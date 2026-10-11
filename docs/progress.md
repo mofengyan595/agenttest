@@ -1,5 +1,13 @@
 # 开发进度
 
+## 本轮最终验收（2026-10-11）
+
+- CI 兼容性修复提交：`d42b98fa98fba3dd96e6b23b89f3e241f703911a`。
+- 远端 [Actions run 38112168760](https://github.com/mofengyan595/agenttest/actions/runs/38112168760) 四组均 success：Windows/Linux 基础组各 154 passed、1 skipped（可选 Agent 模块）、1 个已有弃用提醒；Agent 组各 189 passed，无跳过。
+- 四组 Ruff、pip check、真实回环 HTTP 均通过；每组 8 步 / 9 请求 PASS，health/spec_import/report_query 均 200；Agent 组完整经过六个图节点。
+- 本机 Python 3.11.15 / 项目 .venv：189 passed，Ruff All checks passed，No broken requirements found；Windows Agent 安装脚本实际执行通过。
+- 已保留原始提交历史，全部修改仅位于 AgentTest；阶段 1 P0 已修复，阶段 2 仅交付最小可信工作流。下一里程碑：人工审查策略/认证配置及工作流接口，再设计受控只读调查或有限重规划，继续保持断言和授权不可由模型改变。
+
 ## 首次远端 CI 反馈修复（2026-10-11）
 
 - 首次 run `38112003608` 暴露全新检出无 runs/ 的 smoke 目录初始化问题，以及 Windows Python 3.11.9 内部 socketpair 与本机 3.11.15 的函数组织差异。
@@ -81,7 +89,7 @@
 - [x] OpenAPI 3.x JSON 最小接口摘要
 - [x] 三个基础测试用例
 - [x] 阶段 1：安全契约解析、DSL、Mock target、Executor、Verifier、报告
-- [ ] 阶段 2：LangGraph Agent
+- [ ] 阶段 2：LangGraph Agent（最小 Fake LLM 工作流已完成，后续模块未完成）
 - [ ] 阶段 3：MCP 与 Java 后端真实测试
 - [ ] 阶段 4：效果评测
 - [ ] 阶段 5：产品化
