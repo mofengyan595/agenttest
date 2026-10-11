@@ -1,5 +1,28 @@
 # 开发进度
 
+## 首次远端 CI 反馈修复（2026-10-11）
+
+- 首次 run `38112003608` 暴露全新检出无 runs/ 的 smoke 目录初始化问题，以及 Windows Python 3.11.9 内部 socketpair 与本机 3.11.15 的函数组织差异。
+- smoke 显式创建报告根目录，并支持 --runs-dir，以全新目录验证；保留已有报告。
+- 断网夹具仅兼容两种标准库内部 socketpair 函数代码对象及其回环连接；普通回环 HTTP、公网、DNS 和 connect_ex 继续阻断，新增反向回归证明。
+- 未降低执行器目标白名单、预算或业务断言；修复后重新运行全量验收及远端 CI。
+- 修复后本机实测：189 passed；Ruff 通过；pip check 无损坏依赖。基础与 Agent 各使用全新 runs 子目录完成真实 HTTP：均 8 步 / 9 请求 PASS，三个 API 检查 200，临时服务关闭。
+
+## 本轮提交与审查边界（2026-10-11）
+
+| 模块 | commit SHA | 本地验收 |
+| --- | --- | --- |
+| 策略 Registry 与角色认证隔离 | `8ab94c50b358ad2fcdfe4ca3bccddeed4a59544e` | 94 passed，Ruff，真实 HTTP PASS |
+| OpenAPI 请求约束 | `137d00f7ae46943171c8ad480f5e92f26e6fa1f4` | 130 passed，Ruff，真实 HTTP PASS |
+| 轮询分类与敏感证据 | `9e3afb16a19c36016bb43b9672c94f75196fcbf7` | 152 passed，Ruff，pip check，真实 HTTP PASS |
+| Fake LLM LangGraph 最小工作流 | `ebfbd651d37776c2d1411d61295142bb70663de0` | 187 passed，Ruff，pip check，真实 HTTP 状态图 PASS |
+| Keyless Windows/Linux CI | `490706219a16b466ed2c81b482527923a824045b` | 187 passed，Ruff，pip check，YAML 结构检查 |
+
+- 五个功能提交已推送至原有 Public 仓库 master，未重写历史，未修改 CourseInsight。
+- 推送前复查 15 个提交、51 个跟踪路径、118 个文件版本：无凭据提供商 Key、JWT、私钥或受禁本地产物。字面量候选均为脱敏逻辑或明确的合成测试数据；提交邮箱沿用用户先前明确允许公开的地址。
+- `.venv/`、`.python311/`、`.env`、`runs/` 的忽略规则实际检查通过；工作区没有其他未提交成果被覆盖。
+- 后续仍需人工维护可信 Registry 和配置文件访问权限；当前无多用户审批系统。未知复杂 Schema 停留 NEEDS_REVIEW。仅实现阶段 2 首模块，不接入真实 LLM、MCP、RAG 或业务系统。
+
 ## CI 与交付准备（2026-10-11）
 
 - 阶段 2 最小图模块：`ebfbd65`；Windows Agent 安装入口已实测通过（187 passed，Ruff 通过）。

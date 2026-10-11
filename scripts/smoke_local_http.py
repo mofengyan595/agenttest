@@ -50,6 +50,7 @@ def serve(app: FastAPI):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workflow", action="store_true")
+    parser.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args()
     _, config = demo_inputs()
     environ = {
@@ -58,7 +59,8 @@ def main() -> None:
     }
     target = create_target({"alice": environ["DEMO_ALICE_PASSWORD"],
                             "bob": environ["DEMO_BOB_PASSWORD"]})
-    store = ReportStore(Path("runs"))
+    store = ReportStore(args.runs_dir)
+    store.root.mkdir(parents=True, exist_ok=True)
     with serve(target) as target_url, serve(create_app(store.root)) as platform_url:
         config = TargetConfig.model_validate({**config.model_dump(), "base_url": target_url})
         with tempfile.TemporaryDirectory(dir=store.root) as temporary:
