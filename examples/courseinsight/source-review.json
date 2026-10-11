@@ -1,0 +1,21 @@
+{
+  "commit": "430c23eec8bc31023d8fb43d767bf9d8de164591",
+  "files": {
+    "courseinsight-server/pom.xml": "9c3c6c7edd42fa28472e21f96cb488d9b70089e1688797cd0b67b5a4730c55b1",
+    "courseinsight-server/src/main/java/com/courseinsight/server/controller/AuthController.java": "80f782414e7e0f8f2e65eb45dcbdf4471c959237d6a0cdf686b0f6c8144cde6a",
+    "courseinsight-server/src/main/java/com/courseinsight/server/controller/CourseController.java": "ff7f988f16a81cac4ccf64e568560d905b64df96a17820c40d9293ffce3e5ed7",
+    "courseinsight-server/src/main/java/com/courseinsight/server/config/SecurityConfig.java": "b94d2817946dc14225718388e035d30109156d37e123fe6accc0cd31288ed612",
+    "courseinsight-server/src/main/java/com/courseinsight/server/dto/CourseCreateRequest.java": "7c8b8a9f44213aa704568a6dc7df99999a36e8972e8f78474f2916580fd26ac4",
+    "courseinsight-server/src/main/java/com/courseinsight/server/dto/CourseDetailResponse.java": "28ab23d928ca24b9ddd1051c433270bb7fe6e2e9b2289153828dc6948faf196e",
+    "courseinsight-server/src/main/java/com/courseinsight/server/dto/UserLoginRequest.java": "a8faa0ccf453942a2a19f0ce0b93ea1845c91649491a9dcf026c36a8b6af4d8a",
+    "courseinsight-server/src/main/java/com/courseinsight/server/dto/UserLoginResponse.java": "0c6a386057f9d55af1ea8c49cab1f0b380326899680e9e8cce87231bb0448553",
+    "courseinsight-server/src/main/java/com/courseinsight/server/common/ApiResponse.java": "5f65515ee504a01a22aac5781e619f797fd0ded4542f47e45f1c539821658861",
+    "courseinsight-server/src/main/java/com/courseinsight/server/service/CourseService.java": "a8f44eadc685a3cf9eda9d75fe2044f18866b98cf69ec0af7bd70c241423ddc2",
+    "courseinsight-server/src/main/resources/application.yaml": "12dd762581f0e9981beb1b35b61aa17fce5d8033cac52ae6bb58eb551de1107f",
+    "courseinsight-server/src/main/resources/application-demo.yaml": "a383cf0ac2132907da8b08cb1dad66b80bc255e4fbe8ecf092d68470402ae59d",
+    "compose.yaml": "be9518835c265fb69b2d63843cd7ce9e0b74e7f94aea289eaccb3a94a8579935",
+    "compose.demo.yaml": "d0dff07d5528017a06db05fa02c047b04d4e807a3610184a59799d20a545b21b",
+    "scripts/demo.ps1": "7820efce179f8b6b5a839c1e3eed80fba8f0743351cf0c01660e2b1e076112b8",
+    "scripts/demo.sh": "0a4bf0350a8fa489b4ec6a294ba19acd47fb60510e0c51973d9841e97b3584da"
+  }
+}
