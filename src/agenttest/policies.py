@@ -62,3 +62,14 @@ class PolicyRegistry:
         if step.poll and not policy.assertions.status:
             raise NeedsReview("POLL_HTTP_CONTRACT_NOT_APPROVED")
         return policy
+
+    def catalog(self, business_scenario: str) -> list[dict]:
+        """Public references only; never expose mutable approval objects to planners."""
+        entries = [RegisteredPolicy.model_validate_json(raw) for raw in self._entries.values()]
+        return [{"id": item.id, "operation_id": item.operation_id, "roles": item.roles}
+                for item in entries if item.business_scenario == business_scenario
+                and item.assertions.reviewed]
+
+    def snapshot(self) -> "PolicyRegistry":
+        return PolicyRegistry([RegisteredPolicy.model_validate_json(raw)
+                               for raw in self._entries.values()])

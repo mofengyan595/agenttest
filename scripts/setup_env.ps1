@@ -1,4 +1,4 @@
-param([string]$PythonPath = "")
+param([string]$PythonPath = "", [switch]$Agent)
 
 $ErrorActionPreference = "Stop"
 Set-Location (Resolve-Path (Join-Path $PSScriptRoot ".."))
@@ -34,8 +34,10 @@ $originalTmp = $env:TMP
 try {
     $env:TEMP = (Resolve-Path -LiteralPath '.venv\tmp').Path
     $env:TMP = $env:TEMP
-    Invoke-Checked $projectPython @('-m', 'pip', 'install', '-r', 'requirements-dev.lock')
-    Invoke-Checked $projectPython @('-m', 'pip', 'install', '--no-build-isolation', '-e', '.[dev]')
+    $lockFile = if ($Agent) { 'requirements-agent.lock' } else { 'requirements-dev.lock' }
+    $extras = if ($Agent) { '.[dev,agent]' } else { '.[dev]' }
+    Invoke-Checked $projectPython @('-m', 'pip', 'install', '-r', $lockFile)
+    Invoke-Checked $projectPython @('-m', 'pip', 'install', '--no-build-isolation', '-e', $extras)
     Invoke-Checked $projectPython @('-m', 'pytest', '-q')
     Invoke-Checked $projectPython @('-m', 'ruff', 'check', '.')
 } finally {

@@ -1,5 +1,6 @@
 """Offline demo composition; reusable executor remains independent of this target."""
 
+import json
 import secrets
 from pathlib import Path
 
@@ -26,7 +27,9 @@ def demo_inputs() -> tuple[Scenario, TargetConfig]:
     return scenario, config
 
 
-async def run_demo(fault: Fault = "none", store: ReportStore | None = None) -> RunReport:
+async def run_demo(
+    fault: Fault = "none", store: ReportStore | None = None, *, use_workflow: bool = False,
+) -> RunReport:
     scenario, config = demo_inputs()
     environ = {
         "DEMO_ALICE_USERNAME": "alice", "DEMO_ALICE_PASSWORD": secrets.token_urlsafe(24),
@@ -36,10 +39,16 @@ async def run_demo(fault: Fault = "none", store: ReportStore | None = None) -> R
         environ["DEMO_ALICE_USERNAME"]: environ["DEMO_ALICE_PASSWORD"],
         environ["DEMO_BOB_USERNAME"]: environ["DEMO_BOB_PASSWORD"],
     }, fault)
+    registry = PolicyRegistry.from_json(
+        (PROJECT_ROOT / "examples/demo-policies.json").read_bytes())
+    transport = httpx.ASGITransport(app=target, raise_app_exceptions=False)
+    if use_workflow:
+        from agenttest.workflow import FakeLLM, Workflow
+
+        return await Workflow(json.dumps(target.openapi()).encode(), config, registry,
+                              FakeLLM(scenario.model_dump_json()), store, transport, environ).run()
     executor = Executor(
         config, summarize_openapi(target.openapi()), store,
-        httpx.ASGITransport(app=target, raise_app_exceptions=False), environ,
-        registry=PolicyRegistry.from_json(
-            (PROJECT_ROOT / "examples/demo-policies.json").read_bytes()),
+        transport, environ, registry=registry,
     )
     return await executor.run(scenario)

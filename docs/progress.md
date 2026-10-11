@@ -1,5 +1,20 @@
 # 开发进度
 
+## 阶段 2 首个模块：Fake LLM 状态图（2026-10-11）
+
+- P0 最后修复提交：`9e3afb1`；P0 验收完成后才开始本模块。
+- 查询官方 Graph API / Reference / PyPI，选定并实际导入 LangGraph 1.2.14，核对 StateGraph、START/END、条件边、compile、ainvoke 与 recursion_limit。
+- 图：load_contract -> plan -> validate -> execute -> analyze_or_finish -> report；复用现有 Executor/Verifier 和同一份证据日志。
+- Fake LLM 仅返回不可信 JSON；可信配置快照、策略 Registry、角色 Vault 和预算均不从模型输出加载。图状态不含原始计划、认证信息或 HTTP 正文；按官方 tracing_context(enabled=False) 禁用云追踪。
+- 拒绝非法/重复键 JSON、非 JSON 数字、未知操作、伪造 reviewed/策略/目标/预算、credential/auth_from、秘密直传和跨步骤 Token 外传。分析不能篡改断言或重复执行。
+- 默认单次规划和单次执行器调用，独立模型/工具/图步数/输出大小/超时预算，HTTP 沿用原安全预算；预算/工具异常均有回归。
+- 实测：187 passed，无跳过，无警告；Ruff 通过；pip check 无损坏依赖。
+- 实际 HTTP 状态图：六节点、8 步 / 9 请求 PASS，health/spec_import/report_query 均 200，临时服务已关闭。
+- 安装仅限项目 .venv：langgraph 1.2.14、langchain-core 1.6.9、langsmith 0.14.7 等 25 个必要传递包，单独 requirements-agent.lock；基础版本未改变，未安装模型供应商 SDK 或 MCP。
+- 增加可选 Agent 安装参数和 workflow/workflow-demo CLI。基础环境保留独立使用能力，未装 agent 时仅工作流测试模块跳过。
+- 已知限制：Fake 返回固定样本，分析为确定性建议；无恢复/重规划/真实模型/MCP/RAG/真实 CourseInsight。阶段 2 仅完成首模块，未宣称整阶段完成。
+- 本模块 SHA 在下一检查点登记；下一步为 GitHub Actions 验收及推送。
+
 ## P0 验收：轮询可信分类与证据脱敏（2026-10-11）
 
 - 前一模块：`137d00f`，OpenAPI 请求约束。

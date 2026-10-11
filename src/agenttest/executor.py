@@ -64,12 +64,14 @@ class Executor:
                     for step in scenario.steps}
         return operations, policies
 
-    async def run(self, scenario: Scenario) -> RunReport:
-        report = RunReport(
+    async def run(self, scenario: Scenario, *, report: RunReport | None = None) -> RunReport:
+        report = report or RunReport(
             scenario_sha256=fingerprint(scenario.model_dump()),
             contract_sha256=fingerprint(self.contract.model_dump()),
             environment=self.config.environment, target_origin=self.config.base_url,
         )
+        report.scenario_sha256 = fingerprint(scenario.model_dump())
+        report.contract_sha256 = fingerprint(self.contract.model_dump())
         self.store.save(report)
         try:
             operations, policies = self.validate(scenario)

@@ -1,5 +1,6 @@
 """Explicit opt-in loopback smoke; default pytest suite never opens network sockets."""
 
+import argparse
 import json
 import os
 import secrets
@@ -47,6 +48,9 @@ def serve(app: FastAPI):
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--workflow", action="store_true")
+    args = parser.parse_args()
     _, config = demo_inputs()
     environ = {
         "DEMO_ALICE_USERNAME": "alice", "DEMO_ALICE_PASSWORD": secrets.token_urlsafe(24),
@@ -61,7 +65,7 @@ def main() -> None:
             target_file = Path(temporary) / "target.json"
             target_file.write_text(config.model_dump_json(), encoding="utf-8")
             command = [
-                sys.executable, "-m", "agenttest", "run",
+                sys.executable, "-m", "agenttest", "workflow" if args.workflow else "run",
                 "--contract", str(PROJECT_ROOT / "examples/demo-openapi.json"),
                 "--policies", str(PROJECT_ROOT / "examples/demo-policies.json"),
                 "--plan", str(PROJECT_ROOT / "examples/demo-scenario.json"),
@@ -85,6 +89,7 @@ def main() -> None:
             "health": health.status_code, "spec_import": summary.status_code,
             "report_query": query.status_code, "run_id": report.run_id,
             "servers_stopped_on_exit": True,
+            "workflow_nodes": report.workflow_nodes,
         }
     print(json.dumps(summary_result))
 

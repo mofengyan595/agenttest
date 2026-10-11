@@ -60,6 +60,11 @@ class RunReport(BaseModel):
     reason: str = ""
     environment: str
     target_origin: str
+    workflow_nodes: list[str] = Field(default_factory=list)
+    planner_calls: int = 0
+    tool_calls: int = 0
+    analysis_code: str | None = None
+    workflow_completed: bool | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 

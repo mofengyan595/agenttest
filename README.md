@@ -1,6 +1,6 @@
 # AgentTest
 
-独立 Python API 测试平台。阶段 1 已完成：人工计划 JSON → 契约及权限预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏 JSON 报告。无需 LLM、API Key、Docker；默认 demo 在进程内运行，不访问网络。
+独立 Python API 测试平台。阶段 1 与审查安全修复已完成，阶段 2 首个 Fake LLM 状态图已实现：不可信计划 → 契约及策略预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏报告。无需 API Key、Docker；默认 demo 在进程内运行，不访问网络。
 
 ## 环境与启动
 
@@ -29,6 +29,31 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 `requirements-dev.lock` 是本次 Windows/Python 3.11 环境的准确版本快照，未包含机器路径。首次安装需要包源或预先准备的 wheel 缓存；安装后的默认测试与演示不需要外网。离线安装可事先下载这些依赖到 `artifacts/wheels/`，再使用 `pip install --no-index --find-links artifacts/wheels -r requirements-dev.lock`。
 
 本机没有独立安装的 3.11，因此额外使用项目内、被忽略的 `.python311/` 运行时作为 `.venv` 的基础解释器。另一台机器应重新创建环境，不能复制 `.venv`。
+
+阶段 2 可选安装：Windows 使用 `.\scripts\setup_env.ps1 -Agent`，macOS/Linux 使用 `bash scripts/setup_env.sh --agent`。已有 `.venv` 也可执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-agent.lock
+.\.venv\Scripts\python.exe -m pip install --no-build-isolation -e '.[dev,agent]'
+.\.venv\Scripts\python.exe -m agenttest workflow-demo
+```
+
+Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`。安装时需要包源或缓存，安装后测试与工作流无需外网。仅基础环境运行 pytest 时，工作流测试模块会明确跳过；完整验收应安装 agent extra。
+
+## Fake LLM 最小工作流
+
+图顺序为 `load_contract -> plan -> validate -> execute -> analyze_or_finish -> report`。执行节点直接复用 Executor/Verifier；校验失败跳过执行。`workflow-demo --fault ownership` / `--fault terminal` 保留两个已知故障样本。显式本地目标可运行：
+
+```powershell
+.\.venv\Scripts\python.exe -m agenttest workflow --contract examples/demo-openapi.json --plan examples/demo-scenario.json --target examples/demo-target.json --policies examples/demo-policies.json
+.\.venv\Scripts\python.exe scripts/smoke_local_http.py --workflow
+```
+
+这里 `--plan` 是 Fake LLM 返回的 JSON 样本，仍按不可信模型输出处理。操作员另行加载目标配置与 Policy Registry；模型只看到操作标识、角色别名、策略引用及 DSL 结构，不接收环境、账号凭据或批准对象。原始规划结果、凭据、HTTP 正文不进入图状态，云追踪显式禁用。
+
+每次运行至多一次规划、一次执行器调用；HTTP 请求继续受目标预算限制。`WorkflowBudget` 由操作员构造，模型不能修改。失败分析是固定分类建议，不重写断言、不自动重试整条场景；报告记录节点序列、调用次数和完成状态。当前不支持恢复、重复规划、动态调查或真实模型。
+
+API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)、[API 参考](https://reference.langchain.com/python/langgraph/graph) 和 [禁用追踪文档](https://docs.langchain.com/langsmith/conditional-tracing) 核对，并实际运行 `StateGraph`、条件边、`compile()`、`ainvoke()`；版本见 [PyPI 1.2.14](https://pypi.org/project/langgraph/1.2.14/)。
 
 ## 运行完整演示
 
@@ -124,6 +149,7 @@ src/agenttest/
   report.py          分类、摘要与持久化
   mini_target.py     一次性模拟服务及故障开关
   demo.py            离线演示组装
+  workflow.py        Fake LLM、受控 LangGraph 状态图与预算
   __main__.py        CLI
   main.py            FastAPI 契约导入、健康与报告查询
 tests/               单元、安全边界和完整链路测试
@@ -133,6 +159,6 @@ scripts/             环境准备、真实 loopback 检查
 runs/                本地报告（忽略，不提交）
 ```
 
-已完成阶段 1。未实现 LangGraph、真实模型 Function Calling、MCP、CourseInsight 接入、Golden Tests 评测或前端。下一里程碑为阶段 2 的 fake LLM → DSL 校验 → 执行 → 报告工作流，先验证非法模型输出与工具失败分支，再考虑真实模型。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
+已完成阶段 1 安全修复及阶段 2 首个 Fake LLM 图模块。未实现真实模型 Function Calling、MCP、RAG、CourseInsight 接入、Golden Tests 评测或前端。下一里程碑建议审查可信策略与工作流接口，再定义受控只读调查和重复规划规则。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
 
 实现依据：[OpenAPI 3.1 规范](https://spec.openapis.org/oas/v3.1.0.html)、[文档校验器](https://openapi-spec-validator.readthedocs.io/en/latest/python.html)、[HTTPX transport](https://www.python-httpx.org/advanced/transports/)、[超时](https://www.python-httpx.org/advanced/timeouts/)、[FastAPI 文件上传](https://fastapi.tiangolo.com/tutorial/request-files/)。
