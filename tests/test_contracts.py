@@ -17,8 +17,16 @@ def test_openapi_summary() -> None:
             "openapi": "3.0.3",
             "info": {"title": "demo", "version": "1.0"},
             "paths": {
-                "/api/items": {"get": {"operationId": "listItems", "summary": "List items"}},
-                "/api/items/{id}": {"get": {"operationId": "getItem"}},
+                "/api/items": {"get": {
+                    "operationId": "listItems", "summary": "List items",
+                    "responses": {"200": {"description": "Items"}},
+                }},
+                "/api/items/{id}": {
+                    "parameters": [{"name": "id", "in": "path", "required": True,
+                                    "schema": {"type": "integer"}}],
+                    "get": {"operationId": "getItem",
+                            "responses": {"200": {"description": "Item"}}},
+                },
             },
         }
     }

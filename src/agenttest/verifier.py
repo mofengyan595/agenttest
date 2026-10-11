@@ -1,5 +1,6 @@
 """Only reviewed policies may produce PASS or ASSERTION_FAILED."""
 
+import re
 from typing import Any
 
 from agenttest.dsl import AssertionPolicy
@@ -37,9 +38,14 @@ def verify(
             passed = any(
                 type(actual) is type(item) and actual == item for item in assertion.expected
             )
+        sensitive = bool(re.search(
+            r"password|passwd|token|secret|authorization|cookie|api.?key", assertion.select,
+            re.IGNORECASE,
+        ))
         checks.append(CheckResult(
             kind=assertion.operator, selector=assertion.select, passed=passed,
-            expected=safe_value(assertion.expected), actual=safe_value(actual),
+            expected="[REDACTED]" if sensitive else safe_value(assertion.expected),
+            actual="[REDACTED]" if sensitive else safe_value(actual),
         ))
     outcome = Outcome.PASS if all(check.passed for check in checks) else Outcome.ASSERTION_FAILED
     return outcome, checks

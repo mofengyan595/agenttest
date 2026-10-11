@@ -74,3 +74,16 @@
 - 提供只读 `/api/runs/{run_id}`，无任意目标执行 API；错误不会回显不可信文档。
 - 包含原有接口的针对性 pytest：**7 passed**；Ruff：**All checks passed!**。
 - 下一步：安全边界补充回归、真实本地 HTTP 验证、README 与安装脚本、全量质量门禁。
+
+### 安全边界回归与真实 HTTP
+
+- 前一模块提交：`80e9ce7`（CLI / API）。
+- 加入标准 OpenAPI 文档校验，先展开并限制本地引用，再验证；不交给验证器远程引用。
+- 补齐原始示例/测试文档的响应及路径参数定义，原有行为断言保持不变。
+- 加入超时、请求体上限、轮询耗尽、Cookie 隔离、未知策略停止、数值密码脱敏回归。
+- 全量测试：**74 passed, 1 warning**；Ruff：**All checks passed!**。
+- 默认测试禁止 DNS 和网络连接；Windows 标准库内部 socket pair 除外。
+- 断网夹具首轮误拦截 Windows asyncio 内部通信，已精确放行并全量重测通过。
+- 显式真实 loopback 验证：8 步 / 9 请求 PASS，health/spec_import/report_query 均为 200。
+- 实际 HTTP 验证 run：`737dba777bc649fd860e8aa4e98b15b8`，临时服务均已关闭。
+- 下一步：安装脚本与 README、冻结依赖、交付版本记录；阶段 2 不在本次实现范围。

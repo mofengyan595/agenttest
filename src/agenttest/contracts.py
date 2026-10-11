@@ -5,6 +5,7 @@ import re
 from typing import Any
 
 import yaml
+from openapi_spec_validator import validate
 from pydantic import BaseModel, Field
 
 MAX_DOCUMENT_BYTES = 1_000_000
@@ -127,6 +128,11 @@ def summarize_openapi(document: dict[str, Any]) -> ContractSummary:
     ):
         raise ValueError("OpenAPI info.title and info.version are required")
     document = _resolve(document)
+    try:
+        # All $refs are already local-expanded; validator never receives remote references.
+        validate(document)
+    except Exception:
+        raise ValueError("OpenAPI schema validation failed") from None
     paths = document.get("paths")
     if not isinstance(paths, dict):
         raise ValueError("OpenAPI document must provide a paths object")
@@ -171,8 +177,8 @@ def summarize_openapi(document: dict[str, Any]) -> ContractSummary:
             if body is not None and (not isinstance(body, dict)
                                      or not isinstance(body.get("content"), dict)):
                 raise ValueError("requestBody must contain content")
-            responses = operation.get("responses", {})
-            if not isinstance(responses, dict) or any(
+            responses = operation.get("responses")
+            if not isinstance(responses, dict) or not responses or any(
                 not re.fullmatch(r"[1-5][0-9X]{2}|default", status)
                 or not isinstance(response, dict) for status, response in responses.items()
             ):

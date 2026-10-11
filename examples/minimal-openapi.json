@@ -2,11 +2,23 @@
   "openapi": "3.0.3",
   "info": {"title": "AgentTest demo", "version": "1.0"},
   "paths": {
-    "/api/auth/login": {"post": {"operationId": "login", "summary": "Authenticate user"}},
-    "/api/courses": {"post": {"operationId": "createCourse", "summary": "Create a course"}},
-    "/api/courses/{courseId}": {"get": {"operationId": "getCourse", "summary": "Read a course"}},
-    "/api/courses/{courseId}/analysis-batches": {"post": {"operationId": "createBatch", "summary": "Submit CSV batch"}},
-    "/api/analysis-batches/{batchId}": {"get": {"operationId": "getBatch", "summary": "Read async batch state"}},
-    "/api/analysis-batches/{batchId}/results": {"get": {"operationId": "getBatchResults", "summary": "Get batch results"}}
+    "/api/auth/login": {"post": {"operationId": "login", "responses": {"default": {"description": "Illustrative response, not an assertion"}}}},
+    "/api/courses": {"post": {"operationId": "createCourse", "responses": {"default": {"description": "Illustrative response, not an assertion"}}}},
+    "/api/courses/{courseId}": {
+      "parameters": [{"name": "courseId", "in": "path", "required": true, "schema": {"type": "integer"}}],
+      "get": {"operationId": "getCourse", "responses": {"default": {"description": "Illustrative response"}}}
+    },
+    "/api/courses/{courseId}/analysis-batches": {
+      "parameters": [{"name": "courseId", "in": "path", "required": true, "schema": {"type": "integer"}}],
+      "post": {"operationId": "createBatch", "responses": {"default": {"description": "Illustrative response"}}}
+    },
+    "/api/analysis-batches/{batchId}": {
+      "parameters": [{"name": "batchId", "in": "path", "required": true, "schema": {"type": "integer"}}],
+      "get": {"operationId": "getBatch", "responses": {"default": {"description": "Illustrative response"}}}
+    },
+    "/api/analysis-batches/{batchId}/results": {
+      "parameters": [{"name": "batchId", "in": "path", "required": true, "schema": {"type": "integer"}}],
+      "get": {"operationId": "getBatchResults", "responses": {"default": {"description": "Illustrative response"}}}
+    }
   }
 }
