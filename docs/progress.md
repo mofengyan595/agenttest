@@ -1,5 +1,16 @@
 # 开发进度
 
+## 阶段 3A：四组 CI 与最终交付检查（2026-10-11）
+
+- 功能提交 `b159bf4cb191f093f7800170e9f36909c528fdd3`、`d558df18a806f9e6e591c02ec85406b753a2f461`、`bb8860bdd60e04de5a4d23af7d3bff78f9e8879b`；验收文档与安全统计 `2d9f1d3e8a6d3fb563fbe3ef9d2caf2397617561` 均已推送原 Public master。
+- [Actions 38141751635](https://github.com/mofengyan595/agenttest/actions/runs/38141751635) 对应 `2d9f1d3`，Windows/Linux × base/agent **全部 success**，已逐组读取真实日志。
+- agent：Windows **452 passed / 26.75s**，Linux **452 passed / 29.31s**；base：Windows **381 passed、5 skipped、1 warning / 21.83s**，Linux **381 passed、5 skipped、1 warning / 13.49s**。跳过可选图模块，保留既有 Starlette 提醒。
+- 四组 Ruff / pip check / 基础 8 步 9 请求回环均通过；两个 agent 的 Fake 自然语言和只读调查回环也通过，学校 API 调用均 0。
+- `2d9f1d3` 的最终就绪探测另经真实 Java 验证 PASS：8 次就绪尝试，**0 业务请求、0 创建**；自有进程已关闭。本轮始终只有一次真实课程创建。
+- 最终公开检查：107 个文件、269 个历史 blob，实际学校 Key / demo 密码 / 私钥 / Token / JWT 命中 0；任务、两轮评测、四组 CI 文件逐字节未变，.env/.venv/.python311/runs 正确忽略。
+- 全部六个 demo 容器的 Compose 来源已统一为当前 `D:\Desktop\project\courseinsight-cloud`，五个原卷保留，初始化容器仅创建未运行。CourseInsight 业务代码未改。
+- 本次最后提交只记录上述 CI 与健康探测证据；功能范围结束于阶段 3A，等待审查后再讨论阶段 3B，不提前实施 MCP。
+
 ## 阶段 3A：真实 Java 三步验收（2026-10-11）
 
 | 模块 | commit SHA |

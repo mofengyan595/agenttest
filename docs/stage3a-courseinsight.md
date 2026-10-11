@@ -121,3 +121,8 @@ Java 输出不保存，避免异常日志泄露配置；如启动失败，在操
   正常零调查、ownership 一次调查且原 ASSERTION_FAILED 保留，各创建一次。真实模型调用均 0。
 
 范围结束于三步链路。尚未实现跨用户、上传/异步、自动清理、MCP 或 Stage 3B。
+
+最终本地 **452 passed**（保留 402 项、新增 50 项），Ruff 与 pip check 通过。
+[四组 CI 38141751635](https://github.com/mofengyan595/agenttest/actions/runs/38141751635)
+对应 `2d9f1d3` 全部 success：agent 各 452 passed；base 各 381 passed、5 skipped、1 warning。
+该版本有界健康探测另经真实 Java 验证 PASS（8 次尝试、0 业务请求、0 创建），未增加合成课程。
