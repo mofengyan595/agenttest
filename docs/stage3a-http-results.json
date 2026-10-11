@@ -1,0 +1,88 @@
+{
+  "implementation_commit": "d558df1",
+  "target_source_commit": "430c23eec8bc31023d8fb43d767bf9d8de164591",
+  "run_id": "d1becff562a149f68452861c95423164",
+  "target_origin": "http://127.0.0.1:18080",
+  "outcome": "PASS",
+  "scenario_sha256": "293485afb7b5c336007515867a49af5bec88e08aa181d07d9aaaeaadea744150",
+  "contract_sha256": "f2812364ef4d73e8fb254e3983db9a758f952d6aa09157f04a033cf7573a959a",
+  "policy_registry_sha256": "42a387e2d0f3128b721c07a536e75ae190108b3c5914682776a6059920f43fd8",
+  "synthetic_course_code": "AT3Ae2ecc268599b46d3b9464dbd",
+  "business_requests": 3,
+  "readiness_attempts": 15,
+  "model_calls": 0,
+  "investigations": 0,
+  "steps": [
+    {
+      "step_id": "login",
+      "operation_id": "ciLogin",
+      "outcome": "PASS",
+      "checks_passed": 5,
+      "checks_total": 5,
+      "selectors": [
+        "$.code",
+        "$.data.accessToken",
+        "$.data.tokenType",
+        "$.data.role"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "4e6441d25fad4d858d78b0b1ecd521e1",
+          "status_code": 200,
+          "elapsed_ms": 518.687,
+          "response_bytes": 501,
+          "response_sha256": "50921944134de42d6b034c245cd09f5ea7b5c517d176f586c288dd50166ea47f",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "create",
+      "operation_id": "ciCreateCourse",
+      "outcome": "PASS",
+      "checks_passed": 3,
+      "checks_total": 3,
+      "selectors": [
+        "$.code",
+        "$.data"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "d114cea93acd48a0a8ac9953a9507193",
+          "status_code": 201,
+          "elapsed_ms": 69.665,
+          "response_bytes": 40,
+          "response_sha256": "33330ec3dfef92953de6c68ea0ccc61760191835137b4ed005177bf7a6b15951",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "read",
+      "operation_id": "ciGetCourse",
+      "outcome": "PASS",
+      "checks_passed": 6,
+      "checks_total": 6,
+      "selectors": [
+        "$.code",
+        "$.data.code",
+        "$.data.name",
+        "$.data.teacherName",
+        "$.data.id"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "da758c9f12354a42a4f3469c7402f888",
+          "status_code": 200,
+          "elapsed_ms": 34.583,
+          "response_bytes": 306,
+          "response_sha256": "50729de631f65cce52bb41384209d7ff22b8211636df9cfae7d5474a55e7fd6b",
+          "error_code": null
+        }
+      ]
+    }
+  ]
+}

@@ -177,6 +177,21 @@ API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/gr
 
 外部测试数据清理由操作员负责，第一阶段未实现外部环境自动清理、幂等恢复或生产访问能力。
 
+## CourseInsight Java 三步验收（阶段 3A）
+
+真实本地 Java demo 已完成 **200 → 201 → 200**，三次业务请求、一次创建，动态 ID 与课程 code/name/teacherName 一致。仅使用人工契约、可信策略与固定 DSL，复用原执行器；不启用 LLM、MCP、调查或跨用户测试。
+
+```powershell
+# AgentTest 根目录：先做只读环境预检
+.\.venv\Scripts\python.exe scripts/run_courseinsight_http.py --source "D:\Desktop\project\courseinsight-cloud"
+# 预检通过后显式单次执行；脚本自启并关闭 Java，不要提前占用 18080
+.\.venv\Scripts\python.exe scripts/run_courseinsight_http.py --source "D:\Desktop\project\courseinsight-cloud" --execute
+```
+
+需要 JDK 17、健康且独立的本地 demo Docker 依赖、已审查的 CourseInsight 源码及离线 Maven 缓存。默认只检查、不写入；失败不会自动重试创建。目标固定 127.0.0.1:18080，原数据卷保留。凭据仅从该 demo 的本地配置进入 Vault；不复制凭据、不调用学校 API。每次显式执行生成不同合成代码并保留一条课程，由操作员清理。
+
+配置、Java 校验支持边界、预检阻碍和实际证据见 [阶段 3A 说明](docs/stage3a-courseinsight.md) 与 [脱敏统计](docs/stage3a-http-results.json)。真实 Java 检查显式启用，默认 pytest 和四组 CI 不依赖 Docker、Java 或 API Key。
+
 ## 验证与结构
 
 ```powershell
@@ -205,6 +220,8 @@ src/agenttest/
   report.py          分类、摘要与持久化
   mini_target.py     一次性模拟服务及故障开关
   demo.py            离线演示组装
+  courseinsight.py    人工审核的 Java 三步固定链路与证据
+  courseinsight_env.py 本地 demo 隔离门禁
   workflow.py        Fake LLM、受控 LangGraph 状态图与预算
   planner_input.py   有界自然语言与筛选后的公共规划上下文
   llm_planner.py     真实模型结构化 Adapter 与学校协议适配
@@ -220,6 +237,6 @@ scripts/             环境准备、真实 loopback 检查
 runs/                本地报告（忽略，不提交）
 ```
 
-已完成阶段 1 安全修复、阶段 2A 真实结构化规划及首批 18 条受控任务评测。未实现 Function Calling 工具循环、MCP、RAG、CourseInsight 接入、阶段 4 的 60 条/多轮缺陷评测或前端。下一里程碑是根据保留的失败证据改善规划可靠性及诊断，继续固定业务断言与授权边界。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
+已完成阶段 1、阶段 2A 两轮受控评测、阶段 2B 最小只读调查，以及阶段 3A CourseInsight 独立 Java demo 的登录/创建/查询验收。尚未实现 MCP、RAG、真实 Java 跨用户/异步测试、自动数据清理、阶段 4 广泛评测或前端。阶段 3B 等待阶段 3A 审查后再讨论。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
 
 实现依据：[OpenAPI 3.1 规范](https://spec.openapis.org/oas/v3.1.0.html)、[文档校验器](https://openapi-spec-validator.readthedocs.io/en/latest/python.html)、[HTTPX transport](https://www.python-httpx.org/advanced/transports/)、[超时](https://www.python-httpx.org/advanced/timeouts/)、[FastAPI 文件上传](https://fastapi.tiangolo.com/tutorial/request-files/)。

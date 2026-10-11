@@ -17,9 +17,10 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
-Stage 2A is accepted (two preserved live evaluations). Stage 2B adds one explicitly
-enabled, operator-approved read-only failure investigation using FakeAnalyzer and the
-original Executor session. Preserve original results, ephemeral resource/auth scope,
-zero default independent budgets and no automatic request replay. Keep Windows/Linux ×
-base/agent CI. No real LLM investigation, repair/replanning, MCP, RAG, frontend,
-CourseInsight changes or complex multi-agent.
+Stage 2A and the minimal Stage 2B investigation are complete. Stage 3A adapts the
+reviewed CourseInsight Java demo login/create/read chain using fixed DSL and the
+existing Executor, Verifier, Vault and policies. Require explicit local isolation
+preflight before writes; preserve all demo volumes and never retry creation. Keep the
+402 earlier tests, both original model evaluations and Windows/Linux × base/agent CI.
+No LLM, investigation, MCP, cross-user scenario or CourseInsight business-code changes
+in this milestone. Discuss Stage 3B only after Stage 3A acceptance.

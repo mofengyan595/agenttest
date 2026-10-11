@@ -44,3 +44,80 @@ CourseCreateRequest、CourseDetailResponse、CourseService、application-demo.ya
 策略摘要、动态依赖和请求 attempt ID。报告不记录 JWT、凭据、HTTP 正文或实际 ID。
 按 fixture 的一次性 code 追溯课程；不自动删除课程、数据库或卷，不自动恢复旧 run。
 真实 Java 验收及隔离检查结果在完成环境门禁后追加，离线 MockTransport 通过不代表真实验收。
+
+## 环境准备与运行
+
+本轮 CourseInsight 所有接入路径统一为 `D:\Desktop\project\courseinsight-cloud`。
+已有 demo 容器保留了迁移前的 Compose 路径；用户明确批准重新创建容器。按当前
+`demo.env` / `compose.demo.yaml` 重新创建五个依赖及未启动的卷初始化容器，未删除、
+重建数据卷；五个卷的 Name/CreatedAt/Driver/Mountpoint/Options/Scope/Labels 前后完全一致。
+
+运行需要现有 Python 3.11 .venv、JDK 17、Docker Engine、健康的原 demo 依赖及完整本地
+Maven 缓存。使用 CourseInsight 自带脚本准备依赖，不运行 `clean` 或完整 `smoke`：
+
+```powershell
+# 在 CourseInsight 根目录；首次启动前须确认 demo 专用数据库与卷
+.\scripts\demo.ps1 start
+
+# 在 AgentTest 根目录；默认仅检查，零业务 HTTP、不启动 Java
+.\.venv\Scripts\python.exe scripts/run_courseinsight_http.py `
+  --source "D:\Desktop\project\courseinsight-cloud"
+
+# 显式单次验收：启动自有 Java demo 进程，执行三个业务请求，最后关闭自有进程
+.\.venv\Scripts\python.exe scripts/run_courseinsight_http.py `
+  --source "D:\Desktop\project\courseinsight-cloud" --execute
+```
+
+不得提前另开 Java 占用 18080：验收脚本拒绝接管未知监听进程。
+Java 在 `courseinsight-server` 工作目录以 Maven **离线模式**启动，demo profile 仍可导入
+`../demo.env`；外部参数将地址/端口固定为 127.0.0.1:18080，与 DemoSmoke 的
+`DEMO_BASE_URL` 覆盖机制兼容。固定 MySQL 的 courseinsight_demo、Redis 6380、MQ 9876
+和 AI Stub 8002，关闭 outbox 发布与租约恢复后台任务，避免本轮无关后台处理。
+不执行完整 DemoSmoke（其中包含额外写入与异步操作）。
+
+凭据仅在内存中从当前 demo.env 读取，经 environ 交给 Vault；AgentTest 不复制此文件。
+不读取学校模型配置，不继承模型 Key、Spring/Java/Maven 环境覆盖或代理配置。
+Java 输出不保存，避免异常日志泄露配置；如启动失败，在操作员本地诊断 Maven 缓存与配置，
+不自动联网安装、不重试业务写入。Maven 可产生 CourseInsight 忽略的 target 构建产物，
+业务源码与跟踪文件不改动，原有 .gitignore 修改保留。
+
+门禁检查：固定源码版本与已审查文件摘要、相关源码工作区无漂移、demo 专用容器/卷标签、
+全回环端口、五个健康状态、数据库名和必要凭据匹配、卷不被其他容器共享、Compose 来源目录。
+配置或源码改变须重新人工核对，不通过编辑断言绕过。版本/文件摘要只支持已核对的本地
+`430c23e...`；不是对任意 CourseInsight 版本的通用兼容承诺。
+
+| 固定预检错误码 | 操作员处理 |
+| --- | --- |
+| INSPECTION_FAILED / DOCKER_UNAVAILABLE | 启动 Docker 并确认当前用户有权限；不发送业务请求 |
+| DEMO_COMPOSE_SOURCE_MISMATCH | 从当前目录重新配置 demo 容器，保留全部卷；不要直接改标签充当证明 |
+| DEMO_VOLUME_SCOPE / DEMO_VOLUME_SHARED / DEMO_DATABASE_SCOPE | 核实独立 demo 卷、数据库和凭据，停止写入；不删除数据绕过 |
+| SOURCE_VERSION_UNREVIEWED / SOURCE_WORKTREE_DRIFT / SOURCE_FILE_DRIFT | 重新审查实际 Java 版本与接口，不自动覆盖本地源码 |
+| TARGET_PORT_OCCUPIED | 由操作员检查占用进程；不自动杀死未知服务 |
+| JAVA_START_FAILED / JAVA_HEALTH_TIMEOUT | 检查 JDK 17、离线 Maven 缓存和 demo 配置；无业务重试 |
+
+就绪探测仅访问固定 `/actuator/health`，最多 60 次、总时限 120 秒、正文 64 KiB，拒绝重定向。
+该基础设施预算独立于三次业务请求上限。调查和模型调用始终为零。
+
+## 实际验收（2026-10-11）
+
+原始脱敏统计：[stage3a-http-results.json](stage3a-http-results.json)。
+执行代码版本 `d558df1`，run `d1becff562a149f68452861c95423164`。
+后续 `bb8860b` 只加强就绪探测的大小/总时限/重定向限制，未再次创建真实课程。
+
+| 步骤 | HTTP | 请求次数 | 耗时 ms | 可信检查 |
+| --- | --- | --- | --- | --- |
+| 登录 | 200 | 1 | 518.687 | 5/5 PASS（含 code、角色、Token 字段） |
+| 创建 | 201 | 1 | 69.665 | 3/3 PASS |
+| 查询本次 ID | 200 | 1 | 34.583 | 6/6 PASS（含 ID/code/name/teacherName） |
+
+- 三次业务请求、一次创建、无创建重试；就绪探测 15 次尝试（含连接尚未建立的尝试）。
+- 三个响应 code 均为 0；14/14 检查通过。动态 ID 未写死，查询路径来自本次 `create:$.data`。
+- 合成课程 code `AT3Ae2ecc268599b46d3b9464dbd`，保留在 demo 数据库，未自动清理。
+- JWT/密码/原始响应正文未写入报告或发布统计，实际 ID 在报告中脱敏。
+- 完整本地证据：`runs/d1becff562a149f68452861c95423164/{report.json,fixture.json}`；
+  环境审计 `runs/courseinsight-b880ac4e1859449bb6c3e659ccaa9de1/isolation.json`（均忽略、不提交）。
+- Java 自有进程已停止，demo 基础容器和原数据卷保留；CourseInsight 仍只有原有 .gitignore 修改。
+- 原基础真实回环 8 步/9 请求 PASS；FakeLLM 两类路径 3/3、5/5 PASS；调查回环
+  正常零调查、ownership 一次调查且原 ASSERTION_FAILED 保留，各创建一次。真实模型调用均 0。
+
+范围结束于三步链路。尚未实现跨用户、上传/异步、自动清理、MCP 或 Stage 3B。

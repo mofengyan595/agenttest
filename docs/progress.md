@@ -1,5 +1,23 @@
 # 开发进度
 
+## 阶段 3A：真实 Java 三步验收（2026-10-11）
+
+| 模块 | commit SHA |
+| --- | --- |
+| 人工契约 / 可信策略 / 固定 DSL | `b159bf4` |
+| 隔离门禁 / 显式 Java 执行入口 | `d558df1` |
+| 有界就绪探测 | `bb8860b` |
+
+- 原 402 项保留，新增 50 项；最终 **452 passed**（65.00s），Ruff **All checks passed!**，pip check **No broken requirements found.**
+- 真实 CourseInsight 源码 `430c23eec8bc31023d8fb43d767bf9d8de164591`，执行代码 `d558df1`，绑定 127.0.0.1:18080；run `d1becff562a149f68452861c95423164`。
+- 登录 **200 / 518.687ms**、创建 **201 / 69.665ms**、查询 **200 / 34.583ms**，各请求一次，14/14 检查 PASS。三次 code=0，动态 ID 与 code/name/teacherName 全部一致。
+- 仅一次合成课程创建，code `AT3Ae2ecc268599b46d3b9464dbd`；凭据/Token/正文不落盘，原卷保留，课程保留供操作员追溯/清理。Java 自有进程已停止。
+- 用户批准将全部 demo 容器来源迁至当前目录；五个数据卷所有已核对元数据保持不变。CourseInsight 跟踪文件仍仅有原先 .gitignore 修改。
+- 旧真实回环 8 步/9 请求 PASS；Fake 自然语言两类 3/3、5/5 PASS；调查正常零次、ownership 一次且原失败保留，各创建一次。无学校 API 调用。
+- 保留原任务、两轮评测与四组 CI，实际响应只发布安全摘要：[Java 验收](stage3a-courseinsight.md)、[原始脱敏统计](stage3a-http-results.json)。
+- 支持边界：只批准固定 ASCII 输入；未完整实现 Java NotBlank/UTF-16 长度语义或通用响应 Schema。无跨用户、异步、自动清理、MCP 或阶段 3B。
+- 公开前检查：107 个文件、265 个历史 blob，实际学校 Key/本地 demo 密码/私钥/Token/JWT 命中均 0；原任务、两轮评测及 CI 文件逐字节不变，四类本地产物正确忽略。推送 CI 结果下一检查点记录；不重复真实创建来补写文档。
+
 ## 阶段 3A：就绪探测安全边界（2026-10-11）
 
 - 隔离门禁提交 `d558df1`；真实三步 Java 验收已 PASS（run `d1becff562a149f68452861c95423164`），详见后续验收文档。
