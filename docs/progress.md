@@ -1,5 +1,13 @@
 # 开发进度
 
+## 最终审查与远端 CI（2026-10-11）
+
+- 文档及首次完整验收提交：`30af4fdab2be0a8535a035cf301f6399f810bc44`，已推送。
+- [Actions 38115309963](https://github.com/mofengyan595/agenttest/actions/runs/38115309963) 四组全部 success：Windows/Linux base 各 207 passed、3 skipped（可选 Agent 模块）、1 个既有 Starlette 弃用提醒；agent 各 262 passed。四组 Ruff/pip check/旧回环均通过，两个 Agent 组新增自然语言回环也通过，无真实模型调用。
+- 最终审查发现“无批准路径时返回空草案”的提示与 minItems=1 矛盾。仅将模型草案的空步骤定义为显式弃权，直接进入 NEEDS_REVIEW / MODEL_NO_APPROVED_PLAN；实际 Scenario 仍至少一步、空计划绝不执行或 PASS。
+- 新增结构化弃权和完整图不执行 HTTP 的两个回归；最终本地 **264 passed**，Ruff、pip check 通过。未增加真实模型调用，历史评测数字不变。
+- 公开前实际 Key 检查覆盖 75 个跟踪文件、169 个历史 blob，无匹配；本地 .env、运行产物和虚拟环境仍被忽略，未重写任何既有提交。
+
 ## 阶段 2A 交付记录（2026-10-11）
 
 | 模块 | commit SHA | 实际验证 |

@@ -124,7 +124,8 @@ class DraftStep(StrictModel):
 
 class PlannerDraft(StrictModel):
     name: str = Field(min_length=1, max_length=100)
-    steps: list[DraftStep] = Field(min_length=1, max_length=20)
+    # Empty draft is explicit abstention, never an executable empty Scenario.
+    steps: list[DraftStep] = Field(max_length=20)
 
     def scenario(self) -> Scenario:
         steps = []
@@ -266,5 +267,7 @@ class OpenAICompatiblePlanner:
         if settings.api_key.get_secret_value() in content:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_SECRET_OUTPUT")
         draft = PlannerDraft.model_validate(bounded_json(content, settings.max_response_bytes))
+        if not draft.steps:
+            raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_NO_APPROVED_PLAN")
         self.stats.reason = "MODEL_OUTPUT_RECEIVED"
         return draft.scenario().model_dump_json()

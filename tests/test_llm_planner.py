@@ -135,6 +135,16 @@ async def test_response_byte_limit():
         await llm.generate(context())
 
 
+@pytest.mark.asyncio
+async def test_structured_abstention_needs_review_never_becomes_empty_executable_plan():
+    llm = planner(lambda request: httpx.Response(200, json=completion(
+        json.dumps({"name": "unsupported task", "steps": []}))))
+    with pytest.raises(PlannerFailure) as caught:
+        await llm.generate(context())
+    assert caught.value.outcome == Outcome.NEEDS_REVIEW
+    assert caught.value.reason == "MODEL_NO_APPROVED_PLAN" and llm.stats.calls == 1
+
+
 @pytest.mark.parametrize("base", ["http://model.invalid/v1", "https://user:pass@model.invalid",
                                 "https://model.invalid?key=private", "https://model.invalid/../v1"])
 def test_model_endpoint_only_operator_https(base):

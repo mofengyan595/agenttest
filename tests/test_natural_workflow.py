@@ -76,6 +76,17 @@ async def test_user_task_constraints_before_model(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_real_adapter_can_abstain_without_http_or_invented_pass(tmp_path):
+    planner = OpenAICompatiblePlanner(ModelSettings(model="fixture-model",
+        base_url="https://model.invalid/v1", api_key="synthetic-model-key"),
+        httpx.MockTransport(lambda req: httpx.Response(200, json=completion(
+            json.dumps({"name": "no approved path", "steps": []})))))
+    report = await run_natural_demo("测试目前未批准的删除课程操作", planner, ReportStore(tmp_path))
+    assert report.outcome == Outcome.NEEDS_REVIEW and report.reason == "MODEL_NO_APPROVED_PLAN"
+    assert report.tool_calls == 0 and not report.steps and not report.plan_valid
+
+
+@pytest.mark.asyncio
 async def test_natural_workflow_tool_budget_is_operator_owned(tmp_path):
     report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()),
                                     ReportStore(tmp_path), budget=WorkflowBudget(max_tool_calls=0))

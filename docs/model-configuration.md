@@ -26,6 +26,7 @@
 ## 输出与失败
 
 严格 PlannerDraft 使用封闭对象、枚举、标量参数和显式引用，再转换为现有 Scenario，继续经过 Vault、OpenAPI、Policy Registry 和预算预检。
+没有已批准路径时允许模型返回空草案，直接归为 NEEDS_REVIEW / MODEL_NO_APPROVED_PLAN；不会转成可执行空 Scenario，更不会 PASS。实际 DSL 仍要求至少一个步骤。
 保留 FakeLLM；默认 pytest 主动阻断 DNS/网络，CI 四组无需 Key，不运行真实评测。
 当前真实模型格式不支持 CSV、嵌套对象、轮询或多次调查；不通过临时放宽 DSL 或策略来假装支持。
 
