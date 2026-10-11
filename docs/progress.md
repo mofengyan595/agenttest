@@ -1,5 +1,25 @@
 # 开发进度
 
+## 阶段 5：本地最终验收（2026-10-11）
+
+- 最终全量 **560 passed、1 skipped / 109.90s**，新增 52 项，原 31 个测试文件逐字节保留；Windows 本机符号链接权限跳过。Ruff / pip check / git diff --check 通过。
+- 实际 loopback：正常 8/9 PASS，health/spec/report 200；Fake 自然语言 3/3、5/5；调查正常 0 次、故障 1 GET、原 ASSERTION_FAILED 保留，各创建一次、自有服务退出。统一五项 showcase 全通过，学校 / Java 请求 0。
+- 公开检查：130 文件 / 311 历史 blob；真实学校 Key、两个 demo 密码及私钥/Token/JWT 模式命中 0。旧两轮评测、任务、3A/3B 记录和 31 个原测试文件无改动；.env/.venv/.python311/runs 均忽略。
+- CourseInsight 仍仅原用户 .gitignore 修改；未改业务代码，没有新增依赖或临时正式文件。局部安装脚本更新，Windows/Linux 独立安装由四组 CI 验证。
+- 本轮真实调用已结束：Java 一次创建通过；学校五次 7290 Token。新增任务规划失败与未执行归属缺陷保留，不继续优化样本。
+- 已完成用户限定的阶段 4A/4B/5：CLI/MCP 演示、架构/流程、可复现说明和面试技术文档。旧任务书更广的前端/Docker Agent/60 条样本/脚本导出未实施，遵循本轮明确的范围收敛；README 如实记录。
+- 下一步仅推送并核对最终四组 CI；不扩大功能。模块 SHA 与 CI 结果在下一验收记录补齐。
+
+
+## 阶段 5：统一演示与工程交付（2026-10-11）
+
+- 真实评测记录提交 `2692cde`；新增 `showcase`，统一 normal/fault/investigation/java-mock/mcp/all，故障保持 ASSERTION_FAILED、演示符合预期才 verified。MCP 报告保留，同 invocation 缓存、拒绝 Java。
+- 实际完整 showcase 五项 verified=true，正常 8/9、故障 4/4、调查原 5/5 + 1 GET、Java Mock 3/14 断言、MCP stdio 8/9；所有场景只创建一次，学校和真实 Java 请求为零。
+- 重整 README 定位、准确指标、环境、流程图、架构图、支持边界及可复现命令；新增面试技术说明，区分 Python 平台与 Java 被测服务、条件检出率与整体覆盖。没有源码教学、复杂前端或新依赖。
+- 演示/证据/原 CLI 针对性 **12 passed / 9.96s**；Ruff 通过。安装脚本完整 profile 明确 dev/agent/mcp，继续冻结依赖；四组 CI 增加离线统一演示。
+- 下一步：最终完整 pytest / Ruff / pip check、真实回环 HTTP、公开敏感信息与历史保留检查，推送后核对四组 CI。阶段 4A 以后不再执行真实写入或学校调用。
+
+
 ## 阶段 4B：真实独立评测收尾（2026-10-11）
 
 - 冻结提交 `4f601d4`；B01–B04 四次串行 ecnu-plus 调用，无重试，共 5,496 Token，平均 4,816.5 ms；含 Java 本轮共五次 / 7,290 Token。

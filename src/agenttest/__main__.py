@@ -25,6 +25,10 @@ def bounded_read(path: Path, limit: int = MAX_DOCUMENT_BYTES) -> bytes:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="AgentTest 确定性 API 测试")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    showcase = subcommands.add_parser("showcase", help="统一离线演示；故障检出也视为演示成功")
+    showcase.add_argument("--case", choices=["normal", "fault", "investigation", "java-mock",
+                                           "mcp", "all"], default="normal")
+    showcase.add_argument("--runs-dir", type=Path, default=Path("runs/showcase"))
     demo = subcommands.add_parser("demo", help="运行进程内离线模拟场景")
     demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
     workflow_demo = subcommands.add_parser("workflow-demo", help="运行 Fake LLM 离线状态图")
@@ -61,6 +65,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     store = ReportStore(args.runs_dir)
     try:
+        if args.command == "showcase":
+            from agenttest.showcase import showcase
+
+            result = asyncio.run(showcase(args.case, store))
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0 if result["verified"] else 1
         if args.command == "report":
             result = store.read(args.run_id)
             if args.output:

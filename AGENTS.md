@@ -17,10 +17,10 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
-Stages 1–3B are accepted. Finish Stage 4A bounded Chinese planning for the existing
-Java demo contract, Stage 4B independent disposable-target defect evaluation, then
-Stage 5 reproducible CLI/MCP delivery. Preserve prior tests and raw evaluation records.
-Reuse existing Executor, Verifier, Vault and trusted registries. New real Java database
-writes need explicit operator approval; no CourseInsight business-code changes.
-Keep Windows/Linux × base/agent CI offline. No Java cross-user assertions, RAG,
-multi-agent, auto-repair or automatic write replay.
+Stages 1–4A/4B and scoped Stage 5 delivery are implemented. Preserve raw two-round
+2A records, real Java 3A/4A evidence, Stage 3B MCP evidence and independent B01–B04
+failures. Maintain the unified offline showcase and Windows/Linux × base/agent CI.
+Do not keep tuning used task sets or add new architecture without a new milestone.
+New real Java database writes require explicit operator approval. No CourseInsight
+business-code changes, Java cross-user assumptions, MCP Java writes, auto-repair,
+request recovery, RAG, frontend or multi-agent. Reuse the existing trusted engine.

@@ -35,9 +35,9 @@ try {
     $env:TEMP = (Resolve-Path -LiteralPath '.venv\tmp').Path
     $env:TMP = $env:TEMP
     $lockFile = if ($Agent) { 'requirements-agent.lock' } else { 'requirements-dev.lock' }
-    $extras = if ($Agent) { '.[dev,agent]' } else { '.[dev]' }
+    $extras = if ($Agent) { '.[dev,agent,mcp]' } else { '.[dev]' }
     Invoke-Checked $projectPython @('-m', 'pip', 'install', '-r', $lockFile)
-    Invoke-Checked $projectPython @('-m', 'pip', 'install', '--no-build-isolation', '-e', $extras)
+    Invoke-Checked $projectPython @('-m', 'pip', 'install', '--no-build-isolation', '--no-deps', '-e', $extras)
     Invoke-Checked $projectPython @('-m', 'pytest', '-q')
     Invoke-Checked $projectPython @('-m', 'ruff', 'check', '.')
 } finally {

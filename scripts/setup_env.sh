@@ -15,13 +15,13 @@ LOCK=requirements-dev.lock
 EXTRAS='.[dev]'
 if [ "${1:-}" = "--agent" ]; then
   LOCK=requirements-agent.lock
-  EXTRAS='.[dev,agent]'
+  EXTRAS='.[dev,agent,mcp]'
 elif [ "$#" -ne 0 ]; then
   echo 'Usage: setup_env.sh [--agent]' >&2
   exit 1
 fi
 .venv/bin/python -m pip install -r "$LOCK"
-.venv/bin/python -m pip install --no-build-isolation -e "$EXTRAS"
+.venv/bin/python -m pip install --no-build-isolation --no-deps -e "$EXTRAS"
 .venv/bin/python -m pytest -q
 .venv/bin/python -m ruff check .
 printf '\nEnvironment ready. To run: .venv/bin/python -m uvicorn agenttest.main:app --reload\n'

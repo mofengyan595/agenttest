@@ -73,3 +73,10 @@ jobs:
       - name: MCP SDK stdio disposable mini target check
         if: matrix.profile == 'agent'
         run: '"${{ matrix.python }}" scripts/smoke_mcp_stdio.py'
+      - name: Unified keyless demo entry
+        run: |
+          "${{ matrix.python }}" -m agenttest showcase --case normal
+          "${{ matrix.python }}" -m agenttest showcase --case fault
+      - name: Full offline delivery demo
+        if: matrix.profile == 'agent'
+        run: '"${{ matrix.python }}" -m agenttest showcase --case all'

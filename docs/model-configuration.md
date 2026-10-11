@@ -1,4 +1,4 @@
-# 阶段 2A 模型配置与调用边界
+# 模型配置与调用边界（2A / 4A / 4B）
 
 模型仅生成不可信规划，不持有 Executor、CredentialVault、目标地址或测试授权。
 本模块使用现有 HTTPX 0.28.1 REST 客户端，无 OpenAI SDK 或 LangChain-OpenAI 新依赖；LangGraph 继续固定 1.2.14。
@@ -19,9 +19,9 @@
 
 1. `python scripts/probe_model.py --model-env .env` 只请求 GET models，不产生模型生成 Token。认证失败、模型不存在时先核对配置及密钥来源，禁止反复试错。
 2. `python -m agenttest agent-demo --real --model-env .env --user-task '...'` 每次最多一次生成，默认 30 秒、2048 输出 Token、12000 总 Token。可显式设置 --model-timeout、--max-output-tokens、--max-total-tokens；Pydantic 校验上限。
-3. 评测必须有已人工批准任务集及 --max-live-calls / --max-total-tokens 两个正预算。顺序调用，下一请求前预留输入上限和输出上限；用真实 usage 记账。usage 缺失停止后续调用，401/403/404 停止整组。
-4. 真实评测要求干净且已提交的 Git 工作区；开始前独占写入 `.freeze.json`，记录完整 commit/tree、Prompt/Schema/任务集摘要、非秘密模型配置和独立预算。每条任务前以及结束时检查漂移，变化则停止，不继续调用。
-5. 每条任务追加脱敏 `.journal.jsonl`；最终 JSON 和冻结文件均禁止覆盖。中断不自动恢复或重跑，用新的路径记录新轮次；先核对日志中的实际调用及未知用量。首次 `runs/evaluation/real.json` 保留，第二轮使用 `runs/evaluation/round2/real.json`。
+3. 2A 评测必须有已人工批准任务集及 --max-live-calls / --max-total-tokens 两个正预算。顺序调用，下一请求前预留输入上限和输出上限；用真实 usage 记账。usage 缺失停止后续调用，401/403/404 停止整组。
+4. 2A 真实评测要求干净且已提交的 Git 工作区；开始前独占写入 `.freeze.json`，记录完整 commit/tree、Prompt/Schema/任务集摘要、非秘密模型配置和独立预算。每条任务前以及结束时检查漂移，变化则停止，不继续调用。
+5. 2A 每条任务追加脱敏 `.journal.jsonl`；最终 JSON 和冻结文件均禁止覆盖。中断不自动恢复或重跑，用新的路径记录新轮次；先核对日志中的实际调用及未知用量。首次 `runs/evaluation/real.json` 保留，第二轮使用 `runs/evaluation/round2/real.json`。
 
 输入 Token 采用 UTF-8 字节数加固定包络余量的保守上界；不把它当作精确 tokenizer 结果。学校 usage 自身是估计值，统计按其返回值记录。超时后可能无法得知服务端实际用量，必须标为未知，不能记成 0 或继续消耗后续预算。
 关闭环境代理和 HTTP 重定向，保持 TLS 证书校验。只向操作员选择的模型服务发送公共规划上下文；被测 HTTP 目标仍受原有固定 IP、隔离写入和白名单限制。
@@ -47,3 +47,11 @@
 - [OpenAI strict 结构化输出](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat)
 - [OpenAI Chat Completions 参数](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
 - [LangGraph Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)
+
+## 阶段 4 的专用入口
+
+- Java AI：`scripts/run_courseinsight_ai.py`。先 `--prepare` 生成课程名/教师/唯一代码 fixture 供操作员审阅，再只读预检；只有批准新增真实数据库记录后才 `--real --execute`。Java 独立提示词、原 3A 断言语义和确定性意图检查；最多 1 次学校调用，60 秒、2048 输出、22048 总 Token，零自动重试。操作员 claim 持久化后不恢复重放；模型不持有隔离授权。
+- 独立缺陷评测：`scripts/evaluate_defects.py --baseline real --real --output <新目录>`，只在新建进程内 mini target 执行，无 Java 请求。冻结代码/Prompt/新任务/非秘密配置；每次调用前检查漂移，默认最多四次串行、总预算 90000，每次保留 22048。usage 不明或认证/模型配置错误停止后续调用。
+- 新 B01–B04 是开发者构造的受控机制样本，未冒称逐条人工审核。只使用现有批准策略，不新增业务预期；旧 2A 人工审核任务及其流程独立保留。
+- 结果目录独占创建，逐条安全事件追加；原模型输出仅在内存用于正常/故障对照，不持久化。不能用故障注入结果替代 Java 实测，也不能用固定异步计划证明模型会规划异步流程。
+- 本轮已完成 4A 一次和 4B 四次，合计 7290 Token；原始统计见 [阶段 4 方法与结果](stage4-evaluation.md)。不需要再调用学校 API 来运行最终演示或 CI。
