@@ -59,4 +59,6 @@ class PolicyRegistry:
                 raise NeedsReview("POLICY_BINDING_MISMATCH")
         if step.poll and not policy.poll:
             raise NeedsReview("POLL_POLICY_NOT_APPROVED")
+        if step.poll and not policy.assertions.status:
+            raise NeedsReview("POLL_HTTP_CONTRACT_NOT_APPROVED")
         return policy

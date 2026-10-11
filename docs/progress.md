@@ -1,5 +1,15 @@
 # 开发进度
 
+## P0 验收：轮询可信分类与证据脱敏（2026-10-11）
+
+- 前一模块：`137d00f`，OpenAPI 请求约束。
+- 轮询状态、合法中间态/终态、每次响应约束、轮询次数均来自可信 Registry。每次先核对 HTTP 状态和轮询契约，再等待终态。
+- 401/403/404/500、非法状态、缺失状态、非 JSON 等违反已审核契约时 ASSERTION_FAILED；连接超时、预算耗尽和工具异常保留独立类别。
+- 数值默认脱敏；仅策略 public_evidence 明确批准的非敏感统计字段可展示。密码、验证码、身份信息、自定义 sensitive_fields 和已知秘密别名优先隐藏。
+- P0 全量实测：152 passed，1 个已有 Starlette 弃用提醒；Ruff 通过；pip check 无损坏依赖。
+- 真实回环 HTTP：8 步 / 9 请求 PASS，health/spec_import/report_query 均 200，服务关闭。正常/ownership/terminal 三场景及隔离回归通过。
+- P0 已完成；接下来才开始官方 LangGraph API 核对及 Fake LLM 最小工作流。本模块 SHA 在下一检查点记录。
+
 ## 审查修复：OpenAPI 请求约束（2026-10-11）
 
 - 前一模块：`8ab94c5`，策略与认证隔离。

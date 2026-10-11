@@ -67,9 +67,9 @@ def fingerprint(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def safe_value(value: Any) -> Any:
-    """Keep numeric/boolean evidence; string values and user data stay in memory only."""
-    if value is None or type(value) in {bool, int, float}:
+def safe_value(value: Any, public_numeric: bool = False) -> Any:
+    """Only explicitly approved numeric evidence may leave the verifier."""
+    if value is None or type(value) is bool or (public_numeric and type(value) in {int, float}):
         return value
     return "[REDACTED]"
 

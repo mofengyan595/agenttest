@@ -13,10 +13,18 @@ import httpx
 
 from agenttest.contracts import ContractSummary, Operation
 from agenttest.credentials import CredentialVault
-from agenttest.dsl import ArgumentBinding, Scenario, Step, validate_plan
+from agenttest.dsl import (
+    ArgumentBinding,
+    AssertionPolicy,
+    FieldAssertion,
+    Scenario,
+    Step,
+    validate_plan,
+)
 from agenttest.policies import NeedsReview, PolicyRegistry, RegisteredPolicy
 from agenttest.report import (
     AttemptEvidence,
+    CheckResult,
     Outcome,
     ReportStore,
     RunReport,
@@ -186,22 +194,41 @@ class Executor:
             if 300 <= status < 400:
                 raise ExecutionLimit("REDIRECT_BLOCKED")
             if poll:
-                try:
-                    terminal = select(body, poll.select) in poll.terminal_values
-                except (KeyError, IndexError, TypeError):
-                    raise ExecutionLimit("POLL_STATE_MISSING") from None
+                progress = AssertionPolicy(
+                    reviewed=True, source=policy.assertions.source,
+                    status=policy.assertions.status,
+                    fields=[FieldAssertion(select=poll.select, operator="in",
+                                           expected=poll.progress_values + poll.terminal_values),
+                            *poll.progress_fields],
+                    public_evidence=policy.assertions.public_evidence,
+                )
+                result.outcome, result.checks = self._verify(progress, status, body, vault)
+                if result.outcome != Outcome.PASS:
+                    result.reason = "POLL_CONTRACT_VIOLATION"
+                    return body
+                terminal = select(body, poll.select) in poll.terminal_values
                 if not terminal:
                     if poll_attempt + 1 == attempts:
                         raise ExecutionLimit("POLL_EXHAUSTED")
                     await asyncio.sleep(poll.interval)
                     continue
-            result.outcome, result.checks = verify(policy.assertions, status, body)
+            result.outcome, result.checks = self._verify(policy.assertions, status, body, vault)
             result.reason = "POLICY_EVALUATED"
             if is_login and result.outcome == Outcome.PASS:
                 vault.capture(step.role, body)
                 return {}
             return body
         raise ExecutionLimit("POLL_EXHAUSTED")
+
+    def _verify(
+        self, policy: AssertionPolicy, status: int, body: Any, vault: CredentialVault,
+    ) -> tuple[Outcome, list[CheckResult]]:
+        outcome, checks = verify(policy, status, body, self.config.sensitive_fields)
+        for check in checks:
+            for field in ("expected", "actual"):
+                if vault.contains_secret(getattr(check, field)):
+                    setattr(check, field, "[REDACTED]")
+        return outcome, checks
 
     async def _request(
         self, client: httpx.AsyncClient, method: str, url: str, kwargs: dict,

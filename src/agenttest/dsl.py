@@ -75,11 +75,14 @@ class AssertionPolicy(StrictModel):
     source: str = ""
     status: ExpectedStatus | None = None
     fields: list[FieldAssertion] = Field(default_factory=list, max_length=50)
+    public_evidence: list[str] = Field(default_factory=list, max_length=50)
 
 
 class PollPolicy(StrictModel):
     select: str
     terminal_values: list[str] = Field(min_length=1, max_length=10)
+    progress_values: list[str] = Field(default_factory=list, max_length=20)
+    progress_fields: list[FieldAssertion] = Field(default_factory=list, max_length=50)
     max_attempts: int = Field(default=5, ge=1, le=20)
     interval: float = Field(default=0.01, ge=0, le=5)
 

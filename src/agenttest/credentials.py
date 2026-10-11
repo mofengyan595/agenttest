@@ -8,7 +8,8 @@ from agenttest.selectors import select
 
 SENSITIVE = re.compile(
     r"password|passwd|token|secret|authorization|cookie|api.?key|otp|verification.?code|"
-    r"pin|identity|id.?card|national.?id|phone|mobile|email|ssn|身份证|验证码|密码", re.I,
+    r"pin|identity|id.?card|national.?id|phone|mobile|email|ssn|passport|birth|address|"
+    r"account|user.?id|credit.?card|cvv|身份证|验证码|密码", re.I,
 )
 
 

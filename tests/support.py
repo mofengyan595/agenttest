@@ -7,6 +7,6 @@ def registry(max_attempts=4):
         id="items_v1", operation_id="items", roles=[None], business_scenario="default",
         assertions=AssertionPolicy(reviewed=True, source="operator test fixture",
                                    status={"codes": [200]}),
-        poll=PollPolicy(select="$.state", terminal_values=["DONE"],
+        poll=PollPolicy(select="$.state", terminal_values=["DONE"], progress_values=["RUNNING"],
                         max_attempts=max_attempts, interval=0.0),
     )])

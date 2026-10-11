@@ -19,7 +19,8 @@
           "select": "$.access_token",
           "operator": "exists"
         }
-      ]
+      ],
+      "public_evidence": []
     },
     "required_bindings": {
       "body": {},
@@ -47,7 +48,8 @@
           "select": "$.access_token",
           "operator": "exists"
         }
-      ]
+      ],
+      "public_evidence": []
     },
     "required_bindings": {
       "body": {},
@@ -75,6 +77,9 @@
           "select": "$.courseId",
           "operator": "exists"
         }
+      ],
+      "public_evidence": [
+        "$.courseId"
       ]
     },
     "required_bindings": {
@@ -109,7 +114,8 @@
           "select": "$.name",
           "expected": "AgentTest disposable course"
         }
-      ]
+      ],
+      "public_evidence": []
     },
     "required_bindings": {
       "body": {},
@@ -136,7 +142,8 @@
         "codes": [
           403
         ]
-      }
+      },
+      "public_evidence": []
     },
     "required_bindings": {
       "body": {},
@@ -169,6 +176,9 @@
           "select": "$.batchId",
           "operator": "exists"
         }
+      ],
+      "public_evidence": [
+        "$.batchId"
       ]
     },
     "required_bindings": {
@@ -210,6 +220,9 @@
           "select": "$.count",
           "expected": 2
         }
+      ],
+      "public_evidence": [
+        "$.count"
       ]
     },
     "poll": {
@@ -219,7 +232,17 @@
         "FAILED"
       ],
       "max_attempts": 4,
-      "interval": 0.01
+      "interval": 0.01,
+      "progress_values": [
+        "RUNNING",
+        "QUEUED"
+      ],
+      "progress_fields": [
+        {
+          "select": "$.count",
+          "expected": 2
+        }
+      ]
     },
     "required_bindings": {
       "body": {},
@@ -253,6 +276,9 @@
           "operator": "count",
           "expected": 2
         }
+      ],
+      "public_evidence": [
+        "$.items"
       ]
     },
     "required_bindings": {

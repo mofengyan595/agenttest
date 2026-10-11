@@ -49,7 +49,7 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 .\.venv\Scripts\python.exe -m agenttest report <run_id> --output runs/export.json
 ```
 
-证据包含步骤运行 ID、请求次数、HTTP 状态、响应字节数/摘要、耗时、断言结果以及契约/计划/策略 SHA-256。默认不保存原始请求体、响应体、URL 参数、认证头或 Cookie；字符串/容器断言值隐藏，敏感字段的数值也隐藏。需重现时结合人工计划和策略摘要核对。进程中断留下的 `completed: false` 报告可供审计，不支持自动恢复或重复写入。
+证据包含步骤运行 ID、请求次数、HTTP 状态、响应字节数/摘要、耗时、断言结果以及契约/计划/策略 SHA-256。默认不保存原始请求体、响应体、URL 参数、认证头或 Cookie；字符串、容器及数值断言值默认隐藏，仅可信策略 public_evidence 批准的非敏感数值可展示。密码、验证码、身份信息、自定义 sensitive_fields 和已知秘密始终优先脱敏。进程中断留下的 `completed: false` 报告可供审计，不支持自动恢复或重复写入。
 
 ## API
 
@@ -81,6 +81,7 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 - 不使用契约 servers 选择目标，不接受 DSL URL；所有 HTTP 重定向直接阻断，关闭环境代理。
 - 每个 operationId 必须在白名单；写操作须同时启用 isolated 和 allow_mutations。执行器只为批准的登录操作注入角色凭据，保管 Token，并在受限接口认证头使用。计划禁止 credential/auth_from，认证响应不可绑定；跨步骤数据移除敏感字段和已知秘密别名。
 - 每次运行限制步骤、请求、请求间隔、输入/响应大小、连接/读取及总时长；只有 GET/HEAD 可以有限重试或轮询，写入不会自动重试。
+- 轮询中间态、终态和每次响应约束来自可信策略；业务响应违反审核契约时为 ASSERTION_FAILED，等待耗尽为 TEST_INFRA_ERROR。
 - 仅支持 HTTP bearer、JSON 与 CSV multipart、path/query 参数。必填 header/cookie 或其他认证方式会被拒绝。
 - 请求校验覆盖字段名、严格基本类型、必填项、枚举、对象/数组、长度和数值边界；静态值预检，动态值发送前复检。未声明字段拒绝；复杂组合/联合、正则、开放对象及未知 format 进入 NEEDS_REVIEW。当前支持 format 为 binary/password/int32/int64，不声称支持完整 JSON Schema。
 - 仅解析 OpenAPI 3.0/3.1，先拒绝远程/文件/循环引用和不受控扩展，再进行标准结构校验。第一阶段要求每个操作声明非空 responses；不支持递归/动态引用及带约束兄弟节点的引用（允许 summary/description）。
