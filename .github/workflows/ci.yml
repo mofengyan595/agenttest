@@ -63,3 +63,6 @@ jobs:
         run: '"${{ matrix.python }}" -m pip check'
       - name: Explicit disposable loopback HTTP check
         run: '"${{ matrix.python }}" scripts/smoke_local_http.py ${{ matrix.smoke }}'
+      - name: Natural-language paths over loopback with FakeLLM
+        if: matrix.profile == 'agent'
+        run: '"${{ matrix.python }}" scripts/smoke_natural_http.py'

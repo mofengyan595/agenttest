@@ -1,5 +1,12 @@
 # 开发进度
 
+## 阶段 2A CI（2026-10-11）
+
+- 评测与报告模块：`7ff3b39ce9779b0ab8424e0d642ceceda65a4139`。
+- 保留 Windows/Linux × base/agent 四组 Python 3.11；Agent 组额外执行两类自然语言计划的真实回环 HTTP，规划来自 FakeLLM，真实模型调用 0。
+- CI YAML 矩阵结构实际检查通过；无 --real、Key 或模型评测步骤。Ruff 通过；新增 smoke 本机实际 3/3、5/5 请求 PASS。
+- 下一步：提交模型配置、首次评测统计和 README，推送后核对远端四组结果。
+
 ## 阶段 2A 人工任务、评测与证据可靠性（2026-10-11）
 
 - 真实适配器提交：`19c321accd09c690f70d093bb2ebb72195c1da5f`。
