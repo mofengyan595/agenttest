@@ -1,0 +1,3782 @@
+{
+  "scope": "New controlled mini-target mechanisms, not broad generalization; asynchronous cases are executor-only.",
+  "baselines": {
+    "manual": {
+      "baseline": "manual",
+      "suite_sha256": "faff0ecef7cf26448120a3f4c2b20ef98ef910d5cf54a35db7a9dea522406103",
+      "task_review_status": "developer_curated_not_individually_human_reviewed",
+      "requested_tasks": 4,
+      "attempted_tasks": 4,
+      "stop_reason": null,
+      "requested_supported_tasks": 2,
+      "supported_task_count": 2,
+      "plan_valid_rate": 1.0,
+      "intent_satisfied_rate": 1.0,
+      "policy_selection_correct_rate": 1.0,
+      "end_to_end_success_rate": 1.0,
+      "safe_rejections": 2,
+      "failure_classes": {
+        "PASS": 2,
+        "NEEDS_REVIEW": 2
+      },
+      "generation_calls": 0,
+      "total_tokens": 0,
+      "planning_detection": {
+        "fault_cases": 4,
+        "controls": 4,
+        "detected": 4,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "expected_nl_faults": 4,
+      "not_executed_nl_faults": 0,
+      "async_executor_only": {
+        "fault_cases": 2,
+        "controls": 2,
+        "detected": 2,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "tasks": [
+        {
+          "task_id": "B01",
+          "category": "consistency",
+          "run_id": "48d49f3e9732440f91cb2c23ebfabd1a",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "policy_selection_correct": true,
+          "intent_satisfied": true,
+          "end_to_end_success": true,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B02",
+          "category": "ownership",
+          "run_id": "dbf9d3eb8ff9493eb13fcced88c60003",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 5,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "f41337fff10e653fe9b3fdcd49b30fca9b8461cef77fc0f2eafa0db5edb03ab8",
+          "policy_selection_correct": true,
+          "intent_satisfied": true,
+          "end_to_end_success": true,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B03",
+          "category": "review",
+          "run_id": "137b35ab124d49d98f3fc6aca9a88ded",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "model",
+            "code": "MODEL_NO_APPROVED_PLAN",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        },
+        {
+          "task_id": "B04",
+          "category": "review",
+          "run_id": "612da9a5d66846b89df203b6f78289ed",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "model",
+            "code": "MODEL_NO_APPROVED_PLAN",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        }
+      ],
+      "pairs": [
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "none",
+          "baseline": "manual",
+          "run_id": "499f7ab9e4f7460ba6f5d0cce8cc8f08",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "response_name",
+          "baseline": "manual",
+          "run_id": "c8e9d9e0d5ed4228bb95a9e2cfb4b5c5",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.name"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "none",
+          "baseline": "manual",
+          "run_id": "726217a1caa14771bf6d497addce0edd",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "response_id",
+          "baseline": "manual",
+          "run_id": "be51a3141a194be096a45d151a52c319",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.courseId"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "none",
+          "baseline": "manual",
+          "run_id": "c6d5d005724f478e849357666f37789e",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "create_status",
+          "baseline": "manual",
+          "run_id": "26d1d178d41a4647b9dc3df92601ec2f",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 2,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "createCourse",
+              "kind": "http_status",
+              "selector": null
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        },
+        {
+          "task_id": "B02",
+          "mechanism": "ownership",
+          "fault": "none",
+          "baseline": "manual",
+          "run_id": "d1915392900a4165a0907cdb5d8b09f7",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 5,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "f41337fff10e653fe9b3fdcd49b30fca9b8461cef77fc0f2eafa0db5edb03ab8",
+          "detected": false
+        },
+        {
+          "task_id": "B02",
+          "mechanism": "ownership",
+          "fault": "ownership",
+          "baseline": "manual",
+          "run_id": "3bfa8c53f76643cbafd9fe6f3b43bdfa",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 5,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "http_status",
+              "selector": null
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "f41337fff10e653fe9b3fdcd49b30fca9b8461cef77fc0f2eafa0db5edb03ab8",
+          "detected": true
+        }
+      ],
+      "async_pairs": [
+        {
+          "mechanism": "terminal",
+          "fault": "none",
+          "run_id": "cb412d88d32141dba60571f97d3ff75d",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "terminal",
+          "fault": "terminal",
+          "run_id": "c5a20d7808cf44259f66f2d34226f446",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 8,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatch",
+              "kind": "equals",
+              "selector": "$.state"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "none",
+          "run_id": "2f0e5f2db7254c88911428088daab135",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "result_count",
+          "run_id": "e635ce70772f4313abc6f4264104c7e2",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatchResults",
+              "kind": "count",
+              "selector": "$.items"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        }
+      ]
+    },
+    "fake": {
+      "baseline": "fake",
+      "suite_sha256": "faff0ecef7cf26448120a3f4c2b20ef98ef910d5cf54a35db7a9dea522406103",
+      "task_review_status": "developer_curated_not_individually_human_reviewed",
+      "requested_tasks": 4,
+      "attempted_tasks": 4,
+      "stop_reason": null,
+      "requested_supported_tasks": 2,
+      "supported_task_count": 2,
+      "plan_valid_rate": 1.0,
+      "intent_satisfied_rate": 0.5,
+      "policy_selection_correct_rate": 0.5,
+      "end_to_end_success_rate": 0.5,
+      "safe_rejections": 2,
+      "failure_classes": {
+        "PASS": 1,
+        "NEEDS_REVIEW": 3
+      },
+      "generation_calls": 0,
+      "total_tokens": 0,
+      "planning_detection": {
+        "fault_cases": 3,
+        "controls": 3,
+        "detected": 3,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "expected_nl_faults": 4,
+      "not_executed_nl_faults": 1,
+      "async_executor_only": {
+        "fault_cases": 2,
+        "controls": 2,
+        "detected": 2,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "tasks": [
+        {
+          "task_id": "B01",
+          "category": "consistency",
+          "run_id": "f8571827e38d4abbb495a270a1a1a441",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "policy_selection_correct": true,
+          "intent_satisfied": true,
+          "end_to_end_success": true,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B02",
+          "category": "ownership",
+          "run_id": "98e1937e519043bfbff9bc91bbab0b4c",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED",
+          "plan_valid": true,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "intent",
+            "code": "INTENT_PATH_MISMATCH",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "policy_selection_correct": false,
+          "intent_satisfied": false,
+          "end_to_end_success": false,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B03",
+          "category": "review",
+          "run_id": "ffaafc70684d454d96e36f085fdcb4ff",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED",
+          "plan_valid": true,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "intent",
+            "code": "INTENT_UNSUPPORTED_OBJECTIVE",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        },
+        {
+          "task_id": "B04",
+          "category": "review",
+          "run_id": "22ff9c68e6d24001b423c5d75a396a41",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED",
+          "plan_valid": true,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "intent",
+            "code": "INTENT_UNSUPPORTED_OBJECTIVE",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        }
+      ],
+      "pairs": [
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "none",
+          "baseline": "fake",
+          "run_id": "bba5019f64d34fefbeabedbc3c7f9218",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "response_name",
+          "baseline": "fake",
+          "run_id": "40d5a8614d2a431eafc69e1e3f61da66",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.name"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "none",
+          "baseline": "fake",
+          "run_id": "0efe8cfb82064148a9534c981db8e588",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "response_id",
+          "baseline": "fake",
+          "run_id": "718ee7b3acde4fcd8cd3827a73edeb53",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.courseId"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "none",
+          "baseline": "fake",
+          "run_id": "94d86dadc14542da899990962cb2bd05",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "create_status",
+          "baseline": "fake",
+          "run_id": "04fc0abbe1114872867949c5d90a6a7b",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 2,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "createCourse",
+              "kind": "http_status",
+              "selector": null
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "613808c56d2ca36e747491086977d01a472f46938bb1ca3d015c0e0697bdab18",
+          "detected": true
+        }
+      ],
+      "async_pairs": [
+        {
+          "mechanism": "terminal",
+          "fault": "none",
+          "run_id": "b26a125220134c029d768d719d494268",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "terminal",
+          "fault": "terminal",
+          "run_id": "0526f4b35bf74f4584ef3a3f092606d9",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 8,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatch",
+              "kind": "equals",
+              "selector": "$.state"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "none",
+          "run_id": "f157df33ede8467ab90b202f57c1b172",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "result_count",
+          "run_id": "dc72374cb16f475e91e834f00e41fb83",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatchResults",
+              "kind": "count",
+              "selector": "$.items"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        }
+      ]
+    },
+    "real": {
+      "baseline": "real",
+      "suite_sha256": "faff0ecef7cf26448120a3f4c2b20ef98ef910d5cf54a35db7a9dea522406103",
+      "task_review_status": "developer_curated_not_individually_human_reviewed",
+      "requested_tasks": 4,
+      "attempted_tasks": 4,
+      "stop_reason": null,
+      "requested_supported_tasks": 2,
+      "supported_task_count": 2,
+      "plan_valid_rate": 0.5,
+      "intent_satisfied_rate": 0.5,
+      "policy_selection_correct_rate": 0.5,
+      "end_to_end_success_rate": 0.5,
+      "safe_rejections": 2,
+      "failure_classes": {
+        "PASS": 1,
+        "TOOL_ERROR": 1,
+        "NEEDS_REVIEW": 2
+      },
+      "generation_calls": 4,
+      "total_tokens": 5496,
+      "planning_detection": {
+        "fault_cases": 3,
+        "controls": 3,
+        "detected": 3,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "expected_nl_faults": 4,
+      "not_executed_nl_faults": 1,
+      "async_executor_only": {
+        "fault_cases": 2,
+        "controls": 2,
+        "detected": 2,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "inconclusive_faults": 0,
+        "defect_detection_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "tasks": [
+        {
+          "task_id": "B01",
+          "category": "consistency",
+          "run_id": "a138558716674686839b712d15faea1b",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5547.0,
+            "request_bytes": 6513,
+            "request_sha256": "4e7a3b2238b6998a646540957aaa7e3c129c111dd39b984399fd86ec663b2853",
+            "response_bytes": 1488,
+            "input_token_upper_bound": 7025,
+            "input_tokens": 1067,
+            "output_tokens": 283,
+            "total_tokens": 1350,
+            "output_sha256": "42b6de8dd5fc168630edd03d58b674dcc70a03a9db108d3ca6051e817004b8fc",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "policy_selection_correct": true,
+          "intent_satisfied": true,
+          "end_to_end_success": true,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B02",
+          "category": "ownership",
+          "run_id": "53d61f376ec3484fb6052ec0a189b2cb",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "dsl",
+            "code": "DSL_AUTHENTICATION_ORDER",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4500.0,
+            "request_bytes": 6505,
+            "request_sha256": "96079b83508222db0b2294c4e52738fe9b9d5b795726169f858d9908184ad1b5",
+            "response_bytes": 1892,
+            "input_token_upper_bound": 7017,
+            "input_tokens": 1069,
+            "output_tokens": 390,
+            "total_tokens": 1459,
+            "output_sha256": "c60210f7d3aadeb9ab66b6700091432a2792ea913fa4b7f2af6bc76708dc5033",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "policy_selection_correct": false,
+          "intent_satisfied": false,
+          "end_to_end_success": false,
+          "safely_rejected": false
+        },
+        {
+          "task_id": "B03",
+          "category": "review",
+          "run_id": "46a8ffb95d504a488e4d7c022314802e",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED",
+          "plan_valid": true,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "intent",
+            "code": "INTENT_UNSUPPORTED_OBJECTIVE",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4094.0,
+            "request_bytes": 6472,
+            "request_sha256": "f3ddc745e5c5bc3b5cef1258534984224973603a4cd24cb11d750ddeb20b61fd",
+            "response_bytes": 1486,
+            "input_token_upper_bound": 6984,
+            "input_tokens": 1060,
+            "output_tokens": 279,
+            "total_tokens": 1339,
+            "output_sha256": "33afe171ea47df50f14847faa3bae304bf1ca3120be74231db5e0ae51eecb0dd",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "ac09f9cfbc921917b8a10b8422c773c7866a088f7ecba53c1cd66cad3a6c0068",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        },
+        {
+          "task_id": "B04",
+          "category": "review",
+          "run_id": "db6d431fb4be4c8592138163437b7754",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED",
+          "plan_valid": true,
+          "intent_verified": false,
+          "diagnostic": {
+            "layer": "intent",
+            "code": "INTENT_UNSUPPORTED_OBJECTIVE",
+            "fields": []
+          },
+          "requests": 0,
+          "course_creates": 0,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5125.0,
+            "request_bytes": 6505,
+            "request_sha256": "ef723766be01b0705a73c71cba2cda28305e2fdb571c91960ecde4204714cbcc",
+            "response_bytes": 1502,
+            "input_token_upper_bound": 7017,
+            "input_tokens": 1066,
+            "output_tokens": 282,
+            "total_tokens": 1348,
+            "output_sha256": "2ee996a7937c5acf37bbd681f2d2f4734662c01498db464c77c42f50cdbbb1d2",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "ac2f8503d1bbdb13f35f6c05563aa4f54f74415bb9226892215fe66d6fd4e0aa",
+          "policy_selection_correct": null,
+          "intent_satisfied": null,
+          "end_to_end_success": false,
+          "safely_rejected": true
+        }
+      ],
+      "pairs": [
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "none",
+          "baseline": "real",
+          "run_id": "817ea79f7b32409494f28f039f524755",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_name",
+          "fault": "response_name",
+          "baseline": "real",
+          "run_id": "ef59286647664bca992c4849a40298f1",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.name"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "none",
+          "baseline": "real",
+          "run_id": "7da35bc04e82429ca08ac636bb32c7fc",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "response_id",
+          "fault": "response_id",
+          "baseline": "real",
+          "run_id": "b86884b523e3499ea8ad98d59935f60e",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getCourse",
+              "kind": "equals",
+              "selector": "$.courseId"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": true
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "none",
+          "baseline": "real",
+          "run_id": "374c606f936c40e48c03c4287e814b56",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 3,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": false
+        },
+        {
+          "task_id": "B01",
+          "mechanism": "create_status",
+          "fault": "create_status",
+          "baseline": "real",
+          "run_id": "0fe7496ab98e43ac91ca708a5a3481f7",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": true,
+          "intent_verified": true,
+          "diagnostic": null,
+          "requests": 2,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "createCourse",
+              "kind": "http_status",
+              "selector": null
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "350e36777ab6a3615acfc2f8993613abfb1e9eb6ccc3a0861b6e744912dd1984",
+          "detected": true
+        }
+      ],
+      "async_pairs": [
+        {
+          "mechanism": "terminal",
+          "fault": "none",
+          "run_id": "78c672666f3f491c95fdb8e81333c89b",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "terminal",
+          "fault": "terminal",
+          "run_id": "525a210000814843a761669d8c21579a",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 8,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatch",
+              "kind": "equals",
+              "selector": "$.state"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "none",
+          "run_id": "01d0e77c865849a4937bce0c02a0a16d",
+          "outcome": "PASS",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [],
+          "step_errors": [],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": false
+        },
+        {
+          "mechanism": "result_count",
+          "fault": "result_count",
+          "run_id": "5aac4b043d9e406ca0c0a0f474b07033",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "",
+          "plan_valid": false,
+          "intent_verified": false,
+          "diagnostic": null,
+          "requests": 9,
+          "course_creates": 1,
+          "model_call": null,
+          "failed_checks": [
+            {
+              "operation_id": "getBatchResults",
+              "kind": "count",
+              "selector": "$.items"
+            }
+          ],
+          "step_errors": [
+            "POLICY_EVALUATED"
+          ],
+          "scenario_sha256": "bca82f1b50a1ddc49b2adb7dbaf77d8e45b3e66377a3afd084b2b7370399cf53",
+          "detected": true
+        }
+      ]
+    }
+  },
+  "frozen_manifests": {
+    "manual": {
+      "baseline": "manual",
+      "suite_sha256": "8c1d2077778cace6df13e6ed36bf31de7a75824850b7794294b406b8288ddafd",
+      "prompt_sha256": "2af043602d9803110a057671c1032b8b900c7247b4e07ceea302b243778b5e78",
+      "serial": true,
+      "retries": 0,
+      "code_commit": "4f601d4ea4d5c785f271d4bcd91ac1904da81d93",
+      "school_calls_budget": 0,
+      "total_tokens_budget": 0,
+      "java_requests": 0,
+      "target": "fresh in-process mini target per run"
+    },
+    "fake": {
+      "baseline": "fake",
+      "suite_sha256": "8c1d2077778cace6df13e6ed36bf31de7a75824850b7794294b406b8288ddafd",
+      "prompt_sha256": "2af043602d9803110a057671c1032b8b900c7247b4e07ceea302b243778b5e78",
+      "serial": true,
+      "retries": 0,
+      "code_commit": "4f601d4ea4d5c785f271d4bcd91ac1904da81d93",
+      "school_calls_budget": 0,
+      "total_tokens_budget": 0,
+      "java_requests": 0,
+      "target": "fresh in-process mini target per run"
+    },
+    "real": {
+      "baseline": "real",
+      "suite_sha256": "8c1d2077778cace6df13e6ed36bf31de7a75824850b7794294b406b8288ddafd",
+      "prompt_sha256": "2af043602d9803110a057671c1032b8b900c7247b4e07ceea302b243778b5e78",
+      "serial": true,
+      "retries": 0,
+      "code_commit": "4f601d4ea4d5c785f271d4bcd91ac1904da81d93",
+      "school_calls_budget": 4,
+      "total_tokens_budget": 90000,
+      "java_requests": 0,
+      "target": "fresh in-process mini target per run",
+      "model_config": {
+        "model": "ecnu-plus",
+        "base_url_sha256": "c12d632b453824d3a1f87fdc093e50f9ebec58673d7561673a09da6d09d8c0fa",
+        "protocol": "chatecnu",
+        "timeout": 60.0,
+        "max_input_tokens": 20000,
+        "max_output_tokens": 2048,
+        "max_total_tokens": 22048,
+        "max_response_bytes": 200000
+      }
+    }
+  },
+  "execution_evidence": {
+    "137b35ab124d49d98f3fc6aca9a88ded": {
+      "outcome": "NEEDS_REVIEW",
+      "started_at": "2026-10-11T14:19:42.097161+00:00",
+      "steps": []
+    },
+    "26d1d178d41a4647b9dc3df92601ec2f": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:40.615481+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "26f32b179ae3492fa19e62b5351ddc4b",
+              "status_code": 200,
+              "elapsed_ms": 3.969,
+              "response_bytes": 62,
+              "response_sha256": "9c2c3e8e6842567790cf623b7d48dffa7043745e9a3d4be663f0471ac62fb7ff",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "553d53352fc44ae5b6ec2dc3020d9b77",
+              "status_code": 200,
+              "elapsed_ms": 4.152,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "http_status",
+              "selector": null
+            }
+          ]
+        }
+      ]
+    },
+    "2f0e5f2db7254c88911428088daab135": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:43.835223+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0b4c67a64e93414c8aa8417b342e56bc",
+              "status_code": 200,
+              "elapsed_ms": 3.259,
+              "response_bytes": 62,
+              "response_sha256": "42d9d980a62531eec11f7371530380af4b3f0c89bebf578056e56e4aa9622d4a",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "ef01d388864b4f23ac7f2dcb14707d10",
+              "status_code": 200,
+              "elapsed_ms": 2.163,
+              "response_bytes": 62,
+              "response_sha256": "afad3435232fcdf79b97f647e3763a6cfceb31d7ffe005df239595f3d3ad5cf2",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "432d452a09524516b811589a910736a9",
+              "status_code": 201,
+              "elapsed_ms": 3.253,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "cbab6a57541642008b3edcf4add633bc",
+              "status_code": 200,
+              "elapsed_ms": 3.816,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "15dd315262b34dd9a388dd968da451a8",
+              "status_code": 403,
+              "elapsed_ms": 1.916,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a3d8bb9bdc74429fbb9ab9d4a5c30234",
+              "status_code": 202,
+              "elapsed_ms": 3.587,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f418cfe9052648bd9acca394b4ad595b",
+              "status_code": 200,
+              "elapsed_ms": 3.213,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "d5c74547c1aa40febe9cfc98590f9967",
+              "status_code": 200,
+              "elapsed_ms": 1.837,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4e9cf7a2ecff4912a394beb6bca74c8a",
+              "status_code": 200,
+              "elapsed_ms": 3.535,
+              "response_bytes": 31,
+              "response_sha256": "edd322af0f61ecdb918768d0f26c900eedb7db1933a465ab134ffc0d035e5772",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "3bfa8c53f76643cbafd9fe6f3b43bdfa": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:41.676012+00:00",
+      "steps": [
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "045d0f0bb6704b9cab426197c93dcdc7",
+              "status_code": 200,
+              "elapsed_ms": 3.641,
+              "response_bytes": 62,
+              "response_sha256": "54a81f1d759ff36cd718fcb1d53364ca79b9ae567beb6a939fcb3a41d4d6d69a",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "fa1b8a0790ce4c288035cefd0e41b024",
+              "status_code": 200,
+              "elapsed_ms": 1.949,
+              "response_bytes": 62,
+              "response_sha256": "cf2925cce3c87b667b359b50d8107b99450067e4b4fab945b8063664409489c6",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "aa177b58a97a8692500de3a0e8e566ab0291fda880335c9fbc6ca8e0b999fe06",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "31e0072b94f94db3bc90c60c97bf1db2",
+              "status_code": 201,
+              "elapsed_ms": 5.615,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "dda1d7460bed326abccdaa226015e46230f6ff7b3b2e6cbe2cd3a20158234c2d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4478ec143ef34391bcacbf1a44de4d14",
+              "status_code": 200,
+              "elapsed_ms": 3.704,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "other_read",
+          "operation_id": "getCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "9427f972505e09050c4d901e838f182fdcfe618511e3ca68e0258cd6800e59c7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "33a0bee513a647f794496d46beba5093",
+              "status_code": 200,
+              "elapsed_ms": 2.151,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "http_status",
+              "selector": null
+            }
+          ]
+        }
+      ]
+    },
+    "48d49f3e9732440f91cb2c23ebfabd1a": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:38.415565+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "63b110626c6b48849e2e58e720752421",
+              "status_code": 200,
+              "elapsed_ms": 40.044,
+              "response_bytes": 62,
+              "response_sha256": "513c06e31a9c896790eacf67c2b76be3e26dca4288b877f211e4262511856820",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "59510134fe6c4ab7bb6b77975f6c30c3",
+              "status_code": 201,
+              "elapsed_ms": 4.131,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4b86acbb0f704348b53827e477efadda",
+              "status_code": 200,
+              "elapsed_ms": 3.323,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "499f7ab9e4f7460ba6f5d0cce8cc8f08": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:39.005610+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "2c33024b053c4cec944e4337ac610344",
+              "status_code": 200,
+              "elapsed_ms": 3.436,
+              "response_bytes": 62,
+              "response_sha256": "30465aaa7161a9e0d5e940c25334c5adbb7733720b691778115f922e8f9f94a3",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "fdd5ff5ab9e94dceb24a148485cdb8c3",
+              "status_code": 201,
+              "elapsed_ms": 3.841,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a770a654084f47689ae93c1dc08464e3",
+              "status_code": 200,
+              "elapsed_ms": 3.742,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "612da9a5d66846b89df203b6f78289ed": {
+      "outcome": "NEEDS_REVIEW",
+      "started_at": "2026-10-11T14:19:42.349391+00:00",
+      "steps": []
+    },
+    "726217a1caa14771bf6d497addce0edd": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:39.622885+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "7ebc0918951a4d1dab6a5e6c9e316541",
+              "status_code": 200,
+              "elapsed_ms": 3.334,
+              "response_bytes": 62,
+              "response_sha256": "f1c72ddebe1fb7e5547fa1695e3d75c7626258c3bdb342eeb5aa04750c1ccbe8",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "d2f4157bf03d4c4d90a989349e4901de",
+              "status_code": 201,
+              "elapsed_ms": 3.44,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "3dbd952d759e4151a6b1e1f29490be2e",
+              "status_code": 200,
+              "elapsed_ms": 3.362,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "be51a3141a194be096a45d151a52c319": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:39.937870+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "e96b434a96a34cd286d32e275abe4471",
+              "status_code": 200,
+              "elapsed_ms": 4.591,
+              "response_bytes": 62,
+              "response_sha256": "66af17328a45de489cdc67715ce16c4e5053e6a6ac7dd10afb7031a684a76604",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "2a151ea0a46a40a4b9ef14403cd2acc0",
+              "status_code": 201,
+              "elapsed_ms": 6.823,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "17d95eb34ba4470b90ffa2192442dc51",
+              "status_code": 200,
+              "elapsed_ms": 3.851,
+              "response_bytes": 61,
+              "response_sha256": "68921e435a504e7f2098bdc39239268471f943f4733c2c736c50ce0e8e538ee2",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.courseId"
+            }
+          ]
+        }
+      ]
+    },
+    "c5a20d7808cf44259f66f2d34226f446": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:43.448610+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "ba459c8a674948b4b2de5bb7ede75f6e",
+              "status_code": 200,
+              "elapsed_ms": 3.87,
+              "response_bytes": 62,
+              "response_sha256": "70f061c86d0338fa8bf8b503769fc8d529aa6688e85f7f394ca3c8b5a873c8c6",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "cd8c3ec64dfa41bb832b37d26839538c",
+              "status_code": 200,
+              "elapsed_ms": 1.543,
+              "response_bytes": 62,
+              "response_sha256": "ec10674e8f5e28550bd7b5d9f538466587fa176738f9317c94821f589fc39d07",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "be7f754ca05f4272935608e1b405205b",
+              "status_code": 201,
+              "elapsed_ms": 3.759,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "19c38d5d0bcc49b0a2c49f3e13e4f04e",
+              "status_code": 200,
+              "elapsed_ms": 3.543,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a6e3dc98a142440686aa0542234e2b35",
+              "status_code": 403,
+              "elapsed_ms": 2.139,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "7df88d716bab426f9a13d182d28cdfa8",
+              "status_code": 202,
+              "elapsed_ms": 3.706,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "25babd7852144646b4692d9ebd5308a8",
+              "status_code": 200,
+              "elapsed_ms": 4.085,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "4192c9b37f334de9ac5cd7bf24878fca",
+              "status_code": 200,
+              "elapsed_ms": 1.696,
+              "response_bytes": 40,
+              "response_sha256": "a85e98737796218aaf2f3f0e9d29243d38894710342fde3b8da6f396c4dd75fd",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.state"
+            }
+          ]
+        }
+      ]
+    },
+    "c6d5d005724f478e849357666f37789e": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:40.309078+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "96711f45e84348d7be193cf9965260db",
+              "status_code": 200,
+              "elapsed_ms": 2.783,
+              "response_bytes": 62,
+              "response_sha256": "7abb4acf87cce4a8baee6a6a3527bfd2a4a4183ce04ab2ea1f4259b597f388d8",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0176ffe83e834733962274eb39de67d3",
+              "status_code": 201,
+              "elapsed_ms": 3.158,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "2d72ce2e8d884d9db117f7aab532112f",
+              "status_code": 200,
+              "elapsed_ms": 3.519,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "c8e9d9e0d5ed4228bb95a9e2cfb4b5c5": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:39.330398+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f81752b04e0247aa8b8e689317dc97a7",
+              "status_code": 200,
+              "elapsed_ms": 2.98,
+              "response_bytes": 62,
+              "response_sha256": "1917bc20d664879caec45560622c8e6d49ea06d381c24d774a69fc6195ac0c11",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "1e1a3871b4a94aa592312889049d5390",
+              "status_code": 201,
+              "elapsed_ms": 3.104,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "7027819c41194183876eb686394d4607",
+              "status_code": 200,
+              "elapsed_ms": 3.613,
+              "response_bytes": 70,
+              "response_sha256": "f457f91a5f9e44ec93229a5be4ac844f1a5f2c77dca7198d018cf8449bb362b2",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.name"
+            }
+          ]
+        }
+      ]
+    },
+    "cb412d88d32141dba60571f97d3ff75d": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:42.927860+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "bea6b73ebff542fb949c74584f83e00c",
+              "status_code": 200,
+              "elapsed_ms": 4.508,
+              "response_bytes": 62,
+              "response_sha256": "4607249804f1b0b0eea3c78fb0b0aa7e55427eaba81c87edef3345d1502224fa",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f62f7147cdf743fe84d5f3235258fdbf",
+              "status_code": 200,
+              "elapsed_ms": 1.517,
+              "response_bytes": 62,
+              "response_sha256": "dcbf5dac6f56f7681c0b851dfac0b7221c33e2901f0b7b69443140f9aa7c44ff",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "af89d8c4e1864e9da8609f9e854964cd",
+              "status_code": 201,
+              "elapsed_ms": 3.823,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "02c90900df074ce5b8a3bcce1d6b45ae",
+              "status_code": 200,
+              "elapsed_ms": 4.783,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "68898ac133b04a7fa38a28e7fca785cd",
+              "status_code": 403,
+              "elapsed_ms": 2.158,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "b517a8a7eb5c4d64b0cb5097aaa075ed",
+              "status_code": 202,
+              "elapsed_ms": 3.956,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f5d677f821c74047b1a77016faeafe19",
+              "status_code": 200,
+              "elapsed_ms": 2.981,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "fb696034cec149558f6003cdb0a5e228",
+              "status_code": 200,
+              "elapsed_ms": 2.491,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "84edc004b291491fa8cd5852854f6d2b",
+              "status_code": 200,
+              "elapsed_ms": 4.249,
+              "response_bytes": 31,
+              "response_sha256": "edd322af0f61ecdb918768d0f26c900eedb7db1933a465ab134ffc0d035e5772",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "d1915392900a4165a0907cdb5d8b09f7": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:41.303639+00:00",
+      "steps": [
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0ceb359a4255442b9f9a5833cf6526b2",
+              "status_code": 200,
+              "elapsed_ms": 3.657,
+              "response_bytes": 62,
+              "response_sha256": "cf250227935537259b4959f7a944f451e9d794a2019285e7957d62e65dcf624c",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "9ab2d938368b450cbb3e30dca822beef",
+              "status_code": 200,
+              "elapsed_ms": 1.455,
+              "response_bytes": 62,
+              "response_sha256": "367de09d3ef86121fc6c1017adf5c9f771b1d2df5d637c20b043c4c38a7683c5",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "aa177b58a97a8692500de3a0e8e566ab0291fda880335c9fbc6ca8e0b999fe06",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "3a690d439de340ca89227545a30f6db4",
+              "status_code": 201,
+              "elapsed_ms": 3.197,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "dda1d7460bed326abccdaa226015e46230f6ff7b3b2e6cbe2cd3a20158234c2d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "8f57afae6c7d4b74aceb2f8d88e00e55",
+              "status_code": 200,
+              "elapsed_ms": 3.89,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "other_read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "9427f972505e09050c4d901e838f182fdcfe618511e3ca68e0258cd6800e59c7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "99788f51369d460587e908117da3297e",
+              "status_code": 403,
+              "elapsed_ms": 1.456,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "dbf9d3eb8ff9493eb13fcced88c60003": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:40.910299+00:00",
+      "steps": [
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "43202f38028b4e9693e5b30c695dd091",
+              "status_code": 200,
+              "elapsed_ms": 4.108,
+              "response_bytes": 62,
+              "response_sha256": "60d9e4262bf89375a8b719e6d2f8221e6afd4ab3555aaf118132b5a66ba33514",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "224eec9559e0488d804d96ac4c84272d",
+              "status_code": 200,
+              "elapsed_ms": 1.596,
+              "response_bytes": 62,
+              "response_sha256": "c4b6ffab79e4398ae812be6e1f9b43d37db187702d2adac869e0d337817e3634",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "aa177b58a97a8692500de3a0e8e566ab0291fda880335c9fbc6ca8e0b999fe06",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4fc4d9ff03a841bab051396bb8465982",
+              "status_code": 201,
+              "elapsed_ms": 3.99,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "dda1d7460bed326abccdaa226015e46230f6ff7b3b2e6cbe2cd3a20158234c2d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "59aca63676ce453e8a11710b29197bcc",
+              "status_code": 200,
+              "elapsed_ms": 3.52,
+              "response_bytes": 59,
+              "response_sha256": "65bd7943ae3715643147e425c78bdc3eade22efb59e7002d168ef855520adfbb",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "other_read",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "9427f972505e09050c4d901e838f182fdcfe618511e3ca68e0258cd6800e59c7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "5081c63aba19492d9fe929d956846147",
+              "status_code": 403,
+              "elapsed_ms": 2.024,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "e635ce70772f4313abc6f4264104c7e2": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:44.245224+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4c0f503c612c45fdaa23e1bccf1adc3a",
+              "status_code": 200,
+              "elapsed_ms": 3.805,
+              "response_bytes": 62,
+              "response_sha256": "c0bd619d3b0d2a6febae21445fb0ae947b723ab77c17dda87d75d063211c9a24",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "9c35b0760f5b41de9a0a2a02a2549ef6",
+              "status_code": 200,
+              "elapsed_ms": 2.437,
+              "response_bytes": 62,
+              "response_sha256": "036efca66b0568c1375a25628101449c6dd09f69e1c58d9f45c23b2f23352b67",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "8f865f5d3d6e4f6aaae09ea99a44849a",
+              "status_code": 201,
+              "elapsed_ms": 3.575,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "c55fc4859714418db4a1f31d9fdcdcbe",
+              "status_code": 200,
+              "elapsed_ms": 3.231,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "53da8fd9dd3844048a9e4faa4a8cb5db",
+              "status_code": 403,
+              "elapsed_ms": 1.387,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0573eb2d4b074063bb1b8412f2cb5e2f",
+              "status_code": 202,
+              "elapsed_ms": 3.432,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "e5b579494c7c440ab4e0707d3d83ce09",
+              "status_code": 200,
+              "elapsed_ms": 3.247,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "fa5978a35ce34ab59d7b97eb51dcbe82",
+              "status_code": 200,
+              "elapsed_ms": 1.731,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "dda3e37368304141b21930759846727d",
+              "status_code": 200,
+              "elapsed_ms": 3.161,
+              "response_bytes": 41,
+              "response_sha256": "0b17e5decf4d2a4f1861513e4bbdcc9f78521407c1b029f9d006c9f70166f790",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "count",
+              "selector": "$.items"
+            }
+          ]
+        }
+      ]
+    },
+    "01d0e77c865849a4937bce0c02a0a16d": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:41.809218+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a8ecdf17fd264e549049d9dcecb9cfc7",
+              "status_code": 200,
+              "elapsed_ms": 77.768,
+              "response_bytes": 62,
+              "response_sha256": "c8dfecbf4a90e5510f88e0cc9aabf27a53f30db4860b6ba5cddc0beb28226c04",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "ec492a0ac7b447a19d50ecf6aa3282d2",
+              "status_code": 200,
+              "elapsed_ms": 2.143,
+              "response_bytes": 62,
+              "response_sha256": "29511f4899697b2e74508fe597c629a729981a31b8421b650822bcc57828c090",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "ac1c5051ac53457d9151f1d31ba5be38",
+              "status_code": 201,
+              "elapsed_ms": 4.969,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "28e4b4e40fc246b0b37e27c03fbea198",
+              "status_code": 200,
+              "elapsed_ms": 4.081,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "30a4ee33702b42d7a3597a54745e2315",
+              "status_code": 403,
+              "elapsed_ms": 1.684,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a8506b041c19477ea76484356a814dba",
+              "status_code": 202,
+              "elapsed_ms": 5.344,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "98aa8a8c72b545e6ba725f3af6d6f7ac",
+              "status_code": 200,
+              "elapsed_ms": 3.924,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "50213885302d4dc59deb7242c9353da2",
+              "status_code": 200,
+              "elapsed_ms": 2.84,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "9439f025ad8d493bb39b7d2690e336e2",
+              "status_code": 200,
+              "elapsed_ms": 3.078,
+              "response_bytes": 31,
+              "response_sha256": "edd322af0f61ecdb918768d0f26c900eedb7db1933a465ab134ffc0d035e5772",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "0fe7496ab98e43ac91ca708a5a3481f7": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:25.653088+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "ec79ddfa8d26427fb5cab865b2226551",
+              "status_code": 200,
+              "elapsed_ms": 3.388,
+              "response_bytes": 62,
+              "response_sha256": "b1614e41711c78f218acedc986404ea4a24f8388105fac3871f3c3e8e4f2174e",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "68323780dc38456593c5495e5e99c5cc",
+              "status_code": 200,
+              "elapsed_ms": 3.335,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "http_status",
+              "selector": null
+            }
+          ]
+        }
+      ]
+    },
+    "374c606f936c40e48c03c4287e814b56": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:25.325137+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "de4dd7724df14299871c15cf89275d58",
+              "status_code": 200,
+              "elapsed_ms": 3.185,
+              "response_bytes": 62,
+              "response_sha256": "84d3445eb946cc321aa46c4226737da7d0957c2dfd0d626470262f9a1a2a106b",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "76d6a68360d649598732f1ab60db527f",
+              "status_code": 201,
+              "elapsed_ms": 3.148,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "b90fbbf3077b49da8699b67663de71f3",
+              "status_code": 200,
+              "elapsed_ms": 3.104,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "46a8ffb95d504a488e4d7c022314802e": {
+      "outcome": "NEEDS_REVIEW",
+      "started_at": "2026-10-11T14:19:31.083093+00:00",
+      "steps": []
+    },
+    "525a210000814843a761669d8c21579a": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:41.453794+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0fd486806aa44d05af0af191e961f8a9",
+              "status_code": 200,
+              "elapsed_ms": 3.097,
+              "response_bytes": 62,
+              "response_sha256": "ba70543857e467255c90032c41595c9333361857c6689c28fef51f04beb11db1",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "13baad2d63614ca283164975730a073e",
+              "status_code": 200,
+              "elapsed_ms": 1.355,
+              "response_bytes": 62,
+              "response_sha256": "42f1732d9b3ee2047e7f8b8020e719d8379faedf3b3bbd55861a2d601f380ff6",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "986a13c50f7c4f4481f13dc51c6b94e4",
+              "status_code": 201,
+              "elapsed_ms": 3.299,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "21d185db9d694e1ab1d5600a12bb164b",
+              "status_code": 200,
+              "elapsed_ms": 3.398,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "59b1a7949d4e437d8f8ea954657a6056",
+              "status_code": 403,
+              "elapsed_ms": 1.467,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "d032d00003b440a5bd6d322f633b8c2b",
+              "status_code": 202,
+              "elapsed_ms": 3.482,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f3735fc4199e47a5be35505668f43558",
+              "status_code": 200,
+              "elapsed_ms": 3.038,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "1453a6e0a1b74cfcacb95f0bf104cc2b",
+              "status_code": 200,
+              "elapsed_ms": 2.021,
+              "response_bytes": 40,
+              "response_sha256": "a85e98737796218aaf2f3f0e9d29243d38894710342fde3b8da6f396c4dd75fd",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.state"
+            }
+          ]
+        }
+      ]
+    },
+    "53d61f376ec3484fb6052ec0a189b2cb": {
+      "outcome": "TOOL_ERROR",
+      "started_at": "2026-10-11T14:19:26.201431+00:00",
+      "steps": []
+    },
+    "5aac4b043d9e406ca0c0a0f474b07033": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:42.344511+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "0bd3a9a315114492a5f7c9b1a6747564",
+              "status_code": 200,
+              "elapsed_ms": 4.219,
+              "response_bytes": 62,
+              "response_sha256": "d809b58ae30666ccfb4b18bd7c53a1278b644235d495bfc73b5a6b9474dad17d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "2a098db00c0c45da9ba527412b14af85",
+              "status_code": 200,
+              "elapsed_ms": 1.682,
+              "response_bytes": 62,
+              "response_sha256": "b7879f85e9a7a726a6e36551e61b233b2e5143e723a9ccd33586cad441d203d1",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f663e179f22a48b887fe631ec3e572d6",
+              "status_code": 201,
+              "elapsed_ms": 4.653,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "da2d8a6b62854e788f81c0680fe3ac5d",
+              "status_code": 200,
+              "elapsed_ms": 5.245,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "934a2e766f1346b68d31b43991ef1961",
+              "status_code": 403,
+              "elapsed_ms": 1.629,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "9722b1f22c7d4364bee2121c5da02916",
+              "status_code": 202,
+              "elapsed_ms": 3.686,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "8db96c6f7c3049cd81b02b42340b1d8a",
+              "status_code": 200,
+              "elapsed_ms": 4.229,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "9555e08983ed45d6af7a3d2fe844bf85",
+              "status_code": 200,
+              "elapsed_ms": 2.406,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "96c999794c1544bca852292ed45a1d44",
+              "status_code": 200,
+              "elapsed_ms": 5.014,
+              "response_bytes": 41,
+              "response_sha256": "0b17e5decf4d2a4f1861513e4bbdcc9f78521407c1b029f9d006c9f70166f790",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "count",
+              "selector": "$.items"
+            }
+          ]
+        }
+      ]
+    },
+    "78c672666f3f491c95fdb8e81333c89b": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:41.047842+00:00",
+      "steps": [
+        {
+          "step_id": "login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "6032b447102b6b1ddcb067bf868c0431a2bc357e2c737f8b2d48e8865228350b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "627e17b3ab544f3096833c2917300083",
+              "status_code": 200,
+              "elapsed_ms": 3.676,
+              "response_bytes": 62,
+              "response_sha256": "3f12f4801d884f1556412eb16a1121ca1e7374c64ad2365af4513325611200ca",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "login_bob",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "01412d5d7cc2bc8e0a1730de2cea5e736f7cbcc7f4a0fdaa3731541eea2774d3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "5b1bfb32f38e425ea4a3c5a639736685",
+              "status_code": 200,
+              "elapsed_ms": 1.757,
+              "response_bytes": 62,
+              "response_sha256": "8cd955ed67b042cc3d798cfe0cab4a3e2fb4e66b508c9ccac38e15d76cf42ab8",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "3e95a6e61ecd9ae737d8645b1b64c8439dfce2fe032eb30d3b14e595c5bc5fe4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "7a0e018b889e4cf9b5dacefcee4b107c",
+              "status_code": 201,
+              "elapsed_ms": 4.018,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "read_course",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "0b0af12360b9f0511fc6e972d85cd92ecbffa728f5b9b1924fa76af8be1ecc0b",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "00a6815fed7948039cee6d8b231e0a37",
+              "status_code": 200,
+              "elapsed_ms": 3.623,
+              "response_bytes": 67,
+              "response_sha256": "6f4e56522d100ddfdbcd8a8d897a1ee987b289817c1ba44da6e984d36ae5e05d",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "cross_user",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "fa40c47ecf2dc5fbc45e04bb395112d3bf60e98d17f895314855d2e14b25b9a0",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "2922e58781d14b3a9c5dee71e4d9d464",
+              "status_code": 403,
+              "elapsed_ms": 2.164,
+              "response_bytes": 22,
+              "response_sha256": "9ac3754eba1fd9706053855d7a70376080ac3376979894cbc2effe645bd030ec",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "f1a69bd5452ddd9bca8d7064639e6989dcb643cd6beb6b4d11ff083dad59978d",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "58a1272d21764b9a8dab2f5437db25e0",
+              "status_code": 202,
+              "elapsed_ms": 5.066,
+              "response_bytes": 30,
+              "response_sha256": "dfb4a9faa9db1c6a53516c8219568db529774b0c331afbc832da0bdec495af34",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "poll_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8e45fef30c55f0a25dac48c06b1adb106a4c4664c4e5c47680cc3235ee842af3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a7b5d4e5e12049b9aa02ff56992bf326",
+              "status_code": 200,
+              "elapsed_ms": 3.944,
+              "response_bytes": 41,
+              "response_sha256": "0b346b1e6e07a9d285324c0284ab246ba7356612d714fded5a9649ce46643f7a",
+              "error_code": null
+            },
+            {
+              "attempt": 2,
+              "attempt_id": "1534df2c716a4569af65126fd8f9a2a3",
+              "status_code": 200,
+              "elapsed_ms": 1.91,
+              "response_bytes": 43,
+              "response_sha256": "b558d290312c260ceefd444e4ddef144da3f9a52d9ff910dae42ffe883333d63",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "d10a314869213f4deb6ec946c6002a8ab04aee20afe7f0ad9c32d7683bb073b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "f9ec82ab581a4b999dd39897df8df454",
+              "status_code": 200,
+              "elapsed_ms": 3.772,
+              "response_bytes": 31,
+              "response_sha256": "edd322af0f61ecdb918768d0f26c900eedb7db1933a465ab134ffc0d035e5772",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "7da35bc04e82429ca08ac636bb32c7fc": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:24.762527+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "33e37af6da654b2d8cf95fdb86b6fcd3",
+              "status_code": 200,
+              "elapsed_ms": 2.592,
+              "response_bytes": 62,
+              "response_sha256": "a5e83f1708d630cef65727457f1d728085c4e37199f95a0fed77c119d8bb2bbc",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "c82209b25a71412b98982e2dc71245b6",
+              "status_code": 201,
+              "elapsed_ms": 2.952,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4527bdee88144a86896285dc079d5a47",
+              "status_code": 200,
+              "elapsed_ms": 2.802,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "817ea79f7b32409494f28f039f524755": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:24.189512+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "12f44200265e42b48ca8f376f0ed727c",
+              "status_code": 200,
+              "elapsed_ms": 3.341,
+              "response_bytes": 62,
+              "response_sha256": "e45c34365a69b7c80ec98c0fa7eec8d5509eb345f74c7fc9d41cd5df19a0ab49",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "78b5ea56aea04de1a9a295005d9dfe6e",
+              "status_code": 201,
+              "elapsed_ms": 3.188,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "5b3d4eff153d41689fa238a6ca57a385",
+              "status_code": 200,
+              "elapsed_ms": 3.211,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "a138558716674686839b712d15faea1b": {
+      "outcome": "PASS",
+      "started_at": "2026-10-11T14:19:18.142590+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "d7a2b9ed06d8418f84798bef3627c6b7",
+              "status_code": 200,
+              "elapsed_ms": 5.961,
+              "response_bytes": 62,
+              "response_sha256": "cee636c9870d0c1081c63652735e7e40356f0e7f08b749bdfa46bca6067936ce",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "312d14bedcac4fff9a00d1d87f53139c",
+              "status_code": 201,
+              "elapsed_ms": 3.572,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "848968ce3d204373a94e7ba465c41aac",
+              "status_code": 200,
+              "elapsed_ms": 2.981,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        }
+      ]
+    },
+    "b86884b523e3499ea8ad98d59935f60e": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:25.025987+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "3a27b6fbc3c14e61a5a38d71c8329963",
+              "status_code": 200,
+              "elapsed_ms": 2.9,
+              "response_bytes": 62,
+              "response_sha256": "f7d1bdb35ea4623eeba562ca5b2f1ff3c09c1b879b4fcd5dc3d02c31f8e4a951",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "a0955b3034a34ce19cb2990be5240d88",
+              "status_code": 201,
+              "elapsed_ms": 2.978,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "5bc2e77eb5f142f68a18d2b5f27f19cb",
+              "status_code": 200,
+              "elapsed_ms": 2.988,
+              "response_bytes": 61,
+              "response_sha256": "68921e435a504e7f2098bdc39239268471f943f4733c2c736c50ce0e8e538ee2",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.courseId"
+            }
+          ]
+        }
+      ]
+    },
+    "db6d431fb4be4c8592138163437b7754": {
+      "outcome": "NEEDS_REVIEW",
+      "started_at": "2026-10-11T14:19:35.580883+00:00",
+      "steps": []
+    },
+    "ef59286647664bca992c4849a40298f1": {
+      "outcome": "ASSERTION_FAILED",
+      "started_at": "2026-10-11T14:19:24.484887+00:00",
+      "steps": [
+        {
+          "step_id": "step_login_alice",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "24aae0253fda223798145175117e2cd8d9ccda17ed5f6616b893dc407087c8d8",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "522271ebd5eb4aaab0e2a153d4a3e5f6",
+              "status_code": 200,
+              "elapsed_ms": 2.834,
+              "response_bytes": 62,
+              "response_sha256": "ad9ac3fc54ce832801b126f8f7d9c89a32fddbdef2c4b2ecf168504a8ce37b8f",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "8204131e0dd6b60e97dfd4133d3408f30a1e0624ede73ed3bedee8b3e79d5e08",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "85fee43b19c34c42bcab2cbe159fbf9f",
+              "status_code": 201,
+              "elapsed_ms": 3.004,
+              "response_bytes": 61,
+              "response_sha256": "56ea8a19bafd9373d467d6361053b94846efa9537d22dc1941c06270dc47f932",
+              "error_code": null
+            }
+          ],
+          "failed_checks": []
+        },
+        {
+          "step_id": "step_get_course_owner",
+          "operation_id": "getCourse",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "policy_sha256": "75adcea06cbb1b5bc53d7a0e8299c63018fe869600f99a2fb6049b1ad254fa43",
+          "attempts": [
+            {
+              "attempt": 1,
+              "attempt_id": "4208754c6c9f466d93638960f1ee8282",
+              "status_code": 200,
+              "elapsed_ms": 3.054,
+              "response_bytes": 70,
+              "response_sha256": "f457f91a5f9e44ec93229a5be4ac844f1a5f2c77dca7198d018cf8449bb362b2",
+              "error_code": null
+            }
+          ],
+          "failed_checks": [
+            {
+              "kind": "equals",
+              "selector": "$.name"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
