@@ -1,0 +1,104 @@
+{
+  "milestone": "3B",
+  "date": "2026-10-11",
+  "baseline_commit": "4ef6acc9f7f01def5406c25a774eee5035d63092",
+  "capability_commit": "309dc10",
+  "protocol_commit": "6c4a33f",
+  "sdk": "mcp==2.3.0",
+  "transport": "stdio",
+  "tools": [
+    "list_tests",
+    "get_contract",
+    "validate_plan",
+    "run_scenario",
+    "read_report"
+  ],
+  "stdio_runs": [
+    {
+      "scenario_id": "mini_normal",
+      "run_id": "214b15060b2344f4927cd7f56c690db9",
+      "outcome": "PASS",
+      "steps": 8,
+      "requests": 9,
+      "course_creates": 1
+    },
+    {
+      "scenario_id": "mini_ownership_fault",
+      "run_id": "303d18e7d1254aca82bebaadc995bd46",
+      "outcome": "ASSERTION_FAILED",
+      "steps": 5,
+      "requests": 5,
+      "course_creates": 1
+    },
+    {
+      "scenario_id": "mini_terminal_fault",
+      "run_id": "8c4a2e74f9594056988849e272472985",
+      "outcome": "ASSERTION_FAILED",
+      "steps": 7,
+      "requests": 8,
+      "course_creates": 1
+    }
+  ],
+  "same_invocation_replays": 0,
+  "stdio_denials": [
+    "MCP_SCENARIO_NOT_AUTHORIZED",
+    "MCP_ARGUMENTS_INVALID",
+    "MCP_ARGUMENTS_INVALID",
+    "MCP_RUN_BUDGET_EXHAUSTED"
+  ],
+  "checks": {
+    "pytest_passed": 508,
+    "pytest_skipped": 1,
+    "pytest_seconds": 92.34,
+    "ruff": "PASS",
+    "pip_check": "PASS",
+    "skip_reason": "Windows symlink creation privilege unavailable; Linux CI will verify",
+    "previous_local_http": {
+      "outcome": "PASS",
+      "steps": 8,
+      "requests": 9,
+      "health": 200,
+      "spec_import": 200,
+      "report_query": 200,
+      "run_id": "f11d7b6dcbb0421681906d9a51a2ad56"
+    },
+    "fake_natural_paths": [
+      {
+        "task_id": "T01",
+        "outcome": "PASS",
+        "steps": 3,
+        "requests": 3
+      },
+      {
+        "task_id": "T10",
+        "outcome": "PASS",
+        "steps": 5,
+        "requests": 5
+      }
+    ],
+    "readonly_investigation_regression": {
+      "normal_requests": 5,
+      "normal_investigations": 0,
+      "ownership_requests": 6,
+      "ownership_investigations": 1,
+      "ownership_outcome": "ASSERTION_FAILED",
+      "course_creates_per_run": 1
+    },
+    "mcp_targeted_passed": 56,
+    "mcp_targeted_skipped": 1,
+    "mcp_targeted_seconds": 16.42
+  },
+  "mcp_external_http_requests": 0,
+  "school_api_calls": 0,
+  "java_writes": 0,
+  "evidence_scope": "SDK stdio subprocess with disposable in-process mini target; temporary reports discarded. Metrics are observed results, not a live Java or model evaluation.",
+  "public_audit": {
+    "public_files": 115,
+    "history_blobs": 283,
+    "actual_school_key_and_demo_password_hits": 0,
+    "private_key_token_jwt_hits": 0,
+    "protected_evaluations_tasks_and_java_evidence_unchanged": true,
+    "ignored_artifacts": 4,
+    "original_test_files_unchanged": 30
+  }
+}

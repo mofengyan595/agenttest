@@ -2,6 +2,23 @@
 
 独立 Python API 测试平台。已实现阶段 2A 自然语言规划：用户需求 → FakeLLM 或显式配置的真实模型 → 不可信 DSL → 契约及可信策略预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏报告。默认测试及 demo 无需 API Key、Docker 或外网。真实模型调用必须显式启用。
 
+## 阶段 3B：最小 MCP stdio Server
+
+支持 MCP 的客户端可以发现批准的场景和操作、查看筛选契约、只校验 DSL、显式运行固定场景、按 run_id 读取脱敏报告。使用官方 Python MCP SDK **2.3.0 / MCPServer**，默认只连接进程内、一次性的 mini target；不监听 HTTP，不读取真实凭据，不开放 CourseInsight 写入或失败调查。
+
+```powershell
+# 沿用项目已有 .venv，仅安装可选 MCP 依赖
+.\.venv\Scripts\python.exe -m pip install -r requirements-mcp.lock
+.\.venv\Scripts\python.exe -m pip install --no-build-isolation --no-deps -e '.[dev,mcp]'
+.\.venv\Scripts\python.exe -m agenttest.mcp_server
+# 另一个终端执行真正 SDK stdio 客户端验收；无需 Key/Docker/外网
+.\.venv\Scripts\python.exe scripts/smoke_mcp_stdio.py
+```
+
+工具为 `list_tests`、`get_contract`、`validate_plan`、`run_scenario`、`read_report`。`run_scenario` 只接受批准场景 ID 和唯一 invocation_id；通过校验的自定义 DSL 也不能据此执行。同 ID 不重放写操作，中断记录不可恢复；默认最多 3 run / 100 tool call，单 run 8 步 / 10 HTTP / 30 秒，客户端不能放大预算。
+
+正常场景 8/9 PASS；ownership 5/5、terminal 7/8 保留真实断言失败，各创建一次。详见 [Python/MCP 入门实现说明及调用示例](docs/mcp-guide.md)、[本轮脱敏验收记录](docs/stage3b-results.json)。四组 CI 保留，agent 增加 MCP 验收，base 无需可选 SDK；不调用学校 API 或真实 Java。
+
 ## 环境与启动
 
 使用 Python **3.11**，所有依赖安装在项目 `.venv`。本次验证版本为 3.11.15。
@@ -38,7 +55,7 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 .\.venv\Scripts\python.exe -m agenttest workflow-demo
 ```
 
-Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`。安装时需要包源或缓存，安装后测试与工作流无需外网。仅基础环境运行 pytest 时，工作流测试模块会明确跳过；完整验收应安装 agent extra。
+Agent extra 固定 LangGraph 1.2.14；冻结的 agent 开发环境同时包含可选 MCP SDK，完整版本在 `requirements-agent.lock` 与 `requirements-mcp.lock`。安装时需要包源或缓存，安装后测试与工作流无需外网。仅基础环境运行 pytest 时，工作流测试模块会明确跳过；完整验收应安装 agent extra。
 
 ## Fake LLM 最小工作流
 

@@ -99,3 +99,13 @@ async def test_sdk_unknown_tool_with_untrusted_name_is_redacted(server, caplog):
         assert result.is_error
         assert "private-secret" not in json.dumps(result.model_dump(mode="json"))
         assert "private-secret" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_sdk_rejected_calls_also_consume_tool_budget(tmp_path):
+    server = create_server(MCPService(tmp_path, MCPSettings(max_tool_calls=1)))
+    async with Client(server) as client:
+        rejected = await client.call_tool("get_contract", {"api_key": "private-key"})
+        assert rejected.is_error
+        exhausted = await client.call_tool("get_contract")
+        assert exhausted.structured_content["error_code"] == "MCP_TOOL_BUDGET_EXHAUSTED"

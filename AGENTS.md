@@ -17,10 +17,9 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
-Stage 2A and the minimal Stage 2B investigation are complete. Stage 3A adapts the
-reviewed CourseInsight Java demo login/create/read chain using fixed DSL and the
-existing Executor, Verifier, Vault and policies. Require explicit local isolation
-preflight before writes; preserve all demo volumes and never retry creation. Keep the
-402 earlier tests, both original model evaluations and Windows/Linux × base/agent CI.
-No LLM, investigation, MCP, cross-user scenario or CourseInsight business-code changes
-in this milestone. Discuss Stage 3B only after Stage 3A acceptance.
+Stage 3B minimal MCP stdio server wraps existing approved mini-target scenarios.
+Stages 1–2B and real Java Stage 3A are accepted; preserve their tests and evidence.
+Reuse Executor, Verifier, CredentialVault, TargetConfig and Policy Registry. MCP clients
+cannot authorize targets, credentials, assertions or budgets. CourseInsight MCP writes,
+real LLM investigation, recovery/replanning, RAG, frontend and multi-agent are out of scope.
+Keep Windows/Linux × base/agent CI; no real Java writes or school API calls in CI.

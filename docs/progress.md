@@ -1,5 +1,16 @@
 # 开发进度
 
+## 阶段 3B：全量验收与入门文档（2026-10-11）
+
+- 功能提交 `309dc10`、`6c4a33f`；新增 Python/MCP 入门说明、工具表、客户端配置、实际调用示例及脱敏验收统计。
+- 最终全量 **508 passed、1 skipped**（92.34s），原 452 项保留，30 个原测试文件逐字节未变；MCP 针对性 **56 passed、1 skipped**（16.42s）。Ruff 与 pip check 通过。
+- 真正 stdio 客户端：normal 8/9 PASS、ownership 5/5 和 terminal 7/8 ASSERTION_FAILED，均一次创建；同 ID 重发只读缓存，拒绝 Java/URL/Key/超预算。
+- 原真实回环 HTTP：8/9 PASS，health/spec/report=200；Fake 自然语言 3/3、5/5 PASS；既有调查正常 0 次、ownership 1 次且原断言失败保留，各创建一次。
+- 公开检查：115 个文件、283 个历史 blob；实际学校 Key / demo 密码 / 私钥 / Token / JWT 命中 0，任务/两轮评测/Java 验收记录逐字节不变，四类本地产物正确忽略。
+- CourseInsight 工作区仍仅有用户原先 .gitignore 修改，业务代码未改；本轮学校 API / Java 写入均 0。
+- 已知限制：Windows 符号链接测试因权限跳过；等待 Linux CI 补验。运行预算按 Server 进程计算，重启不恢复 HTTP；不开放客户端 DSL 执行授权、Java MCP、远程 HTTP 或独立 wheel 分发。
+- 四组 CI 保持原矩阵，agent 增加 SDK stdio。推送后核对本轮各组日志，不将之前 CI 冒充本轮结果；本模块 SHA 下一检查点记录。
+
 ## 阶段 3B：官方 SDK / stdio / 协议验收（2026-10-11）
 
 - 授权适配层提交 `309dc10`；官方文档核对当前 MCP Python SDK **2.3.0**，使用 v2 `MCPServer` / `Client` / `StdioServerParameters`，无旧 FastMCP 导入。
