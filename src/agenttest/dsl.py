@@ -1,11 +1,11 @@
-"""Human-authored plans only. Validate all dependencies and permissions before I/O."""
+"""Untrusted plans: references and ordinary data, never policies or credentials."""
 
 import os
 import re
 from typing import Any, Literal
 from urllib.parse import unquote
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary, Operation
 from agenttest.safety import StrictModel, TargetConfig
@@ -16,7 +16,6 @@ class ArgumentBinding(StrictModel):
     value: Any = None
     from_step: str | None = None
     select: str = "$"
-    credential: Literal["username", "password"] | None = None
 
     @field_validator("select")
     @classmethod
@@ -25,10 +24,16 @@ class ArgumentBinding(StrictModel):
 
     @model_validator(mode="after")
     def one_source(self) -> "ArgumentBinding":
-        if sum(("value" in self.model_fields_set, self.from_step is not None,
-                self.credential is not None)) != 1:
+        if sum(("value" in self.model_fields_set, self.from_step is not None)) != 1:
             raise ValueError("Binding requires exactly one source")
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize_source(self, handler):
+        data = handler(self)
+        if self.from_step is not None:
+            data.pop("value", None)
+        return data
 
 
 class ExpectedStatus(StrictModel):
@@ -94,13 +99,12 @@ class Step(StrictModel):
     id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
     operation_id: str
     role: str | None = None
-    auth_from: ArgumentBinding | None = None
     path_parameters: dict[str, ArgumentBinding] = Field(default_factory=dict)
     query: dict[str, ArgumentBinding] = Field(default_factory=dict)
     body: dict[str, ArgumentBinding] = Field(default_factory=dict)
     upload: CSVUpload | None = None
-    assertions: AssertionPolicy = Field(default_factory=AssertionPolicy)
-    poll: PollPolicy | None = None
+    policy_id: str | None = None
+    poll: bool = False
     read_retries: int = Field(default=0, ge=0, le=2)
 
 
@@ -134,17 +138,22 @@ def validate_plan(
             raise ValueError("Unknown role alias")
         role = config.roles.get(step.role)
         bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values()]
-        if step.auth_from:
-            if not step.auth_from.from_step:
-                raise ValueError("Authentication must bind a previous step or role environment")
-            bindings.append(step.auth_from)
         for binding in bindings:
             if binding.from_step and binding.from_step not in seen:
                 raise ValueError("Dependency must reference an earlier step (no cycles)")
-            if binding.credential:
-                env_name = getattr(role, f"{binding.credential}_env", None)
-                if not env_name or not environ.get(env_name):
-                    raise ValueError("Missing role credential environment variable")
+            if binding.from_step:
+                source = seen[binding.from_step]
+                source_role = config.roles.get(source.role)
+                if source_role and source.operation_id == source_role.login_operation:
+                    raise ValueError("Authentication responses are not bindable")
+        is_login = role and step.operation_id == role.login_operation
+        if is_login:
+            if step.body or step.upload or step.query or step.path_parameters:
+                raise ValueError("Authentication request is executor-owned")
+            if not all(environ.get(name or "") for name in (role.username_env, role.password_env)):
+                raise ValueError("Missing authentication credentials")
+        elif any(step.operation_id == item.login_operation for item in config.roles.values()):
+            raise ValueError("Authentication operation requires its approved role")
         requires_auth = bool(operation.security) and {} not in operation.security
         if requires_auth:
             supported = any(
@@ -156,10 +165,11 @@ def validate_plan(
                 raise ValueError("Stage 1 supports HTTP bearer authentication only")
             if not role:
                 raise ValueError("Restricted operation needs a role alias")
-            if step.auth_from:
-                if seen[step.auth_from.from_step].role != step.role:
-                    raise ValueError("Credential source role does not match step role")
-            elif not role.bearer_env or not environ.get(role.bearer_env):
+            logged_in = any(
+                previous.role == step.role and previous.operation_id == role.login_operation
+                for previous in seen.values()
+            )
+            if not logged_in and (not role.bearer_env or not environ.get(role.bearer_env)):
                 raise ValueError("Restricted operation lacks a credential")
         if operation.method not in {"GET", "HEAD"} and (step.poll or step.read_retries):
             raise ValueError("Mutations cannot be polled or retried")
@@ -175,7 +185,7 @@ def validate_plan(
                 if param["name"] not in location:
                     raise ValueError("Missing required operation parameter")
         if operation.request_body and operation.request_body.get("required"):
-            if not step.body and not step.upload:
+            if not step.body and not step.upload and not is_login:
                 raise ValueError("Missing required request body")
         seen[step.id] = step
     return operations

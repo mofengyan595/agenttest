@@ -1,7 +1,9 @@
 # 模拟服务人工编写策略 v1
 
 这份策略由任务书要求落实为固定示例，仅适用于 AgentTest 一次性 mini target。
-`reviewed: true` 表示示例作者确认的预期；平台不能为未审查策略自动补上此标记。
+机器策略位于操作员加载的 `examples/demo-policies.json`，独立于不可信计划。
+Registry 中 `reviewed: true` 是审查记录；计划禁止此字段，只能引用策略 ID。
+每项审批绑定接口、角色、`mini_target_v1` 业务场景及必要的请求数据前提。
 真实服务的策略必须由其业务负责人另行审查，不能直接套用这些预期。
 
 ## authentication
@@ -23,4 +25,4 @@
 终态只接受 SUCCEEDED；FAILED 是合法可观察终态，但违反成功测试预期。
 结果接口返回两条 items。`terminal` 故障开关令终态为 FAILED，应产生 ASSERTION_FAILED。
 
-报告保存策略内容 SHA-256，可与原始 JSON 计划重算比对；断言值不会自动修改。
+报告保存 Registry 条目的 SHA-256，可与可信策略重算比对；断言值不会自动修改。

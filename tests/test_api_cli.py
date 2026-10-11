@@ -48,5 +48,6 @@ def test_cli_fault_and_bad_target(tmp_path: Path, capsys) -> None:
     target = tmp_path / "target.json"
     target.write_text('{"base_url":"http://evil.test","allowed_operations":["x"]}')
     assert main(["run", "--target", str(target), "--contract", "missing.json",
-                 "--plan", "missing.json", "--runs-dir", str(tmp_path)]) == 2
+                 "--plan", "missing.json", "--policies", "missing.json",
+                 "--runs-dir", str(tmp_path)]) == 2
     assert json.loads(capsys.readouterr().out)["outcome"] == "TOOL_ERROR"

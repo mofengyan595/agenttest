@@ -63,6 +63,7 @@ def main() -> None:
             command = [
                 sys.executable, "-m", "agenttest", "run",
                 "--contract", str(PROJECT_ROOT / "examples/demo-openapi.json"),
+                "--policies", str(PROJECT_ROOT / "examples/demo-policies.json"),
                 "--plan", str(PROJECT_ROOT / "examples/demo-scenario.json"),
                 "--target", str(target_file), "--runs-dir", str(store.root),
             ]

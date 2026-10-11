@@ -2,52 +2,91 @@
   "name": "Reviewed mini target login, ownership and asynchronous CSV scenario",
   "steps": [
     {
-      "id": "login_alice", "operation_id": "login", "role": "alice",
-      "body": {"username": {"credential": "username"}, "password": {"credential": "password"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#authentication", "status": {"codes": [200]}, "fields": [{"select": "$.access_token", "operator": "exists"}]}
+      "id": "login_alice",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "login_alice_v1"
     },
     {
-      "id": "login_bob", "operation_id": "login", "role": "bob",
-      "body": {"username": {"credential": "username"}, "password": {"credential": "password"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#authentication", "status": {"codes": [200]}, "fields": [{"select": "$.access_token", "operator": "exists"}]}
+      "id": "login_bob",
+      "operation_id": "login",
+      "role": "bob",
+      "policy_id": "login_bob_v1"
     },
     {
-      "id": "create_course", "operation_id": "createCourse", "role": "alice",
-      "auth_from": {"from_step": "login_alice", "select": "$.access_token"},
-      "body": {"name": {"value": "AgentTest disposable course"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#resources", "status": {"codes": [201]}, "fields": [{"select": "$.courseId", "operator": "exists"}]}
+      "id": "create_course",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "body": {
+        "name": {
+          "value": "AgentTest disposable course"
+        }
+      },
+      "policy_id": "create_course_v1"
     },
     {
-      "id": "read_course", "operation_id": "getCourse", "role": "alice",
-      "auth_from": {"from_step": "login_alice", "select": "$.access_token"},
-      "path_parameters": {"courseId": {"from_step": "create_course", "select": "$.courseId"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#resources", "status": {"codes": [200]}, "fields": [{"select": "$.name", "expected": "AgentTest disposable course"}]}
+      "id": "read_course",
+      "operation_id": "getCourse",
+      "role": "alice",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "policy_id": "read_course_v1"
     },
     {
-      "id": "cross_user", "operation_id": "getCourse", "role": "bob",
-      "auth_from": {"from_step": "login_bob", "select": "$.access_token"},
-      "path_parameters": {"courseId": {"from_step": "create_course", "select": "$.courseId"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#ownership", "status": {"codes": [403]}}
+      "id": "cross_user",
+      "operation_id": "getCourse",
+      "role": "bob",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "policy_id": "cross_user_v1"
     },
     {
-      "id": "create_batch", "operation_id": "createBatch", "role": "alice",
-      "auth_from": {"from_step": "login_alice", "select": "$.access_token"},
-      "path_parameters": {"courseId": {"from_step": "create_course", "select": "$.courseId"}},
-      "upload": {"content": "text\nfirst synthetic row\nsecond synthetic row\n"},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#batches", "status": {"codes": [202]}, "fields": [{"select": "$.batchId", "operator": "exists"}]}
+      "id": "create_batch",
+      "operation_id": "createBatch",
+      "role": "alice",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "upload": {
+        "content": "text\nfirst synthetic row\nsecond synthetic row\n"
+      },
+      "policy_id": "create_batch_v1"
     },
     {
-      "id": "poll_batch", "operation_id": "getBatch", "role": "alice",
-      "auth_from": {"from_step": "login_alice", "select": "$.access_token"},
-      "path_parameters": {"batchId": {"from_step": "create_batch", "select": "$.batchId"}},
-      "poll": {"select": "$.state", "terminal_values": ["SUCCEEDED", "FAILED"], "max_attempts": 4, "interval": 0.01},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#batches", "status": {"codes": [200]}, "fields": [{"select": "$.state", "expected": "SUCCEEDED"}, {"select": "$.count", "expected": 2}]}
+      "id": "poll_batch",
+      "operation_id": "getBatch",
+      "role": "alice",
+      "path_parameters": {
+        "batchId": {
+          "from_step": "create_batch",
+          "select": "$.batchId"
+        }
+      },
+      "poll": true,
+      "policy_id": "poll_batch_v1"
     },
     {
-      "id": "batch_results", "operation_id": "getBatchResults", "role": "alice",
-      "auth_from": {"from_step": "login_alice", "select": "$.access_token"},
-      "path_parameters": {"batchId": {"from_step": "create_batch", "select": "$.batchId"}},
-      "assertions": {"reviewed": true, "source": "docs/demo-policy.md#batches", "status": {"codes": [200]}, "fields": [{"select": "$.items", "operator": "count", "expected": 2}]}
+      "id": "batch_results",
+      "operation_id": "getBatchResults",
+      "role": "alice",
+      "path_parameters": {
+        "batchId": {
+          "from_step": "create_batch",
+          "select": "$.batchId"
+        }
+      },
+      "policy_id": "batch_results_v1"
     }
   ]
 }

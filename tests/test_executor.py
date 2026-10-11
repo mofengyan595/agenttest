@@ -3,6 +3,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from support import registry
 
 from agenttest.contracts import ContractSummary, Operation
 from agenttest.dsl import Scenario
@@ -19,14 +20,13 @@ def setup(tmp_path: Path, handler, method="GET", **config_overrides):
         environment="isolated", allow_mutations=True, allowed_operations=["items"],
         min_request_interval=0.0, **config_overrides,
     )
-    return Executor(config, contract, ReportStore(tmp_path), httpx.MockTransport(handler))
+    return Executor(config, contract, ReportStore(tmp_path),
+                    httpx.MockTransport(handler), registry=registry())
 
 
 def plan(**step_overrides) -> Scenario:
     return Scenario.model_validate({"name": "executor", "steps": [{
-        "id": "read", "operation_id": "items", "assertions": {
-            "reviewed": True, "source": "reviewed fixture v1", "status": {"codes": [200]},
-        }, **step_overrides,
+        "id": "read", "operation_id": "items", "policy_id": "items_v1", **step_overrides,
     }]})
 
 
@@ -73,9 +73,7 @@ async def test_retry_reads_never_writes(tmp_path: Path, method: str, expected_ca
 async def test_request_budget_and_poll_exhaustion(tmp_path: Path) -> None:
     executor = setup(tmp_path, lambda req: httpx.Response(200, json={"state": "RUNNING"}),
                      max_requests=2)
-    report = await executor.run(plan(poll={
-        "select": "$.state", "terminal_values": ["DONE"], "max_attempts": 4, "interval": 0.0,
-    }))
+    report = await executor.run(plan(poll=True))
     assert report.outcome == Outcome.TEST_INFRA_ERROR
     assert report.steps[0].reason == "REQUEST_LIMIT"
     assert len(report.steps[0].attempts) == 2

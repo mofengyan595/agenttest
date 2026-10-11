@@ -9,6 +9,7 @@ from agenttest.contracts import summarize_openapi
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
 from agenttest.mini_target import Fault, create_target
+from agenttest.policies import PolicyRegistry
 from agenttest.report import ReportStore, RunReport
 from agenttest.safety import TargetConfig
 
@@ -38,5 +39,7 @@ async def run_demo(fault: Fault = "none", store: ReportStore | None = None) -> R
     executor = Executor(
         config, summarize_openapi(target.openapi()), store,
         httpx.ASGITransport(app=target, raise_app_exceptions=False), environ,
+        registry=PolicyRegistry.from_json(
+            (PROJECT_ROOT / "examples/demo-policies.json").read_bytes()),
     )
     return await executor.run(scenario)

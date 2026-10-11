@@ -3,6 +3,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from support import registry
 
 from agenttest.contracts import ContractSummary, Operation, load_openapi
 from agenttest.dsl import AssertionPolicy, Scenario, validate_plan
@@ -31,9 +32,7 @@ def operation(method="GET", path="/items", body=None) -> ContractSummary:
 
 def plan(**overrides) -> Scenario:
     return Scenario.model_validate({"name": "security", "steps": [{
-        "id": "first", "operation_id": "items", "assertions": {
-            "reviewed": True, "source": "security fixture", "status": {"codes": [200]},
-        }, **overrides,
+        "id": "first", "operation_id": "items", "policy_id": "items_v1", **overrides,
     }]})
 
 
@@ -50,7 +49,7 @@ def test_encoded_path_traversal_rejected(path: str) -> None:
 
 @pytest.mark.parametrize("overrides", [
     {"read_retries": 1},
-    {"poll": {"select": "$.state", "terminal_values": ["DONE"]}},
+    {"poll": True},
 ])
 def test_mutations_cannot_retry_or_poll(overrides: dict) -> None:
     with pytest.raises(ValueError):
@@ -64,7 +63,7 @@ async def test_total_timeout_has_infrastructure_outcome(tmp_path: Path) -> None:
         return httpx.Response(200)
 
     report = await Executor(config(run_timeout=0.03), operation(), ReportStore(tmp_path),
-                            httpx.MockTransport(handler)).run(plan())
+                            httpx.MockTransport(handler), registry=registry()).run(plan())
     assert report.outcome == Outcome.TEST_INFRA_ERROR
     assert report.reason == "RUN_TIMEOUT"
     assert ReportStore(tmp_path).read(report.run_id).completed
@@ -77,7 +76,7 @@ async def test_oversize_request_rejected_before_transmit(tmp_path: Path) -> None
 
     contract = operation(method="POST", body={"content": {"application/json": {}}})
     executor = Executor(config(max_body_bytes=10), contract, ReportStore(tmp_path),
-                        httpx.MockTransport(never))
+                        httpx.MockTransport(never), registry=registry())
     report = await executor.run(plan(body={"text": {"value": "x" * 50}}))
     assert report.outcome == Outcome.TEST_INFRA_ERROR
     assert report.steps[0].reason == "REQUEST_BODY_LIMIT"
@@ -94,11 +93,12 @@ async def test_cookies_never_cross_steps_and_unknown_policy_stops(tmp_path: Path
 
     scenario = plan()
     scenario.steps.append(scenario.steps[0].model_copy(update={"id": "second"}))
-    executor = Executor(config(), operation(), ReportStore(tmp_path), httpx.MockTransport(handler))
+    executor = Executor(config(), operation(), ReportStore(tmp_path),
+                        httpx.MockTransport(handler), registry=registry())
     assert (await executor.run(scenario)).outcome == Outcome.PASS and len(calls) == 2
-    scenario.steps[0].assertions = AssertionPolicy()
+    scenario.steps[0].policy_id = None
     assert (await executor.run(scenario)).outcome == Outcome.NEEDS_REVIEW
-    assert len(calls) == 3
+    assert len(calls) == 2
 
 
 @pytest.mark.asyncio
@@ -106,8 +106,8 @@ async def test_poll_exhaustion_never_bug(tmp_path: Path) -> None:
     report = await Executor(
         config(), operation(), ReportStore(tmp_path),
         httpx.MockTransport(lambda request: httpx.Response(200, json={"state": "RUNNING"})),
-    ).run(plan(poll={"select": "$.state", "terminal_values": ["DONE"],
-                    "max_attempts": 2, "interval": 0.0}))
+        registry=registry(max_attempts=2),
+    ).run(plan(poll=True))
     assert report.outcome == Outcome.TEST_INFRA_ERROR
     assert report.steps[0].reason == "POLL_EXHAUSTED"
 

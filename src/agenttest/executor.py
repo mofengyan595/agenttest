@@ -12,7 +12,9 @@ from typing import Any
 import httpx
 
 from agenttest.contracts import ContractSummary, Operation
+from agenttest.credentials import CredentialVault
 from agenttest.dsl import ArgumentBinding, Scenario, Step, validate_plan
+from agenttest.policies import NeedsReview, PolicyRegistry, RegisteredPolicy
 from agenttest.report import (
     AttemptEvidence,
     Outcome,
@@ -36,12 +38,22 @@ class Executor:
         self, config: TargetConfig, contract: ContractSummary,
         store: ReportStore | None = None, transport: httpx.AsyncBaseTransport | None = None,
         environ: dict[str, str] | None = None,
+        registry: PolicyRegistry | None = None,
     ) -> None:
         self.config = config
         self.contract = contract
         self.store = store or ReportStore(Path("runs"))
         self.transport = transport
         self.environ = dict(os.environ) if environ is None else dict(environ)
+        self.registry = registry or PolicyRegistry()
+
+    def validate(
+        self, scenario: Scenario,
+    ) -> tuple[dict[str, Operation], dict[str, RegisteredPolicy]]:
+        operations = validate_plan(scenario, self.contract, self.config, self.environ)
+        policies = {step.id: self.registry.resolve(step, self.config.business_scenario)
+                    for step in scenario.steps}
+        return operations, policies
 
     async def run(self, scenario: Scenario) -> RunReport:
         report = RunReport(
@@ -51,7 +63,12 @@ class Executor:
         )
         self.store.save(report)
         try:
-            operations = validate_plan(scenario, self.contract, self.config, self.environ)
+            operations, policies = self.validate(scenario)
+        except NeedsReview:
+            report.outcome, report.reason = Outcome.NEEDS_REVIEW, "POLICY_REVIEW_REQUIRED"
+            report.completed = True
+            self.store.save(report)
+            return report
         except ValueError:
             report.outcome, report.reason = Outcome.TOOL_ERROR, "PLAN_REJECTED"
             report.completed = True
@@ -59,6 +76,7 @@ class Executor:
             return report
         # Per-run state and budgets are never shared across executions.
         state: dict[str, Any] = {}
+        vault = CredentialVault(self.config, self.environ)
         budget = {"requests": 0, "last_request": 0.0}
         timeout = httpx.Timeout(
             self.config.read_timeout, connect=self.config.connect_timeout,
@@ -76,7 +94,7 @@ class Executor:
                             step_id=step.id, operation_id=step.operation_id,
                             method=operation.method, path_template=operation.path,
                             outcome=Outcome.TEST_INFRA_ERROR, reason="IN_PROGRESS",
-                            policy_sha256=fingerprint(step.assertions.model_dump()),
+                            policy_sha256=fingerprint(policies[step.id].model_dump()),
                         )
                         report.steps.append(result)
                         # Journal before sending a mutation. Reports cannot be resumed/replayed.
@@ -84,9 +102,10 @@ class Executor:
                         try:
                             body = await self._step(
                                 client, step, operation, state, budget, result, report,
+                                policies[step.id], vault,
                             )
                             if result.outcome == Outcome.PASS:
-                                state[step.id] = body
+                                state[step.id] = vault.public_response(body)
                         except httpx.TransportError as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = type(exc).__name__
@@ -115,14 +134,12 @@ class Executor:
     def _binding(self, binding: ArgumentBinding, step: Step, state: dict) -> Any:
         if binding.from_step:
             return select(state[binding.from_step], binding.select)
-        if binding.credential:
-            role = self.config.roles[step.role]
-            return self.environ[getattr(role, f"{binding.credential}_env")]
         return binding.value
 
     async def _step(
         self, client: httpx.AsyncClient, step: Step, operation: Operation,
         state: dict, budget: dict, result: StepResult, report: RunReport,
+        policy: RegisteredPolicy, vault: CredentialVault,
     ) -> Any:
         path = operation.path
         for name, binding in step.path_parameters.items():
@@ -132,23 +149,25 @@ class Executor:
             path = path.replace("{" + name + "}", str(value))
         headers = {}
         role = self.config.roles.get(step.role)
-        if step.auth_from:
-            token = self._binding(step.auth_from, step, state)
-            if not isinstance(token, str) or not token or any(c in token for c in "\r\n"):
-                raise ValueError("Invalid bearer credential")
-            headers["Authorization"] = "Bearer " + token
-        elif role and role.bearer_env:
-            headers["Authorization"] = "Bearer " + self.environ[role.bearer_env]
+        is_login = role and step.operation_id == role.login_operation
+        if role and operation.security and {} not in operation.security:
+            headers = vault.header(step.role)
         query = {key: self._binding(value, step, state) for key, value in step.query.items()}
         payload = {key: self._binding(value, step, state) for key, value in step.body.items()}
+        ordinary_data = [path, query, payload, step.upload.model_dump() if step.upload else ""]
+        if vault.contains_secret(ordinary_data):
+            raise ValueError("Secret cannot be used as ordinary request data")
+        if is_login:
+            payload = vault.login_payload(step.role)
         kwargs: dict[str, Any] = {"headers": headers, "params": query}
         if step.upload:
             kwargs["files"] = {step.upload.field: (
                 step.upload.filename, step.upload.content.encode("utf-8"), "text/csv",
             )}
-        elif step.body:
+        elif step.body or is_login:
             kwargs["json"] = payload
-        attempts = step.poll.max_attempts if step.poll else 1
+        poll = policy.poll if step.poll else None
+        attempts = poll.max_attempts if poll else 1
         for poll_attempt in range(attempts):
             status, body = await self._request(
                 client, operation.method, self.config.base_url + path, kwargs,
@@ -156,18 +175,21 @@ class Executor:
             )
             if 300 <= status < 400:
                 raise ExecutionLimit("REDIRECT_BLOCKED")
-            if step.poll:
+            if poll:
                 try:
-                    terminal = select(body, step.poll.select) in step.poll.terminal_values
+                    terminal = select(body, poll.select) in poll.terminal_values
                 except (KeyError, IndexError, TypeError):
                     raise ExecutionLimit("POLL_STATE_MISSING") from None
                 if not terminal:
                     if poll_attempt + 1 == attempts:
                         raise ExecutionLimit("POLL_EXHAUSTED")
-                    await asyncio.sleep(step.poll.interval)
+                    await asyncio.sleep(poll.interval)
                     continue
-            result.outcome, result.checks = verify(step.assertions, status, body)
+            result.outcome, result.checks = verify(policy.assertions, status, body)
             result.reason = "POLICY_EVALUATED"
+            if is_login and result.outcome == Outcome.PASS:
+                vault.capture(step.role, body)
+                return {}
             return body
         raise ExecutionLimit("POLL_EXHAUSTED")
 

@@ -1,0 +1,269 @@
+[
+  {
+    "id": "login_alice_v1",
+    "operation_id": "login",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#authentication",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.access_token",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {},
+      "upload": null
+    }
+  },
+  {
+    "id": "login_bob_v1",
+    "operation_id": "login",
+    "roles": [
+      "bob"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#authentication",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.access_token",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {},
+      "upload": null
+    }
+  },
+  {
+    "id": "create_course_v1",
+    "operation_id": "createCourse",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#resources",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.courseId",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {
+        "name": {
+          "value": "AgentTest disposable course",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "path_parameters": {},
+      "upload": null
+    }
+  },
+  {
+    "id": "read_course_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#resources",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.name",
+          "expected": "AgentTest disposable course"
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "upload": null
+    }
+  },
+  {
+    "id": "cross_user_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "bob"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#ownership",
+      "status": {
+        "codes": [
+          403
+        ]
+      }
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "upload": null
+    }
+  },
+  {
+    "id": "create_batch_v1",
+    "operation_id": "createBatch",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#batches",
+      "status": {
+        "codes": [
+          202
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.batchId",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create_course",
+          "select": "$.courseId"
+        }
+      },
+      "upload": {
+        "field": "file",
+        "filename": "input.csv",
+        "content": "text\nfirst synthetic row\nsecond synthetic row\n"
+      }
+    }
+  },
+  {
+    "id": "poll_batch_v1",
+    "operation_id": "getBatch",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#batches",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.state",
+          "expected": "SUCCEEDED"
+        },
+        {
+          "select": "$.count",
+          "expected": 2
+        }
+      ]
+    },
+    "poll": {
+      "select": "$.state",
+      "terminal_values": [
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "max_attempts": 4,
+      "interval": 0.01
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {
+        "batchId": {
+          "from_step": "create_batch",
+          "select": "$.batchId"
+        }
+      },
+      "upload": null
+    }
+  },
+  {
+    "id": "batch_results_v1",
+    "operation_id": "getBatchResults",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/demo-policy.md#batches",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.items",
+          "operator": "count",
+          "expected": 2
+        }
+      ]
+    },
+    "required_bindings": {
+      "body": {},
+      "path_parameters": {
+        "batchId": {
+          "from_step": "create_batch",
+          "select": "$.batchId"
+        }
+      },
+      "upload": null
+    }
+  }
+]

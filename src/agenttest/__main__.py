@@ -9,6 +9,7 @@ from agenttest.contracts import MAX_DOCUMENT_BYTES, load_openapi
 from agenttest.demo import run_demo
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
+from agenttest.policies import PolicyRegistry
 from agenttest.report import Outcome, ReportStore
 from agenttest.safety import TargetConfig
 
@@ -27,7 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     demo = subcommands.add_parser("demo", help="运行进程内离线模拟场景")
     demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
     execute = subcommands.add_parser("run", help="执行人工计划和显式授权的目标配置")
-    for name in ("contract", "plan", "target"):
+    for name in ("contract", "plan", "target", "policies"):
         execute.add_argument(f"--{name}", type=Path, required=True)
     report = subcommands.add_parser("report", help="查询或导出脱敏 JSON 报告")
     report.add_argument("run_id")
@@ -50,7 +51,8 @@ def main(argv: list[str] | None = None) -> int:
             config = TargetConfig.model_validate_json(bounded_read(args.target))
             contract = load_openapi(bounded_read(args.contract))
             scenario = Scenario.model_validate_json(bounded_read(args.plan))
-            result = asyncio.run(Executor(config, contract, store).run(scenario))
+            registry = PolicyRegistry.from_json(bounded_read(args.policies))
+            result = asyncio.run(Executor(config, contract, store, registry=registry).run(scenario))
         print(json.dumps({
             "run_id": result.run_id, "outcome": result.outcome.value,
             "steps": len(result.steps),

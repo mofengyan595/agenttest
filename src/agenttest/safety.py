@@ -15,6 +15,10 @@ class RoleCredential(StrictModel):
     username_env: str | None = None
     password_env: str | None = None
     bearer_env: str | None = None
+    login_operation: str | None = None
+    username_field: str = "username"
+    password_field: str = "password"
+    token_selector: str = "$.access_token"
 
 
 class TargetConfig(StrictModel):
@@ -24,6 +28,8 @@ class TargetConfig(StrictModel):
     allow_mutations: bool = False
     allowed_operations: list[str] = Field(min_length=1)
     roles: dict[str, RoleCredential] = Field(default_factory=dict)
+    business_scenario: str = "default"
+    sensitive_fields: list[str] = Field(default_factory=list)
     max_steps: int = Field(default=20, ge=1, le=100)
     max_requests: int = Field(default=40, ge=1, le=200)
     max_body_bytes: int = Field(default=100_000, ge=1, le=1_000_000)

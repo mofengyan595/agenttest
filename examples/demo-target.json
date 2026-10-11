@@ -2,9 +2,25 @@
   "base_url": "http://127.0.0.1:8080",
   "environment": "isolated",
   "allow_mutations": true,
-  "allowed_operations": ["login", "createCourse", "getCourse", "createBatch", "getBatch", "getBatchResults"],
+  "allowed_operations": [
+    "login",
+    "createCourse",
+    "getCourse",
+    "createBatch",
+    "getBatch",
+    "getBatchResults"
+  ],
   "roles": {
-    "alice": {"username_env": "DEMO_ALICE_USERNAME", "password_env": "DEMO_ALICE_PASSWORD"},
-    "bob": {"username_env": "DEMO_BOB_USERNAME", "password_env": "DEMO_BOB_PASSWORD"}
-  }
+    "alice": {
+      "username_env": "DEMO_ALICE_USERNAME",
+      "password_env": "DEMO_ALICE_PASSWORD",
+      "login_operation": "login"
+    },
+    "bob": {
+      "username_env": "DEMO_BOB_USERNAME",
+      "password_env": "DEMO_BOB_PASSWORD",
+      "login_operation": "login"
+    }
+  },
+  "business_scenario": "mini_target_v1"
 }

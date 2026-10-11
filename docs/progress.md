@@ -1,5 +1,15 @@
 # 开发进度
 
+## 审查修复：策略与认证边界（2026-10-11）
+
+- 基于发布提交 `d8a3b5ca8779930b6b3e55071dccde919578f17e` 继续，保留全部历史。
+- 不可信 DSL 只引用 policy_id；独立 Registry 校验接口、角色、可信业务场景、数据绑定前提，未知策略在 I/O 前 NEEDS_REVIEW。
+- 删除普通参数 credential 和 auth_from；批准的登录操作由执行器注入凭据，Token 留在每次运行的角色 Vault，认证响应禁止跨步骤绑定。
+- 加入伪造审核、策略作用域、审批快照、认证响应与秘密别名泄露回归。
+- 实测：94 passed，1 个已有 Starlette 弃用提醒；Ruff All checks passed。
+- 真实回环 HTTP：8 步、9 请求 PASS，health/spec_import/report_query 均 200；临时服务关闭。
+- 本模块提交 SHA 在下一检查点记录。尚待：请求 Schema 校验、轮询分类、全面脱敏；尚未开始阶段 2。
+
 - [x] 独立 Python 项目骨架
 - [x] Python 3.11 独立 .venv 与安装脚本（已在本机运行）
 - [x] FastAPI 健康检查
