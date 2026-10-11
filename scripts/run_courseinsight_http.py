@@ -73,18 +73,34 @@ def stop(process: subprocess.Popen) -> None:
 
 async def wait_health(process: subprocess.Popen) -> int:
     # Infrastructure readiness only. All three business requests go through Executor.
-    async with httpx.AsyncClient(trust_env=False, follow_redirects=False, timeout=2.0) as client:
-        for attempt in range(1, 61):
-            if process.poll() is not None:
-                raise PreflightError("JAVA_START_FAILED")
-            try:
-                response = await client.get(ORIGIN + "/actuator/health")
-                if (response.status_code == 200 and len(response.content) < 65536
-                        and response.json().get("status") == "UP"):
-                    return attempt
-            except (httpx.TransportError, ValueError):
-                pass
-            await asyncio.sleep(2)
+    try:
+        async with asyncio.timeout(120), httpx.AsyncClient(
+            trust_env=False, follow_redirects=False, timeout=2.0,
+        ) as client:
+            for attempt in range(1, 61):
+                if process.poll() is not None:
+                    raise PreflightError("JAVA_START_FAILED")
+                try:
+                    async with client.stream("GET", ORIGIN + "/actuator/health") as response:
+                        if 300 <= response.status_code < 400:
+                            raise PreflightError("JAVA_HEALTH_REDIRECT_BLOCKED")
+                        body = bytearray()
+                        async for chunk in response.aiter_bytes():
+                            if len(body) + len(chunk) > 65536:
+                                raise PreflightError("JAVA_HEALTH_BODY_LIMIT")
+                            body.extend(chunk)
+                        if response.status_code == 200:
+                            data = json.loads(body)
+                            if not isinstance(data, dict):
+                                raise PreflightError("JAVA_HEALTH_INVALID_RESPONSE")
+                            if data.get("status") == "UP":
+                                return attempt
+                except (httpx.TransportError, ValueError) as error:
+                    if isinstance(error, PreflightError):
+                        raise
+                await asyncio.sleep(2)
+    except TimeoutError:
+        raise PreflightError("JAVA_HEALTH_TIMEOUT") from None
     raise PreflightError("JAVA_HEALTH_TIMEOUT")
 
 

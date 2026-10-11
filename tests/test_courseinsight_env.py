@@ -199,3 +199,36 @@ def test_launch_cannot_inherit_model_credentials_or_spring_overrides(script, mon
     args = " ".join(captured["args"])
     assert "--server.address=127.0.0.1" in args and "--server.port=18080" in args
     assert "courseinsight_demo" in args and "-o" in captured["args"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response,code", [
+    ("healthy", None), ("oversize", "JAVA_HEALTH_BODY_LIMIT"),
+    ("redirect", "JAVA_HEALTH_REDIRECT_BLOCKED"), ("list", "JAVA_HEALTH_INVALID_RESPONSE"),
+])
+async def test_readiness_is_bounded_and_never_follows_redirects(
+    script, monkeypatch, response, code,
+):
+    import httpx
+
+    calls = []
+    original = httpx.AsyncClient
+    def handler(request):
+        calls.append(request)
+        assert request.url == "http://127.0.0.1:18080/actuator/health"
+        if response == "oversize":
+            return httpx.Response(200, content=b"x" * 65537)
+        if response == "redirect":
+            return httpx.Response(302, headers={"Location": "https://example.com"})
+        return httpx.Response(200, json=[] if response == "list" else {"status": "UP"})
+    class Process:
+        def poll(self):
+            return None
+    monkeypatch.setattr(script.httpx, "AsyncClient", lambda **kwargs: original(
+        **kwargs, transport=httpx.MockTransport(handler)))
+    if code:
+        with pytest.raises(env.PreflightError, match=f"^{code}$"):
+            await script.wait_health(Process())
+    else:
+        assert await script.wait_health(Process()) == 1
+    assert len(calls) == 1
