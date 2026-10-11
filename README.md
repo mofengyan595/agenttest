@@ -61,10 +61,10 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 # 零生成 Token 的连通性与模型存在检查
 .\.venv\Scripts\python.exe scripts/probe_model.py --model-env .env
 # 两类真实规划，目标为本次运行的一次性 mini target
-.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task '用户 A（alice）创建线性代数课程，再查询并核对 ID 和名称一致。'
-.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task 'alice 创建概率论课程并查询核对，再让已登录 bob 查询同一课程，验证归属权限拒绝。'
+.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task '用户 A（alice）创建“线性代数”课程，再查询并核对 ID 和名称一致。'
+.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task 'alice 创建“概率论”课程并查询核对，再让已登录 bob 查询同一课程被拒绝。'
 # 无模型、无网络，验证自然语言规划入口与执行链路；这不测试自然语言理解
-.\.venv\Scripts\python.exe -m agenttest agent-demo --fake-plan examples/nl-consistency-plan.json --user-task 'alice 创建线性代数课程并查询核对。'
+.\.venv\Scripts\python.exe -m agenttest agent-demo --fake-plan examples/nl-consistency-plan.json --user-task 'alice 创建“线性代数”课程并查询核对。'
 ```
 
 `user_task` 最多 2000 字符/8000 UTF-8 字节，拒绝控制字符、URL、明显凭据及 Vault 已知秘密。自然语言仍是不可信数据；提示词本身不提供授权。参数化策略只开放有界合成名称和审核过的来源/角色关系，状态码与比较语义固定。真实结构化格式目前支持标量 JSON 参数及步骤引用，不支持由模型规划 CSV、复杂对象或轮询；原确定性 DSL 的这些功能继续保留。

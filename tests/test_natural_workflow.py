@@ -32,7 +32,11 @@ async def test_structured_adapter_reuses_executor(tmp_path, cross, creator, faul
         base_url="https://model.invalid/v1", api_key="synthetic-model-key"),
         httpx.MockTransport(lambda req: httpx.Response(200, json=completion(
             json.dumps(wire(scenario(cross, creator=creator)))))))
-    report = await run_natural_demo("创建并查询课程，按需要验证跨用户权限", planner,
+    other = "bob" if creator == "alice" else "alice"
+    task = f'{creator} 创建“线性代数”并查询核对 ID 和名称。'
+    if cross:
+        task += f'再让 {other} 查询同一课程被拒绝。'
+    report = await run_natural_demo(task, planner,
                                     ReportStore(tmp_path), fault=fault)
     assert report.outcome == expected and report.plan_valid
     assert report.model_call.calls == 1 and report.model_call.total_tokens == 150
@@ -88,7 +92,8 @@ async def test_real_adapter_can_abstain_without_http_or_invented_pass(tmp_path):
 
 @pytest.mark.asyncio
 async def test_natural_workflow_tool_budget_is_operator_owned(tmp_path):
-    report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()),
+    report = await run_natural_demo('alice 创建“线性代数”并查询核对 ID 和名称',
+                                    FakeLLM(scenario().model_dump_json()),
                                     ReportStore(tmp_path), budget=WorkflowBudget(max_tool_calls=0))
     assert report.reason == "TOOL_CALL_LIMIT" and report.tool_calls == 0
 
@@ -106,7 +111,8 @@ async def test_report_has_one_writer_thread_and_matches_returned_snapshot(tmp_pa
 
     monkeypatch.setattr(ReportStore, "save", save)
     store = ReportStore(tmp_path)
-    report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()), store)
+    report = await run_natural_demo('alice 创建“线性代数”并查询核对 ID 和名称',
+                                    FakeLLM(scenario().model_dump_json()), store)
     assert threads == {threading.get_ident()}
     assert report == store.read(report.run_id) and report.workflow_completed
 
@@ -125,7 +131,8 @@ async def test_report_node_failure_preserves_final_tool_error(tmp_path, monkeypa
 
     monkeypatch.setattr(ReportStore, "save", save)
     store = ReportStore(tmp_path)
-    report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()), store)
+    report = await run_natural_demo('alice 创建“线性代数”并查询核对 ID 和名称',
+                                    FakeLLM(scenario().model_dump_json()), store)
     assert report.outcome == Outcome.TOOL_ERROR and report.reason == "WORKFLOW_ERROR"
     assert report == store.read(report.run_id) and not report.workflow_completed
     assert "private-local-file-error" not in report.model_dump_json()

@@ -17,6 +17,7 @@ from agenttest.credentials import CredentialVault
 from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
+from agenttest.intent import validate_intent
 from agenttest.llm_planner import PlannerFailure
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context, validate_user_task
@@ -176,6 +177,9 @@ class Workflow:
                                   for key, b in getattr(s, loc).items() if b.from_step is not None},
                 ) for s in scenario.steps]
                 report.scenario_sha256 = fingerprint(scenario.model_dump())
+                if self._config.business_scenario == "mini_target_nl_v1":
+                    validate_intent(self._user_task, scenario)
+                    report.intent_verified = True
                 return {"ready": True}
             except NeedsReview as exc:
                 report.diagnostic = exc.diagnostic

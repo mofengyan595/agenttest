@@ -143,6 +143,12 @@ async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"]
                         "intent_satisfied": intent,
                         "end_to_end_success": success, "outcome": report.outcome.value,
                         "failure_class": classification, "reason": report.reason,
+                        "diagnostic": report.diagnostic.model_dump(mode="json")
+                        if report.diagnostic else None,
+                        "intent_verified": report.intent_verified,
+                        "requests": sum(len(s.attempts) for s in report.steps),
+                        "failed_step_reason": next((s.reason for s in report.steps
+                            if s.outcome != Outcome.PASS), None),
                         "plan_sha256": report.scenario_sha256,
                         "model_call": report.model_call.model_dump()
                         if report.model_call else None})
@@ -169,7 +175,15 @@ async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"]
                             for category in ("consistency", "ownership")
                             for rows in [[r for r in results if r["category"] == category]]},
             "failure_classes": dict(Counter(r["failure_class"] for r in results)),
+            "failure_codes": dict(Counter(
+                r["diagnostic"]["code"] if r["diagnostic"] else
+                r["failed_step_reason"] or r["reason"] or r["failure_class"]
+                for r in results if r["failure_class"] != "PASS")),
             "generation_calls": calls, "total_tokens": tokens,
+            "input_tokens": sum(r["model_call"]["input_tokens"] or 0 for r in results
+                                if r["model_call"]),
+            "output_tokens": sum(r["model_call"]["output_tokens"] or 0 for r in results
+                                 if r["model_call"]),
             "model_latency_ms": {"mean": sum(latencies) / len(latencies),
                                  "p95": latencies[math.ceil(len(latencies) * .95) - 1]}
             if latencies else None, "results": results}

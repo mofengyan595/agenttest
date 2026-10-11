@@ -33,7 +33,7 @@ async def test_manual_and_fixed_fake_are_distinct_baselines(tmp_path):
     assert fake["plan_valid_rate"] == 1
     assert fake["intent_satisfied_rate"] == fake["end_to_end_success_rate"] == 1 / 18
     assert fake["policy_selection_correct_rate"] == 5 / 18
-    assert fake["failure_classes"] == {"PASS": 1, "TASK_MISMATCH": 17}
+    assert fake["failure_classes"] == {"PASS": 1, "NEEDS_REVIEW": 17}
     assert fake["by_category"]["ownership"]["end_to_end_success_rate"] == 0
     assert manual["generation_calls"] == fake["generation_calls"] == 0
 

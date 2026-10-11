@@ -152,6 +152,13 @@ roles and policy IDs, and satisfy every binding rule. Do not invent policies, cr
 resource IDs or outcomes. Authentication has no arguments; the executor supplies credentials.
 Create resources before reading them. Bind courseId to the approved create step's $.courseId.
 For data consistency use the same role; for ownership use a different authenticated role.
+Preserve the EXACT quoted course name as body.name, without adding quotes, suffixes or labels.
+Use the explicitly named creator (including bob when specified), not an assumed default role.
+For ownership include both owner read and other-user read, bound to the SAME create step.
+Login each required role BEFORE its first protected operation. Use exactly one create and
+one owner read, plus exactly one forbidden read for ownership; do not add unrelated steps.
+Use unique step ids. Each literal argument has value=<literal>, from_step=null, select=null;
+each courseId reference has value=null, from_step=<create id>, select="$.courseId".
 For a task with no approved path, return an empty steps array; local validation will reject it.
 Arguments use location/body/path_parameters/query, name, value, from_step, select.
 For a literal set from_step/select to null. For a reference set value to null and provide

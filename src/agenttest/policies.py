@@ -14,7 +14,8 @@ class NeedsReview(ValidationFailure):
     """No trusted basis exists to execute or classify this expectation."""
 
     def __init__(self, code: str):
-        layer = (Layer.OPENAPI if code.startswith(("UNSUPPORTED_", "OPEN_OBJECT_", "ONLY_OBJECT_"))
+        layer = (Layer.INTENT if code.startswith("INTENT_") else
+                 Layer.OPENAPI if code.startswith(("UNSUPPORTED_", "OPEN_OBJECT_", "ONLY_OBJECT_"))
                  else Layer.DEPENDENCY if "DEPENDENCY" in code
                  else Layer.POLICY)
         super().__init__(layer, code)
