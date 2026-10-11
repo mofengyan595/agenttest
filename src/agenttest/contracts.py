@@ -85,16 +85,26 @@ def _bounded_tree(document: Any) -> None:
 
 def _resolve(document: dict) -> dict:
     budget = 0
+    expanded_bytes = 0
 
     def visit(value: Any, trail: tuple[str, ...] = (), depth: int = 0) -> Any:
-        nonlocal budget
+        nonlocal budget, expanded_bytes
         budget += 1
+        expanded_bytes += 8
+        if isinstance(value, str):
+            expanded_bytes += len(value.encode("utf-8"))
+        if isinstance(value, dict):
+            expanded_bytes += sum(len(key.encode("utf-8")) for key in value)
         if budget > 30_000 or depth > 50:
             raise ValueError("Reference expansion exceeds limit")
+        if expanded_bytes > MAX_DOCUMENT_BYTES:
+            raise ValueError("Expanded reference size exceeds limit")
         if isinstance(value, list):
             return [visit(item, trail, depth + 1) for item in value]
         if not isinstance(value, dict):
             return value
+        if "$dynamicRef" in value or "$recursiveRef" in value:
+            raise ValueError("Dynamic references are unsupported")
         if "$ref" in value:
             ref = value["$ref"]
             if not isinstance(ref, str) or not ref.startswith("#/") or ref in trail:
@@ -107,6 +117,8 @@ def _resolve(document: dict) -> dict:
                 raise ValueError("Unresolved local reference") from exc
             if not isinstance(target, dict):
                 raise ValueError("Reference must resolve to an object")
+            if set(value) - {"$ref", "summary", "description"}:
+                raise ValueError("Reference constraint siblings are unsupported")
             resolved = visit(target, (*trail, ref), depth + 1)
             siblings = {k: visit(v, trail, depth + 1) for k, v in value.items() if k != "$ref"}
             return {**resolved, **siblings}

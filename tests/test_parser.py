@@ -39,3 +39,23 @@ def test_cyclic_reference_and_size_limits() -> None:
         load_openapi(FIXTURE.read_text() + "\nextra: {$ref: '#/extra'}")
     with pytest.raises(ValueError):
         load_openapi("a: " + "[" * 60 + "0" + "]" * 60)
+
+
+def test_reference_expansion_byte_limit() -> None:
+    schema = "description: '" + "x" * 50_000 + "'"
+    repeated = "\n".join(f"    x{i}: {{$ref: '#/components/schemas/base'}}" for i in range(25))
+    with pytest.raises(ValueError, match="Expanded reference size"):
+        load_openapi("openapi: 3.1.0\ninfo: {title: x, version: '1'}\npaths: {}\n"
+                     "components:\n  schemas:\n    base: {" + schema + "}\n" + repeated)
+
+
+@pytest.mark.parametrize("keyword", ["$dynamicRef", "$recursiveRef"])
+def test_dynamic_references_never_reach_validator(keyword: str) -> None:
+    with pytest.raises(ValueError, match="Dynamic references"):
+        load_openapi(FIXTURE.read_text() + f"\nextra: {{{keyword}: 'https://evil.test/schema'}}")
+
+
+def test_reference_siblings_cannot_change_schema_meaning() -> None:
+    with pytest.raises(ValueError, match="constraint siblings"):
+        load_openapi(FIXTURE.read_text()
+                     + "\nextra: {$ref: '#/components/schemas/Item', type: string}")

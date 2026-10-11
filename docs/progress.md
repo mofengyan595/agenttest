@@ -87,3 +87,11 @@
 - 显式真实 loopback 验证：8 步 / 9 请求 PASS，health/spec_import/report_query 均为 200。
 - 实际 HTTP 验证 run：`737dba777bc649fd860e8aa4e98b15b8`，临时服务均已关闭。
 - 下一步：安装脚本与 README、冻结依赖、交付版本记录；阶段 2 不在本次实现范围。
+
+### 引用解析最终检查
+
+- 前一模块提交：`0e17f4d`（安全回归及真实 HTTP 检查）。
+- 增加引用展开后的字节预算；拒绝动态引用和会改变引用语义的约束兄弟节点。
+- 实际 CLI run 经真实 loopback 读取 JSON 契约、人工计划与授权配置：8 步 / 9 请求 PASS。
+- 新增 4 个引用边界测试后：**78 passed, 1 warning**；Ruff 通过；pip check 无损坏依赖。
+- 正常 CLI demo 退出码 0，两个故障 CLI demo 退出码 1，分别停止在第 5 / 7 步。

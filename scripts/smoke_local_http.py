@@ -1,9 +1,12 @@
 """Explicit opt-in loopback smoke; default pytest suite never opens network sockets."""
 
-import asyncio
 import json
+import os
 import secrets
 import socket
+import subprocess
+import sys
+import tempfile
 import threading
 import time
 from contextlib import contextmanager
@@ -13,9 +16,7 @@ import httpx
 import uvicorn
 from fastapi import FastAPI
 
-from agenttest.contracts import summarize_openapi
-from agenttest.demo import demo_inputs
-from agenttest.executor import Executor
+from agenttest.demo import PROJECT_ROOT, demo_inputs
 from agenttest.main import create_app
 from agenttest.mini_target import create_target
 from agenttest.report import Outcome, ReportStore
@@ -46,7 +47,7 @@ def serve(app: FastAPI):
 
 
 def main() -> None:
-    scenario, config = demo_inputs()
+    _, config = demo_inputs()
     environ = {
         "DEMO_ALICE_USERNAME": "alice", "DEMO_ALICE_PASSWORD": secrets.token_urlsafe(24),
         "DEMO_BOB_USERNAME": "bob", "DEMO_BOB_PASSWORD": secrets.token_urlsafe(24),
@@ -56,9 +57,20 @@ def main() -> None:
     store = ReportStore(Path("runs"))
     with serve(target) as target_url, serve(create_app(store.root)) as platform_url:
         config = TargetConfig.model_validate({**config.model_dump(), "base_url": target_url})
-        report = asyncio.run(Executor(
-            config, summarize_openapi(target.openapi()), store, environ=environ,
-        ).run(scenario))
+        with tempfile.TemporaryDirectory(dir=store.root) as temporary:
+            target_file = Path(temporary) / "target.json"
+            target_file.write_text(config.model_dump_json(), encoding="utf-8")
+            command = [
+                sys.executable, "-m", "agenttest", "run",
+                "--contract", str(PROJECT_ROOT / "examples/demo-openapi.json"),
+                "--plan", str(PROJECT_ROOT / "examples/demo-scenario.json"),
+                "--target", str(target_file), "--runs-dir", str(store.root),
+            ]
+            completed = subprocess.run(
+                command, env={**os.environ, **environ}, capture_output=True, text=True, timeout=70,
+            )
+            assert completed.returncode == 0, "Local CLI execution failed"
+            report = store.read(json.loads(completed.stdout)["run_id"])
         with httpx.Client(trust_env=False, timeout=5.0) as client:
             health = client.get(platform_url + "/health")
             summary = client.post(platform_url + "/api/spec/summary", json=target.openapi())
