@@ -55,3 +55,13 @@
 - 保存每次请求状态码、响应长度/摘要、耗时及安全错误码；异常文本不落盘。
 - 针对性 pytest：**7 passed**；Ruff：**All checks passed!**。
 - 下一模块：FastAPI mini target、登录/创建/查询/上传/轮询链路与两个故障样本。
+
+### 离线模拟链路
+
+- 前一模块提交：`b93dcc6`（HTTP Executor）。
+- 完成独立 FastAPI mini target、固定 JSON 场景、角色环境配置及示例策略说明。
+- 正常场景 8 步、9 次请求：双账号登录、创建、查询、跨用户拒绝、CSV、两次轮询、结果条数。
+- `ownership` 与 `terminal` 两个独立故障均被对应断言检出；重复运行互不污染。
+- 针对性 pytest：**4 passed**；Ruff 首轮两处超长行，修复后复查。
+- 仅在 `.venv` 增加 python-multipart 0.0.32，用于 mini target 的 CSV 接收。
+- 下一模块：CLI、安全文档导入及报告查询 API、启动验证、完整文档与冻结依赖。
