@@ -6,10 +6,16 @@
 
 使用 Python **3.11**，所有依赖安装在项目 `.venv`。本次验证版本为 3.11.15。
 
+GitHub 仓库：[mofengyan595/agenttest](https://github.com/mofengyan595/agenttest)。首次获取项目：
+
+```powershell
+git clone https://github.com/mofengyan595/agenttest.git
+Set-Location agenttest
+```
+
 Windows PowerShell：
 
 ```powershell
-Set-Location 'D:\Desktop\project\agenttest'
 .\scripts\setup_env.ps1
 # 没有 py 启动器时，可指定本机 Python 3.11：
 # .\scripts\setup_env.ps1 -PythonPath 'C:\path\to\python.exe'
@@ -57,7 +63,13 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 
 `examples/demo-scenario.json` 是人工编写的完整计划；`docs/demo-policy.md` 记录示例预期来源。`examples/demo-target.json` 是操作员管理的目标和角色授权配置，不能由模型生成并自动批准。
 
-真实本地实例可运行 `uvicorn agenttest.mini_target:local_app --factory --host 127.0.0.1 --port 8080`；启动前在环境变量设置 `.env.example` 中的四个 DEMO_* 值，CLI 通过同样的环境变量读取账号。第一阶段不自动加载 `.env`。
+真实本地实例使用项目虚拟环境启动：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn agenttest.mini_target:local_app --factory --host 127.0.0.1 --port 8080
+```
+
+启动前在环境变量设置 `.env.example` 中的四个 DEMO_* 值，CLI 通过同样的环境变量读取账号。第一阶段不自动加载 `.env`。
 
 ```powershell
 .\.venv\Scripts\python.exe -m agenttest run --contract examples/demo-openapi.json --plan examples/demo-scenario.json --target examples/demo-target.json

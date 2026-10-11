@@ -13,6 +13,19 @@
 
 本文件由 Codex 在每个阶段完成后根据实际测试结果更新，禁止提前标记任务完成。
 
+## GitHub Public 发布检查（2026-10-11）
+
+- 已创建空的 Public 仓库：[mofengyan595/agenttest](https://github.com/mofengyan595/agenttest)。
+- 保留原有 9 个提交及全部 SHA；发布前基准为 `08bad70b33abb973469bd08c76395c38238f655f`。
+- 已审查原有 39 个已跟踪文件、全部 9 个提交中的 62 个文件版本及提交元数据。
+- 扫描候选已核对为测试占位内容；未发现真实 API Key、密码、Token 或业务数据。
+- 提交作者邮箱已核对并获得公开授权，未改写任何提交历史。
+- `.venv/`、`.python311/`、`.env`、`runs/`、缓存和产物未进入当前或历史版本，忽略规则已验证。
+- 发布前重新运行：pytest **78 passed, 1 warning**；Ruff **All checks passed!**；pip check **No broken requirements found.**
+- README 增补公开仓库获取步骤，并明确模拟服务也使用项目 `.venv` 启动。
+- 本次新增发布文档提交；推送及远程 SHA 的最终核查结果在本次交付回复中提供。
+- **阶段 2 暂停在未开始状态；下一步先完成代码审查，等待用户后续开发指示。**
+
 ## 阶段 1 最终验收（2026-10-11）
 
 **完成。** 实现提交：`8b79f00f6c2f7c131c792a5652f46e3eba65886a`。
