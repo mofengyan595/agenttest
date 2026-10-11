@@ -1,5 +1,17 @@
 # 开发进度
 
+## 阶段 2A 真实模型适配器（2026-10-11）
+
+- 上一模块：`2a18dca9756bea29a42c51333ae1e6a51ead705d`（user_task、公共上下文、参数化策略）。
+- 核对 OpenAI 结构化输出、LangGraph Graph API，以及用户指定的 ChatECNU 模型/对话/结构化输出/模型列表官方文档。
+- 增加独立 HTTPX Planner Adapter，不增加 SDK 依赖。学校协议使用 max_tokens + json_schema + thinking disabled，目标和模型仅来自环境变量或显式本地 .env；无官方 OpenAI 默认地址，无失败降级格式或自动重试。
+- 模型结果经有界 JSON、封闭 PlannerDraft、现有 Scenario/OpenAPI/Registry/Vault 校验，仍复用原 Executor/Verifier。默认 CI 不访问模型；新增 agent/agent-demo 真实调用必须显式 --real。
+- 报告仅增加调用数量、状态码、字节数、耗时、Token usage 和摘要；不保存 API Key、原始响应、思考内容或提示词。
+- 离线全量 **248 passed**，Ruff 通过，pip check 无损坏依赖。
+- 真实连通性：GET models 200，配置模型存在，0 次生成；严格结构化探测通过（1 次生成，956 Token）。
+- 真实两类需求产生不同计划：一致性 3 步 PASS（run c9e43eb634ca484d894c99dc9f94a955），归属 5 步 PASS（run 835faa6955054440a32d8df9d1270563）。首轮总生成次数严格限制为 3，逐次无自动重试；详细统计在本地 runs，不提交原始产物。
+- 下一模块：18 条候选任务人工审核、三基线评测和安全回归；待审核候选不能声称已完成人工批准。
+
 ## 阶段 2 自然语言输入与参数化策略（2026-10-11）
 
 - 基于 `d44b6de141c94007a124d4ca67520071bf59e041`，原始基线 189 passed，Ruff 通过。

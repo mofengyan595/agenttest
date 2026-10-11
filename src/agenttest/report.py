@@ -49,6 +49,21 @@ class StepResult(BaseModel):
     attempts: list[AttemptEvidence] = Field(default_factory=list)
 
 
+class ModelCallStats(BaseModel):
+    calls: int = 0
+    model_sha256: str | None = None
+    http_status: int | None = None
+    elapsed_ms: float = 0
+    request_bytes: int = 0
+    response_bytes: int = 0
+    input_token_upper_bound: int = 0
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+    output_sha256: str | None = None
+    reason: str | None = None
+
+
 class RunReport(BaseModel):
     run_id: str = Field(default_factory=lambda: uuid4().hex)
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -68,6 +83,7 @@ class RunReport(BaseModel):
     user_task_sha256: str | None = None
     plan_valid: bool = False
     selected_policy_ids: list[str] = Field(default_factory=list)
+    model_call: ModelCallStats | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 

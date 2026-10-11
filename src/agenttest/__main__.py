@@ -1,4 +1,4 @@
-"""Run with python -m agenttest; no API key or model is involved."""
+"""Offline commands by default; real model access requires explicit --real."""
 
 import argparse
 import asyncio
@@ -31,13 +31,28 @@ def main(argv: list[str] | None = None) -> int:
     workflow_demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
     execute = subcommands.add_parser("run", help="执行人工计划和显式授权的目标配置")
     workflow = subcommands.add_parser("workflow", help="通过 Fake LLM 规划样本运行状态图")
+    workflow.add_argument("--user-task", default="执行操作员提供的测试计划")
+    agent = subcommands.add_parser("agent", help="自然语言规划显式授权的目标")
+    agent_demo = subcommands.add_parser("agent-demo", help="自然语言规划一次性 mini target")
+    agent_demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
+    for command in (agent, agent_demo):
+        command.add_argument("--user-task", required=True)
+        model = command.add_mutually_exclusive_group(required=True)
+        model.add_argument("--real", action="store_true")
+        model.add_argument("--fake-plan", type=Path)
+        command.add_argument("--model-env", type=Path)
+        command.add_argument("--max-output-tokens", type=int, default=2048)
+        command.add_argument("--max-total-tokens", type=int, default=12_000)
+        command.add_argument("--model-timeout", type=float, default=30.0)
+    for name in ("contract", "target", "policies"):
+        agent.add_argument(f"--{name}", type=Path, required=True)
     for command in (execute, workflow):
         for name in ("contract", "plan", "target", "policies"):
             command.add_argument(f"--{name}", type=Path, required=True)
     report = subcommands.add_parser("report", help="查询或导出脱敏 JSON 报告")
     report.add_argument("run_id")
     report.add_argument("--output", type=Path)
-    for command in (demo, workflow_demo, execute, workflow, report):
+    for command in (demo, workflow_demo, execute, workflow, agent, agent_demo, report):
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     store = ReportStore(args.runs_dir)
@@ -52,6 +67,33 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in {"demo", "workflow-demo"}:
             result = asyncio.run(run_demo(args.fault, store,
                                          use_workflow=args.command == "workflow-demo"))
+        elif args.command in {"agent", "agent-demo"}:
+            from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
+            from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
+
+            budget = WorkflowBudget()
+            if args.real:
+                settings = (ModelSettings.from_env_file(args.model_env) if args.model_env
+                            else ModelSettings.from_environment())
+                settings = ModelSettings.model_validate({**settings.model_dump(),
+                    "timeout": args.model_timeout, "max_output_tokens": args.max_output_tokens,
+                    "max_total_tokens": args.max_total_tokens})
+                planner = OpenAICompatiblePlanner(settings)
+                budget = WorkflowBudget(model_timeout=settings.timeout + 1,
+                                        workflow_timeout=min(settings.timeout + 90, 300))
+            else:
+                planner = FakeLLM(bounded_read(args.fake_plan).decode("utf-8"))
+            if args.command == "agent-demo":
+                from agenttest.natural_demo import run_natural_demo
+
+                result = asyncio.run(run_natural_demo(args.user_task, planner, store,
+                                                     fault=args.fault, budget=budget))
+            else:
+                result = asyncio.run(Workflow(
+                    bounded_read(args.contract),
+                    TargetConfig.model_validate_json(bounded_read(args.target)),
+                    PolicyRegistry.from_json(bounded_read(args.policies)), planner, store,
+                    budget=budget, user_task=args.user_task).run())
         else:
             config = TargetConfig.model_validate_json(bounded_read(args.target))
             registry = PolicyRegistry.from_json(bounded_read(args.policies))
@@ -60,7 +102,8 @@ def main(argv: list[str] | None = None) -> int:
 
                 result = asyncio.run(Workflow(
                     bounded_read(args.contract), config, registry,
-                    FakeLLM(bounded_read(args.plan).decode("utf-8")), store).run())
+                    FakeLLM(bounded_read(args.plan).decode("utf-8")), store,
+                    user_task=args.user_task).run())
             else:
                 contract = load_openapi(bounded_read(args.contract))
                 scenario = Scenario.model_validate_json(bounded_read(args.plan))

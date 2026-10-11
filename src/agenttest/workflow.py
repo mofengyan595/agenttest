@@ -16,6 +16,8 @@ from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
+from agenttest.llm_planner import PlannerFailure
+from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context, validate_user_task
 from agenttest.policies import NeedsReview, PolicyRegistry
 from agenttest.report import Outcome, ReportStore, RunReport, fingerprint
@@ -28,7 +30,7 @@ class WorkflowBudget(StrictModel):
     max_tool_calls: int = Field(default=1, ge=0, le=1)
     max_plan_bytes: int = Field(default=100_000, ge=1, le=1_000_000)
     graph_steps: int = Field(default=10, ge=1, le=20)
-    model_timeout: float = Field(default=5.0, gt=0, le=30)
+    model_timeout: float = Field(default=5.0, gt=0, le=125)
     workflow_timeout: float = Field(default=90.0, gt=0, le=300)
 
 
@@ -56,32 +58,7 @@ class GraphState(TypedDict):
 
 
 def parse_plan(raw: str, limit: int) -> Scenario:
-    if not isinstance(raw, str) or len(raw.encode("utf-8")) > limit:
-        raise ValueError("Invalid planner output size")
-
-    def unique(pairs):
-        data = {}
-        for key, value in pairs:
-            if key in data:
-                raise ValueError("Duplicate plan key")
-            data[key] = value
-        return data
-
-    def invalid_constant(value):
-        raise ValueError("Non-JSON number")
-
-    data = json.loads(raw, object_pairs_hook=unique, parse_constant=invalid_constant)
-    pending = [(data, 0)]
-    nodes = 0
-    while pending:
-        value, depth = pending.pop()
-        nodes += 1
-        if depth > 40 or nodes > 20_000:
-            raise ValueError("Plan structure limit exceeded")
-        if isinstance(value, (dict, list)):
-            pending.extend((v, depth + 1) for v in (
-                value.values() if isinstance(value, dict) else value))
-    return Scenario.model_validate(data)
+    return Scenario.model_validate(bounded_json(raw, limit))
 
 
 class Workflow:
@@ -128,7 +105,10 @@ class Workflow:
             nonlocal executor, contract
             enter("load_contract")
             try:
-                validate_user_task(self._user_task)
+                try:
+                    validate_user_task(self._user_task)
+                except ValueError:
+                    return reject(Outcome.TOOL_ERROR, "USER_TASK_REJECTED")
                 if CredentialVault(self._config, self._environ).contains_secret(self._user_task):
                     return reject(Outcome.TOOL_ERROR, "USER_TASK_REJECTED")
                 contract = load_openapi(self._document)
@@ -156,8 +136,16 @@ class Workflow:
                 return {"ready": True}
             except TimeoutError:
                 return reject(Outcome.TEST_INFRA_ERROR, "MODEL_TIMEOUT")
+            except PlannerFailure as exc:
+                return reject(exc.outcome, exc.reason)
             except Exception:
                 return reject(Outcome.TOOL_ERROR, "PLANNER_ERROR")
+            finally:
+                from agenttest.report import ModelCallStats
+
+                stats = getattr(self._planner, "stats", None)
+                if isinstance(stats, ModelCallStats):
+                    report.model_call = stats.model_copy(deep=True)
 
         def validate(state: GraphState) -> dict:
             nonlocal scenario, raw_plan
