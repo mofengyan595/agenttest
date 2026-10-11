@@ -8,6 +8,8 @@
 
 调查只针对已执行且有可审计响应证据的失败。JSON/DSL/策略/意图预检失败直接报告，不发额外业务请求。只读调查用于收集补充证据，不替代规划修复，不自动改判原结果。
 
+第二轮实际为 16/18，T04 名称不符、T05 显式弃权，二者业务请求均为 0，调查入口必须跳过；不能为追求恢复率补发创建或读取。ownership 9/9 通过不表示未来调查已验证，最小验收仍须注入真实业务故障。详见 [第二轮证据](stage2a-round2-evaluation.md)。
+
 ## 状态流与信任边界
 
 `execute -> classify_failure -> choose_readonly -> validate_investigation -> investigate -> report`
