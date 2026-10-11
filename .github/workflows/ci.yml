@@ -1,0 +1,65 @@
+name: Keyless Python checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: ${{ matrix.os }} / ${{ matrix.profile }} / Python 3.11
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        profile: [base, agent]
+        include:
+          - os: ubuntu-latest
+            python: .venv/bin/python
+          - os: windows-latest
+            python: .venv/Scripts/python.exe
+          - profile: base
+            lock: requirements-dev.lock
+            extras: .[dev]
+            smoke: ''
+          - profile: agent
+            lock: requirements-agent.lock
+            extras: .[dev,agent]
+            smoke: --workflow
+    defaults:
+      run:
+        shell: bash
+    env:
+      LANGSMITH_TRACING: 'false'
+      LANGCHAIN_TRACING_V2: 'false'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.lock
+            requirements-agent.lock
+      - name: Create project virtual environment
+        run: python -m venv .venv
+      - name: Install pinned dependencies
+        run: |
+          "${{ matrix.python }}" -m pip install -r "${{ matrix.lock }}"
+          "${{ matrix.python }}" -m pip install --no-build-isolation --no-deps -e '${{ matrix.extras }}'
+      - name: Offline tests
+        run: '"${{ matrix.python }}" -m pytest -q'
+      - name: Ruff
+        run: '"${{ matrix.python }}" -m ruff check .'
+      - name: Dependency consistency
+        run: '"${{ matrix.python }}" -m pip check'
+      - name: Explicit disposable loopback HTTP check
+        run: '"${{ matrix.python }}" scripts/smoke_local_http.py ${{ matrix.smoke }}'

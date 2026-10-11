@@ -1,5 +1,13 @@
 # 开发进度
 
+## CI 与交付准备（2026-10-11）
+
+- 阶段 2 最小图模块：`ebfbd65`；Windows Agent 安装入口已实测通过（187 passed，Ruff 通过）。
+- 添加 GitHub Actions：Windows/Linux × base/agent，Python 3.11，独立 .venv、冻结依赖、离线 pytest、Ruff、pip check、显式临时回环 HTTP。
+- 权限仅 contents: read，checkout 不保留凭据；不使用 LLM Key、Docker 或外部被测服务。
+- 基础组仅安装基础依赖，工作流模块明确跳过；Agent 组完整验收工作流。CI 的实际远端结果在推送后核查。
+- 提交前本地实测：187 passed；Ruff 通过；pip check 无损坏依赖；CI YAML 可解析，触发器、四组矩阵及只读权限结构核对通过。
+
 ## 阶段 2 首个模块：Fake LLM 状态图（2026-10-11）
 
 - P0 最后修复提交：`9e3afb1`；P0 验收完成后才开始本模块。

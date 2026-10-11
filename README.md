@@ -135,6 +135,8 @@ API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/gr
 
 默认 pytest 使用 MockTransport/ASGITransport，主动阻断 DNS 和出站连接；Windows 异步事件循环内部 socket pair 除外。真实 HTTP 检查独立显式运行。
 
+GitHub Actions 在 master 推送和 PR 时运行 Windows/Linux × base/agent 四组 Python 3.11 检查：独立 .venv、冻结依赖、pytest、Ruff、pip check 和临时回环 HTTP。无需 LLM Key 或 Docker；基础组明确跳过可选工作流模块，Agent 组运行全部测试。安装步骤需要包源，测试不访问外部服务。
+
 ```text
 src/agenttest/
   contracts.py       OpenAPI 输入、安全引用、标准校验与摘要
