@@ -1,5 +1,20 @@
 # 开发进度
 
+## 阶段 2A 交付记录（2026-10-11）
+
+| 模块 | commit SHA | 实际验证 |
+| --- | --- | --- |
+| user_task 与参数化策略 | `2a18dca9756bea29a42c51333ae1e6a51ead705d` | 54 项相关测试、Ruff、旧回环 HTTP PASS |
+| 真实结构化 Planner / ChatECNU | `19c321accd09c690f70d093bb2ebb72195c1da5f` | 248 项全量测试、Ruff、pip check、真实两类任务 PASS |
+| 人工任务与三基线、报告可靠性 | `7ff3b39ce9779b0ab8424e0d642ceceda65a4139` | 262 项全量测试、Ruff、pip check、30 次离线回放一致 |
+| 四组无 Key CI 与自然语言回环 | `3141af1bc8d9087b20c97bacc07eb32274252b00` | 矩阵结构检查、Ruff、3/3 与 5/5 请求 PASS |
+
+- Python 3.11.15，沿用 .venv，未安装或升级新依赖；保留原提交历史，未改 CourseInsight。
+- 新旧真实回环 HTTP 已复查：8/9、3/3、5/5 均 PASS，全部临时服务关闭；真实模型不进入 CI。
+- 首次模型评测及失败详见 [评测记录](stage2a-evaluation.md)、[脱敏统计](stage2a-results.json)。配置详见 [模型配置](model-configuration.md)。
+- 首次真实 13/18 是实际结果，不因报告修复回放成功而上调；当前尚未验证修复后的第二轮真实模型成功率。
+- 下一里程碑：细化不泄密的非法规划诊断，在新的独立评测轮次改善规划可靠性；不扩展 MCP/RAG/真实业务系统。
+
 ## 阶段 2A CI（2026-10-11）
 
 - 评测与报告模块：`7ff3b39ce9779b0ab8424e0d642ceceda65a4139`。

@@ -1,6 +1,6 @@
 # AgentTest
 
-独立 Python API 测试平台。阶段 1 与审查安全修复已完成，阶段 2 首个 Fake LLM 状态图已实现：不可信计划 → 契约及策略预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏报告。无需 API Key、Docker；默认 demo 在进程内运行，不访问网络。
+独立 Python API 测试平台。已实现阶段 2A 自然语言规划：用户需求 → FakeLLM 或显式配置的真实模型 → 不可信 DSL → 契约及可信策略预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏报告。默认测试及 demo 无需 API Key、Docker 或外网。真实模型调用必须显式启用。
 
 ## 环境与启动
 
@@ -49,9 +49,39 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 .\.venv\Scripts\python.exe scripts/smoke_local_http.py --workflow
 ```
 
-这里 `--plan` 是 Fake LLM 返回的 JSON 样本，仍按不可信模型输出处理。操作员另行加载目标配置与 Policy Registry；模型只看到操作标识、角色别名、策略引用及 DSL 结构，不接收环境、账号凭据或批准对象。原始规划结果、凭据、HTTP 正文不进入图状态，云追踪显式禁用。
+这里 `--plan` 是 Fake LLM 返回的 JSON 样本，仍按不可信模型输出处理。操作员另行加载目标配置与 Policy Registry；Planner 接收 user_task、白名单操作、参数/请求 Schema、认证要求及策略适用前提，不接收目标环境、账号凭据或批准权。原始规划结果、凭据、HTTP 正文不进入图状态，云追踪显式禁用。
 
-每次运行至多一次规划、一次执行器调用；HTTP 请求继续受目标预算限制。`WorkflowBudget` 由操作员构造，模型不能修改。失败分析是固定分类建议，不重写断言、不自动重试整条场景；报告记录节点序列、调用次数和完成状态。当前不支持恢复、重复规划、动态调查或真实模型。
+每次运行至多一次规划、一次执行器调用；HTTP 请求继续受目标预算限制。`WorkflowBudget` 由操作员构造，模型不能修改。失败分析是固定分类建议，不重写断言、不自动重试整条场景；报告记录节点序列、调用次数和完成状态。当前不支持恢复、重复规划或动态调查。
+
+## 阶段 2A：真实自然语言规划
+
+模型和 Base URL 没有默认值，来自本机环境变量，或显式 `--model-env .env`。文件只读取 OPENAI_API_KEY、OPENAI_BASE_URL、AGENTTEST_MODEL，进程环境优先；不执行、不展开文件内容。学校 ChatECNU 按其官方协议使用 `max_tokens` 和 `response_format.json_schema`，不会自动切换到 OpenAI 官方地址。
+
+```powershell
+# 零生成 Token 的连通性与模型存在检查
+.\.venv\Scripts\python.exe scripts/probe_model.py --model-env .env
+# 两类真实规划，目标为本次运行的一次性 mini target
+.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task '用户 A（alice）创建线性代数课程，再查询并核对 ID 和名称一致。'
+.\.venv\Scripts\python.exe -m agenttest agent-demo --real --model-env .env --user-task 'alice 创建概率论课程并查询核对，再让已登录 bob 查询同一课程，验证归属权限拒绝。'
+# 无模型、无网络，验证自然语言规划入口与执行链路；这不测试自然语言理解
+.\.venv\Scripts\python.exe -m agenttest agent-demo --fake-plan examples/nl-consistency-plan.json --user-task 'alice 创建线性代数课程并查询核对。'
+```
+
+`user_task` 最多 2000 字符/8000 UTF-8 字节，拒绝控制字符、URL、明显凭据及 Vault 已知秘密。自然语言仍是不可信数据；提示词本身不提供授权。参数化策略只开放有界合成名称和审核过的来源/角色关系，状态码与比较语义固定。真实结构化格式目前支持标量 JSON 参数及步骤引用，不支持由模型规划 CSV、复杂对象或轮询；原确定性 DSL 的这些功能继续保留。
+
+真实接口 `agent` 与 `agent-demo` 共用同一 Workflow/Executor/Verifier；前者要求显式 `--contract --target --policies`，目标账号仍来自执行器环境。详细配置及预算见 [模型配置说明](docs/model-configuration.md)。
+
+18 条 [人工确认任务](docs/natural-language-tasks.md) 仅代表两个意图的措辞、角色和合成数据变体。评测分别统计计划有效、策略选择、意图满足及端到端成功；执行报告 PASS 只表示所选策略通过，不能自动证明自然语言需求完整满足。
+
+```powershell
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline manual --output runs/evaluation/manual.json
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline fake --output runs/evaluation/fake.json
+# 显式启用真实学校模型；最多 18 次、累计 60000 Token，每次输出最多 2048
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline real --model-env .env --max-live-calls 18 --max-total-tokens 60000 --output runs/evaluation/real.json
+.\.venv\Scripts\python.exe scripts/smoke_natural_http.py
+```
+
+三基线边界、实际首次评测和失败证据摘要见 [阶段 2A 评测记录](docs/stage2a-evaluation.md)。真实评测脚本不在 pytest 自动收集或 GitHub CI 中调用。
 
 API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)、[API 参考](https://reference.langchain.com/python/langgraph/graph) 和 [禁用追踪文档](https://docs.langchain.com/langsmith/conditional-tracing) 核对，并实际运行 `StateGraph`、条件边、`compile()`、`ainvoke()`；版本见 [PyPI 1.2.14](https://pypi.org/project/langgraph/1.2.14/)。
 
@@ -152,6 +182,11 @@ src/agenttest/
   mini_target.py     一次性模拟服务及故障开关
   demo.py            离线演示组装
   workflow.py        Fake LLM、受控 LangGraph 状态图与预算
+  planner_input.py   有界自然语言与筛选后的公共规划上下文
+  llm_planner.py     真实模型结构化 Adapter 与学校协议适配
+  model_probe.py     显式模型列表探测
+  natural_demo.py    一次性自然语言测试目标组装
+  evaluation.py     人工标注任务、三基线与分类指标
   __main__.py        CLI
   main.py            FastAPI 契约导入、健康与报告查询
 tests/               单元、安全边界和完整链路测试
@@ -161,6 +196,6 @@ scripts/             环境准备、真实 loopback 检查
 runs/                本地报告（忽略，不提交）
 ```
 
-已完成阶段 1 安全修复及阶段 2 首个 Fake LLM 图模块。未实现真实模型 Function Calling、MCP、RAG、CourseInsight 接入、Golden Tests 评测或前端。下一里程碑建议审查可信策略与工作流接口，再定义受控只读调查和重复规划规则。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
+已完成阶段 1 安全修复、阶段 2A 真实结构化规划及首批 18 条受控任务评测。未实现 Function Calling 工具循环、MCP、RAG、CourseInsight 接入、阶段 4 的 60 条/多轮缺陷评测或前端。下一里程碑是根据保留的失败证据改善规划可靠性及诊断，继续固定业务断言与授权边界。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
 
 实现依据：[OpenAPI 3.1 规范](https://spec.openapis.org/oas/v3.1.0.html)、[文档校验器](https://openapi-spec-validator.readthedocs.io/en/latest/python.html)、[HTTPX transport](https://www.python-httpx.org/advanced/transports/)、[超时](https://www.python-httpx.org/advanced/timeouts/)、[FastAPI 文件上传](https://fastapi.tiangolo.com/tutorial/request-files/)。
