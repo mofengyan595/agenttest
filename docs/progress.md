@@ -23,3 +23,17 @@
 - 已知提醒：当前 Starlette TestClient 对 httpx 发出弃用提醒，测试通过。
 - 下一模块：目标隔离策略与人工编写的测试计划 DSL；尚未实现执行器或完整闭环。
 - 本检查点对应本地提交 `feat: implement OpenAPI parser`；SHA 在下一检查点登记（避免提交内容自引用）。
+
+### 本地提交记录
+
+- `71e25e5`：契约解析及原始骨架。
+- 原始 OpenAPI JSON fixture 随目标隔离与 DSL 模块加入版本管理。
+
+### 目标隔离与 DSL
+
+- 完成固定 IP 目标、localhost 固定到 127.0.0.1、操作白名单、隔离写入授权和预算配置。
+- 第一阶段不支持 DNS 主机名，防止校验后 DNS 重绑定；拒绝公网、元数据、未授权私网。
+- 完成 Scenario / Step / ArgumentBinding / AssertionPolicy / ExpectedStatus，支持前序步骤绑定。
+- 预检未知操作、循环/前向依赖、角色、环境凭据、路径参数、媒体类型及危险表达式。
+- pytest：**39 passed**；Ruff 首轮发现一处超长行，已修复，提交前复查。
+- 下一模块：Verifier 与可脱敏、可审计的报告。

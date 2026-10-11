@@ -1,0 +1,12 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "AgentTest demo", "version": "1.0"},
+  "paths": {
+    "/api/auth/login": {"post": {"operationId": "login", "summary": "Authenticate user"}},
+    "/api/courses": {"post": {"operationId": "createCourse", "summary": "Create a course"}},
+    "/api/courses/{courseId}": {"get": {"operationId": "getCourse", "summary": "Read a course"}},
+    "/api/courses/{courseId}/analysis-batches": {"post": {"operationId": "createBatch", "summary": "Submit CSV batch"}},
+    "/api/analysis-batches/{batchId}": {"get": {"operationId": "getBatch", "summary": "Read async batch state"}},
+    "/api/analysis-batches/{batchId}/results": {"get": {"operationId": "getBatchResults", "summary": "Get batch results"}}
+  }
+}
