@@ -236,6 +236,7 @@ class OpenAICompatiblePlanner:
             payload.pop("store")
             payload["response_format"]["json_schema"].pop("strict")
             payload["thinking"] = {"type": "disabled"}
+            payload["temperature"] = 0
         encoded = json.dumps(payload, ensure_ascii=False).encode()
         if settings.api_key.get_secret_value() in encoded.decode():
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INPUT_REJECTED")
@@ -246,6 +247,7 @@ class OpenAICompatiblePlanner:
                 > settings.max_total_tokens):
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TOKEN_BUDGET")
         self.stats.request_bytes = len(encoded)
+        self.stats.request_sha256 = fingerprint(payload)
         async with asyncio.timeout(settings.timeout):
             async with httpx.AsyncClient(
                     transport=self._transport, trust_env=False,

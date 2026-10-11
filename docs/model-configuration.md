@@ -12,6 +12,7 @@
 
 学校服务的公开 Base URL 为 `https://chat.ecnu.edu.cn/open/api/v1`，当前用户配置使用 ecnu-plus；代码不以它们作为默认值。以本机配置及学校模型列表实际结果为准。
 学校端点会选择 chatecnu 协议：POST BaseURL/chat/completions，Bearer 认证，max_tokens、json_schema、thinking disabled。
+第二轮固定 temperature=0（学校官方参数支持）；与首轮未显式指定温度的配置不同，不宣称严格受控的单因素实验。模型 ID 固定不等于学校后端权重版本可冻结。
 其他显式配置的 HTTPS 兼容端点使用 max_completion_tokens、strict json_schema、store false；不支持时明确失败，不自动降级为自由文本或 JSON mode。
 
 ## 调用与预算
@@ -19,6 +20,8 @@
 1. `python scripts/probe_model.py --model-env .env` 只请求 GET models，不产生模型生成 Token。认证失败、模型不存在时先核对配置及密钥来源，禁止反复试错。
 2. `python -m agenttest agent-demo --real --model-env .env --user-task '...'` 每次最多一次生成，默认 30 秒、2048 输出 Token、12000 总 Token。可显式设置 --model-timeout、--max-output-tokens、--max-total-tokens；Pydantic 校验上限。
 3. 评测必须有已人工批准任务集及 --max-live-calls / --max-total-tokens 两个正预算。顺序调用，下一请求前预留输入上限和输出上限；用真实 usage 记账。usage 缺失停止后续调用，401/403/404 停止整组。
+4. 真实评测要求干净且已提交的 Git 工作区；开始前独占写入 `.freeze.json`，记录完整 commit/tree、Prompt/Schema/任务集摘要、非秘密模型配置和独立预算。每条任务前以及结束时检查漂移，变化则停止，不继续调用。
+5. 每条任务追加脱敏 `.journal.jsonl`；最终 JSON 和冻结文件均禁止覆盖。中断不自动恢复或重跑，用新的路径记录新轮次；先核对日志中的实际调用及未知用量。首次 `runs/evaluation/real.json` 保留，第二轮使用 `runs/evaluation/round2/real.json`。
 
 输入 Token 采用 UTF-8 字节数加固定包络余量的保守上界；不把它当作精确 tokenizer 结果。学校 usage 自身是估计值，统计按其返回值记录。超时后可能无法得知服务端实际用量，必须标为未知，不能记成 0 或继续消耗后续预算。
 关闭环境代理和 HTTP 重定向，保持 TLS 证书校验。只向操作员选择的模型服务发送公共规划上下文；被测 HTTP 目标仍受原有固定 IP、隔离写入和白名单限制。
@@ -31,6 +34,7 @@
 当前真实模型格式不支持 CSV、嵌套对象、轮询或多次调查；不通过临时放宽 DSL 或策略来假装支持。
 
 报告仅保存模型名称、调用数、HTTP 状态、Token usage、耗时、字节数、哈希和审核后结构；不保存 API Key、端点配置、原始 prompt、响应文本或 reasoning_content。
+新增固定安全诊断及请求摘要；字段路径遮蔽未知键。受控意图验证和限制见 [规划可靠性](planning-reliability.md)。
 错误分为 MODEL_API_ERROR、MODEL_SERVICE_ERROR、MODEL_TIMEOUT、MODEL_CONNECTION_ERROR、MODEL_INVALID_RESPONSE、MODEL_OUTPUT_TRUNCATED、MODEL_TOKEN_BUDGET、MODEL_RESPONSE_LIMIT、MODEL_REFUSAL 等；后续执行沿用现有五类 Outcome。
 保留模型输出摘要可以关联失败，但无法逐字回放历史非法输出。若需要原文审计，应另行设计人工批准的脱敏留存机制，不能直接开启 SDK debug 日志。
 

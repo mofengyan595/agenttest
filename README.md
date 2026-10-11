@@ -72,16 +72,18 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 真实接口 `agent` 与 `agent-demo` 共用同一 Workflow/Executor/Verifier；前者要求显式 `--contract --target --policies`，目标账号仍来自执行器环境。详细配置及预算见 [模型配置说明](docs/model-configuration.md)。
 
 18 条 [人工确认任务](docs/natural-language-tasks.md) 仅代表两个意图的措辞、角色和合成数据变体。评测分别统计计划有效、策略选择、意图满足及端到端成功；执行报告 PASS 只表示所选策略通过，不能自动证明自然语言需求完整满足。
+当前 mini target 在执行前还检查受控意图：课程名须有明确引号，创建者和跨用户关系明确；无法可靠理解的额外目标进入 NEEDS_REVIEW。固定 Fake 计划不符时也停止。详见 [诊断与意图边界](docs/planning-reliability.md)。
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline manual --output runs/evaluation/manual.json
-.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline fake --output runs/evaluation/fake.json
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline manual --output runs/evaluation/round2/manual.json
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline fake --output runs/evaluation/round2/fake.json
 # 显式启用真实学校模型；最多 18 次、累计 60000 Token，每次输出最多 2048
-.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline real --model-env .env --max-live-calls 18 --max-total-tokens 60000 --output runs/evaluation/real.json
+.\.venv\Scripts\python.exe scripts/evaluate_planners.py --baseline real --model-env .env --max-live-calls 18 --max-total-tokens 60000 --output runs/evaluation/round2/real.json
 .\.venv\Scripts\python.exe scripts/smoke_natural_http.py
 ```
 
 三基线边界、实际首次评测和失败证据摘要见 [阶段 2A 评测记录](docs/stage2a-evaluation.md)。真实评测脚本不在 pytest 自动收集或 GitHub CI 中调用。
+真实评测先提交代码并保持工作区干净，自动冻结代码/Prompt/Schema/配置/任务集，每条前检查漂移，串行且零自动重试。输出、冻结文件和逐条日志不可覆盖；重复实验必须使用新的输出路径。
 
 API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)、[API 参考](https://reference.langchain.com/python/langgraph/graph) 和 [禁用追踪文档](https://docs.langchain.com/langsmith/conditional-tracing) 核对，并实际运行 `StateGraph`、条件边、`compile()`、`ainvoke()`；版本见 [PyPI 1.2.14](https://pypi.org/project/langgraph/1.2.14/)。
 

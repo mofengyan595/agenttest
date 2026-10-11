@@ -60,6 +60,7 @@ class ModelCallStats(BaseModel):
     http_status: int | None = None
     elapsed_ms: float = 0
     request_bytes: int = 0
+    request_sha256: str | None = None
     response_bytes: int = 0
     input_token_upper_bound: int = 0
     input_tokens: int | None = None

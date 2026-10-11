@@ -7,6 +7,7 @@ from pathlib import Path
 
 from agenttest.demo import PROJECT_ROOT
 from agenttest.evaluation import TaskSuite, evaluate, save_evaluation
+from agenttest.evaluation_freeze import EvaluationFreeze
 from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
 from agenttest.report import ReportStore
 from agenttest.workflow import WorkflowBudget
@@ -19,7 +20,9 @@ async def run(args) -> dict:
         suite.cases = [case for case in suite.cases if case.id in selected]
         if {case.id for case in suite.cases} != selected:
             raise ValueError("Unknown task id")
-    planner, budget = None, WorkflowBudget()
+    if args.output.exists():
+        raise ValueError("Never overwrite historical evaluation results")
+    planner, freeze, budget = None, None, WorkflowBudget()
     if args.baseline == "real":
         settings = (ModelSettings.from_env_file(args.model_env) if args.model_env
                     else ModelSettings.from_environment())
@@ -28,10 +31,26 @@ async def run(args) -> dict:
         planner = OpenAICompatiblePlanner(settings)
         budget = WorkflowBudget(model_timeout=settings.timeout + 1,
                                 workflow_timeout=min(300, settings.timeout + 90))
+        freeze = EvaluationFreeze(PROJECT_ROOT, settings, suite,
+                                  args.max_live_calls, args.max_total_tokens)
+        freeze.save(args.output.with_suffix(".freeze.json"))
+    journal = args.output.with_suffix(".journal.jsonl")
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    with journal.open("x", encoding="utf-8"):
+        pass
+
+    def record(row):
+        with journal.open("a", encoding="utf-8") as destination:
+            destination.write(json.dumps(row, ensure_ascii=False) + "\n")
+
     result = await evaluate(suite, args.baseline, ReportStore(args.runs_dir), planner=planner,
                             max_live_calls=args.max_live_calls,
                             max_total_tokens=args.max_total_tokens, budget=budget,
-                            progress=lambda item: print(json.dumps(item), flush=True))
+                            progress=lambda item: print(json.dumps(item), flush=True),
+                            before_case=freeze.verify if freeze else None, record=record)
+    if freeze:
+        freeze.verify()
+        result["freeze"] = freeze.manifest
     save_evaluation(result, args.output)
     return {key: value for key, value in result.items() if key != "results"}
 

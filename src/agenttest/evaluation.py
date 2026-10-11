@@ -106,7 +106,8 @@ def metrics(results: list[dict]) -> dict:
 
 async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"],
                    store: ReportStore, *, planner=None, max_live_calls: int = 0,
-                   max_total_tokens: int = 0, budget=None, progress=None) -> dict:
+                   max_total_tokens: int = 0, budget=None, progress=None,
+                   before_case=None, record=None) -> dict:
     from agenttest.workflow import FakeLLM
 
     if baseline not in {"manual", "fake", "real"}:
@@ -128,6 +129,8 @@ async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"]
         else:
             selected = FakeLLM(manual_plan(case).model_dump_json()
                                if baseline == "manual" else fixed)
+        if before_case:
+            before_case()
         report = await run_natural_demo(case.user_task, selected, store, budget=budget)
         correct = policy_selection_correct(case, report)
         intent = intent_satisfied(case, report)
@@ -165,6 +168,8 @@ async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"]
             progress({"task_id": case.id, "outcome": report.outcome.value,
                       "intent_satisfied": intent, "end_to_end_success": success,
                       "reason": report.reason})
+        if record:
+            record(results[-1])
     total = len(results)
     latencies = sorted(r["model_call"]["elapsed_ms"] for r in results if r["model_call"])
     return {"baseline": baseline, "suite_sha256": fingerprint(suite.model_dump()),
@@ -191,4 +196,5 @@ async def evaluate(suite: TaskSuite, baseline: Literal["manual", "fake", "real"]
 
 def save_evaluation(result: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    with path.open("x", encoding="utf-8") as destination:
+        destination.write(json.dumps(result, ensure_ascii=False, indent=2))

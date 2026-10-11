@@ -109,3 +109,19 @@ async def test_auth_error_stops_entire_suite_without_retry(tmp_path):
     assert len(requests) == result["attempted"] == 1
     assert result["stop_reason"] == "CHECK_MODEL_CONFIGURATION"
     assert result["results"][0]["failure_class"] == "TOOL_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_freeze_guard_runs_before_planner_and_journal_keeps_safe_rows(tmp_path):
+    records, calls = [], []
+
+    def stop():
+        calls.append(True)
+        raise ValueError("freeze changed")
+
+    with pytest.raises(ValueError):
+        await evaluate(suite(), "manual", ReportStore(tmp_path),
+                       before_case=stop, record=records.append)
+    assert len(calls) == 1 and not records and not list(tmp_path.iterdir())
+    result = await evaluate(suite(), "manual", ReportStore(tmp_path), record=records.append)
+    assert records == result["results"] and len(records) == 18
