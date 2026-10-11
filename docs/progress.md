@@ -1,5 +1,16 @@
 # 开发进度
 
+## 阶段 3B：受控 MCP 能力适配层（2026-10-11）
+
+- 基线 `4ef6acc9f7f01def5406c25a774eee5035d63092`，原 **452 passed**（62.62s）；不重复 Java 写入或真实模型评测。
+- 新增 SDK 无关的薄适配层，复用 Executor / Verifier / Vault / TargetConfig / Policy Registry；只运行三个固定 mini target 场景，使用进程内 ASGI 和一次性合成凭据。
+- 公共契约沿用筛选器；DSL 只校验不执行，未知目标、凭据、断言、策略、跨步骤 Token 引用均拒绝。客户端无法增加预算或启用 CourseInsight。
+- 唯一 invocation ID 在执行前原子占用；同 ID 只返回完成报告，中断/取消/报告失败后不可恢复；新进程也不能重放旧 ID。
+- 针对性 **42 passed、1 skipped**（10.57s）；Windows 未授予符号链接创建权限，该项在 Linux CI 再验。Ruff 通过。
+- 覆盖创建请求超时、工具异常、创建成功后的报告写入失败，重试/重启均只观察到一次创建发送；所有生成凭据与 Token 不落盘。
+- 操作员启动预算默认最多 3 run / 100 tool call，单 run 8 步 / 10 HTTP / 30 秒；进程重启会重置会话总预算，已占用 ID 仍永久不可执行。
+- 下一模块：官方 MCP SDK v2 stdio、协议客户端验收；本模块 SHA 在下一检查点记录。
+
 ## 阶段 3A：四组 CI 与最终交付检查（2026-10-11）
 
 - 功能提交 `b159bf4cb191f093f7800170e9f36909c528fdd3`、`d558df18a806f9e6e591c02ec85406b753a2f461`、`bb8860bdd60e04de5a4d23af7d3bff78f9e8879b`；验收文档与安全统计 `2d9f1d3e8a6d3fb563fbe3ef9d2caf2397617561` 均已推送原 Public master。
