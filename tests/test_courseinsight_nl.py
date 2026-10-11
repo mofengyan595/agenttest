@@ -104,6 +104,9 @@ def test_operator_generated_code_and_utf16_boundaries():
     b, _, _, _ = approved_inputs(DEFAULT_TASK)
     assert a.steps[1].body["code"] != b.steps[1].body["code"]
     assert not target.allow_mutations
+    for invalid in ("", "unapproved", 1):
+        with pytest.raises(ValueError, match="OPERATOR_COURSE_CODE_INVALID"):
+            approved_inputs(DEFAULT_TASK, course_code=invalid)
     assert interpret(DEFAULT_TASK).teacher == "Demo Teacher"
     with pytest.raises(NeedsReview):
         interpret(DEFAULT_TASK.replace("Demo Teacher", "😀" * 26))

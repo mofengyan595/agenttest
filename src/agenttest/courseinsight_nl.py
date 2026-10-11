@@ -64,8 +64,8 @@ def interpret(task: str) -> JavaIntent:
 def approved_inputs(task: str, *, course_code: str | None = None):
     """Operator-side data binding; all original approved assertion semantics are preserved."""
     intent = interpret(task)
-    code = course_code or "AT4A" + uuid4().hex[:24]
-    if not re.fullmatch(r"AT4A[0-9a-f]{24}", code):
+    code = "AT4A" + uuid4().hex[:24] if course_code is None else course_code
+    if not isinstance(code, str) or not re.fullmatch(r"AT4A[0-9a-f]{24}", code):
         raise ValueError("OPERATOR_COURSE_CODE_INVALID")
     scenario, target, contract, _ = inputs()
     scenario.name = "CourseInsight operator-pinned natural language test"
