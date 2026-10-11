@@ -1,0 +1,43 @@
+{
+  "name": "CourseInsight Stage 3A reviewed fixture",
+  "steps": [
+    {
+      "id": "login",
+      "operation_id": "ciLogin",
+      "role": "demo_admin",
+      "policy_id": "ci_login_admin_v1"
+    },
+    {
+      "id": "create",
+      "operation_id": "ciCreateCourse",
+      "role": "demo_admin",
+      "policy_id": "ci_create_course_v1",
+      "body": {
+        "code": {
+          "value": "AT3A_OPERATOR_GENERATED"
+        },
+        "name": {
+          "value": "AgentTest Stage 3A Course"
+        },
+        "teacherName": {
+          "value": "AgentTest Synthetic Teacher"
+        },
+        "description": {
+          "value": "Isolated local demo acceptance fixture"
+        }
+      }
+    },
+    {
+      "id": "read",
+      "operation_id": "ciGetCourse",
+      "role": "demo_admin",
+      "policy_id": "ci_read_created_v1",
+      "path_parameters": {
+        "id": {
+          "from_step": "create",
+          "select": "$.data"
+        }
+      }
+    }
+  ]
+}

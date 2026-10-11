@@ -1,0 +1,147 @@
+[
+  {
+    "id": "ci_login_admin_v1",
+    "operation_id": "ciLogin",
+    "roles": [
+      "demo_admin"
+    ],
+    "business_scenario": "courseinsight_demo_3a_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/stage3a-courseinsight.md#approved-expectations",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": 0
+        },
+        {
+          "select": "$.data.accessToken",
+          "operator": "exists"
+        },
+        {
+          "select": "$.data.tokenType",
+          "expected": "Bearer"
+        },
+        {
+          "select": "$.data.role",
+          "expected": "ADMIN"
+        }
+      ]
+    },
+    "binding_rules": [],
+    "closed_arguments": true
+  },
+  {
+    "id": "ci_create_course_v1",
+    "operation_id": "ciCreateCourse",
+    "roles": [
+      "demo_admin"
+    ],
+    "business_scenario": "courseinsight_demo_3a_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/stage3a-courseinsight.md#approved-expectations",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": 0
+        },
+        {
+          "select": "$.data",
+          "operator": "exists"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "code",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        }
+      },
+      {
+        "location": "body",
+        "name": "name",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "AgentTest Stage 3A Course"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "teacherName",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "AgentTest Synthetic Teacher"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "description",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "Isolated local demo acceptance fixture"
+          ]
+        }
+      }
+    ],
+    "closed_arguments": true
+  },
+  {
+    "id": "ci_read_created_v1",
+    "operation_id": "ciGetCourse",
+    "roles": [
+      "demo_admin"
+    ],
+    "business_scenario": "courseinsight_demo_3a_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/stage3a-courseinsight.md#approved-expectations",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": 0
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "id",
+        "source_policy_id": "ci_create_course_v1",
+        "source_selector": "$.data",
+        "role_relation": "same",
+        "response_selector": "$.data.id",
+        "source_body_equalities": {
+          "$.data.code": "code",
+          "$.data.name": "name",
+          "$.data.teacherName": "teacherName"
+        }
+      }
+    ],
+    "closed_arguments": true
+  }
+]

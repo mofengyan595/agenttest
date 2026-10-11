@@ -1,0 +1,23 @@
+{
+  "base_url": "http://127.0.0.1:18080",
+  "environment": "isolated",
+  "allow_mutations": false,
+  "allowed_operations": [
+    "ciLogin",
+    "ciCreateCourse",
+    "ciGetCourse"
+  ],
+  "roles": {
+    "demo_admin": {
+      "username_env": "COURSEINSIGHT_DEMO_USERNAME",
+      "password_env": "COURSEINSIGHT_DEMO_PASSWORD",
+      "login_operation": "ciLogin",
+      "token_selector": "$.data.accessToken"
+    }
+  },
+  "business_scenario": "courseinsight_demo_3a_v1",
+  "max_steps": 3,
+  "max_requests": 3,
+  "run_timeout": 30.0,
+  "min_request_interval": 0.1
+}
