@@ -63,6 +63,19 @@ def test_filtered_context_contains_constraints_not_private_annotations():
         "request_body"]["content"]["application/json"]
 
 
+def test_unsupported_schema_is_marked_and_secret_enums_are_blocked():
+    contract, config, registry = inputs()
+    op = next(o for o in contract.operations if o.operation_id == "createCourse")
+    schema = op.request_body["content"]["application/json"]["schema"]
+    schema["properties"]["name"]["pattern"] = ".*"
+    context = planning_context(contract, config, registry, "创建课程", {})
+    assert next(o for o in context["operations"] if o["id"] == "createCourse")[
+        "request_validation"] == "NEEDS_REVIEW"
+    schema["properties"]["name"]["enum"] = ["sk-" + "syntheticsecret" * 2]
+    with pytest.raises(ValueError):
+        planning_context(contract, config, registry, "创建课程", {})
+
+
 @pytest.mark.parametrize("creator", ["alice", "bob"])
 def test_parameterized_policy_keeps_equality_and_ownership(creator):
     contract, config, registry = inputs()

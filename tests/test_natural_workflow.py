@@ -80,3 +80,41 @@ async def test_natural_workflow_tool_budget_is_operator_owned(tmp_path):
     report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()),
                                     ReportStore(tmp_path), budget=WorkflowBudget(max_tool_calls=0))
     assert report.reason == "TOOL_CALL_LIMIT" and report.tool_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_report_has_one_writer_thread_and_matches_returned_snapshot(tmp_path, monkeypatch):
+    import threading
+
+    threads = set()
+    original = ReportStore.save
+
+    def save(store, report):
+        threads.add(threading.get_ident())
+        return original(store, report)
+
+    monkeypatch.setattr(ReportStore, "save", save)
+    store = ReportStore(tmp_path)
+    report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()), store)
+    assert threads == {threading.get_ident()}
+    assert report == store.read(report.run_id) and report.workflow_completed
+
+
+@pytest.mark.asyncio
+async def test_report_node_failure_preserves_final_tool_error(tmp_path, monkeypatch):
+    original = ReportStore.save
+    failed = False
+
+    def save(store, report):
+        nonlocal failed
+        if report.workflow_nodes[-1:] == ["report"] and not failed:
+            failed = True
+            raise OSError("private-local-file-error")
+        return original(store, report)
+
+    monkeypatch.setattr(ReportStore, "save", save)
+    store = ReportStore(tmp_path)
+    report = await run_natural_demo("创建并查询课程", FakeLLM(scenario().model_dump_json()), store)
+    assert report.outcome == Outcome.TOOL_ERROR and report.reason == "WORKFLOW_ERROR"
+    assert report == store.read(report.run_id) and not report.workflow_completed
+    assert "private-local-file-error" not in report.model_dump_json()

@@ -1,0 +1,34 @@
+{
+  "name": "annotated baseline T01",
+  "steps": [
+    {
+      "id": "login_alice",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "nl_login_v1"
+    },
+    {
+      "id": "create",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "policy_id": "nl_create_v1",
+      "body": {
+        "name": {
+          "value": "线性代数"
+        }
+      }
+    },
+    {
+      "id": "read",
+      "operation_id": "getCourse",
+      "role": "alice",
+      "policy_id": "nl_read_v1",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create",
+          "select": "$.courseId"
+        }
+      }
+    }
+  ]
+}

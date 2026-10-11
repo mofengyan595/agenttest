@@ -1,0 +1,52 @@
+{
+  "name": "annotated baseline T10",
+  "steps": [
+    {
+      "id": "login_alice",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "nl_login_v1"
+    },
+    {
+      "id": "login_bob",
+      "operation_id": "login",
+      "role": "bob",
+      "policy_id": "nl_login_v1"
+    },
+    {
+      "id": "create",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "policy_id": "nl_create_v1",
+      "body": {
+        "name": {
+          "value": "离散数学"
+        }
+      }
+    },
+    {
+      "id": "read",
+      "operation_id": "getCourse",
+      "role": "alice",
+      "policy_id": "nl_read_v1",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create",
+          "select": "$.courseId"
+        }
+      }
+    },
+    {
+      "id": "other_read",
+      "operation_id": "getCourse",
+      "role": "bob",
+      "policy_id": "nl_forbidden_v1",
+      "path_parameters": {
+        "courseId": {
+          "from_step": "create",
+          "select": "$.courseId"
+        }
+      }
+    }
+  ]
+}

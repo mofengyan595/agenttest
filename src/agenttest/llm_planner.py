@@ -24,7 +24,7 @@ class PlannerFailure(Exception):
 
 
 class ModelSettings(StrictModel):
-    model: str = Field(min_length=1, max_length=200, repr=False)
+    model: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$", repr=False)
     base_url: str = Field(repr=False)
     api_key: SecretStr = Field(repr=False)
     protocol: Literal["openai_compatible", "chatecnu"] = "openai_compatible"
@@ -164,8 +164,13 @@ class OpenAICompatiblePlanner:
         self._transport = transport
         self.stats = ModelCallStats()
 
+    @property
+    def token_reservation(self) -> int:
+        return self._settings.max_input_tokens + self._settings.max_output_tokens
+
     async def generate(self, context: dict) -> str:
-        self.stats = ModelCallStats(model_sha256=fingerprint(self._settings.model))
+        self.stats = ModelCallStats(model_name=self._settings.model,
+                                    model_sha256=fingerprint(self._settings.model))
         started = time.monotonic()
         try:
             return await self._generate(context)
@@ -178,7 +183,7 @@ class OpenAICompatiblePlanner:
         except httpx.TransportError:
             self.stats.reason = "MODEL_CONNECTION_ERROR"
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_CONNECTION_ERROR") from None
-        except (ValueError, TypeError, KeyError, IndexError, RecursionError):
+        except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):
             self.stats.reason = "MODEL_INVALID_RESPONSE"
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE") from None
         finally:

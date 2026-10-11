@@ -1,11 +1,12 @@
 """Bounded public planning input; no server URLs, examples, accounts or response data."""
 
+import json
 import re
 import unicodedata
 
 from agenttest.contracts import ContractSummary
-from agenttest.policies import PolicyRegistry
-from agenttest.request_validation import CONSTRAINTS
+from agenttest.policies import NeedsReview, PolicyRegistry
+from agenttest.request_validation import CONSTRAINTS, request_schemas
 from agenttest.safety import TargetConfig
 
 PRIVATE_LITERAL = re.compile(
@@ -52,6 +53,13 @@ def planning_context(contract: ContractSummary, config: TargetConfig,
         except ValueError:
             continue
         managed = any(role.login_operation == op.operation_id for role in config.roles.values())
+        support = "SUPPORTED_SUBSET"
+        try:
+            media_types = list((op.request_body or {}).get("content", {})) or [None]
+            for media in media_types:
+                request_schemas(op, media)
+        except (NeedsReview, ValueError):
+            support = "NEEDS_REVIEW"
         body = None
         if op.request_body and not managed:
             body = {"required": op.request_body.get("required", False), "content": {
@@ -65,7 +73,32 @@ def planning_context(contract: ContractSummary, config: TargetConfig,
                            for p in op.parameters],
             "request_body": body, "authentication_executor_managed": managed,
             "security": op.security,
+            "request_validation": support,
         })
-    return {"user_task": validate_user_task(user_task), "operations": operations,
-            "policies": [p for p in policies if p["operation_id"] in permitted],
-            "roles": list(config.roles), "plan_schema": plan_schema}
+    visible_ids = {op["id"] for op in operations}
+    visible_policies = [p for p in policies if p["operation_id"] in visible_ids]
+    for policy in visible_policies:
+        for rule in policy["binding_rules"]:
+            if rule["literal_schema"] is not None:
+                rule["literal_schema"] = public_schema(rule["literal_schema"])
+    schemes = {name for op in operations for requirement in op["security"] for name in requirement}
+    context = {"user_task": validate_user_task(user_task), "operations": operations,
+               "security_schemes": {name: {key: value for key, value in definition.items()
+                                          if key in {"type", "scheme"}}
+                                    for name, definition in contract.security_schemes.items()
+                                    if name in schemes},
+               "policies": visible_policies, "roles": list(config.roles),
+               "plan_schema": plan_schema}
+    raw = json.dumps(context, ensure_ascii=False)
+    if len(raw.encode()) > 100_000:
+        raise ValueError("Planner context too large")
+    pending = [context]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+        elif isinstance(value, str) and PRIVATE_LITERAL.search(value):
+            raise ValueError("Sensitive literal in public planning input")
+    return context

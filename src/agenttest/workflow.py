@@ -20,7 +20,7 @@ from agenttest.llm_planner import PlannerFailure
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context, validate_user_task
 from agenttest.policies import NeedsReview, PolicyRegistry
-from agenttest.report import Outcome, ReportStore, RunReport, fingerprint
+from agenttest.report import Outcome, PlanStepEvidence, ReportStore, RunReport, fingerprint
 from agenttest.safety import StrictModel, TargetConfig
 
 
@@ -101,7 +101,7 @@ class Workflow:
             report.outcome, report.reason = outcome, reason
             return {"ready": False}
 
-        def load_contract(state: GraphState) -> dict:
+        async def load_contract(state: GraphState) -> dict:
             nonlocal executor, contract
             enter("load_contract")
             try:
@@ -147,7 +147,7 @@ class Workflow:
                 if isinstance(stats, ModelCallStats):
                     report.model_call = stats.model_copy(deep=True)
 
-        def validate(state: GraphState) -> dict:
+        async def validate(state: GraphState) -> dict:
             nonlocal scenario, raw_plan
             enter("validate")
             try:
@@ -160,11 +160,31 @@ class Workflow:
                 executor.validate(scenario)
                 report.plan_valid = True
                 report.selected_policy_ids = [s.policy_id for s in scenario.steps]
+                report.plan_structure = [PlanStepEvidence(
+                    step_id=s.id, operation_id=s.operation_id, role=s.role, policy_id=s.policy_id,
+                    argument_sha256={f"{loc}.{key}": fingerprint(b.value)
+                                     for loc in ("body", "query", "path_parameters")
+                                     for key, b in getattr(s, loc).items() if b.from_step is None},
+                    dependencies={f"{loc}.{key}": b.from_step
+                                  for loc in ("body", "query", "path_parameters")
+                                  for key, b in getattr(s, loc).items() if b.from_step is not None},
+                ) for s in scenario.steps]
                 report.scenario_sha256 = fingerprint(scenario.model_dump())
                 return {"ready": True}
             except NeedsReview:
+                report.validation_issue = "POLICY_OR_SCHEMA_REVIEW"
                 return reject(Outcome.NEEDS_REVIEW, "REVIEW_REQUIRED")
-            except (ValueError, TypeError, RecursionError):
+            except (ValueError, TypeError, RecursionError) as exc:
+                # Match only our fixed messages; never persist exception text or Pydantic inputs.
+                report.validation_issue = {
+                    "Duplicate step id or unknown operationId": "DUPLICATE_ID_OR_UNKNOWN_OPERATION",
+                    "Dependency must reference an earlier step (no cycles)": "INVALID_DEPENDENCY",
+                    "Authentication responses are not bindable": "AUTH_RESPONSE_BINDING",
+                    "Authentication request is executor-owned": "AUTH_ARGUMENTS",
+                    "Restricted operation lacks a credential": "AUTHENTICATION_ORDER",
+                    "Missing required request body": "MISSING_BODY",
+                    "Request value has wrong type": "REQUEST_TYPE",
+                }.get(str(exc), "DSL_OR_REQUEST_INVALID")
                 return reject(Outcome.TOOL_ERROR, "PLAN_REJECTED")
             finally:
                 raw_plan = None
@@ -180,7 +200,7 @@ class Workflow:
             except Exception:
                 return reject(Outcome.TOOL_ERROR, "EXECUTOR_ERROR")
 
-        def analyze_or_finish(state: GraphState) -> dict:
+        async def analyze_or_finish(state: GraphState) -> dict:
             enter("analyze_or_finish")
             # Analysis cannot change an expectation, replan or replay a mutation.
             report.analysis_code = {
@@ -192,7 +212,7 @@ class Workflow:
             }[report.outcome]
             return {"ready": True}
 
-        def finish_report(state: GraphState) -> dict:
+        async def finish_report(state: GraphState) -> dict:
             enter("report")
             report.completed = report.workflow_completed = True
             self._store.save(report)
@@ -231,4 +251,5 @@ class Workflow:
                 report.completed = True
                 report.workflow_completed = False
                 self._store.save(report)
-        return report
+        # Graph nodes share a single event loop; no cancellable thread may keep changing a report.
+        return report.model_copy(deep=True)

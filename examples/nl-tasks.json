@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "reviewed": true,
+  "review_source": "docs/natural-language-tasks.md#human-review-2026-10-11",
+  "cases": [
+    {
+      "id": "T01",
+      "category": "consistency",
+      "creator": "alice",
+      "course_name": "线性代数",
+      "user_task": "用户 A（alice）创建名为“线性代数”的课程，再查询新课程，核对 ID 和名称一致。"
+    },
+    {
+      "id": "T02",
+      "category": "consistency",
+      "creator": "bob",
+      "course_name": "概率论",
+      "user_task": "请用用户 B（bob）创建“概率论”，随后由 B 读取它，检查返回的课程编号和名称与创建操作一致。"
+    },
+    {
+      "id": "T03",
+      "category": "consistency",
+      "creator": "alice",
+      "course_name": "数据结构",
+      "user_task": "验证 alice 新建“数据结构”课程后，能够用创建返回的 ID 查询到相同课程名称。"
+    },
+    {
+      "id": "T04",
+      "category": "consistency",
+      "creator": "bob",
+      "course_name": "数据库",
+      "user_task": "以 bob 身份测试课程“数据库”的创建和查询，要求读回的 ID、名称正确。"
+    },
+    {
+      "id": "T05",
+      "category": "consistency",
+      "creator": "alice",
+      "course_name": "算法设计",
+      "user_task": "帮用户 A（alice）测试“算法设计”课程从创建到查询的数据一致性。"
+    },
+    {
+      "id": "T06",
+      "category": "consistency",
+      "creator": "alice",
+      "course_name": "计算机网络",
+      "user_task": "新建一门“计算机网络”课程，创建者使用 alice。再以 alice 查询并比较名称与课程 ID。"
+    },
+    {
+      "id": "T07",
+      "category": "consistency",
+      "creator": "bob",
+      "course_name": "操作系统",
+      "user_task": "用户 B（bob）添加“操作系统”后立即查询刚创建的课程，确认没有读到其他课程或错误名称。"
+    },
+    {
+      "id": "T08",
+      "category": "consistency",
+      "creator": "alice",
+      "course_name": "软件工程",
+      "user_task": "为 alice 规划“软件工程”课程创建及读取测试，使用真实创建响应的编号，核对课程数据。"
+    },
+    {
+      "id": "T09",
+      "category": "consistency",
+      "creator": "bob",
+      "course_name": "人工智能",
+      "user_task": "验证 bob 可以创建“人工智能”课程，并能准确读回同一编号和名称。"
+    },
+    {
+      "id": "T10",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "离散数学",
+      "user_task": "用户 A（alice）创建“离散数学”，A 查询确认一致，再让用户 B（bob）查询同一课程，应受到归属权限限制。"
+    },
+    {
+      "id": "T11",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "编译原理",
+      "user_task": "alice 新建“编译原理”并正常读取后，bob 登录访问这个课程，验证跨用户读取被拒绝。"
+    },
+    {
+      "id": "T12",
+      "category": "ownership",
+      "creator": "bob",
+      "course_name": "机器学习",
+      "user_task": "由 bob 创建“机器学习”并核对自己的读取结果，再验证 alice 读取同一个课程时被拒绝。"
+    },
+    {
+      "id": "T13",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "数值分析",
+      "user_task": "检查“数值分析”的所有权：alice 创建且自己能正确查询，bob 对该新课程的查询应被禁止。"
+    },
+    {
+      "id": "T14",
+      "category": "ownership",
+      "creator": "bob",
+      "course_name": "图论",
+      "user_task": "让用户 B（bob）创建“图论”并读取验证一致性；随后用户 A（alice）访问同一 ID，验证归属检查生效。"
+    },
+    {
+      "id": "T15",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "信息安全",
+      "user_task": "测试用户隔离：alice 创建“信息安全”后读回正确数据，bob 即使已登录也不能读此课程。"
+    },
+    {
+      "id": "T16",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "分布式系统",
+      "user_task": "以 alice 创建“分布式系统”，先验证创建者查询一致，再检验 bob 对相同课程编号的访问被拒绝。"
+    },
+    {
+      "id": "T17",
+      "category": "ownership",
+      "creator": "bob",
+      "course_name": "自然语言处理",
+      "user_task": "bob 创建“自然语言处理”并查询确认，alice 登录后尝试查询它，应该受到权限限制。"
+    },
+    {
+      "id": "T18",
+      "category": "ownership",
+      "creator": "alice",
+      "course_name": "计算机图形学",
+      "user_task": "为课程“计算机图形学”规划归属测试：创建者 alice 查询成功且数据一致，另一用户 bob 查询同一资源被拒绝。"
+    }
+  ]
+}

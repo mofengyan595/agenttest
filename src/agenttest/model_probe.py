@@ -1,5 +1,7 @@
 """Explicit authenticated metadata probe; no completion tokens or response-body logs."""
 
+import asyncio
+
 import httpx
 
 from agenttest.llm_planner import ModelSettings
@@ -10,8 +12,9 @@ async def check_connection(settings: ModelSettings,
     result = {"http_status": None, "configured_model_available": False,
               "generation_calls": 0, "reason": "MODEL_CONNECTION_ERROR"}
     try:
-        async with httpx.AsyncClient(transport=transport, timeout=settings.timeout,
-                                     trust_env=False, follow_redirects=False) as client:
+        async with asyncio.timeout(settings.timeout), httpx.AsyncClient(
+                transport=transport, timeout=settings.timeout,
+                trust_env=False, follow_redirects=False) as client:
             async with client.stream("GET", settings.base_url + "/models", headers={
                     "Authorization": "Bearer " + settings.api_key.get_secret_value()}) as response:
                 result["http_status"] = response.status_code
@@ -30,6 +33,6 @@ async def check_connection(settings: ModelSettings,
         result["configured_model_available"] = any(
             item.get("id") == settings.model for item in data["data"])
         result["reason"] = "READY" if result["configured_model_available"] else "MODEL_NOT_FOUND"
-    except (httpx.TransportError, ValueError, TypeError, KeyError, RecursionError):
+    except (httpx.TransportError, TimeoutError, ValueError, TypeError, KeyError, RecursionError):
         pass
     return result

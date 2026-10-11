@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import time
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -51,6 +52,7 @@ class StepResult(BaseModel):
 
 class ModelCallStats(BaseModel):
     calls: int = 0
+    model_name: str | None = None
     model_sha256: str | None = None
     http_status: int | None = None
     elapsed_ms: float = 0
@@ -62,6 +64,15 @@ class ModelCallStats(BaseModel):
     total_tokens: int | None = None
     output_sha256: str | None = None
     reason: str | None = None
+
+
+class PlanStepEvidence(BaseModel):
+    step_id: str
+    operation_id: str
+    role: str | None
+    policy_id: str
+    argument_sha256: dict[str, str] = Field(default_factory=dict)
+    dependencies: dict[str, str] = Field(default_factory=dict)
 
 
 class RunReport(BaseModel):
@@ -84,6 +95,8 @@ class RunReport(BaseModel):
     plan_valid: bool = False
     selected_policy_ids: list[str] = Field(default_factory=list)
     model_call: ModelCallStats | None = None
+    plan_structure: list[PlanStepEvidence] = Field(default_factory=list)
+    validation_issue: str | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 
@@ -109,7 +122,16 @@ class ReportStore:
         path = directory / "report.json"
         temporary = directory / "report.tmp"
         temporary.write_text(report.model_dump_json(indent=2), encoding="utf-8")
-        temporary.replace(path)
+        for attempt in range(5):
+            try:
+                temporary.replace(path)
+                break
+            except PermissionError as exc:
+                # Windows readers can briefly deny replacement. Retry file publication only;
+                # no HTTP request or scenario is replayed, and permanent denial remains an error.
+                if getattr(exc, "winerror", None) not in {5, 32, 33} or attempt == 4:
+                    raise
+                time.sleep(.005 * 2 ** attempt)
         return path
 
     def read(self, run_id: str) -> RunReport:
