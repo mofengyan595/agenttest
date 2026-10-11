@@ -60,8 +60,11 @@ class Executor:
         self, scenario: Scenario,
     ) -> tuple[dict[str, Operation], dict[str, RegisteredPolicy]]:
         operations = validate_plan(scenario, self.contract, self.config, self.environ)
-        policies = {step.id: self.registry.resolve(step, self.config.business_scenario)
-                    for step in scenario.steps}
+        policies, previous = {}, {}
+        for step in scenario.steps:
+            policies[step.id] = self.registry.resolve(
+                step, self.config.business_scenario, previous)
+            previous[step.id] = step
         return operations, policies
 
     async def run(self, scenario: Scenario, *, report: RunReport | None = None) -> RunReport:
@@ -179,6 +182,11 @@ class Executor:
                  if step.body or is_login else None)
         request_payload = {step.upload.field: step.upload.content} if step.upload else payload
         validate_request(operation, path_values, query, request_payload, media)
+        policy = policy.model_copy(deep=True)
+        policy.assertions = self.registry.request_assertions(policy, {
+            "path_parameters": path_values, "query": query, "body": request_payload,
+        })
+        result.policy_sha256 = fingerprint(policy.model_dump())
         kwargs: dict[str, Any] = {"headers": headers, "params": query}
         if step.upload:
             kwargs["files"] = {step.upload.field: (

@@ -1,0 +1,126 @@
+[
+  {
+    "business_scenario": "mini_target_nl_v1",
+    "closed_arguments": true,
+    "id": "nl_login_v1",
+    "operation_id": "login",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.access_token",
+          "operator": "exists"
+        }
+      ]
+    }
+  },
+  {
+    "business_scenario": "mini_target_nl_v1",
+    "closed_arguments": true,
+    "id": "nl_create_v1",
+    "operation_id": "createCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.courseId",
+          "operator": "exists"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "name",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "response_selector": "$.name"
+      }
+    ]
+  },
+  {
+    "business_scenario": "mini_target_nl_v1",
+    "closed_arguments": true,
+    "id": "nl_read_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": []
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "courseId",
+        "source_policy_id": "nl_create_v1",
+        "source_selector": "$.courseId",
+        "role_relation": "same",
+        "response_selector": "$.courseId",
+        "source_body_equalities": {
+          "$.name": "name"
+        }
+      }
+    ]
+  },
+  {
+    "business_scenario": "mini_target_nl_v1",
+    "closed_arguments": true,
+    "id": "nl_forbidden_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          403
+        ]
+      },
+      "fields": []
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "courseId",
+        "source_policy_id": "nl_create_v1",
+        "source_selector": "$.courseId",
+        "role_relation": "different"
+      }
+    ]
+  }
+]

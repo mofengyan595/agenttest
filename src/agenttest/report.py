@@ -65,6 +65,9 @@ class RunReport(BaseModel):
     tool_calls: int = 0
     analysis_code: str | None = None
     workflow_completed: bool | None = None
+    user_task_sha256: str | None = None
+    plan_valid: bool = False
+    selected_policy_ids: list[str] = Field(default_factory=list)
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 

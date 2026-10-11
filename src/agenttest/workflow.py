@@ -16,6 +16,7 @@ from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
+from agenttest.planner_input import planning_context, validate_user_task
 from agenttest.policies import NeedsReview, PolicyRegistry
 from agenttest.report import Outcome, ReportStore, RunReport, fingerprint
 from agenttest.safety import StrictModel, TargetConfig
@@ -89,6 +90,7 @@ class Workflow:
         planner: Planner, store: ReportStore | None = None,
         transport: httpx.AsyncBaseTransport | None = None, environ: dict[str, str] | None = None,
         budget: WorkflowBudget | None = None,
+        *, user_task: str = "执行操作员提供的测试计划",
     ) -> None:
         self._document = bytes(contract_document)
         self._config = TargetConfig.model_validate(config.model_dump())
@@ -101,6 +103,7 @@ class Workflow:
 
         self._environ = dict(os.environ if environ is None else environ)
         self._budget = (budget or WorkflowBudget()).model_copy(deep=True)
+        self._user_task = user_task
 
     async def run(self) -> RunReport:
         report = RunReport(
@@ -125,6 +128,9 @@ class Workflow:
             nonlocal executor, contract
             enter("load_contract")
             try:
+                validate_user_task(self._user_task)
+                if CredentialVault(self._config, self._environ).contains_secret(self._user_task):
+                    return reject(Outcome.TOOL_ERROR, "USER_TASK_REJECTED")
                 contract = load_openapi(self._document)
                 report.contract_sha256 = fingerprint(contract.model_dump())
                 executor = Executor(self._config, contract, self._store, self._transport,
@@ -139,14 +145,12 @@ class Workflow:
             if report.planner_calls >= self._budget.max_model_calls:
                 return reject(Outcome.TEST_INFRA_ERROR, "MODEL_CALL_LIMIT")
             report.planner_calls += 1
-            context = {
-                "operations": [{"id": op.operation_id, "method": op.method, "path": op.path}
-                               for op in contract.operations],
-                "policies": self._registry.catalog(self._config.business_scenario),
-                "roles": list(self._config.roles),
-                "plan_schema": Scenario.model_json_schema(),
-            }
             try:
+                context = planning_context(contract, self._config, self._registry,
+                                           self._user_task, Scenario.model_json_schema())
+                if CredentialVault(self._config, self._environ).contains_secret(context):
+                    return reject(Outcome.TOOL_ERROR, "PLANNER_INPUT_REJECTED")
+                report.user_task_sha256 = fingerprint(self._user_task)
                 async with asyncio.timeout(self._budget.model_timeout):
                     raw_plan = await self._planner.generate(context)
                 return {"ready": True}
@@ -166,6 +170,8 @@ class Workflow:
                 if vault.contains_secret(scenario.model_dump()):
                     raise ValueError("Secret in planner output")
                 executor.validate(scenario)
+                report.plan_valid = True
+                report.selected_policy_ids = [s.policy_id for s in scenario.steps]
                 report.scenario_sha256 = fingerprint(scenario.model_dump())
                 return {"ready": True}
             except NeedsReview:
