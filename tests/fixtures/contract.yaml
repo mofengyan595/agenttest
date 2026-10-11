@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info: {title: local fixture, version: '1'}
+security: [{bearerAuth: []}]
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+  parameters:
+    ItemId: {name: id, in: path, required: true, schema: {type: integer}}
+  schemas:
+    Item: {type: object, properties: {name: {type: string}}}
+paths:
+  /items/{id}:
+    parameters: [{$ref: '#/components/parameters/ItemId'}]
+    post:
+      operationId: updateItem
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Item'}
+      responses:
+        '200': {description: updated}
+    get:
+      operationId: getItem
+      responses:
+        '200': {description: found}
