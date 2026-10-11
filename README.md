@@ -194,6 +194,8 @@ docs/                                # 各阶段原始评测与技术说明
 
 [面试技术说明](docs/project-technical-summary.md) · [进度和各模块 SHA](docs/progress.md) · [2A 原始首次结果](docs/stage2a-evaluation.md) · [2A 第二轮结果](docs/stage2a-round2-evaluation.md) · [阶段 4 数据与方法](docs/stage4-evaluation.md)
 
+最终代码四组 CI 已通过：完整 agent **561 项**，base **436 通过 / 15 可选跳过**；本轮新增 52 项，原有 31 个测试文件保留。[验收统计](docs/delivery-results.json)。
+
 Windows/Linux × base/agent 四组 Actions 保留；pytest、Ruff、pip check、真实回环 HTTP、Fake 自然语言/调查和 MCP stdio 自动验证。CI **不调用学校模型、Docker 或真实 Java 写入**。本机完整结果与最终 CI 在进度文档记录；仅基础安装会明确跳过可选 Agent/MCP 测试。
 
 当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；无 RAG、多 Agent、复杂前端、Kubernetes 或新数据库。文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。

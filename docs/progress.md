@@ -1,5 +1,24 @@
 # 开发进度
 
+## 最终交付验收：阶段 4A–5（2026-10-11）
+
+| 模块 | commit SHA |
+| --- | --- |
+| Java 自然语言与一次性验收入口 | `74e0909` |
+| 新任务 / 成对缺陷评测 / 4A 实测记录 | `4f601d4` |
+| 真实模型失败与逐请求脱敏证据 | `2692cde` |
+| 统一五项演示 / README / 架构 / 面试文档 / CI | `57541b6` |
+| 空代码拒绝 | `64796f2` |
+| 操作员 manifest 类型边界 | `c419073463522438f05201af5fe2ae2741a280f2` |
+
+- [最终代码 CI 38147989036](https://github.com/mofengyan595/agenttest/actions/runs/38147989036) 四组 success，已逐组读取实际日志；Windows agent **561 passed / 68.03s**，Linux agent **561 passed / 58.34s**，均无跳过；Windows base **436 passed / 15 skipped / 1 warning / 37.94s**，Linux base **436 passed / 15 skipped / 1 warning / 25.74s**。可选模块跳过与既有 Starlette warning 明确保留。
+- 四组 Ruff、pip check、回环 HTTP、统一演示通过；两组 agent Fake 自然语言/调查/MCP stdio/full showcase 通过。CI 学校和 Java 调用均 0，本机符号链接权限项已由两组 agent CI 补验。
+- 本地全量 560 passed / 1 skipped，最终操作员边界 33 passed；原基线共 509 项，本轮新增 52 项，31 个原测试文件、两轮任务与评测、Java 3A 和 MCP 3B 记录逐字节保留。
+- 实际 Java + AI：1 次模型 / 1794 Token / 21891 ms，200/201/200、14 断言、1 创建。独立新任务模型：4 次 / 5496 Token，支持任务成功 1/2，已执行缺陷 3/3、总体覆盖 3/4；B02 规划失败和两条意图拒绝保留。人工六机制 6/6；不宣称真实模型 100% 或广泛泛化。
+- 公共敏感信息检查为零命中，四类本地产物忽略；CourseInsight 业务代码未改。本条与 delivery-results.json 仅补充实际验收记录，不新增功能、依赖、学校调用或 Java 写入。
+- 用户限定阶段 4A–5 已完成，已适合如实写入实习简历。后续只进行人工代码审查/演示，不再优化已使用样本；若扩大真实目标或写入，单独批准和建立新任务集。
+
+
 ## 操作员 manifest 类型边界（2026-10-11）
 
 - 空代码修复提交 `64796f2`；进一步核对 JSON 文件入口，显式拒绝 null/非字符串代码、非字符串 invocation、布尔 version，避免错误类型被解释为缺省。
