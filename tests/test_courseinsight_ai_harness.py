@@ -70,7 +70,9 @@ def test_fixture_is_exclusive_and_validated(script, tmp_path):
     assert script.load_fixture(path) == first
     with pytest.raises(FileExistsError):
         script.prepare(path, script.DEFAULT_TASK)
-    first["course_code"] = "unapproved"
-    path.write_text(json.dumps(first))
-    with pytest.raises(ValueError):
-        script.load_fixture(path)
+    for key, value in [("course_code", "unapproved"), ("course_code", None),
+                       ("course_code", 1), ("version", True), ("invocation_id", None)]:
+        invalid = {**first, key: value}
+        path.write_text(json.dumps(invalid))
+        with pytest.raises(ValueError):
+            script.load_fixture(path)

@@ -34,8 +34,12 @@ def load_fixture(path: Path) -> dict:
     if len(raw) > 10_000:
         raise ValueError("FIXTURE_SIZE")
     data = json.loads(raw)
-    if (set(data) != {"version", "invocation_id", "user_task", "course_code"}
-            or data["version"] != 1 or UUID(data["invocation_id"]).hex != data["invocation_id"]):
+    if (type(data) is not dict
+            or set(data) != {"version", "invocation_id", "user_task", "course_code"}
+            or type(data["version"]) is not int or data["version"] != 1
+            or any(type(data[key]) is not str
+                   for key in ("invocation_id", "user_task", "course_code"))
+            or UUID(data["invocation_id"]).hex != data["invocation_id"]):
         raise ValueError("FIXTURE_FORMAT")
     approved_inputs(data["user_task"], course_code=data["course_code"])
     return data

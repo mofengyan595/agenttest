@@ -1,5 +1,13 @@
 # 开发进度
 
+## 操作员 manifest 类型边界（2026-10-11）
+
+- 空代码修复提交 `64796f2`；进一步核对 JSON 文件入口，显式拒绝 null/非字符串代码、非字符串 invocation、布尔 version，避免错误类型被解释为缺省。
+- 相关离线 **33 passed / 7.40s**、Ruff 通过；完整回归 **560 passed、1 skipped / 100.31s**。本次改动范围仅操作员文件加载，四组 CI 再跑完整门禁。
+- `57541b6` 已核对 Linux agent 561 passed，Linux/Windows base 436 passed、15 skipped、既有 Starlette warning；全部 Ruff / pip check / 离线演示通过。最终以新提交四组结果为准。
+- 安装辅助脚本本轮未端到端重复运行；四组 CI 验证的是相同冻结依赖和安装命令，不能等同脚本本体实测。真实 Java 与学校调用仍没有增加。
+
+
 ## 交付边界复查：拒绝空操作员代码（2026-10-11）
 
 - 演示交付提交 `57541b66af4bc8896f1d67709da2359094ab2a7b`；复查发现显式空代码被 `or` 当成缺省。改为只有 None 才生成，空串/非字符串/非法值明确拒绝，防止静默替换人工审阅输入。
@@ -12,7 +20,7 @@
 - 最终全量 **560 passed、1 skipped / 109.90s**，新增 52 项，原 31 个测试文件逐字节保留；Windows 本机符号链接权限跳过。Ruff / pip check / git diff --check 通过。
 - 实际 loopback：正常 8/9 PASS，health/spec/report 200；Fake 自然语言 3/3、5/5；调查正常 0 次、故障 1 GET、原 ASSERTION_FAILED 保留，各创建一次、自有服务退出。统一五项 showcase 全通过，学校 / Java 请求 0。
 - 公开检查：130 文件 / 311 历史 blob；真实学校 Key、两个 demo 密码及私钥/Token/JWT 模式命中 0。旧两轮评测、任务、3A/3B 记录和 31 个原测试文件无改动；.env/.venv/.python311/runs 均忽略。
-- CourseInsight 仍仅原用户 .gitignore 修改；未改业务代码，没有新增依赖或临时正式文件。局部安装脚本更新，Windows/Linux 独立安装由四组 CI 验证。
+- CourseInsight 仍仅原用户 .gitignore 修改；未改业务代码，没有新增依赖或临时正式文件。局部安装脚本更新；Windows/Linux 冻结依赖安装由四组 CI 验证，辅助脚本本轮未端到端重复执行。
 - 本轮真实调用已结束：Java 一次创建通过；学校五次 7290 Token。新增任务规划失败与未执行归属缺陷保留，不继续优化样本。
 - 已完成用户限定的阶段 4A/4B/5：CLI/MCP 演示、架构/流程、可复现说明和面试技术文档。旧任务书更广的前端/Docker Agent/60 条样本/脚本导出未实施，遵循本轮明确的范围收敛；README 如实记录。
 - 下一步仅推送并核对最终四组 CI；不扩大功能。模块 SHA 与 CI 结果在下一验收记录补齐。
