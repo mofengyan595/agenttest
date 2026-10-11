@@ -1,5 +1,15 @@
 # 开发进度
 
+## 阶段 3B：官方 SDK / stdio / 协议验收（2026-10-11）
+
+- 授权适配层提交 `309dc10`；官方文档核对当前 MCP Python SDK **2.3.0**，使用 v2 `MCPServer` / `Client` / `StdioServerParameters`，无旧 FastMCP 导入。
+- 五个工具：list_tests、get_contract、validate_plan、run_scenario、read_report。默认只启动 stdio，不监听 HTTP；参数 Schema extra=forbid，入口在 SDK 参数错误回显前拒绝敏感输入。
+- 可选 mcp extra 与 requirements-mcp.lock；仅现有 .venv 安装，未升级原冻结版本。基础 profile 不安装 SDK；agent profile 增加 stdio 验证，Windows/Linux × base/agent 四组保留。
+- 针对性 **55 passed、1 skipped**（17.24s）；Ruff、pip check 通过。符号链接权限项交给 Linux CI。
+- 真正 SDK stdio 子进程验收：normal run `214b15060b2344f4927cd7f56c690db9`，8 步 / 9 HTTP PASS；ownership 5/5、terminal 7/8 正确 ASSERTION_FAILED，各创建一次。重复 ID 只读报告。
+- 越权 Java 场景、额外 URL、额外 Key、耗尽 run 预算分别被固定错误码拒绝；外部 HTTP / 学校 API / Java 写入均 0。报告临时目录随客户端验收销毁，仅保留脱敏统计。
+- 下一模块：全量回归、原有真实回环、入门说明和公开检查；本模块 SHA 在下一检查点记录。
+
 ## 阶段 3B：受控 MCP 能力适配层（2026-10-11）
 
 - 基线 `4ef6acc9f7f01def5406c25a774eee5035d63092`，原 **452 passed**（62.62s）；不重复 Java 写入或真实模型评测。

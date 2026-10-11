@@ -101,9 +101,9 @@ class MCPService:
 
     async def call(self, name: str, arguments: dict | None = None) -> dict:
         """One bounded, redacted boundary shared by in-memory and stdio clients."""
-        self._calls += 1
-        if self._calls > self._settings.max_tool_calls:
-            return error("MCP_TOOL_BUDGET_EXHAUSTED")
+        exhausted = self._charge()
+        if exhausted:
+            return exhausted
         if name not in REQUESTS:
             return error("MCP_TOOL_NOT_AUTHORIZED")
         try:
@@ -132,6 +132,16 @@ class MCPService:
         except Exception:
             # Do not pass exception text, Pydantic inputs or a traceback to the SDK logger.
             return error("MCP_INTERNAL_ERROR")
+
+    def _charge(self) -> dict | None:
+        self._calls += 1
+        if self._calls > self._settings.max_tool_calls:
+            return error("MCP_TOOL_BUDGET_EXHAUSTED")
+        return None
+
+    def reject(self, code: str) -> dict:
+        """Malformed protocol calls consume the same startup tool budget."""
+        return self._charge() or error(code)
 
     def public_contract(self) -> dict:
         context = planning_context(self._contract, self._config, self._registry,

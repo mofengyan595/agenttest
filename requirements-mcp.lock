@@ -1,0 +1,13 @@
+# Optional official MCP SDK v2, Python 3.11; no model provider SDK.
+-r requirements-dev.lock
+cffi==2.1.1
+cryptography==50.0.2
+httpcore2==2.13.1
+httpx2==2.13.1
+mcp==2.3.0
+mcp-types==2.3.0
+pycparser==3.11
+PyJWT==2.15.1
+pywin32==312; sys_platform == "win32"
+sse-starlette==3.5.0
+truststore==0.10.4

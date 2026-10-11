@@ -30,7 +30,7 @@ jobs:
             smoke: ''
           - profile: agent
             lock: requirements-agent.lock
-            extras: .[dev,agent]
+            extras: .[dev,agent,mcp]
             smoke: --workflow
     defaults:
       run:
@@ -49,6 +49,7 @@ jobs:
           cache-dependency-path: |
             requirements-dev.lock
             requirements-agent.lock
+            requirements-mcp.lock
       - name: Create project virtual environment
         run: python -m venv .venv
       - name: Install pinned dependencies
@@ -69,3 +70,6 @@ jobs:
       - name: Read-only failure investigation over loopback with FakeAnalyzer
         if: matrix.profile == 'agent'
         run: '"${{ matrix.python }}" scripts/smoke_investigation_http.py'
+      - name: MCP SDK stdio disposable mini target check
+        if: matrix.profile == 'agent'
+        run: '"${{ matrix.python }}" scripts/smoke_mcp_stdio.py'
