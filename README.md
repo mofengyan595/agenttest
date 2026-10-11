@@ -85,6 +85,8 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 三基线边界、实际首次评测和失败证据摘要见 [阶段 2A 评测记录](docs/stage2a-evaluation.md)。真实评测脚本不在 pytest 自动收集或 GitHub CI 中调用。
 真实评测先提交代码并保持工作区干净，自动冻结代码/Prompt/Schema/配置/任务集，每条前检查漂移，串行且零自动重试。输出、冻结文件和逐条日志不可覆盖；重复实验必须使用新的输出路径。
 
+阶段 2B 目前仅有 [只读失败调查设计与验收方案](docs/stage2b-readonly-design.md)：独立能力目录和预算、保留原失败、不自动重放创建。尚未实现动态调查或恢复。
+
 API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)、[API 参考](https://reference.langchain.com/python/langgraph/graph) 和 [禁用追踪文档](https://docs.langchain.com/langsmith/conditional-tracing) 核对，并实际运行 `StateGraph`、条件边、`compile()`、`ainvoke()`；版本见 [PyPI 1.2.14](https://pypi.org/project/langgraph/1.2.14/)。
 
 ## 运行完整演示
