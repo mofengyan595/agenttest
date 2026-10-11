@@ -1,5 +1,13 @@
 # 开发进度
 
+## 阶段 2A 最终验收（2026-10-11）
+
+- 最终代码提交：`d18107eaf959489d3fe157d15ca02e5252f074df`，已推送原仓库 master，所有旧提交保留。
+- 对应 [Actions 38115469263](https://github.com/mofengyan595/agenttest/actions/runs/38115469263) 四组全部 success。Windows/Linux agent 各 264 passed；base 各 208 passed、3 skipped、1 个已有 Starlette 弃用提醒。
+- 四组 Ruff、pip check、旧回环 HTTP 通过；两个 Agent 组新增 3 步/5 步自然语言回环通过，真实模型调用 0。默认测试和 CI 完全不依赖学校 Key。
+- 本地最终 264 passed，Ruff 和依赖检查通过。首轮真实评测仍为 13/18，21 次生成总计 26797 Token；修复后只做离线回归，没有把历史失败覆盖或编造第二轮模型指标。
+- 本次阶段 2A 完成；尚待后续独立轮次改善规划成功率、扩展审核任务和安全诊断。暂不接 MCP、RAG、前端或真实 CourseInsight。
+
 ## 最终审查与远端 CI（2026-10-11）
 
 - 文档及首次完整验收提交：`30af4fdab2be0a8535a035cf301f6399f810bc44`，已推送。
