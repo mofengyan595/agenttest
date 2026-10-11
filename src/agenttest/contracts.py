@@ -45,7 +45,7 @@ def _mapping(loader: UniqueLoader, node: yaml.MappingNode) -> dict:
 UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping)
 
 
-def load_openapi(raw: bytes | str) -> ContractSummary:
+def load_openapi(raw: bytes | str, *, unwrap: bool = False) -> ContractSummary:
     encoded = raw.encode("utf-8") if isinstance(raw, str) else raw
     if len(encoded) > MAX_DOCUMENT_BYTES:
         raise ValueError("Contract exceeds size limit")
@@ -53,6 +53,8 @@ def load_openapi(raw: bytes | str) -> ContractSummary:
         document = yaml.load(encoded.decode("utf-8"), Loader=UniqueLoader)
     except (yaml.YAMLError, UnicodeError, RecursionError) as exc:
         raise ValueError("Invalid JSON/YAML document") from exc
+    if unwrap and isinstance(document, dict) and set(document) == {"document"}:
+        document = document["document"]
     return summarize_openapi(document)
 
 

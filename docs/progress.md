@@ -65,3 +65,12 @@
 - 针对性 pytest：**4 passed**；Ruff 首轮两处超长行，修复后复查。
 - 仅在 `.venv` 增加 python-multipart 0.0.32，用于 mini target 的 CSV 接收。
 - 下一模块：CLI、安全文档导入及报告查询 API、启动验证、完整文档与冻结依赖。
+
+### CLI / API
+
+- 前一模块提交：`e21d721`（模拟链路及故障样本）。
+- CLI 支持离线 demo、显式配置目标运行人工计划、查询/导出脱敏 JSON 报告。
+- API 保留 /health 与原 JSON 包装格式，增加原始 JSON/YAML 和读取时大小限制。
+- 提供只读 `/api/runs/{run_id}`，无任意目标执行 API；错误不会回显不可信文档。
+- 包含原有接口的针对性 pytest：**7 passed**；Ruff：**All checks passed!**。
+- 下一步：安全边界补充回归、真实本地 HTTP 验证、README 与安装脚本、全量质量门禁。
