@@ -22,10 +22,12 @@ from agenttest.dsl import (
     Step,
     validate_plan,
 )
+from agenttest.investigation import InvestigationConfig, ReadOnlyCapabilityRegistry
 from agenttest.policies import NeedsReview, PolicyRegistry, RegisteredPolicy
 from agenttest.report import (
     AttemptEvidence,
     CheckResult,
+    InvestigationResult,
     Outcome,
     ReportStore,
     RunReport,
@@ -49,13 +51,18 @@ class Executor:
         store: ReportStore | None = None, transport: httpx.AsyncBaseTransport | None = None,
         environ: dict[str, str] | None = None,
         registry: PolicyRegistry | None = None,
+        *, investigation: InvestigationConfig | None = None,
+        capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
     ) -> None:
-        self.config = config
-        self.contract = contract
+        self.config = config.model_copy(deep=True)
+        self.contract = contract.model_copy(deep=True)
         self.store = store or ReportStore(Path("runs"))
         self.transport = transport
         self.environ = dict(os.environ) if environ is None else dict(environ)
-        self.registry = registry or PolicyRegistry()
+        self.registry = (registry or PolicyRegistry()).snapshot()
+        self.investigation = (investigation or InvestigationConfig()).model_copy(deep=True)
+        self.capabilities = (capabilities or ReadOnlyCapabilityRegistry()).snapshot()
+        self.analyzer = analyzer
 
     def validate(
         self, scenario: Scenario,
@@ -69,11 +76,20 @@ class Executor:
         return operations, policies
 
     async def run(self, scenario: Scenario, *, report: RunReport | None = None) -> RunReport:
+        scenario = scenario.model_copy(deep=True)
         report = report or RunReport(
             scenario_sha256=fingerprint(scenario.model_dump()),
             contract_sha256=fingerprint(self.contract.model_dump()),
             environment=self.config.environment, target_origin=self.config.base_url,
         )
+        if report.steps or report.completed:
+            raise ValueError("RUN_NOT_RESUMABLE")
+        try:
+            saved = self.store.read(report.run_id)
+        except FileNotFoundError:
+            saved = None
+        if saved is not None and (saved.steps or saved.completed):
+            raise ValueError("RUN_NOT_RESUMABLE")
         report.scenario_sha256 = fingerprint(scenario.model_dump())
         report.contract_sha256 = fingerprint(self.contract.model_dump())
         self.store.save(report)
@@ -95,17 +111,18 @@ class Executor:
         # Per-run state and budgets are never shared across executions.
         state: dict[str, Any] = {}
         vault = CredentialVault(self.config, self.environ)
+        authenticated: set[str] = set()
         budget = {"requests": 0, "last_request": 0.0}
         timeout = httpx.Timeout(
             self.config.read_timeout, connect=self.config.connect_timeout,
             write=self.config.read_timeout, pool=self.config.connect_timeout,
         )
         try:
-            async with asyncio.timeout(self.config.run_timeout):
-                async with httpx.AsyncClient(
-                    transport=self.transport, timeout=timeout, trust_env=False,
-                    follow_redirects=False, limits=httpx.Limits(max_connections=1),
-                ) as client:
+            async with httpx.AsyncClient(
+                transport=self.transport, timeout=timeout, trust_env=False,
+                follow_redirects=False, limits=httpx.Limits(max_connections=1),
+            ) as client:
+                async with asyncio.timeout(self.config.run_timeout):
                     for step in scenario.steps:
                         operation = operations[step.operation_id]
                         result = StepResult(
@@ -124,6 +141,13 @@ class Executor:
                             )
                             if result.outcome == Outcome.PASS:
                                 state[step.id] = vault.public_response(body)
+                                if step.role:
+                                    # A role is reusable only after a successful original request.
+                                    role = self.config.roles[step.role]
+                                    if (step.operation_id == role.login_operation
+                                            or operation.security):
+                                        authenticated.add(step.role)
+                            body = None
                         except httpx.TransportError as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = type(exc).__name__
@@ -143,17 +167,39 @@ class Executor:
                         self.store.save(report)
                         if result.outcome != Outcome.PASS:
                             break
+                if not report.reason:
+                    report.outcome = aggregate(report.steps)
+                # Publish the immutable business result before any optional investigation.
+                report.completed = True
+                self.store.save(report)
+                if self.investigation.enabled:
+                    from agenttest.readonly_runtime import investigate
+
+                    await investigate(self, client, scenario, report, state, vault, authenticated,
+                                      last_request=budget["last_request"])
         except TimeoutError:
             if report.steps:
                 report.steps[-1].outcome = Outcome.TEST_INFRA_ERROR
                 report.steps[-1].reason = "RUN_TIMEOUT"
             report.outcome, report.reason = Outcome.TEST_INFRA_ERROR, "RUN_TIMEOUT"
         except Exception:
-            report.outcome, report.reason = Outcome.TOOL_ERROR, "TRANSPORT_SETUP_ERROR"
+            if report.investigations:
+                report.investigation_error = "INVESTIGATION_REPORT_ERROR"
+            else:
+                report.outcome, report.reason = Outcome.TOOL_ERROR, "TRANSPORT_SETUP_ERROR"
+        finally:
+            state.clear()
+            authenticated.clear()
+            vault.close()
         if not report.reason:
             report.outcome = aggregate(report.steps)
         report.completed = True
-        self.store.save(report)
+        try:
+            self.store.save(report)
+        except OSError:
+            if not report.investigations:
+                raise
+            report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         return report
 
     def _binding(self, binding: ArgumentBinding, step: Step, state: dict) -> Any:
@@ -257,7 +303,7 @@ class Executor:
         retries: int, budget: dict, result: StepResult, report: RunReport,
     ) -> tuple[int, Any]:
         for retry in range(retries + 1):
-            if budget["requests"] >= self.config.max_requests:
+            if budget["requests"] >= budget.get("max_requests", self.config.max_requests):
                 raise ExecutionLimit("REQUEST_LIMIT")
             delay = self.config.min_request_interval - (time.monotonic() - budget["last_request"])
             if delay > 0:
@@ -269,8 +315,12 @@ class Executor:
             if len(request_body) > self.config.max_body_bytes:
                 raise ExecutionLimit("REQUEST_BODY_LIMIT")
             budget["requests"] += 1
+            if isinstance(result, InvestigationResult):
+                result.requests_used = budget["requests"]
             budget["last_request"] = time.monotonic()
             evidence = AttemptEvidence(attempt=len(result.attempts) + 1, elapsed_ms=0.0)
+            if isinstance(result, InvestigationResult):
+                evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
             result.attempts.append(evidence)
             self.store.save(report)
             started = time.monotonic()
@@ -289,6 +339,7 @@ class Executor:
                         body = json.loads(chunks)
                     except (ValueError, UnicodeError):
                         body = None
+                    evidence.error_code = None
                     return response.status_code, body
                 finally:
                     await response.aclose()
@@ -298,6 +349,10 @@ class Executor:
                     raise
             except ExecutionLimit as exc:
                 evidence.error_code = str(exc)
+                raise
+            except BaseException:
+                # Cancellation/process interruption leaves send outcome unknown, never retryable.
+                evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
                 raise
             finally:
                 evidence.elapsed_ms = round((time.monotonic() - started) * 1000, 3)

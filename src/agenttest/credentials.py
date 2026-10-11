@@ -20,7 +20,7 @@ def sensitive_field(name: str, custom: list[str] = ()) -> bool:
 class CredentialVault:
     def __init__(self, config: TargetConfig, environ: dict[str, str]) -> None:
         self.config = config
-        self._environ = environ
+        self._environ = dict(environ)
         self._tokens: dict[str, str] = {}
         self._secrets = {
             environ[name] for role in config.roles.values()
@@ -48,6 +48,12 @@ class CredentialVault:
         if not token or any(c in token for c in "\r\n"):
             raise ValueError("Missing authentication context")
         return {"Authorization": "Bearer " + token}
+
+    def close(self) -> None:
+        """Release session-owned credentials; never mutate the operator's environment."""
+        self._tokens.clear()
+        self._secrets.clear()
+        self._environ.clear()
 
     def contains_secret(self, value: Any) -> bool:
         if isinstance(value, dict):

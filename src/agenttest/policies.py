@@ -142,3 +142,8 @@ class PolicyRegistry:
     def snapshot(self) -> "PolicyRegistry":
         return PolicyRegistry([RegisteredPolicy.model_validate_json(raw)
                                for raw in self._entries.values()])
+
+    def digest(self) -> str:
+        from agenttest.report import fingerprint
+
+        return fingerprint(self._entries)
