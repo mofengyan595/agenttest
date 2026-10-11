@@ -1,17 +1,70 @@
 # 开发进度
 
 - [x] 独立 Python 项目骨架
-- [x] 独立 .venv 创建脚本（需在本机运行）
+- [x] Python 3.11 独立 .venv 与安装脚本（已在本机运行）
 - [x] FastAPI 健康检查
 - [x] OpenAPI 3.x JSON 最小接口摘要
 - [x] 三个基础测试用例
-- [ ] 阶段 1：安全契约解析、DSL、Mock target、Executor、Verifier、报告（进行中）
+- [x] 阶段 1：安全契约解析、DSL、Mock target、Executor、Verifier、报告
 - [ ] 阶段 2：LangGraph Agent
 - [ ] 阶段 3：MCP 与 Java 后端真实测试
 - [ ] 阶段 4：效果评测
 - [ ] 阶段 5：产品化
 
 本文件由 Codex 在每个阶段完成后根据实际测试结果更新，禁止提前标记任务完成。
+
+## 阶段 1 最终验收（2026-10-11）
+
+**完成。** 实现提交：`8b79f00f6c2f7c131c792a5652f46e3eba65886a`。
+环境/文档交付随后独立提交，不在文件中自引用其 SHA，可使用 `git log -1 --oneline` 查询。
+
+| 实际运行 | 结果 |
+| --- | --- |
+| `.venv/Scripts/python.exe -m pytest -q` | 78 passed, 1 warning，无跳过 |
+| `.venv/Scripts/python.exe -m ruff check .` | All checks passed! |
+| `.venv/Scripts/python.exe -m pip check` | No broken requirements found. |
+| `scripts/setup_env.ps1` | 实际执行成功；当时 74 tests + Ruff 通过，之后引用回归增加至 78 |
+| `.venv/Scripts/python.exe scripts/smoke_local_http.py` | CLI run 真实 HTTP：8 步 / 9 请求 PASS；health/spec_import/report_query 均 200；服务已关闭 |
+| `.venv/Scripts/python.exe -m agenttest demo` | PASS，8 步，退出码 0 |
+| `.venv/Scripts/python.exe -m agenttest demo --fault ownership` | ASSERTION_FAILED，cross_user，第 5 步，退出码 1 |
+| `.venv/Scripts/python.exe -m agenttest demo --fault terminal` | ASSERTION_FAILED，poll_batch，第 7 步，退出码 1 |
+
+实际报告（本地产物，已忽略不提交）：
+
+- 真实 CLI HTTP：`4370658b5fe44d5b8275405cdf4420b8`。
+- 离线正常：`66160569edde409b85104c8028ea1c45`。
+- 归属故障：`f5aebf44130f4bcbafcf9eeae5e586cd`。
+- 终态故障：`5ad9d0c65eff45a1bfa46e221b5a4dc1`。
+- 位置均为 `runs/<run_id>/report.json`；报告导出另有 CLI/API 测试覆盖。
+
+本地功能提交：
+
+| SHA | 内容 |
+| --- | --- |
+| 71e25e5 | OpenAPI 解析与原始骨架保存 |
+| 87a5c3d | 目标隔离、角色与 DSL 校验 |
+| c94ce7e | 确定性断言与脱敏报告 |
+| b93dcc6 | 受限 HTTP Executor |
+| e21d721 | 模拟 target、完整链路与两个故障 |
+| 80e9ce7 | CLI 与契约/报告 API |
+| 0e17f4d | 标准契约校验、安全回归与断网测试 |
+| 8b79f00 | 引用展开预算、真实 CLI HTTP 验证 |
+
+环境：Python 3.11.15；精确依赖见 `requirements-dev.lock`。
+本机缺少独立 Python 3.11，使用项目内忽略的 `.python311` 运行时支撑新建 `.venv`。
+未访问或修改 CourseInsight；未配置远程仓库，未推送。
+
+已知限制：仅 IP/localhost、HTTP bearer、JSON/CSV 和受限 JSONPath；拒绝递归/动态引用。
+尚无外部测试数据自动清理、写入幂等恢复或真实服务接入。
+Starlette 对 TestClient 使用 httpx 有一条弃用提醒，未抑制，测试通过。
+macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已有 `.venv` 分支，新建环境已在开发开始时手动完成。
+初次依赖安装需要包源或预先准备的 wheel 缓存；运行与默认测试不需要外网。
+
+**下一准确里程碑：阶段 2 首个可验证模块。** 先查询当时官方 LangGraph 文档，
+实现 fake LLM 的 `load_contract -> plan -> validate -> setup -> execute -> verify -> analyze_or_finish -> report`，
+验证非法 JSON、未知操作、工具故障、预算耗尽和不篡改断言；暂不接真实模型、MCP 或 Java 服务。
+
+以下保留各模块开发检查点，测试数量按当时实际结果记录。
 
 ## 2026-10-11 阶段 1 检查点
 

@@ -1,40 +1,121 @@
-# AgentTest — Codex starter
+# AgentTest
 
-独立 Python 工程骨架，用来启动 AgentTest 的阶段性开发。**当前可运行的是健康检查与 OpenAPI 3.x JSON 基础摘要接口，不是完整测试平台。** 完整规划请看 `CODEX_TASK.md`，Codex 工作准则看 `AGENTS.md`。
+独立 Python API 测试平台。阶段 1 已完成：人工计划 JSON → 契约及权限预检 → 受限 HTTP 执行 → 确定性断言 → 脱敏 JSON 报告。无需 LLM、API Key、Docker；默认 demo 在进程内运行，不访问网络。
 
-## 环境：独立 `.venv`
+## 环境与启动
 
-建议安装 Python **3.11**（3.12 也可以）；项目不需要也不应使用全局 Python 环境。
+使用 Python **3.11**，所有依赖安装在项目 `.venv`。本次验证版本为 3.11.15。
 
-### Windows PowerShell
+Windows PowerShell：
 
 ```powershell
-cd agenttest
+Set-Location 'D:\Desktop\project\agenttest'
 .\scripts\setup_env.ps1
-.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --reload
+# 没有 py 启动器时，可指定本机 Python 3.11：
+# .\scripts\setup_env.ps1 -PythonPath 'C:\path\to\python.exe'
+.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000
 ```
 
-### macOS / Linux
+macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。该脚本尚未在本次 Windows 环境执行验证。
 
-```bash
-cd agenttest
-bash scripts/setup_env.sh
-.venv/bin/python -m uvicorn agenttest.main:app --reload
+脚本保留已有 `.venv`，检查解释器版本；安装冻结依赖，再执行任务书要求的 `pip install -e '.[dev]'`（禁止构建隔离以沿用冻结的构建工具），最后运行 pytest 和 Ruff。不会修改全局 Python。
+
+`requirements-dev.lock` 是本次 Windows/Python 3.11 环境的准确版本快照，未包含机器路径。首次安装需要包源或预先准备的 wheel 缓存；安装后的默认测试与演示不需要外网。离线安装可事先下载这些依赖到 `artifacts/wheels/`，再使用 `pip install --no-index --find-links artifacts/wheels -r requirements-dev.lock`。
+
+本机没有独立安装的 3.11，因此额外使用项目内、被忽略的 `.python311/` 运行时作为 `.venv` 的基础解释器。另一台机器应重新创建环境，不能复制 `.venv`。
+
+## 运行完整演示
+
+```powershell
+.\.venv\Scripts\python.exe -m agenttest demo
+.\.venv\Scripts\python.exe -m agenttest demo --fault ownership
+.\.venv\Scripts\python.exe -m agenttest demo --fault terminal
 ```
 
-也可以不使用脚本，手动创建：`python3.11 -m venv .venv`，然后使用 `.venv` 对应的 Python 运行 `-m pip install -e '.[dev]'`。
+正常场景 8 步、9 次请求：alice/bob 登录 → alice 创建课程 → 查询课程 → bob 跨用户访问得到 403 → 上传两行 CSV → 轮询 RUNNING / SUCCEEDED → 核对结果条数。每次演示创建独立内存状态和随机临时凭据，不改变进程环境。
 
-- 访问 `http://127.0.0.1:8000/health` -> `{ "status": "ok" }`
-- 访问 `http://127.0.0.1:8000/docs` 查看自动生成的 API 文档。
-- `python -m pytest -q` / `python -m ruff check .`（请使用 `.venv` 中的 Python）。
-- 阶段 2 再安装 Agent 依赖：`pip install -e '.[agent,dev]'`（使用 `.venv` 的 pip）。
+正常返回 `PASS`、退出码 0；两个故障分别在 `cross_user`、`poll_batch` 检出 `ASSERTION_FAILED`、退出码 1。故障仅注入独立模拟服务，未改动 CourseInsight Cloud。
 
-本 zip **不携带 `.venv`**：Python 虚拟环境通常依赖本机解释器路径，在你的电脑上运行脚本创建即可。
+终端返回 run_id 与报告位置 `runs/<run_id>/report.json`：
 
-## 发给 Codex 的简短指令
+```powershell
+.\.venv\Scripts\python.exe -m agenttest report <run_id>
+.\.venv\Scripts\python.exe -m agenttest report <run_id> --output runs/export.json
+```
 
-> 请先阅读 `AGENTS.md` 和 `CODEX_TASK.md`，只实现“阶段 1”。首先创建/核验 Python 3.11 独立 `.venv`，让原有骨架测试通过，再完成安全 OpenAPI 解析、测试计划 DSL、Mock 被测 API、受限 HTTP Executor、Verifier 和 JSON 报告。每一步运行 pytest 和 ruff，修复错误后再继续。不要在第一阶段接大模型/MCP/前端，也不要修改 CourseInsight 仓库。执行结束给我实际运行结果、文件列表与演示命令。
+证据包含步骤运行 ID、请求次数、HTTP 状态、响应字节数/摘要、耗时、断言结果以及契约/计划/策略 SHA-256。默认不保存原始请求体、响应体、URL 参数、认证头或 Cookie；字符串/容器断言值隐藏，敏感字段的数值也隐藏。需重现时结合人工计划和策略摘要核对。进程中断留下的 `completed: false` 报告可供审计，不支持自动恢复或重复写入。
 
-## 已知范围
+## API
 
-当前提供 `src/agenttest/contracts.py` 的最简 OpenAPI 操作摘要以及三个基础测试；契约安全解析、执行器、智能规划、MCP、故障注入、跨系统兼容性都尚未开发，需要 Codex 逐步实现。不要将目标架构描述成已经交付。
+- `GET /health`：健康检查。
+- `POST /api/spec/summary`：原始 JSON、YAML，或兼容原有 `{"document": {...}}`。JSON 使用 application/json；YAML 使用 application/yaml。读取时限制 1 MB。
+- `GET /api/runs/{run_id}`：只读查询已保存的报告；必须与 CLI 使用同一工作目录/runs 目录。
+
+本地 API 没有公开的任意目标执行入口。Swagger UI 的静态资源默认来自 CDN，离线时请直接调用 API。
+
+## 目标授权与人工 DSL
+
+`examples/demo-scenario.json` 是人工编写的完整计划；`docs/demo-policy.md` 记录示例预期来源。`examples/demo-target.json` 是操作员管理的目标和角色授权配置，不能由模型生成并自动批准。
+
+真实本地实例可运行 `uvicorn agenttest.mini_target:local_app --factory --host 127.0.0.1 --port 8080`；启动前在环境变量设置 `.env.example` 中的四个 DEMO_* 值，CLI 通过同样的环境变量读取账号。第一阶段不自动加载 `.env`。
+
+```powershell
+.\.venv\Scripts\python.exe -m agenttest run --contract examples/demo-openapi.json --plan examples/demo-scenario.json --target examples/demo-target.json
+```
+
+安全边界：
+
+- 仅接受固定 IP 或 localhost；localhost 固定成 127.0.0.1，不进行 DNS 查询。非本地 IP 必须是配置中逐个授权的隔离私网地址；拒绝公网、云元数据、未授权私网和特殊地址。
+- 不使用契约 servers 选择目标，不接受 DSL URL；所有 HTTP 重定向直接阻断，关闭环境代理。
+- 每个 operationId 必须在白名单；写操作须同时启用 isolated 和 allow_mutations。角色凭据只能来自指定环境变量或同角色前序登录步骤。
+- 每次运行限制步骤、请求、请求间隔、输入/响应大小、连接/读取及总时长；只有 GET/HEAD 可以有限重试或轮询，写入不会自动重试。
+- 仅支持 HTTP bearer、JSON 与 CSV multipart、path/query 参数。必填 header/cookie 或其他认证方式会被拒绝。
+- 仅解析 OpenAPI 3.0/3.1，先拒绝远程/文件/循环引用和不受控扩展，再进行标准结构校验。第一阶段要求每个操作声明非空 responses；不支持递归/动态引用及带约束兄弟节点的引用（允许 summary/description）。
+- JSONPath 仅支持 `$.field[index]`，不支持代码、过滤器或通配符。绝不执行模型生成的 Python/Shell。
+- `reviewed` 与 `source` 必须由人工策略提供；它们是审查记录，尚无多用户审批系统。未知预期不会补造断言。
+
+| 结果 | 含义 |
+| --- | --- |
+| PASS | 所有已审查断言通过 |
+| ASSERTION_FAILED | 已审查断言与实际结果不符，仍须结合证据定位 |
+| TEST_INFRA_ERROR | 超时、请求预算、轮询耗尽、重定向或大小限制等运行问题 |
+| TOOL_ERROR | 非法计划、绑定或工具错误 |
+| NEEDS_REVIEW | 缺少审查来源或明确预期 |
+
+外部测试数据清理由操作员负责，第一阶段未实现外部环境自动清理、幂等恢复或生产访问能力。
+
+## 验证与结构
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pip check
+# 可选：开启临时 loopback 服务验证真实 HTTP，完成后自动关闭
+.\.venv\Scripts\python.exe scripts/smoke_local_http.py
+```
+
+默认 pytest 使用 MockTransport/ASGITransport，主动阻断 DNS 和出站连接；Windows 异步事件循环内部 socket pair 除外。真实 HTTP 检查独立显式运行。
+
+```text
+src/agenttest/
+  contracts.py       OpenAPI 输入、安全引用、标准校验与摘要
+  safety.py          操作员目标、角色与预算配置
+  dsl.py             人工计划模型及执行前校验
+  selectors.py       安全 JSONPath 子集
+  executor.py        确定性 HTTP、绑定、重试、轮询和证据
+  verifier.py        审查后确定性断言
+  report.py          分类、摘要与持久化
+  mini_target.py     一次性模拟服务及故障开关
+  demo.py            离线演示组装
+  __main__.py        CLI
+  main.py            FastAPI 契约导入、健康与报告查询
+tests/               单元、安全边界和完整链路测试
+examples/            JSON 场景、目标与契约
+docs/                策略、进度及本地提交记录
+scripts/             环境准备、真实 loopback 检查
+runs/                本地报告（忽略，不提交）
+```
+
+已完成阶段 1。未实现 LangGraph、真实模型 Function Calling、MCP、CourseInsight 接入、Golden Tests 评测或前端。下一里程碑为阶段 2 的 fake LLM → DSL 校验 → 执行 → 报告工作流，先验证非法模型输出与工具失败分支，再考虑真实模型。详见 `CODEX_TASK.md` 与 `docs/progress.md`。
+
+实现依据：[OpenAPI 3.1 规范](https://spec.openapis.org/oas/v3.1.0.html)、[文档校验器](https://openapi-spec-validator.readthedocs.io/en/latest/python.html)、[HTTPX transport](https://www.python-httpx.org/advanced/transports/)、[超时](https://www.python-httpx.org/advanced/timeouts/)、[FastAPI 文件上传](https://fastapi.tiangolo.com/tutorial/request-files/)。

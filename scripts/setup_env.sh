@@ -3,14 +3,16 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 if command -v python3.11 >/dev/null 2>&1; then
   PY=python3.11
-elif command -v python3.12 >/dev/null 2>&1; then
-  PY=python3.12
 else
-  echo "Python 3.11 or 3.12 is required. Please install Python 3.11 first." >&2
+  echo "Python 3.11 is required. Please install it first." >&2
   exit 1
 fi
-"$PY" -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e '.[dev]'
+if [ ! -f .venv/bin/python ]; then
+  "$PY" -m venv .venv
+fi
+.venv/bin/python -c 'import sys; assert sys.version_info[:2] == (3, 11)'
+.venv/bin/python -m pip install -r requirements-dev.lock
+.venv/bin/python -m pip install --no-build-isolation -e '.[dev]'
 .venv/bin/python -m pytest -q
+.venv/bin/python -m ruff check .
 printf '\nEnvironment ready. To run: .venv/bin/python -m uvicorn agenttest.main:app --reload\n'
