@@ -1,5 +1,20 @@
 # 开发进度
 
+## 阶段 2B：远端四组验收（2026-10-11）
+
+| 模块 | commit SHA |
+| --- | --- |
+| 可信能力目录 / 零默认预算 / 报告类型 | `dc2b268` |
+| 受限会话 / 单次调查 / 故障注入 | `0d7d31b` |
+| 工作流 / 演示 / 真实回环 / CI / 文档 | `6aa283ddaa89bbee9506b1382c156a57d2258b2f` |
+
+- 上述功能提交已推送现有 Public master，工作区干净；[Actions 38130960971](https://github.com/mofengyan595/agenttest/actions/runs/38130960971) 对应 `6aa283d`，四组全部 success，已读取四组真实日志核对。
+- Windows/Linux agent 各 **402 passed**；base 各 **331 passed、5 skipped、1 warning**（无可选图依赖时跳过五个模块，既有 Starlette 提醒）。四组 Ruff、pip check 和原 8/9 回环均通过。
+- 两组 agent 的原自然语言 3/3、5/5 以及新增调查回环全部通过：正常 5 HTTP / 0 调查；ownership 6 HTTP / 1 调查，原 ASSERTION_FAILED 保留；各创建 1 次、登录 2 次，真实模型调用 0。
+- Windows CI 调查 attempt `3e549fcaaa444ea8a89620a9c1aba42c`（200、1.589ms）；Linux `de8276b24cf741179ced11ca80ed5ebb`（200、42.829ms）。均与本地响应摘要一致，不保存正文。
+- 公开检查：95 个文件、246 个历史 blob，实际学校 Key / 私钥 / 云 Token 命中 0；.env/.venv/.python311/runs 四类产物均被忽略；六个任务与两轮评测文件相对 `7003f66` 逐字节未变。
+- 当前交付范围完成。下一步先审查本次能力边界及故障证据，再决定是否扩大只读目录；不自动启用真实模型调查、修复或重规划。
+
 ## 阶段 2B：工作流与本地 HTTP 验收（2026-10-11）
 
 - 运行会话提交 `0d7d31b`，能力目录 `dc2b268`；原 `7003f66b77018897b0c12b55cd9a46051b1b0eb8` 及全部提交保留。

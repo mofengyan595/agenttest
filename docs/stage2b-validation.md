@@ -27,4 +27,6 @@
 - 超时、运输异常、工具异常、异步取消、认证过期和报告故障不会重新登录、创建或重发未知请求；会话 finally 清除 Vault 和响应绑定。
 - 报告节点失败也不覆盖原业务失败；永久报告故障只保证此前成功落盘的证据。恢复测试只读取旧报告，执行器拒绝所有已有请求的 run。
 
-最终 pytest/Ruff/依赖检查、功能提交 SHA 和四组 CI 实际状态记录于 [开发进度](progress.md)。操作系统硬杀进程及物理内存擦除未测试；实现不支持自动恢复、真实 LLM 调查、自动修复或重规划。
+本地全量 **402 passed**（原 327 + 新增 75），Ruff 与 pip check 通过。[功能提交 6aa283d 的四组 CI](https://github.com/mofengyan595/agenttest/actions/runs/38130960971) 全部 success：Windows/Linux agent 各 402 passed，base 各 331 passed、5 skipped、1 条既有提醒。两组 agent 均实际完成上述新增回环故障检查，原失败不变，创建/登录次数一致，真实模型调用 0。
+
+详细功能 SHA 与 CI 日志摘录见 [开发进度](progress.md)。操作系统硬杀进程及物理内存擦除未测试；实现不支持自动恢复、真实 LLM 调查、自动修复或重规划。
