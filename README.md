@@ -82,6 +82,7 @@ macOS / Linux：`bash scripts/setup_env.sh`，随后使用 `.venv/bin/python`。
 - 每个 operationId 必须在白名单；写操作须同时启用 isolated 和 allow_mutations。执行器只为批准的登录操作注入角色凭据，保管 Token，并在受限接口认证头使用。计划禁止 credential/auth_from，认证响应不可绑定；跨步骤数据移除敏感字段和已知秘密别名。
 - 每次运行限制步骤、请求、请求间隔、输入/响应大小、连接/读取及总时长；只有 GET/HEAD 可以有限重试或轮询，写入不会自动重试。
 - 仅支持 HTTP bearer、JSON 与 CSV multipart、path/query 参数。必填 header/cookie 或其他认证方式会被拒绝。
+- 请求校验覆盖字段名、严格基本类型、必填项、枚举、对象/数组、长度和数值边界；静态值预检，动态值发送前复检。未声明字段拒绝；复杂组合/联合、正则、开放对象及未知 format 进入 NEEDS_REVIEW。当前支持 format 为 binary/password/int32/int64，不声称支持完整 JSON Schema。
 - 仅解析 OpenAPI 3.0/3.1，先拒绝远程/文件/循环引用和不受控扩展，再进行标准结构校验。第一阶段要求每个操作声明非空 responses；不支持递归/动态引用及带约束兄弟节点的引用（允许 summary/description）。
 - JSONPath 仅支持 `$.field[index]`，不支持代码、过滤器或通配符。绝不执行模型生成的 Python/Shell。
 - 计划禁止 assertions/reviewed/source，只能引用独立 Registry 的 policy_id。策略必须匹配接口、角色、可信业务场景及数据绑定前提；未知、不适用或未批准策略在发送请求前进入 NEEDS_REVIEW。
@@ -115,6 +116,7 @@ src/agenttest/
   dsl.py             不可信计划及执行前校验
   policies.py        独立可信 Policy Registry 与作用域匹配
   credentials.py     执行器角色认证与跨步骤秘密隔离
+  request_validation.py 明确的 OpenAPI 请求约束子集
   selectors.py       安全 JSONPath 子集
   executor.py        确定性 HTTP、绑定、重试、轮询和证据
   verifier.py        审查后确定性断言

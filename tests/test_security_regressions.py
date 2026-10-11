@@ -74,7 +74,9 @@ async def test_oversize_request_rejected_before_transmit(tmp_path: Path) -> None
     def never(request):
         pytest.fail("Oversize request must not be sent")
 
-    contract = operation(method="POST", body={"content": {"application/json": {}}})
+    contract = operation(method="POST", body={"content": {"application/json": {"schema": {
+        "type": "object", "properties": {"text": {"type": "string"}},
+    }}}})
     executor = Executor(config(max_body_bytes=10), contract, ReportStore(tmp_path),
                         httpx.MockTransport(never), registry=registry())
     report = await executor.run(plan(body={"text": {"value": "x" * 50}}))

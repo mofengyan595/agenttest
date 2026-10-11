@@ -187,5 +187,31 @@ def validate_plan(
         if operation.request_body and operation.request_body.get("required"):
             if not step.body and not step.upload and not is_login:
                 raise ValueError("Missing required request body")
+        # Local import keeps trusted policy models independent of schema validation.
+        from agenttest.request_validation import request_schemas, validate_value
+
+        media = ("multipart/form-data" if step.upload else "application/json"
+                 if step.body or is_login else None)
+        schemas, body_schema = request_schemas(operation, media)
+        for location, values in (("path", step.path_parameters), ("query", step.query)):
+            if set(values) - set(schemas[location]):
+                raise ValueError("Unknown operation parameter")
+            for name, binding in values.items():
+                if binding.from_step is None:
+                    validate_value(binding.value, schemas[location][name])
+        if body_schema is not None and not is_login:
+            if step.upload:
+                validate_value({step.upload.field: step.upload.content}, body_schema)
+            else:
+                properties = body_schema.get("properties", {})
+                if set(step.body) - set(properties):
+                    raise ValueError("Unknown request body field")
+                if set(body_schema.get("required", [])) - set(step.body):
+                    raise ValueError("Missing required request body field")
+                for name, binding in step.body.items():
+                    if properties[name].get("readOnly"):
+                        raise ValueError("Read-only request field")
+                    if binding.from_step is None:
+                        validate_value(binding.value, properties[name])
         seen[step.id] = step
     return operations

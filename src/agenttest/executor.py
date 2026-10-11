@@ -24,6 +24,7 @@ from agenttest.report import (
     aggregate,
     fingerprint,
 )
+from agenttest.request_validation import validate_request
 from agenttest.safety import TargetConfig
 from agenttest.selectors import select
 from agenttest.verifier import verify
@@ -65,7 +66,7 @@ class Executor:
         try:
             operations, policies = self.validate(scenario)
         except NeedsReview:
-            report.outcome, report.reason = Outcome.NEEDS_REVIEW, "POLICY_REVIEW_REQUIRED"
+            report.outcome, report.reason = Outcome.NEEDS_REVIEW, "REVIEW_REQUIRED"
             report.completed = True
             self.store.save(report)
             return report
@@ -109,6 +110,9 @@ class Executor:
                         except httpx.TransportError as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = type(exc).__name__
+                        except NeedsReview:
+                            result.outcome = Outcome.NEEDS_REVIEW
+                            result.reason = "REQUEST_SCHEMA_REVIEW_REQUIRED"
                         except ExecutionLimit as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = str(exc)
@@ -142,8 +146,10 @@ class Executor:
         policy: RegisteredPolicy, vault: CredentialVault,
     ) -> Any:
         path = operation.path
+        path_values = {}
         for name, binding in step.path_parameters.items():
             value = self._binding(binding, step, state)
+            path_values[name] = value
             if type(value) not in {str, int} or not re.fullmatch(r"[A-Za-z0-9_-]+", str(value)):
                 raise ValueError("Unsafe path parameter")
             path = path.replace("{" + name + "}", str(value))
@@ -159,6 +165,10 @@ class Executor:
             raise ValueError("Secret cannot be used as ordinary request data")
         if is_login:
             payload = vault.login_payload(step.role)
+        media = ("multipart/form-data" if step.upload else "application/json"
+                 if step.body or is_login else None)
+        request_payload = {step.upload.field: step.upload.content} if step.upload else payload
+        validate_request(operation, path_values, query, request_payload, media)
         kwargs: dict[str, Any] = {"headers": headers, "params": query}
         if step.upload:
             kwargs["files"] = {step.upload.field: (
