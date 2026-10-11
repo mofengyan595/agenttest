@@ -4,7 +4,7 @@ import asyncio
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol, TypedDict
+from typing import Callable, Protocol, TypedDict
 
 import httpx
 from langgraph.errors import GraphRecursionError
@@ -73,6 +73,8 @@ class Workflow:
         *, user_task: str = "执行操作员提供的测试计划",
         investigation: InvestigationConfig | None = None,
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
+        intent_validator: Callable[[str, Scenario], None] | None = None,
+        execution_guard: Callable[[], None] | None = None,
     ) -> None:
         self._document = bytes(contract_document)
         self._config = TargetConfig.model_validate(config.model_dump())
@@ -89,6 +91,8 @@ class Workflow:
         self._investigation = (investigation or InvestigationConfig()).model_copy(deep=True)
         self._capabilities = (capabilities or ReadOnlyCapabilityRegistry()).snapshot()
         self._analyzer = analyzer
+        self._intent_validator = intent_validator
+        self._execution_guard = execution_guard
 
     async def run(self) -> RunReport:
         report = RunReport(
@@ -192,6 +196,11 @@ class Workflow:
                 if self._config.business_scenario == "mini_target_nl_v1":
                     validate_intent(self._user_task, scenario)
                     report.intent_verified = True
+                elif self._config.business_scenario == "courseinsight_demo_nl_v1":
+                    if self._intent_validator is None:
+                        raise NeedsReview("INTENT_VALIDATOR_REQUIRED")
+                    self._intent_validator(self._user_task, scenario)
+                    report.intent_verified = True
                 return {"ready": True}
             except NeedsReview as exc:
                 report.diagnostic = exc.diagnostic
@@ -217,6 +226,11 @@ class Workflow:
             if report.tool_calls >= self._budget.max_tool_calls:
                 return reject(Outcome.TEST_INFRA_ERROR, "TOOL_CALL_LIMIT")
             report.tool_calls += 1
+            if self._execution_guard is not None:
+                try:
+                    self._execution_guard()
+                except Exception:
+                    return reject(Outcome.TEST_INFRA_ERROR, "EXECUTION_PREFLIGHT_FAILED")
             try:
                 await executor.run(scenario, report=report)
                 return {"ready": True}
