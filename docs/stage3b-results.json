@@ -52,7 +52,7 @@
     "pytest_seconds": 92.34,
     "ruff": "PASS",
     "pip_check": "PASS",
-    "skip_reason": "Windows symlink creation privilege unavailable; Linux CI will verify",
+    "skip_reason": "Local Windows symlink privilege unavailable; both Windows and Linux agent CI verified this test",
     "previous_local_http": {
       "outcome": "PASS",
       "steps": 8,
@@ -94,11 +94,56 @@
   "evidence_scope": "SDK stdio subprocess with disposable in-process mini target; temporary reports discarded. Metrics are observed results, not a live Java or model evaluation.",
   "public_audit": {
     "public_files": 115,
-    "history_blobs": 283,
+    "history_blobs": 289,
     "actual_school_key_and_demo_password_hits": 0,
     "private_key_token_jwt_hits": 0,
     "protected_evaluations_tasks_and_java_evidence_unchanged": true,
     "ignored_artifacts": 4,
     "original_test_files_unchanged": 30
+  },
+  "ci": {
+    "run_id": 38144292792,
+    "url": "https://github.com/mofengyan595/agenttest/actions/runs/38144292792",
+    "commit_sha": "0d93152f136e648e2a541d76a279b03f4b9077a2",
+    "conclusion": "success",
+    "logs_verified": true,
+    "jobs": [
+      {
+        "os": "windows",
+        "profile": "base",
+        "job_id": 114484301365,
+        "passed": 424,
+        "skipped": 6,
+        "warnings": 1,
+        "seconds": 29.2
+      },
+      {
+        "os": "windows",
+        "profile": "agent",
+        "job_id": 114484301488,
+        "passed": 509,
+        "skipped": 0,
+        "seconds": 30.78,
+        "stdio_smoke": "PASS"
+      },
+      {
+        "os": "linux",
+        "profile": "base",
+        "job_id": 114484301521,
+        "passed": 424,
+        "skipped": 6,
+        "warnings": 1,
+        "seconds": 23.65
+      },
+      {
+        "os": "linux",
+        "profile": "agent",
+        "job_id": 114484301523,
+        "passed": 509,
+        "skipped": 0,
+        "seconds": 40.28,
+        "stdio_smoke": "PASS"
+      }
+    ]
   }
 }

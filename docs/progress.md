@@ -1,5 +1,20 @@
 # 开发进度
 
+## 阶段 3B：四组 CI 验收（2026-10-11）
+
+| 模块 | commit SHA |
+| --- | --- |
+| 受控能力适配 / 防重放 | `309dc10` |
+| MCP SDK v2 stdio / 冻结依赖 / CI | `6c4a33f` |
+| 入门文档 / 实际调用证据 | `0d93152f136e648e2a541d76a279b03f4b9077a2` |
+
+- [Actions 38144292792](https://github.com/mofengyan595/agenttest/actions/runs/38144292792) 对应 `0d93152`，四组 **全部 success**，已分别读取完整日志并核对。
+- agent：Windows **509 passed / 30.78s**，Linux **509 passed / 40.28s**，无跳过；本机缺权限的符号链接边界已在两组 CI 验证。
+- base：Windows **424 passed、6 skipped、1 warning / 29.20s**，Linux **424 passed、6 skipped、1 warning / 23.65s**；跳过可选图/MCP 模块，保留既有 Starlette 提醒。
+- 四组 Ruff、pip check、真实回环 8/9 均通过；两组 agent 自然语言/只读调查回归及真正 MCP stdio 子进程验收均通过。学校 API / Java 写入均 0。
+- 推送后公开检查：115 文件 / 289 历史 blob，实际 Key / demo 密码 / 私钥 / Token / JWT 命中 0；旧任务、两轮评测、Java 记录及原 30 测试文件保留。工作区干净，基线历史仍为祖先。
+- 本次最后提交只记录以上验收结果。最小阶段 3B 完成；下一步审查工具边界，再单独决定是否设计 Java 只读 MCP 能力，当前不开放 Java 写入、任意计划执行或自动恢复。
+
 ## 阶段 3B：全量验收与入门文档（2026-10-11）
 
 - 功能提交 `309dc10`、`6c4a33f`；新增 Python/MCP 入门说明、工具表、客户端配置、实际调用示例及脱敏验收统计。

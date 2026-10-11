@@ -53,7 +53,7 @@ Linux 对应解释器为 `.venv/bin/python`。首次安装需要包源或 wheel 
 | `mini_ownership_fault` | 5 步 / 5 次请求，归属权限断言失败 |
 | `mini_terminal_fault` | 7 步 / 8 次请求，异步终态断言失败 |
 
-故障场景是现有 mini target 故障注入样本，沿用同一套批准的策略和 DSL。MCP 不开放任意故障配置，也不降低断言来使它们通过。每次运行创建一个合成课程，结束后内存数据丢弃；外部 Java 和真实业务数据不会参与。
+故障场景是现有 mini target 故障注入样本，沿用同一套批准的策略和 DSL。MCP 不开放任意故障配置，也不降低断言来使它们通过。每次运行创建一个合成课程，结束后内存数据丢弃；外部 Java 和真实业务数据不会参与。ASGI 在内存里处理 HTTP 请求，不占用 8080 端口；报告中的回环 origin 是执行器的逻辑地址。
 
 ## 实际调用示例
 
@@ -147,3 +147,5 @@ asyncio.run(main())
 四组 CI 保持 Windows/Linux × base/agent；agent 组安装 MCP 并运行 stdio 验收，base 组不要求 MCP。CI 不发送学校 API 调用或真实 Java 写入。原有 452 项测试、两轮真实模型结果和 Java 3A 记录继续保留。
 
 本轮没有客户端提交计划的执行授权流程、远程 MCP HTTP 部署、Java MCP 能力、真实 LLM 调查、恢复运行、自动清理外部资源或独立 wheel 分发；扩大这些能力需要单独审核。
+
+本轮全量本机结果为 **508 passed、1 skipped**，跳过原因是本机符号链接权限。对应验收提交 `0d93152` 的 Windows/Linux agent CI 均 **509 passed**，base 均 **424 passed、6 skipped、1 warning**；Ruff、pip check、stdio 与回环检查通过。[四组 CI](https://github.com/mofengyan595/agenttest/actions/runs/38144292792) 已核对日志。
