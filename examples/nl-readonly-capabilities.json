@@ -1,0 +1,26 @@
+[
+  {
+    "id": "course_owner_read",
+    "operation_id": "getCourse",
+    "roles": ["alice", "bob"],
+    "policy_id": "nl_read_v1",
+    "business_scenario": "mini_target_nl_v1",
+    "source_policy_id": "nl_create_v1",
+    "source_selector": "$.courseId",
+    "path_parameter": "courseId",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed independent mini_target.get_course/owned_course: dictionary lookup only; no writes, polling or state transitions. Applies only to this isolated fixture."
+  },
+  {
+    "id": "course_other_read",
+    "operation_id": "getCourse",
+    "roles": ["alice", "bob"],
+    "policy_id": "nl_forbidden_v1",
+    "business_scenario": "mini_target_nl_v1",
+    "source_policy_id": "nl_create_v1",
+    "source_selector": "$.courseId",
+    "path_parameter": "courseId",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed independent mini_target.get_course/owned_course: dictionary lookup with ownership guard, no side effects. getBatch advances state and is expressly excluded."
+  }
+]

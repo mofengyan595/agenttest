@@ -1,5 +1,13 @@
 # 开发进度
 
+## 阶段 2B：能力目录与零默认预算（2026-10-11）
+
+- 起点 `7003f66b77018897b0c12b55cd9a46051b1b0eb8`；工作区干净，原 327 项测试、Ruff、pip check 实际通过。
+- 新增操作员 ReadOnlyCapability Registry、最多单轮/单次的独立预算和严格 AnalyzerSelection；默认禁用且所有预算为零。
+- 首批仅批准隔离 mini target 的 getCourse 本人读取及跨用户查询；getBatch 状态推进查询不在目录内。能力不包含模型自行声明的审批字段。
+- 报告向后兼容地增加 investigations，HTTP attempt 增加唯一 ID；资源引用只允许会话生成的不透明句柄。
+- 针对性测试 **25 passed**（1.60s），Ruff 通过；尚未连接执行会话，不能宣称调查链路可用。提交 SHA 在下一检查点记录。
+
 ## 第二轮远端验收（2026-10-11）
 
 - 结果交付提交 `22387cccea4002552c8d5289a80f2e4ffd134b75` 已推送原 Public 仓库 master；相对起点新增五个小步提交，旧提交完整保留。

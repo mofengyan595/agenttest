@@ -32,6 +32,7 @@ class CheckResult(BaseModel):
 
 class AttemptEvidence(BaseModel):
     attempt: int
+    attempt_id: str = Field(default_factory=lambda: uuid4().hex)
     status_code: int | None = None
     elapsed_ms: float
     response_bytes: int = 0
@@ -50,6 +51,17 @@ class StepResult(BaseModel):
     policy_sha256: str
     checks: list[CheckResult] = Field(default_factory=list)
     attempts: list[AttemptEvidence] = Field(default_factory=list)
+
+
+class InvestigationResult(StepResult):
+    parent_step_id: str
+    capability_id: str | None = None
+    source_step_id: str | None = None
+    resource_ref_sha256: str | None = None
+    requests_used: int = 0
+    rounds_used: int = 0
+    model_calls_used: int = 0
+    elapsed_ms: float = 0
 
 
 class ModelCallStats(BaseModel):
@@ -103,6 +115,8 @@ class RunReport(BaseModel):
     validation_issue: str | None = None
     diagnostic: Diagnostic | None = None
     intent_verified: bool = False
+    investigations: list[InvestigationResult] = Field(default_factory=list)
+    investigation_error: str | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 
