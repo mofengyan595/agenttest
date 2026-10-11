@@ -69,4 +69,6 @@ T04 只留名称摘要及不等关系，不保存错误名称；T05 不推测模
 
 完整离线 **327 passed**，Ruff / pip check 通过；旧图真实回环 8/9、自然语言两路径 3/3 和 5/5 PASS，临时服务关闭。四组 CI 配置保持原文件，真实模型调用未加入 CI。
 
+结果提交 `22387cccea4002552c8d5289a80f2e4ffd134b75` 的 [四组远端验收](https://github.com/mofengyan595/agenttest/actions/runs/38128347535) 全部 success。Windows/Linux agent 各 327 passed；base 各 266 passed、4 skipped、1 个原有 Starlette 提醒；四组 Ruff、依赖和回环均通过。
+
 阶段 2B 仅交付 [受控只读调查设计](stage2b-readonly-design.md)。本轮两个失败均在业务执行前，不能用只读调查修复；下一步仍应根据明确诊断改善规划，并在独立新轮次评估，不补跑本轮失败。未来调查适用于已有响应证据的业务失败，使用独立预算且不重放创建。

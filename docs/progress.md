@@ -1,5 +1,13 @@
 # 开发进度
 
+## 第二轮远端验收（2026-10-11）
+
+- 结果交付提交 `22387cccea4002552c8d5289a80f2e4ffd134b75` 已推送原 Public 仓库 master；相对起点新增五个小步提交，旧提交完整保留。
+- [Actions 38128347535](https://github.com/mofengyan595/agenttest/actions/runs/38128347535) 对应上述提交，四组全部 success：Windows/Linux agent 各 **327 passed**；base 各 **266 passed、4 skipped、1 warning**（可选图模块跳过、既有 Starlette 提醒）。
+- 四组 Ruff、依赖检查、旧真实回环通过；两个 agent 组 3/3 与 5/5 自然语言回环通过，CI 真实模型调用 0。已读取四组实际日志核对。
+- 冻结版本 e5b44b9 与交付提交的 src/scripts/tests/依赖/CI/任务书逐字节一致，后续只有报告和文档；没有将离线修复或新结果回填首轮。
+- 本次完成安全诊断、意图门禁、第二轮 16/18 实测及 2B 最小设计；仍未实现动态只读调查、恢复或重规划。下一里程碑按设计先做独立能力目录/预算/FakeAnalyzer，避免重放创建。
+
 ## 第二轮真实评测完成（2026-10-11）
 
 | 本次模块 | commit SHA |
