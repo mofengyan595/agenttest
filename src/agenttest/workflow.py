@@ -18,6 +18,7 @@ from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_d
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
 from agenttest.intent import validate_intent
+from agenttest.investigation import InvestigationConfig, ReadOnlyCapabilityRegistry
 from agenttest.llm_planner import PlannerFailure
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context, validate_user_task
@@ -70,6 +71,8 @@ class Workflow:
         transport: httpx.AsyncBaseTransport | None = None, environ: dict[str, str] | None = None,
         budget: WorkflowBudget | None = None,
         *, user_task: str = "执行操作员提供的测试计划",
+        investigation: InvestigationConfig | None = None,
+        capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
     ) -> None:
         self._document = bytes(contract_document)
         self._config = TargetConfig.model_validate(config.model_dump())
@@ -83,6 +86,9 @@ class Workflow:
         self._environ = dict(os.environ if environ is None else environ)
         self._budget = (budget or WorkflowBudget()).model_copy(deep=True)
         self._user_task = user_task
+        self._investigation = (investigation or InvestigationConfig()).model_copy(deep=True)
+        self._capabilities = (capabilities or ReadOnlyCapabilityRegistry()).snapshot()
+        self._analyzer = analyzer
 
     async def run(self) -> RunReport:
         report = RunReport(
@@ -100,7 +106,11 @@ class Workflow:
             self._store.save(report)
 
         def reject(outcome: Outcome, reason: str) -> dict:
-            report.outcome, report.reason = outcome, reason
+            if report.investigations:
+                # Post-execution tool/report failures cannot rewrite the original business result.
+                report.investigation_error = reason
+            else:
+                report.outcome, report.reason = outcome, reason
             return {"ready": False}
 
         async def load_contract(state: GraphState) -> dict:
@@ -116,7 +126,9 @@ class Workflow:
                 contract = load_openapi(self._document)
                 report.contract_sha256 = fingerprint(contract.model_dump())
                 executor = Executor(self._config, contract, self._store, self._transport,
-                                    self._environ, registry=self._registry)
+                                    self._environ, registry=self._registry,
+                                    investigation=self._investigation,
+                                    capabilities=self._capabilities, analyzer=self._analyzer)
                 return {"ready": True}
             except ValidationFailure as exc:
                 report.diagnostic = exc.diagnostic
@@ -261,6 +273,11 @@ class Workflow:
             if not report.workflow_completed:
                 report.completed = True
                 report.workflow_completed = False
-                self._store.save(report)
+                try:
+                    self._store.save(report)
+                except OSError:
+                    if not report.investigations:
+                        raise
+                    report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         # Graph nodes share a single event loop; no cancellable thread may keep changing a report.
         return report.model_copy(deep=True)

@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
     workflow_demo = subcommands.add_parser("workflow-demo", help="运行 Fake LLM 离线状态图")
     workflow_demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
+    investigation_demo = subcommands.add_parser(
+        "investigation-demo", help="显式启用单轮 FakeAnalyzer，只读调查隔离 mini target")
+    investigation_demo.add_argument("--fault", choices=["none", "ownership"], default="ownership")
     execute = subcommands.add_parser("run", help="执行人工计划和显式授权的目标配置")
     workflow = subcommands.add_parser("workflow", help="通过 Fake LLM 规划样本运行状态图")
     workflow.add_argument("--user-task", default="执行操作员提供的测试计划")
@@ -52,7 +55,8 @@ def main(argv: list[str] | None = None) -> int:
     report = subcommands.add_parser("report", help="查询或导出脱敏 JSON 报告")
     report.add_argument("run_id")
     report.add_argument("--output", type=Path)
-    for command in (demo, workflow_demo, execute, workflow, agent, agent_demo, report):
+    for command in (demo, workflow_demo, investigation_demo, execute, workflow,
+                    agent, agent_demo, report):
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     store = ReportStore(args.runs_dir)
@@ -64,7 +68,11 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(result.model_dump_json(indent=2))
             return 0
-        if args.command in {"demo", "workflow-demo"}:
+        if args.command == "investigation-demo":
+            from agenttest.investigation_demo import run_investigation_demo
+
+            result = asyncio.run(run_investigation_demo(store, fault=args.fault))
+        elif args.command in {"demo", "workflow-demo"}:
             result = asyncio.run(run_demo(args.fault, store,
                                          use_workflow=args.command == "workflow-demo"))
         elif args.command in {"agent", "agent-demo"}:
@@ -112,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({
             "run_id": result.run_id, "outcome": result.outcome.value,
             "steps": len(result.steps),
+            "investigations": len(result.investigations),
             "report": str(store.root / result.run_id / "report.json"),
         }, ensure_ascii=False))
         return 0 if result.outcome == Outcome.PASS else 1

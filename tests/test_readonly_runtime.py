@@ -55,7 +55,9 @@ def setup(tmp_path, *, fault="ownership", analyzer=None, enabled=True, budget=No
             return httpx.Response(201, json=body)
         reads = sum(method == "GET" for method, _ in calls)
         if reads >= (3 if fault == "ownership" else 2) and investigation_fault:
-            await investigation_fault(req)
+            response = await investigation_fault(req)
+            if response is not None:
+                return response
         if fault == "name":
             body["name"] = "private-wrong-name"
         elif fault == "id":
@@ -105,10 +107,12 @@ async def test_ownership_investigation_reuses_auth_and_independent_budget(tmp_pa
     investigation = report.investigations[0]
     assert investigation.outcome == Outcome.PASS and len(calls) == 6
     assert investigation.capability_id == "course_owner_read"
+    assert investigation.role == "alice"
     assert investigation.parent_step_id == "forbidden" and investigation.source_step_id == "create"
     assert (investigation.requests_used == investigation.rounds_used
             == investigation.model_calls_used == 1)
     assert investigation.attempts[0].status_code == 200
+    assert investigation.attempts[0].elapsed_ms > 0
     assert len(investigation.attempts[0].attempt_id) == 32
     assert investigation.attempts[0].response_sha256 and investigation.elapsed_ms > 0
     assert executor.store.read(report.run_id) == report
@@ -355,3 +359,41 @@ async def test_analyzer_errors_have_fixed_codes_and_no_http(tmp_path):
     assert report.investigations[0].reason == "INVESTIGATION_TOOL_ERROR"
     assert len(calls) == 5
     assert "private-sensitive" not in report.model_dump_json()
+
+
+@pytest.mark.asyncio
+async def test_analyzer_can_select_other_approved_policy_without_changing_failure(tmp_path):
+    analyzer = SelectingAnalyzer(lambda context: next(
+        c for c in context["choices"] if c["capability_id"] == "course_other_read"))
+    executor, calls, _ = setup(tmp_path, analyzer=analyzer)
+    report = await executor.run(scenario(True))
+    assert_original_preserved(executor, report, calls)
+    assert report.investigations[0].capability_id == "course_other_read"
+    assert report.investigations[0].checks[0].expected == [403]
+    assert report.investigations[0].outcome == Outcome.ASSERTION_FAILED
+    assert len(calls) == 6
+
+
+@pytest.mark.asyncio
+async def test_expired_authentication_does_not_trigger_login(tmp_path):
+    async def expired(req):
+        return httpx.Response(401, json={"detail": "private-auth-detail"})
+
+    executor, calls, _ = setup(tmp_path, investigation_fault=expired)
+    report = await executor.run(scenario(True))
+    assert_original_preserved(executor, report, calls)
+    assert report.investigations[0].reason == "INVESTIGATION_ASSERTION_FAILED"
+    assert report.investigations[0].attempts[0].status_code == 401
+    assert len(calls) == 6
+
+
+@pytest.mark.asyncio
+async def test_authority_drift_during_investigation_is_detected_after_response(tmp_path):
+    async def mutate(req):
+        executor.investigation.budget.max_requests = 20
+
+    executor, calls, _ = setup(tmp_path, investigation_fault=mutate)
+    report = await executor.run(scenario(True))
+    assert_original_preserved(executor, report, calls)
+    assert report.investigations[0].reason == "INVESTIGATION_AUTHORITY_CHANGED"
+    assert executor.investigation.budget.max_requests == 1 and len(calls) == 6

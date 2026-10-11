@@ -323,7 +323,7 @@ class Executor:
                 evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
             result.attempts.append(evidence)
             self.store.save(report)
-            started = time.monotonic()
+            started = time.perf_counter()
             try:
                 response = await client.send(request, stream=True)
                 try:
@@ -355,6 +355,6 @@ class Executor:
                 evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
                 raise
             finally:
-                evidence.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
+                evidence.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
                 self.store.save(report)
         raise ExecutionLimit("RETRIES_EXHAUSTED")

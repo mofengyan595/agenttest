@@ -51,7 +51,7 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 
 这里 `--plan` 是 Fake LLM 返回的 JSON 样本，仍按不可信模型输出处理。操作员另行加载目标配置与 Policy Registry；Planner 接收 user_task、白名单操作、参数/请求 Schema、认证要求及策略适用前提，不接收目标环境、账号凭据或批准权。原始规划结果、凭据、HTTP 正文不进入图状态，云追踪显式禁用。
 
-每次运行至多一次规划、一次执行器调用；HTTP 请求继续受目标预算限制。`WorkflowBudget` 由操作员构造，模型不能修改。失败分析是固定分类建议，不重写断言、不自动重试整条场景；报告记录节点序列、调用次数和完成状态。当前不支持恢复、重复规划或动态调查。
+每次运行至多一次规划、一次执行器调用；HTTP 请求继续受目标预算限制。`WorkflowBudget` 由操作员构造，模型不能修改。失败分析提供固定分类建议，不重写断言、不自动重试整条场景；报告记录节点序列、调用次数和完成状态。阶段 2B 另支持操作员显式开启的单次只读调查，默认关闭；不支持恢复或重复规划。
 
 ## 阶段 2A：真实自然语言规划
 
@@ -86,7 +86,26 @@ Agent extra 固定 LangGraph 1.2.14；完整版本在 `requirements-agent.lock`�
 第二轮实际 **16/18**（首轮 13/18），计划有效及策略正确 **17/18**、意图满足 **16/18**；18 次调用 / 25595 Token。T04 错名、T05 弃权保留为 NEEDS_REVIEW。详见 [两轮对比和逐条脱敏统计](docs/stage2a-round2-evaluation.md)，不宣称小样本具备广泛泛化能力。
 真实评测先提交代码并保持工作区干净，自动冻结代码/Prompt/Schema/配置/任务集，每条前检查漂移，串行且零自动重试。输出、冻结文件和逐条日志不可覆盖；重复实验必须使用新的输出路径。
 
-阶段 2B 目前仅有 [只读失败调查设计与验收方案](docs/stage2b-readonly-design.md)：独立能力目录和预算、保留原失败、不自动重放创建。尚未实现动态调查或恢复。
+## 阶段 2B：受控只读失败调查
+
+已实现 [最小设计与验收方案](docs/stage2b-readonly-design.md)。调查默认关闭，独立请求、轮数、分析器调用和时间预算均为零。操作员通过 `InvestigationConfig`、`ReadOnlyCapabilityRegistry` 和 `FakeAnalyzer` 显式配置；模型只能从过滤后的目录中选能力 ID、已建立认证的角色和当前运行的临时资源句柄。
+
+```powershell
+# 显式开启隔离 mini target 的单次调查；故障仍返回退出码 1
+.\.venv\Scripts\python.exe -m agenttest investigation-demo
+# 原业务 PASS，零调查请求，退出码 0
+.\.venv\Scripts\python.exe -m agenttest investigation-demo --fault none
+# 真实本地 HTTP，检查两类场景各只创建一次、登录两次，无学校 API 调用
+.\.venv\Scripts\python.exe scripts/smoke_investigation_http.py
+```
+
+首批能力在 `examples/nl-readonly-capabilities.json`，仅适用于独立 mini target 的 getCourse，不能直接作为真实服务的无副作用凭证。GET 本身不足以证明安全；会推进状态的 getBatch 未获批准。普通运行入口不会因存在该文件而自动启用调查。
+
+调查位于 `execute` 内原 HTTP 会话结束前，复用 Executor/Verifier/Vault，最多一次选择、一次 GET，无重试、重新登录或创建。只有原 ASSERTION_FAILED 且有已通过的同 run 来源引用才可进入；JSON/DSL/策略/意图拒绝、模型弃权及 PASS 均不调查。原课程 ID 由执行器绑定，分析器不能传入 ID、URL、Header、策略或断言。
+
+报告追加 `investigations`，保存父步骤、能力、资源句柄摘要、唯一 attempt ID、状态/耗时/响应摘要、固定错误码及预算消耗，不保存认证或 HTTP 正文。原结果和断言保持不变；调查 PASS 只能表示补充读取成功。预算在发送前扣除并落盘，未知发送结果不重发；报告失败单独记录 `investigation_error`，永久落盘失败时不能保证最后一条证据已保存。
+
+会话内认证和响应绑定只在内存中使用，结束/取消后清除；历史 run 只能读取，不支持重启恢复。当前仅 FakeAnalyzer，不接入真实 LLM 调查、自动修复、重新规划、MCP 或 RAG。两轮 18 条评测原始数据保持不变，不再用已使用任务反复调优。
 
 API 已按 [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)、[API 参考](https://reference.langchain.com/python/langgraph/graph) 和 [禁用追踪文档](https://docs.langchain.com/langsmith/conditional-tracing) 核对，并实际运行 `StateGraph`、条件边、`compile()`、`ainvoke()`；版本见 [PyPI 1.2.14](https://pypi.org/project/langgraph/1.2.14/)。
 

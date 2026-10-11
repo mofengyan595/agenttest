@@ -17,7 +17,9 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
-Stage 2 natural-language planning: bounded user tasks, public contract/policy context,
-operator-configured structured-output LLM adapter, offline FakeLLM baseline and explicit
-live evaluation. Reuse Executor, Verifier and CredentialVault. Keep Windows/Linux ×
-base/agent CI. No MCP, RAG, frontend, CourseInsight changes or complex multi-agent.
+Stage 2A is accepted (two preserved live evaluations). Stage 2B adds one explicitly
+enabled, operator-approved read-only failure investigation using FakeAnalyzer and the
+original Executor session. Preserve original results, ephemeral resource/auth scope,
+zero default independent budgets and no automatic request replay. Keep Windows/Linux ×
+base/agent CI. No real LLM investigation, repair/replanning, MCP, RAG, frontend,
+CourseInsight changes or complex multi-agent.

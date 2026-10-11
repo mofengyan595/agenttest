@@ -56,6 +56,7 @@ class StepResult(BaseModel):
 class InvestigationResult(StepResult):
     parent_step_id: str
     capability_id: str | None = None
+    role: str | None = None
     source_step_id: str | None = None
     resource_ref_sha256: str | None = None
     requests_used: int = 0

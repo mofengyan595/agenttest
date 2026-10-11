@@ -26,10 +26,12 @@ def natural_inputs(fault: Fault = "none"):
 
 
 async def run_natural_demo(user_task: str, planner, store: ReportStore | None = None,
-                           *, fault: Fault = "none", budget=None) -> RunReport:
+                           *, fault: Fault = "none", budget=None, investigation=None,
+                           capabilities=None, analyzer=None) -> RunReport:
     from agenttest.workflow import Workflow
 
     target, config, registry, environ = natural_inputs(fault)
     return await Workflow(json.dumps(target.openapi()).encode(), config, registry, planner,
                           store, httpx.ASGITransport(target, raise_app_exceptions=False),
-                          environ, budget, user_task=user_task).run()
+                          environ, budget, user_task=user_task, investigation=investigation,
+                          capabilities=capabilities, analyzer=analyzer).run()

@@ -1,5 +1,17 @@
 # 开发进度
 
+## 阶段 2B：工作流与本地 HTTP 验收（2026-10-11）
+
+- 运行会话提交 `0d7d31b`，能力目录 `dc2b268`；原 `7003f66b77018897b0c12b55cd9a46051b1b0eb8` 及全部提交保留。
+- Workflow.execute 仍只调用一次 Executor，调查在原会话关闭前完成；新增显式 investigation-demo，普通入口仍默认禁用。FakeAnalyzer 可选择本人或他人的批准能力，原业务断言不变。
+- 新增四组 CI 中 agent 的真实只读回环检查，Windows/Linux × base/agent 矩阵保持；无新增依赖、无学校 API 调用。更新 README、AGENTS 与设计文档，保留两轮结果和原任务。
+- 最终全量 **402 passed**（81.48s）：保留原 327 项，新增 75 项；Ruff **All checks passed!**，pip check **No broken requirements found.**
+- 真实 HTTP：旧工作流 8 步/9 请求 PASS、health/spec_import/report_query 均 200；旧 Fake 自然语言路径 3/3 与 5/5 PASS；新调查正常 5 请求/零调查，ownership 6 请求/一次调查，均创建 1 次、登录 2 次。
+- 最新调查 run `4506ffc1ffc747ddbcd1fbfe3488098d`；attempt `27181d313db54f1090cba0c6058910fb`，200、5.639ms、58 字节。原 ASSERTION_FAILED 保留，补充读取 PASS。完整脱敏记录见 [验收证据](stage2b-validation.md)。
+- 故障覆盖独立预算、原 ID/名称绑定、非法能力/策略/写操作/状态 GET、跨 run、配置漂移、认证过期、超时/工具/取消、发送前落盘、永久报告失败。读取已有 run 不能恢复执行。
+- 已知限制：仅单次 FakeAnalyzer GET 调查；未测试操作系统硬杀进程或物理内存擦除，永久报告失败不能保证最终证据落盘；无自动恢复、修复、真实 LLM 调查或重规划。
+- 本模块功能提交后推送原 Public master，远端 CI 待核对；模块 SHA 与 CI 结果在下一检查点记录。
+
 ## 阶段 2B：受限运行会话与单次调查（2026-10-11）
 
 - 能力目录提交：`dc2b268`。复用原 Executor._step / _request、Verifier 和 Vault，未新增 HTTP 引擎或依赖。

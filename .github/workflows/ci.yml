@@ -66,3 +66,6 @@ jobs:
       - name: Natural-language paths over loopback with FakeLLM
         if: matrix.profile == 'agent'
         run: '"${{ matrix.python }}" scripts/smoke_natural_http.py'
+      - name: Read-only failure investigation over loopback with FakeAnalyzer
+        if: matrix.profile == 'agent'
+        run: '"${{ matrix.python }}" scripts/smoke_investigation_http.py'

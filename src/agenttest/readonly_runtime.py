@@ -104,7 +104,7 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
         outcome=Outcome.NEEDS_REVIEW, reason="INVESTIGATION_PENDING",
     )
     report.investigations.append(result)
-    started = time.monotonic()
+    started = time.perf_counter()
     budget = authority.budget
     requests = {"requests": 0, "last_request": last_request,
                 "max_requests": min(budget.max_requests, config.max_requests)}
@@ -151,14 +151,19 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
             result.step_id, result.operation_id = step.id, step.operation_id
             result.method, result.path_template = operation.method, operation.path
             result.capability_id, result.source_step_id = selection.capability_id, source_id
+            result.role = selection.role
             result.resource_ref_sha256 = fingerprint(selection.resource_ref)
             result.policy_sha256 = fingerprint(policy.model_dump())
             # Authentication was established in the original run, never by investigation.
             vault.header(step.role)
             await executor._step(client, step, operation, state, requests, result,
                                  report, policy, vault)
-            result.reason = ("INVESTIGATION_POLICY_PASSED" if result.outcome == Outcome.PASS
-                             else "INVESTIGATION_ASSERTION_FAILED")
+            if digest() != frozen:
+                result.outcome = Outcome.NEEDS_REVIEW
+                result.reason = "INVESTIGATION_AUTHORITY_CHANGED"
+            else:
+                result.reason = ("INVESTIGATION_POLICY_PASSED" if result.outcome == Outcome.PASS
+                                 else "INVESTIGATION_ASSERTION_FAILED")
     except TimeoutError:
         result.outcome, result.reason = Outcome.TEST_INFRA_ERROR, "INVESTIGATION_TIMEOUT"
     except httpx.TransportError:
@@ -180,7 +185,7 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
         else:
             result.outcome, result.reason = Outcome.TOOL_ERROR, "INVESTIGATION_TOOL_ERROR"
     finally:
-        result.elapsed_ms = round((time.monotonic() - started) * 1000, 2)
+        result.elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         result.requests_used = requests["requests"]
         # Restore the immutable original evidence even if an injected analyzer mutated a reference.
         for name in type(report).model_fields:
