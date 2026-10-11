@@ -8,6 +8,8 @@ import yaml
 from openapi_spec_validator import validate
 from pydantic import BaseModel, Field
 
+from agenttest.diagnostics import Layer, ValidationFailure
+
 MAX_DOCUMENT_BYTES = 1_000_000
 METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "trace"}
 
@@ -38,7 +40,9 @@ def _mapping(loader: UniqueLoader, node: yaml.MappingNode) -> dict:
     for key_node, value_node in node.value:
         key = loader.construct_object(key_node)
         if not isinstance(key, str) or key in result:
-            raise ValueError("Document keys must be unique strings")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_DOCUMENT_KEYS_MUST_BE_UNIQUE_STRINGS",
+                "Document keys must be unique strings")
         result[key] = loader.construct_object(value_node)
     return result
 
@@ -49,11 +53,15 @@ UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _ma
 def load_openapi(raw: bytes | str, *, unwrap: bool = False) -> ContractSummary:
     encoded = raw.encode("utf-8") if isinstance(raw, str) else raw
     if len(encoded) > MAX_DOCUMENT_BYTES:
-        raise ValueError("Contract exceeds size limit")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_CONTRACT_EXCEEDS_SIZE_LIMIT",
+            "Contract exceeds size limit")
     try:
         document = yaml.load(encoded.decode("utf-8"), Loader=UniqueLoader)
     except (yaml.YAMLError, UnicodeError, RecursionError) as exc:
-        raise ValueError("Invalid JSON/YAML document") from exc
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_INVALID_JSON_YAML_DOCUMENT",
+            "Invalid JSON/YAML document") from exc
     if unwrap and isinstance(document, dict) and set(document) == {"document"}:
         document = document["document"]
     return summarize_openapi(document)
@@ -66,21 +74,31 @@ def _bounded_tree(document: Any) -> None:
         nonlocal count
         count += 1
         if depth > 40 or count > 20_000:
-            raise ValueError("Contract nesting or expansion exceeds limit")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_CONTRACT_NESTING_OR_EXPANSION_EXCEEDS_LIMIT",
+                "Contract nesting or expansion exceeds limit")
         if isinstance(value, (dict, list)):
             if id(value) in ancestors:
-                raise ValueError("Cyclic YAML aliases are forbidden")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_CYCLIC_YAML_ALIASES_ARE_FORBIDDEN",
+                    "Cyclic YAML aliases are forbidden")
             ancestors = ancestors | {id(value)}
             if isinstance(value, dict) and any(not isinstance(k, str) for k in value):
-                raise ValueError("Document keys must be strings")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_DOCUMENT_KEYS_MUST_BE_STRINGS",
+                    "Document keys must be strings")
             for child in value.values() if isinstance(value, dict) else value:
                 walk(child, depth + 1, ancestors)
         elif not isinstance(value, (str, int, float, bool, type(None))):
-            raise ValueError("Document must contain JSON-compatible values")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_DOCUMENT_MUST_CONTAIN_JSON_COMPATIBLE_VALUES",
+                "Document must contain JSON-compatible values")
 
     walk(document, 0, set())
     if len(json.dumps(document, allow_nan=False).encode()) > MAX_DOCUMENT_BYTES:
-        raise ValueError("Contract exceeds expanded size limit")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_CONTRACT_EXCEEDS_EXPANDED_SIZE_LIMIT",
+            "Contract exceeds expanded size limit")
 
 
 def _resolve(document: dict) -> dict:
@@ -96,29 +114,43 @@ def _resolve(document: dict) -> dict:
         if isinstance(value, dict):
             expanded_bytes += sum(len(key.encode("utf-8")) for key in value)
         if budget > 30_000 or depth > 50:
-            raise ValueError("Reference expansion exceeds limit")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_REFERENCE_EXPANSION_EXCEEDS_LIMIT",
+                "Reference expansion exceeds limit")
         if expanded_bytes > MAX_DOCUMENT_BYTES:
-            raise ValueError("Expanded reference size exceeds limit")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_EXPANDED_REFERENCE_SIZE_EXCEEDS_LIMIT",
+                "Expanded reference size exceeds limit")
         if isinstance(value, list):
             return [visit(item, trail, depth + 1) for item in value]
         if not isinstance(value, dict):
             return value
         if "$dynamicRef" in value or "$recursiveRef" in value:
-            raise ValueError("Dynamic references are unsupported")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_DYNAMIC_REFERENCES_ARE_UNSUPPORTED",
+                "Dynamic references are unsupported")
         if "$ref" in value:
             ref = value["$ref"]
             if not isinstance(ref, str) or not ref.startswith("#/") or ref in trail:
-                raise ValueError("Only acyclic local JSON Pointer references are supported")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_LOCAL_REFERENCE_REQUIRED",
+                    "Only acyclic local JSON Pointer references are supported")
             target: Any = document
             try:
                 for part in ref[2:].split("/"):
                     target = target[part.replace("~1", "/").replace("~0", "~")]
             except (KeyError, TypeError) as exc:
-                raise ValueError("Unresolved local reference") from exc
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_UNRESOLVED_LOCAL_REFERENCE",
+                    "Unresolved local reference") from exc
             if not isinstance(target, dict):
-                raise ValueError("Reference must resolve to an object")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_REFERENCE_MUST_RESOLVE_TO_AN_OBJECT",
+                    "Reference must resolve to an object")
             if set(value) - {"$ref", "summary", "description"}:
-                raise ValueError("Reference constraint siblings are unsupported")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_REFERENCE_CONSTRAINT_SIBLINGS_ARE_UNSUPPORTED",
+                    "Reference constraint siblings are unsupported")
             resolved = visit(target, (*trail, ref), depth + 1)
             siblings = {k: visit(v, trail, depth + 1) for k, v in value.items() if k != "$ref"}
             return {**resolved, **siblings}
@@ -130,71 +162,103 @@ def _resolve(document: dict) -> dict:
 def summarize_openapi(document: dict[str, Any]) -> ContractSummary:
     _bounded_tree(document)
     if not isinstance(document, dict):
-        raise ValueError("OpenAPI document must be an object")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_OPENAPI_DOCUMENT_MUST_BE_AN_OBJECT",
+            "OpenAPI document must be an object")
     version = document.get("openapi")
     if not isinstance(version, str) or not re.fullmatch(r"3\.[01]\.\d+", version):
-        raise ValueError("Only OpenAPI 3.0/3.1 specifications are supported")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_ONLY_OPENAPI_3_0_3_1_SPECIFICATIONS_ARE_SUPPORTED",
+            "Only OpenAPI 3.0/3.1 specifications are supported")
     info = document.get("info")
     if not isinstance(info, dict) or not all(
         isinstance(info.get(k), str) for k in ("title", "version")
     ):
-        raise ValueError("OpenAPI info.title and info.version are required")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_OPENAPI_INFO_TITLE_AND_INFO_VERSION_ARE_REQUIRED",
+            "OpenAPI info.title and info.version are required")
     document = _resolve(document)
     try:
         # All $refs are already local-expanded; validator never receives remote references.
         validate(document)
     except Exception:
-        raise ValueError("OpenAPI schema validation failed") from None
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_OPENAPI_SCHEMA_VALIDATION_FAILED",
+            "OpenAPI schema validation failed") from None
     paths = document.get("paths")
     if not isinstance(paths, dict):
-        raise ValueError("OpenAPI document must provide a paths object")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_OPENAPI_DOCUMENT_MUST_PROVIDE_A_PATHS_OBJECT",
+            "OpenAPI document must provide a paths object")
     components = document.get("components", {})
     if not isinstance(components, dict):
-        raise ValueError("components must be an object")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_COMPONENTS_MUST_BE_AN_OBJECT",
+            "components must be an object")
     schemes = components.get("securitySchemes", {})
     if not isinstance(schemes, dict) or any(not isinstance(v, dict) for v in schemes.values()):
-        raise ValueError("securitySchemes must contain objects")
+        raise ValidationFailure(
+            Layer.OPENAPI, "OPENAPI_SECURITYSCHEMES_MUST_CONTAIN_OBJECTS",
+            "securitySchemes must contain objects")
     operations = []
     ids: set[str] = set()
     for path, path_spec in paths.items():
         if path.startswith("x-"):
             continue
         if not path.startswith("/") or path.startswith("//") or any(c in path for c in "?#\\"):
-            raise ValueError("Each path must be a local absolute API path")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_EACH_PATH_MUST_BE_A_LOCAL_ABSOLUTE_API_PATH",
+                "Each path must be a local absolute API path")
         if not isinstance(path_spec, dict):
-            raise ValueError("Path item must be an object")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_PATH_ITEM_MUST_BE_AN_OBJECT",
+                "Path item must be an object")
         for method, operation in path_spec.items():
             if method not in METHODS:
                 continue
             if not isinstance(operation, dict):
-                raise ValueError("Operation must be an object")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_OPERATION_MUST_BE_AN_OBJECT",
+                    "Operation must be an object")
             operation_id = operation.get("operationId")
             if operation_id is not None:
                 if not isinstance(operation_id, str) or not operation_id or operation_id in ids:
-                    raise ValueError("operationId must be a unique nonempty string")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_OPERATIONID_MUST_BE_A_UNIQUE_NONEMPTY_STRING",
+                        "operationId must be a unique nonempty string")
                 ids.add(operation_id)
             parameters: dict[tuple[str, str], dict] = {}
             for owner in (path_spec, operation):
                 values = owner.get("parameters", [])
                 if not isinstance(values, list):
-                    raise ValueError("parameters must be an array")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_PARAMETERS_MUST_BE_AN_ARRAY",
+                        "parameters must be an array")
                 for param in values:
                     if (not isinstance(param, dict) or not isinstance(param.get("name"), str)
                             or param.get("in") not in {"path", "query", "header", "cookie"}):
-                        raise ValueError("Invalid parameter")
+                        raise ValidationFailure(
+                            Layer.OPENAPI, "OPENAPI_INVALID_PARAMETER",
+                            "Invalid parameter")
                     if param["in"] == "path" and param.get("required") is not True:
-                        raise ValueError("Path parameters must be required")
+                        raise ValidationFailure(
+                            Layer.OPENAPI, "OPENAPI_PATH_PARAMETERS_MUST_BE_REQUIRED",
+                            "Path parameters must be required")
                     parameters[param["in"], param["name"]] = param
             body = operation.get("requestBody")
             if body is not None and (not isinstance(body, dict)
                                      or not isinstance(body.get("content"), dict)):
-                raise ValueError("requestBody must contain content")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_REQUESTBODY_MUST_CONTAIN_CONTENT",
+                    "requestBody must contain content")
             responses = operation.get("responses")
             if not isinstance(responses, dict) or not responses or any(
                 not re.fullmatch(r"[1-5][0-9X]{2}|default", status)
                 or not isinstance(response, dict) for status, response in responses.items()
             ):
-                raise ValueError("Invalid response definitions")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_INVALID_RESPONSE_DEFINITIONS",
+                    "Invalid response definitions")
             security = operation.get("security", document.get("security", []))
             if not isinstance(security, list) or any(
                 not isinstance(requirement, dict) or any(
@@ -203,7 +267,9 @@ def summarize_openapi(document: dict[str, Any]) -> ContractSummary:
                     for name, scopes in requirement.items()
                 ) for requirement in security
             ):
-                raise ValueError("Invalid or unknown security requirements")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_INVALID_OR_UNKNOWN_SECURITY_REQUIREMENTS",
+                    "Invalid or unknown security requirements")
             operations.append(Operation(
                 method=method.upper(), path=path, operation_id=operation_id,
                 summary=operation.get("summary"), parameters=list(parameters.values()),

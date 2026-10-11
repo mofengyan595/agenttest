@@ -10,10 +10,11 @@ import httpx
 from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, START, StateGraph
 from langsmith import tracing_context
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
+from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import Scenario
 from agenttest.executor import Executor
 from agenttest.llm_planner import PlannerFailure
@@ -116,7 +117,11 @@ class Workflow:
                 executor = Executor(self._config, contract, self._store, self._transport,
                                     self._environ, registry=self._registry)
                 return {"ready": True}
+            except ValidationFailure as exc:
+                report.diagnostic = exc.diagnostic
+                return reject(Outcome.TOOL_ERROR, "INVALID_CONTRACT")
             except ValueError:
+                report.diagnostic = Diagnostic(layer=Layer.OPENAPI, code="OPENAPI_INVALID_CONTRACT")
                 return reject(Outcome.TOOL_ERROR, "INVALID_CONTRACT")
 
         async def plan(state: GraphState) -> dict:
@@ -137,6 +142,7 @@ class Workflow:
             except TimeoutError:
                 return reject(Outcome.TEST_INFRA_ERROR, "MODEL_TIMEOUT")
             except PlannerFailure as exc:
+                report.diagnostic = exc.diagnostic
                 return reject(exc.outcome, exc.reason)
             except Exception:
                 return reject(Outcome.TOOL_ERROR, "PLANNER_ERROR")
@@ -156,7 +162,7 @@ class Workflow:
                 # Detect direct secret literals as well as prohibited binding mechanisms.
                 vault = CredentialVault(self._config, self._environ)
                 if vault.contains_secret(scenario.model_dump()):
-                    raise ValueError("Secret in planner output")
+                    raise ValidationFailure(Layer.DSL, "DSL_SECRET_LITERAL")
                 executor.validate(scenario)
                 report.plan_valid = True
                 report.selected_policy_ids = [s.policy_id for s in scenario.steps]
@@ -171,20 +177,21 @@ class Workflow:
                 ) for s in scenario.steps]
                 report.scenario_sha256 = fingerprint(scenario.model_dump())
                 return {"ready": True}
-            except NeedsReview:
+            except NeedsReview as exc:
+                report.diagnostic = exc.diagnostic
                 report.validation_issue = "POLICY_OR_SCHEMA_REVIEW"
                 return reject(Outcome.NEEDS_REVIEW, "REVIEW_REQUIRED")
-            except (ValueError, TypeError, RecursionError) as exc:
-                # Match only our fixed messages; never persist exception text or Pydantic inputs.
-                report.validation_issue = {
-                    "Duplicate step id or unknown operationId": "DUPLICATE_ID_OR_UNKNOWN_OPERATION",
-                    "Dependency must reference an earlier step (no cycles)": "INVALID_DEPENDENCY",
-                    "Authentication responses are not bindable": "AUTH_RESPONSE_BINDING",
-                    "Authentication request is executor-owned": "AUTH_ARGUMENTS",
-                    "Restricted operation lacks a credential": "AUTHENTICATION_ORDER",
-                    "Missing required request body": "MISSING_BODY",
-                    "Request value has wrong type": "REQUEST_TYPE",
-                }.get(str(exc), "DSL_OR_REQUEST_INVALID")
+            except ValidationFailure as exc:
+                report.diagnostic = exc.diagnostic
+                report.validation_issue = exc.diagnostic.code
+                return reject(Outcome.TOOL_ERROR, "PLAN_REJECTED")
+            except ValidationError as exc:
+                report.diagnostic = schema_diagnostic(exc, Layer.DSL)
+                report.validation_issue = report.diagnostic.code
+                return reject(Outcome.TOOL_ERROR, "PLAN_REJECTED")
+            except (ValueError, TypeError, RecursionError):
+                report.diagnostic = Diagnostic(layer=Layer.DSL, code="DSL_INVALID_PLAN")
+                report.validation_issue = report.diagnostic.code
                 return reject(Outcome.TOOL_ERROR, "PLAN_REJECTED")
             finally:
                 raw_plan = None

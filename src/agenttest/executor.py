@@ -13,6 +13,7 @@ import httpx
 
 from agenttest.contracts import ContractSummary, Operation
 from agenttest.credentials import CredentialVault
+from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.dsl import (
     ArgumentBinding,
     AssertionPolicy,
@@ -78,12 +79,15 @@ class Executor:
         self.store.save(report)
         try:
             operations, policies = self.validate(scenario)
-        except NeedsReview:
+        except NeedsReview as exc:
+            report.diagnostic = exc.diagnostic
             report.outcome, report.reason = Outcome.NEEDS_REVIEW, "REVIEW_REQUIRED"
             report.completed = True
             self.store.save(report)
             return report
-        except ValueError:
+        except ValueError as exc:
+            if isinstance(exc, ValidationFailure):
+                report.diagnostic = exc.diagnostic
             report.outcome, report.reason = Outcome.TOOL_ERROR, "PLAN_REJECTED"
             report.completed = True
             self.store.save(report)
@@ -123,9 +127,13 @@ class Executor:
                         except httpx.TransportError as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = type(exc).__name__
-                        except NeedsReview:
+                        except NeedsReview as exc:
+                            report.diagnostic = exc.diagnostic
                             result.outcome = Outcome.NEEDS_REVIEW
                             result.reason = "REQUEST_SCHEMA_REVIEW_REQUIRED"
+                        except ValidationFailure as exc:
+                            report.diagnostic = exc.diagnostic
+                            result.outcome, result.reason = Outcome.TOOL_ERROR, "EXECUTION_ERROR"
                         except ExecutionLimit as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = str(exc)
@@ -150,7 +158,11 @@ class Executor:
 
     def _binding(self, binding: ArgumentBinding, step: Step, state: dict) -> Any:
         if binding.from_step:
-            return select(state[binding.from_step], binding.select)
+            try:
+                return select(state[binding.from_step], binding.select)
+            except (KeyError, ValueError, TypeError, IndexError):
+                raise ValidationFailure(Layer.DEPENDENCY,
+                                        "DEPENDENCY_RESOLUTION_FAILED") from None
         return binding.value
 
     async def _step(
@@ -164,7 +176,7 @@ class Executor:
             value = self._binding(binding, step, state)
             path_values[name] = value
             if type(value) not in {str, int} or not re.fullmatch(r"[A-Za-z0-9_-]+", str(value)):
-                raise ValueError("Unsafe path parameter")
+                raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_UNSAFE_PATH_VALUE")
             path = path.replace("{" + name + "}", str(value))
         headers = {}
         role = self.config.roles.get(step.role)
@@ -175,7 +187,7 @@ class Executor:
         payload = {key: self._binding(value, step, state) for key, value in step.body.items()}
         ordinary_data = [path, query, payload, step.upload.model_dump() if step.upload else ""]
         if vault.contains_secret(ordinary_data):
-            raise ValueError("Secret cannot be used as ordinary request data")
+            raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
         if is_login:
             payload = vault.login_payload(step.role)
         media = ("multipart/form-data" if step.upload else "application/json"

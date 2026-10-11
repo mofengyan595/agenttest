@@ -5,12 +5,19 @@ from typing import Literal
 
 from pydantic import Field
 
+from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.dsl import AssertionPolicy, FieldAssertion, PollPolicy, Step
 from agenttest.safety import StrictModel
 
 
-class NeedsReview(ValueError):
+class NeedsReview(ValidationFailure):
     """No trusted basis exists to execute or classify this expectation."""
+
+    def __init__(self, code: str):
+        layer = (Layer.OPENAPI if code.startswith(("UNSUPPORTED_", "OPEN_OBJECT_", "ONLY_OBJECT_"))
+                 else Layer.DEPENDENCY if "DEPENDENCY" in code
+                 else Layer.POLICY)
+        super().__init__(layer, code)
 
 
 class BindingRule(StrictModel):

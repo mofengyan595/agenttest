@@ -9,8 +9,9 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 
+from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import ArgumentBinding, Scenario, Step
 from agenttest.plan_json import bounded_json
 from agenttest.report import ModelCallStats, Outcome, fingerprint
@@ -18,9 +19,10 @@ from agenttest.safety import StrictModel
 
 
 class PlannerFailure(Exception):
-    def __init__(self, outcome: Outcome, reason: str):
+    def __init__(self, outcome: Outcome, reason: str, diagnostic: Diagnostic | None = None):
         super().__init__(reason)
         self.outcome, self.reason = outcome, reason
+        self.diagnostic = diagnostic or Diagnostic(layer=Layer.MODEL, code=reason)
 
 
 class ModelSettings(StrictModel):
@@ -135,7 +137,7 @@ class PlannerDraft(StrictModel):
             for arg in draft.arguments:
                 values = getattr(step, arg.location)
                 if arg.name in values:
-                    raise ValueError("Duplicate argument")
+                    raise ValidationFailure(Layer.MODEL, "MODEL_DUPLICATE_ARGUMENT")
                 values[arg.name] = (ArgumentBinding(value=arg.value) if arg.from_step is None
                                     else ArgumentBinding(from_step=arg.from_step,
                                                          select=arg.select))
@@ -177,7 +179,18 @@ class OpenAICompatiblePlanner:
             return await self._generate(context)
         except PlannerFailure as exc:
             self.stats.reason = exc.reason
+            self.stats.diagnostic = exc.diagnostic
             raise
+        except ValidationError as exc:
+            diagnostic = schema_diagnostic(exc, Layer.MODEL)
+            self.stats.reason = "MODEL_INVALID_RESPONSE"
+            self.stats.diagnostic = diagnostic
+            raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE", diagnostic) from None
+        except ValidationFailure as exc:
+            self.stats.reason = "MODEL_INVALID_RESPONSE"
+            self.stats.diagnostic = exc.diagnostic
+            raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
+                                 exc.diagnostic) from None
         except (httpx.TimeoutException, TimeoutError):
             self.stats.reason = "MODEL_TIMEOUT"
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TIMEOUT") from None
@@ -186,7 +199,9 @@ class OpenAICompatiblePlanner:
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_CONNECTION_ERROR") from None
         except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):
             self.stats.reason = "MODEL_INVALID_RESPONSE"
-            raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE") from None
+            self.stats.diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_ENVELOPE_INVALID")
+            raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
+                                 self.stats.diagnostic) from None
         finally:
             self.stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
 
@@ -250,7 +265,7 @@ class OpenAICompatiblePlanner:
         usage = data["usage"]
         counts = [usage[k] for k in ("prompt_tokens", "completion_tokens", "total_tokens")]
         if any(type(n) is not int or n < 0 for n in counts) or counts[2] != counts[0] + counts[1]:
-            raise ValueError("Invalid usage")
+            raise ValidationFailure(Layer.MODEL, "MODEL_USAGE_INVALID")
         self.stats.input_tokens, self.stats.output_tokens, self.stats.total_tokens = counts
         if (counts[0] > settings.max_input_tokens or counts[1] > settings.max_output_tokens
                 or counts[2] > settings.max_total_tokens):
@@ -261,7 +276,7 @@ class OpenAICompatiblePlanner:
         if choice["message"].get("refusal") or choice["finish_reason"] == "content_filter":
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_REFUSAL")
         if choice["finish_reason"] != "stop" or len(data["choices"]) != 1:
-            raise ValueError("Unexpected completion")
+            raise ValidationFailure(Layer.MODEL, "MODEL_CHOICE_INVALID")
         content = choice["message"]["content"]
         self.stats.output_sha256 = fingerprint(content)
         if settings.api_key.get_secret_value() in content:

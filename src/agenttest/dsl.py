@@ -8,6 +8,7 @@ from urllib.parse import unquote
 from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary, Operation
+from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.safety import StrictModel, TargetConfig
 from agenttest.selectors import validate_selector
 
@@ -25,7 +26,9 @@ class ArgumentBinding(StrictModel):
     @model_validator(mode="after")
     def one_source(self) -> "ArgumentBinding":
         if sum(("value" in self.model_fields_set, self.from_step is not None)) != 1:
-            raise ValueError("Binding requires exactly one source")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_BINDING_REQUIRES_EXACTLY_ONE_SOURCE",
+                "Binding requires exactly one source")
         return self
 
     @model_serializer(mode="wrap")
@@ -43,7 +46,9 @@ class ExpectedStatus(StrictModel):
     @classmethod
     def valid_codes(cls, value: list[int]) -> list[int]:
         if any(code < 100 or code > 599 for code in value):
-            raise ValueError("Invalid expected HTTP status")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_INVALID_EXPECTED_HTTP_STATUS",
+                "Invalid expected HTTP status")
         return value
 
 
@@ -60,13 +65,19 @@ class FieldAssertion(StrictModel):
     @model_validator(mode="after")
     def expectation_shape(self) -> "FieldAssertion":
         if self.operator != "exists" and "expected" not in self.model_fields_set:
-            raise ValueError("Assertion requires an explicit expected value")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_ASSERTION_REQUIRES_AN_EXPLICIT_EXPECTED_VALUE",
+                "Assertion requires an explicit expected value")
         if self.operator == "count" and (
             type(self.expected) is not int or self.expected < 0
         ):
-            raise ValueError("Count must be a nonnegative integer")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_COUNT_MUST_BE_A_NONNEGATIVE_INTEGER",
+                "Count must be a nonnegative integer")
         if self.operator == "in" and not isinstance(self.expected, list):
-            raise ValueError("Membership assertion requires a list")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_MEMBERSHIP_ASSERTION_REQUIRES_A_LIST",
+                "Membership assertion requires a list")
         return self
 
 
@@ -122,41 +133,61 @@ def validate_plan(
 ) -> dict[str, Operation]:
     environ = dict(os.environ) if environ is None else environ
     if len(scenario.steps) > config.max_steps:
-        raise ValueError("Step limit exceeded")
+        raise ValidationFailure(Layer.DSL, "DSL_STEP_LIMIT", "Step limit exceeded")
     operations = {op.operation_id: op for op in contract.operations if op.operation_id}
     seen: dict[str, Step] = {}
     for step in scenario.steps:
-        if step.id in seen or step.operation_id not in operations:
-            raise ValueError("Duplicate step id or unknown operationId")
+        if step.id in seen:
+            raise ValidationFailure(Layer.DSL, "DSL_DUPLICATE_STEP_ID",
+                                    "Duplicate step id or unknown operationId")
+        if step.operation_id not in operations:
+            raise ValidationFailure(
+                Layer.DSL, "DSL_UNKNOWN_OPERATION",
+                "Duplicate step id or unknown operationId")
         operation = operations[step.operation_id]
-        config.permit(step.operation_id, operation.method)
+        try:
+            config.permit(step.operation_id, operation.method)
+        except ValueError:
+            raise ValidationFailure(Layer.DSL, "DSL_OPERATION_NOT_PERMITTED") from None
         decoded = unquote(unquote(operation.path))
         if (any(segment in {".", ".."} for segment in decoded.split("/"))
                 or any(c in decoded for c in "?#\\\r\n") or decoded.startswith("//")):
-            raise ValueError("Unsafe operation path")
+            raise ValidationFailure(Layer.DSL, "DSL_UNSAFE_OPERATION_PATH", "Unsafe operation path")
         placeholders = set(re.findall(r"\{([^{}]+)\}", operation.path))
         if set(step.path_parameters) != placeholders:
-            raise ValueError("Path parameters must match operation placeholders")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_PATH_PARAMETERS_MUST_MATCH_OPERATION_PLACEHOLDERS",
+                "Path parameters must match operation placeholders")
         if step.role is not None and step.role not in config.roles:
-            raise ValueError("Unknown role alias")
+            raise ValidationFailure(Layer.DSL, "DSL_UNKNOWN_ROLE", "Unknown role alias")
         role = config.roles.get(step.role)
         bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values()]
         for binding in bindings:
             if binding.from_step and binding.from_step not in seen:
-                raise ValueError("Dependency must reference an earlier step (no cycles)")
+                raise ValidationFailure(
+                    Layer.DEPENDENCY, "DEPENDENCY_FORWARD_OR_UNKNOWN",
+                    "Dependency must reference an earlier step (no cycles)")
             if binding.from_step:
                 source = seen[binding.from_step]
                 source_role = config.roles.get(source.role)
                 if source_role and source.operation_id == source_role.login_operation:
-                    raise ValueError("Authentication responses are not bindable")
+                    raise ValidationFailure(
+                        Layer.DEPENDENCY, "DEPENDENCY_AUTH_RESPONSE",
+                        "Authentication responses are not bindable")
         is_login = role and step.operation_id == role.login_operation
         if is_login:
             if step.body or step.upload or step.query or step.path_parameters:
-                raise ValueError("Authentication request is executor-owned")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_AUTH_ARGUMENTS",
+                    "Authentication request is executor-owned")
             if not all(environ.get(name or "") for name in (role.username_env, role.password_env)):
-                raise ValueError("Missing authentication credentials")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_MISSING_AUTHENTICATION_CREDENTIALS",
+                    "Missing authentication credentials")
         elif any(step.operation_id == item.login_operation for item in config.roles.values()):
-            raise ValueError("Authentication operation requires its approved role")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_AUTHENTICATION_OPERATION_REQUIRES_ITS_APPROVED_ROLE",
+                "Authentication operation requires its approved role")
         requires_auth = bool(operation.security) and {} not in operation.security
         if requires_auth:
             supported = any(
@@ -165,31 +196,47 @@ def validate_plan(
                 for req in operation.security
             )
             if not supported:
-                raise ValueError("Stage 1 supports HTTP bearer authentication only")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_STAGE_1_SUPPORTS_HTTP_BEARER_AUTHENTICATION_ONLY",
+                    "Stage 1 supports HTTP bearer authentication only")
             if not role:
-                raise ValueError("Restricted operation needs a role alias")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_RESTRICTED_OPERATION_NEEDS_A_ROLE_ALIAS",
+                    "Restricted operation needs a role alias")
             logged_in = any(
                 previous.role == step.role and previous.operation_id == role.login_operation
                 for previous in seen.values()
             )
             if not logged_in and (not role.bearer_env or not environ.get(role.bearer_env)):
-                raise ValueError("Restricted operation lacks a credential")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_AUTHENTICATION_ORDER",
+                    "Restricted operation lacks a credential")
         if operation.method not in {"GET", "HEAD"} and (step.poll or step.read_retries):
-            raise ValueError("Mutations cannot be polled or retried")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_MUTATIONS_CANNOT_BE_POLLED_OR_RETRIED",
+                "Mutations cannot be polled or retried")
         if step.upload and step.body:
-            raise ValueError("JSON and multipart bodies cannot be combined")
+            raise ValidationFailure(
+                Layer.DSL, "DSL_JSON_AND_MULTIPART_BODIES_CANNOT_BE_COMBINED",
+                "JSON and multipart bodies cannot be combined")
         if step.upload or step.body:
             media = "multipart/form-data" if step.upload else "application/json"
             if not operation.request_body or media not in operation.request_body["content"]:
-                raise ValueError("Body media type is not declared in contract")
+                raise ValidationFailure(
+                    Layer.DSL, "DSL_BODY_MEDIA_TYPE_IS_NOT_DECLARED_IN_CONTRACT",
+                    "Body media type is not declared in contract")
         for param in operation.parameters:
             if param.get("required"):
                 location = {"path": step.path_parameters, "query": step.query}.get(param["in"], {})
                 if param["name"] not in location:
-                    raise ValueError("Missing required operation parameter")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",
+                        "Missing required operation parameter")
         if operation.request_body and operation.request_body.get("required"):
             if not step.body and not step.upload and not is_login:
-                raise ValueError("Missing required request body")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_BODY_REQUIRED",
+                    "Missing required request body")
         # Local import keeps trusted policy models independent of schema validation.
         from agenttest.request_validation import request_schemas, validate_value
 
@@ -198,7 +245,9 @@ def validate_plan(
         schemas, body_schema = request_schemas(operation, media)
         for location, values in (("path", step.path_parameters), ("query", step.query)):
             if set(values) - set(schemas[location]):
-                raise ValueError("Unknown operation parameter")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
+                    "Unknown operation parameter")
             for name, binding in values.items():
                 if binding.from_step is None:
                     validate_value(binding.value, schemas[location][name])
@@ -208,12 +257,18 @@ def validate_plan(
             else:
                 properties = body_schema.get("properties", {})
                 if set(step.body) - set(properties):
-                    raise ValueError("Unknown request body field")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_UNKNOWN_BODY_FIELD",
+                        "Unknown request body field")
                 if set(body_schema.get("required", [])) - set(step.body):
-                    raise ValueError("Missing required request body field")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_BODY_FIELD_REQUIRED",
+                        "Missing required request body field")
                 for name, binding in step.body.items():
                     if properties[name].get("readOnly"):
-                        raise ValueError("Read-only request field")
+                        raise ValidationFailure(
+                            Layer.DSL, "DSL_READ_ONLY_REQUEST_FIELD",
+                            "Read-only request field")
                     if binding.from_step is None:
                         validate_value(binding.value, properties[name])
         seen[step.id] = step

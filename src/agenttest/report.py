@@ -11,6 +11,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from agenttest.diagnostics import Diagnostic
+
 
 class Outcome(str, Enum):
     PASS = "PASS"
@@ -51,6 +53,7 @@ class StepResult(BaseModel):
 
 
 class ModelCallStats(BaseModel):
+    diagnostic: Diagnostic | None = None
     calls: int = 0
     model_name: str | None = None
     model_sha256: str | None = None
@@ -97,6 +100,8 @@ class RunReport(BaseModel):
     model_call: ModelCallStats | None = None
     plan_structure: list[PlanStepEvidence] = Field(default_factory=list)
     validation_issue: str | None = None
+    diagnostic: Diagnostic | None = None
+    intent_verified: bool = False
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
 

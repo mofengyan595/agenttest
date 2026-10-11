@@ -4,6 +4,7 @@ import math
 from typing import Any
 
 from agenttest.contracts import Operation
+from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.policies import NeedsReview
 
 ANNOTATIONS = {"title", "description", "default", "example", "examples", "deprecated",
@@ -50,7 +51,7 @@ def supported_schema(schema: Any, depth: int = 0) -> None:
 def validate_value(value: Any, schema: dict) -> None:
     supported_schema(schema)
     if "enum" in schema and not any(type(value) is type(v) and value == v for v in schema["enum"]):
-        raise ValueError("Request value outside enum")
+        raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_ENUM", "Request value outside enum")
     if value is None and schema.get("nullable") is True:
         return
     kind = schema["type"]
@@ -61,14 +62,18 @@ def validate_value(value: Any, schema: dict) -> None:
         "null": value is None,
     }
     if not matches[kind] or (type(value) is float and not math.isfinite(value)):
-        raise ValueError("Request value has wrong type")
+        raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_TYPE", "Request value has wrong type")
     if kind == "object":
         properties = schema.get("properties", {})
         if set(value) - set(properties) or set(schema.get("required", [])) - set(value):
-            raise ValueError("Unknown or missing request field")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_OBJECT_FIELDS",
+                "Unknown or missing request field")
         for key, item in value.items():
             if properties[key].get("readOnly"):
-                raise ValueError("Read-only field in request")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_READ_ONLY_FIELD_IN_REQUEST",
+                    "Read-only field in request")
             validate_value(item, properties[key])
     if kind == "array":
         for item in value:
@@ -77,22 +82,30 @@ def validate_value(value: Any, schema: dict) -> None:
         unit = "Items" if kind == "array" else "Length"
         if (len(value) < schema.get("min" + unit, 0)
                 or len(value) > schema.get("max" + unit, math.inf)):
-            raise ValueError("Request length outside bounds")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_VALUE_LENGTH",
+                "Request length outside bounds")
     if kind in {"number", "integer"}:
         for bound, direction in (("minimum", -1), ("maximum", 1)):
             limit = schema.get(bound)
             exclusive = schema.get("exclusive" + bound.capitalize(), False)
             if type(exclusive) in {int, float}:
                 if (value - exclusive) * direction >= 0:
-                    raise ValueError("Request numeric value outside exclusive bounds")
+                    raise ValidationFailure(
+                        Layer.OPENAPI, "OPENAPI_VALUE_EXCLUSIVE_BOUND",
+                        "Request numeric value outside exclusive bounds")
             if limit is not None and (
                 (value - limit) * direction > 0 or (exclusive is True and value == limit)
             ):
-                raise ValueError("Request numeric value outside bounds")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_VALUE_BOUND",
+                    "Request numeric value outside bounds")
         if schema.get("format") in {"int32", "int64"}:
             bits = int(schema["format"][3:])
             if value < -(2 ** (bits - 1)) or value >= 2 ** (bits - 1):
-                raise ValueError("Request integer outside format bounds")
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_VALUE_FORMAT_BOUND",
+                    "Request integer outside format bounds")
 
 
 def request_schemas(operation: Operation, media: str | None) -> tuple[dict, dict | None]:
@@ -116,7 +129,9 @@ def request_schemas(operation: Operation, media: str | None) -> tuple[dict, dict
     if media:
         content = (operation.request_body or {}).get("content", {})
         if media not in content:
-            raise ValueError("Undeclared body media type")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_UNDECLARED_BODY_MEDIA_TYPE",
+                "Undeclared body media type")
         body = content[media].get("schema")
         supported_schema(body)
         if body["type"] != "object":
@@ -129,12 +144,16 @@ def validate_request(operation: Operation, path: dict, query: dict, payload: dic
     parameters, body = request_schemas(operation, media)
     for location, values in (("path", path), ("query", query)):
         if set(values) - set(parameters[location]):
-            raise ValueError("Unknown operation parameter")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
+                "Unknown operation parameter")
         for name, value in values.items():
             validate_value(value, parameters[location][name])
     for param in operation.parameters:
         values = {"path": path, "query": query}.get(param["in"], {})
         if param.get("required") and param["name"] not in values:
-            raise ValueError("Missing required operation parameter")
+            raise ValidationFailure(
+                Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",
+                "Missing required operation parameter")
     if body is not None:
         validate_value(payload, body)
