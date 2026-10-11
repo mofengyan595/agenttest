@@ -1,4 +1,4 @@
-"""Independent disposable FastAPI target with two explicit defect switches."""
+"""Independent disposable FastAPI target with operator-only defect switches."""
 
 import csv
 import io
@@ -7,10 +7,14 @@ import secrets
 from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-Fault = Literal["none", "ownership", "terminal"]
+Fault = Literal["none", "ownership", "terminal", "response_name", "response_id",
+                "create_status", "result_count"]
+FAULTS = ("none", "ownership", "terminal", "response_name", "response_id",
+          "create_status", "result_count")
 
 
 class LoginInput(BaseModel):
@@ -24,7 +28,7 @@ class CourseInput(BaseModel):
 
 def create_target(users: dict[str, str], fault: Fault = "none") -> FastAPI:
     """All resource state belongs to this app; faults affect only this disposable target."""
-    if fault not in {"none", "ownership", "terminal"}:
+    if fault not in FAULTS:
         raise ValueError("Unknown demo fault")
     app = FastAPI(title="AgentTest disposable mini target", version="1.0")
     tokens: dict[str, str] = {}
@@ -59,15 +63,22 @@ def create_target(users: dict[str, str], fault: Fault = "none") -> FastAPI:
         tokens[token] = payload.username
         return {"access_token": token}
 
-    @app.post("/api/courses", operation_id="createCourse", status_code=201)
-    def create_course(payload: CourseInput, user: user_dependency) -> dict:
+    @app.post("/api/courses", operation_id="createCourse", status_code=201, response_model=dict)
+    def create_course(payload: CourseInput, user: user_dependency) -> dict | JSONResponse:
         course_id = len(courses) + 1
         courses[course_id] = {"courseId": course_id, "owner": user, "name": payload.name}
+        if fault == "create_status":
+            return JSONResponse(courses[course_id], status_code=200)
         return courses[course_id]
 
     @app.get("/api/courses/{courseId}", operation_id="getCourse")
     def get_course(courseId: int, user: user_dependency) -> dict:
-        return owned_course(courseId, user)
+        course = dict(owned_course(courseId, user))
+        if fault == "response_name":
+            course["name"] = "Injected inconsistent response"
+        elif fault == "response_id":
+            course["courseId"] += 1
+        return course
 
     @app.post("/api/courses/{courseId}/analysis-batches", operation_id="createBatch",
               status_code=202)
@@ -111,7 +122,8 @@ def create_target(users: dict[str, str], fault: Fault = "none") -> FastAPI:
         batch = owned_batch(batchId, user)
         if batch["polls"] < 2 or fault == "terminal":
             raise HTTPException(409, "Batch is not successful")
-        return {"items": [{"row": n + 1} for n in range(batch["count"])]}
+        count = batch["count"] + (1 if fault == "result_count" else 0)
+        return {"items": [{"row": n + 1} for n in range(count)]}
 
     return app
 

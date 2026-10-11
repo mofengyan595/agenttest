@@ -1,0 +1,321 @@
+{
+  "stage": "4A",
+  "execution": "real school API and real isolated Java HTTP",
+  "code_commit": "74e0909d95add99415c4e21dac0b008c1518f5ad",
+  "source_commit": "430c23eec8bc31023d8fb43d767bf9d8de164591",
+  "model_config": {
+    "model": "ecnu-plus",
+    "base_url_sha256": "c12d632b453824d3a1f87fdc093e50f9ebec58673d7561673a09da6d09d8c0fa",
+    "protocol": "chatecnu",
+    "timeout": 60.0,
+    "max_input_tokens": 20000,
+    "max_output_tokens": 2048,
+    "max_total_tokens": 22048,
+    "max_response_bytes": 200000
+  },
+  "prompt_sha256": "a1ee9d96fa87cfad58076efeeaada067f778a00a0807fe70dc5ef459405abce8",
+  "fixture_sha256": "2b2a6406da07176f920ea0c50a9bc16e9410661a83464eeae5d0b095b6d1e380",
+  "result": {
+    "run_id": "60076fbe920048e9acd6219f35fb85e3",
+    "outcome": "PASS",
+    "reason": "",
+    "plan_valid": true,
+    "intent_verified": true,
+    "http_statuses": [
+      200,
+      201,
+      200
+    ],
+    "http_elapsed_ms": [
+      375.224,
+      91.208,
+      29.235
+    ],
+    "checks": 14,
+    "create_requests": 1,
+    "model_call": {
+      "diagnostic": null,
+      "calls": 1,
+      "model_name": "ecnu-plus",
+      "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+      "http_status": 200,
+      "elapsed_ms": 21891.0,
+      "request_bytes": 7269,
+      "request_sha256": "7d6d4faa1bdd86e91beda62c36f51ed2ad93bd4ae427fd80529c026a5d334a37",
+      "response_bytes": 2116,
+      "input_token_upper_bound": 7781,
+      "input_tokens": 1336,
+      "output_tokens": 458,
+      "total_tokens": 1794,
+      "output_sha256": "381ca24e16c61b9c7706e8d30f9c9d6d2fa499dbce364a9439cdeaf1fc5b9d57",
+      "reason": "MODEL_OUTPUT_RECEIVED"
+    },
+    "diagnostic": null
+  },
+  "report": {
+    "run_id": "60076fbe920048e9acd6219f35fb85e3",
+    "started_at": "2026-10-11T14:11:41.464925+00:00",
+    "scenario_sha256": "e31dbefffb949230dbc4fa3d0299a922431ccc7e0fb003b110e146810303d4ce",
+    "contract_sha256": "f2812364ef4d73e8fb254e3983db9a758f952d6aa09157f04a033cf7573a959a",
+    "outcome": "PASS",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "step_run_id": "4957ed0471614f9f9f63966cb2a158b1",
+        "operation_id": "ciLogin",
+        "method": "POST",
+        "path_template": "/api/auth/login",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "b1093536c8215819577584fed41f85d3c7c21639c20292ee89a6bd90fe21fd36",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          },
+          {
+            "kind": "equals",
+            "selector": "$.code",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "exists",
+            "selector": "$.data.accessToken",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.tokenType",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.role",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "d5e0dc2c1da740a89c4e8aa957d6b853",
+            "status_code": 200,
+            "elapsed_ms": 375.224,
+            "response_bytes": 501,
+            "response_sha256": "d012be49d3f34c8d5752980d8f14a81513240b00348d75fe014018c299e1aeb2",
+            "error_code": null
+          }
+        ]
+      },
+      {
+        "step_id": "step_2",
+        "step_run_id": "51fa1bd8f81142f489e25e85ff0258c1",
+        "operation_id": "ciCreateCourse",
+        "method": "POST",
+        "path_template": "/api/courses",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "6298e1f38c88b08897373905516cdffbe69662af10062e11fa217290b9a7c7b5",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              201
+            ],
+            "actual": 201
+          },
+          {
+            "kind": "equals",
+            "selector": "$.code",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "exists",
+            "selector": "$.data",
+            "passed": true,
+            "expected": null,
+            "actual": "[REDACTED]"
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "16c15047f83d4ba0b742f30a7ad39431",
+            "status_code": 201,
+            "elapsed_ms": 91.208,
+            "response_bytes": 40,
+            "response_sha256": "284cd1653a32a121d7e3a7a82ebb35a2d9b0f894b70cdb01c0fa2fee3fbdd380",
+            "error_code": null
+          }
+        ]
+      },
+      {
+        "step_id": "step_3",
+        "step_run_id": "b902b081750d4e16953ee9d5d7472382",
+        "operation_id": "ciGetCourse",
+        "method": "GET",
+        "path_template": "/api/courses/{id}",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "76a8693ac3a534c2a209a0f8919ab7cee8e21f7ac609d8cb8c0d775fbe185afb",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          },
+          {
+            "kind": "equals",
+            "selector": "$.code",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.code",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.name",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.teacherName",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          },
+          {
+            "kind": "equals",
+            "selector": "$.data.id",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "9faa14cdc9c84f79b2c93e644c43d98f",
+            "status_code": 200,
+            "elapsed_ms": 29.235,
+            "response_bytes": 285,
+            "response_sha256": "f6b4096b6fbf7c7a47c44d76deb4d68f80ddf29f6c207b2348f2a38c2b16e88f",
+            "error_code": null
+          }
+        ]
+      }
+    ],
+    "completed": true,
+    "reason": "",
+    "environment": "isolated",
+    "target_origin": "http://127.0.0.1:18080",
+    "workflow_nodes": [
+      "load_contract",
+      "plan",
+      "validate",
+      "execute",
+      "analyze_or_finish",
+      "report"
+    ],
+    "planner_calls": 1,
+    "tool_calls": 1,
+    "analysis_code": "COMPLETED",
+    "workflow_completed": true,
+    "user_task_sha256": "b4466648be5badeba1f42fb6caf7b67fc520696e5d610da863c6b39ea9c29032",
+    "plan_valid": true,
+    "selected_policy_ids": [
+      "ci_nl_login_v1",
+      "ci_nl_create_v1",
+      "ci_nl_read_v1"
+    ],
+    "model_call": {
+      "diagnostic": null,
+      "calls": 1,
+      "model_name": "ecnu-plus",
+      "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+      "http_status": 200,
+      "elapsed_ms": 21891.0,
+      "request_bytes": 7269,
+      "request_sha256": "7d6d4faa1bdd86e91beda62c36f51ed2ad93bd4ae427fd80529c026a5d334a37",
+      "response_bytes": 2116,
+      "input_token_upper_bound": 7781,
+      "input_tokens": 1336,
+      "output_tokens": 458,
+      "total_tokens": 1794,
+      "output_sha256": "381ca24e16c61b9c7706e8d30f9c9d6d2fa499dbce364a9439cdeaf1fc5b9d57",
+      "reason": "MODEL_OUTPUT_RECEIVED"
+    },
+    "plan_structure": [
+      {
+        "step_id": "step_1",
+        "operation_id": "ciLogin",
+        "role": "demo_admin",
+        "policy_id": "ci_nl_login_v1",
+        "argument_sha256": {},
+        "dependencies": {}
+      },
+      {
+        "step_id": "step_2",
+        "operation_id": "ciCreateCourse",
+        "role": "demo_admin",
+        "policy_id": "ci_nl_create_v1",
+        "argument_sha256": {
+          "body.code": "befba8f943528a4831c176da926223630eedf47f755dd9f998f5991ff484336c",
+          "body.name": "89a35619e589b0d3be62cbad12f07e8aa57fd91562db71702c6dc0b81da0e556",
+          "body.teacherName": "9659a6f5c97e8640404580ea1eeed7678cc25bdfda3ca710e57e8f684e284615",
+          "body.description": "4992947ade6f4f148f3dbbb41c440fa0cc9d6209e931cc2a641b2c2f6e96c222"
+        },
+        "dependencies": {}
+      },
+      {
+        "step_id": "step_3",
+        "operation_id": "ciGetCourse",
+        "role": "demo_admin",
+        "policy_id": "ci_nl_read_v1",
+        "argument_sha256": {},
+        "dependencies": {
+          "path_parameters.id": "step_2"
+        }
+      }
+    ],
+    "validation_issue": null,
+    "diagnostic": null,
+    "intent_verified": true,
+    "investigations": [],
+    "investigation_error": null,
+    "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+  },
+  "notes": [
+    "One user-approved synthetic course retained; no automatic cleanup or replay.",
+    "No CourseInsight business code modified.",
+    "Mock tests are separate from this live evidence."
+  ]
+}
