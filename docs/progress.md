@@ -1,5 +1,41 @@
 # 开发进度
 
+## 补充审查整改与 Candidate Discovery 质量门禁（2026-10-12）
+
+基线/开始 HEAD：`9e988d51bd34d7fabb00785f4737f4c5fcb0be93`，初始工作区干净。逐项文件行号、触发条件、复现、影响、兼容性和修复必要性见[完整核验表](review-remediation.md)。整改验收阶段未创建分支/提交/推送；后续用户已明确授权提交与推送，实际状态以 Git 记录为准。未调用收费模型、未向真实 Java 写入；冻结样本与历史成绩原样保留。
+
+- 确认并修复同 ID report.tmp 竞争/旧快照覆盖、保存端预置 junction 跳转、Run ID 写读不一致、13 条下 E2E 的总量/单页混淆、历史数值任意公开；补充本地 Host/peer/Origin/Fetch Metadata 门禁。没有把本地操作员目录风险称作远程任意写漏洞，也没有为本地只读工具增加 OAuth/JWT。
+- ReportStore 用 OS 单写锁、CAS revision、独占唯一 temp、fsync/原子发布、原 Windows 文件替换重试；路径由目录 fd / Windows 无 DELETE 共享句柄固定。旧标准 ID 报告无 revision 仍可读；冲突/损坏文件不静默覆盖，不重跑 Executor/HTTP。只读调查仅排除/保留发布 revision，业务不可变保护和权限不变。
+- 复用隔离 E2E 生成 13 有效 + 2 无效/缺文件项，检查 12/1 分页、按钮、筛选重置、空列表、移动/桌面同一记录、旧字段缺失和错误 ID；截图仍仅在忽略目录。History 原分页逻辑正确，未改页面。独立 Web CI 增加 Windows/Linux Chromium E2E，远端结果待验证。
+- Discovery 新增 23 项边界回归（专项原 44 → 67）：3.0/3.1 排他值、enum 冲突、无 witness、非法/矛盾边界、可选 body、可信源/多源、指针实际解引用、零凭据/Vault/运行调用、覆盖分层与旧产物未知细分、私有 Policy enum 输出。修复可选正文被强制加入、非法约束导致异常、inclusive/exclusive 依据不完整、Policy enum 数字被误当合成值输出；原静态覆盖口径正确，保留正常+负例分子。没有再实现发现器或扩展 Schema 支持。
+
+最终实际运行：
+
+| 命令 / 核验 | 实际输出或结果 |
+| --- | --- |
+| `.venv/Scripts/python.exe -m pytest -q --basetemp runs/review-full-enum-delivery -rs` | **738 passed, 13 skipped in 236.47s**；输出保存在 `runs/review-pytest-delivery.txt`。10 项 Windows symlink 权限（1314/既有权限项），3 项 POSIX 专项；Windows junction、真实替换锁、线程/多进程及崩溃恢复均实际通过 |
+| `runs/review-windows-base/.venv/Scripts/python.exe -m pytest -q --basetemp runs/review-full-base -rs` | **585 passed, 29 skipped, 1 warning in 111.49s**；独立 Base 确认没有 langgraph/mcp。从已有缓存和项目 Python 自带 wheels 离线安装 requirements-dev.lock，未改锁/系统/主环境；16 项可选功能跳过，余 13 同平台项；警告为锁定 Starlette 对 httpx TestClient 的弃用提醒。输出 `runs/review-pytest-base.txt` |
+| `python -m pytest -q tests/test_discovery.py`（项目 .venv；独立临时目录） | **67 passed in 2.06s**；无跳过 |
+| `.venv/Scripts/python.exe -m ruff check .` | `All checks passed!` |
+| `.venv/Scripts/python.exe -m pip check` | `No broken requirements found.`；依赖锁未改 |
+| `.venv/Scripts/python.exe -m agenttest showcase --case all --runs-dir runs/review-showcase-enum-final` | 五项均 `verified: true`；MCP cached_without_replay；故障/调查仍 ASSERTION_FAILED；school_api_calls=0、real_java_requests=0。完整输出 `runs/review-showcase-latest.json` |
+| 独立 Windows Base：Ruff / pip check / showcase normal、fault | 均通过；两个展示 verified=true，正常 PASS、故障 ASSERTION_FAILED；没有调用 Agent/MCP 可选功能。输出 `runs/review-base-normal.json`、`runs/review-base-fault.json` |
+| `.venv/Scripts/python.exe scripts/smoke_local_http.py --workflow --runs-dir runs/review-loopback-final` | PASS，8 步/9 请求，health/spec_import/report_query 全 200，六图节点，自建服务退出；run `6b51f63b7e754bf1865116322282976a` |
+| discovery CLI（同原 fixture/target/excludedOp） | **19 候选 / 全部 NEEDS_REVIEW / Operation 1/2 / Scenario 8/9 / 执行、HTTP、模型均 0**；新细分正常、静态预检、可信策略各 1/2，实际执行 0/2；产物 `runs/review-enum-final.discovery.json` |
+| `npm run typecheck` / `npm test` / `npm run build` | 类型通过；**4 files / 26 tests passed**；Vite 构建通过，JS 303.67 kB、gzip 96.87 kB；复用已有 node_modules，未改锁，无需再 npm ci |
+| `npm run test:e2e` | 最终 **2 passed (34.0s)**；Windows Edge / 托管临时 API+Vite。13 有效报告的 12/1、按钮、筛选重置、空筛选、两端相同 ID 顺序、无效项跳过、旧字段缺失、错误 ID 均覆盖；桌面与手机截图已实际查看 |
+| WSL Ubuntu 24.04 / Python 3.12.3：`PYTHONPATH=src python3 -m unittest discover -s tests -p test_report_files_portable.py -v` | 原生 `/tmp` **7 tests / OK**；实际验证 POSIX nofollow/dir_fd、锁冲突与释放、独占 temp、原子发布、hardlink、链接/目录替换、FIFO；不是完整 Linux pytest |
+| 旧报告读取 | 既有 `runs/showcase` **11/11** 可读，无迁移/重写；无 revision 的独立历史夹具可读并正常版本化更新 |
+| `git diff --check`；冻结/范围外文件 `git diff --exit-code HEAD -- ...` | 无输出，退出 0；examples、锁文件、pyproject、两轮 2A、Java/MCP/4A/4B/delivery JSON 及 Executor/Vault/Workflow/Intent/MCP/safety 未改；Readonly runtime 仅两处发布元数据适配 |
+
+修复前实际复现：旧快照回退 completed；UUID 保存成功读取失败；合成手机号数值原样公开；可控同 ID 交错 `saved / FileNotFoundError`；预置 Windows junction 在根外产生 report.json；可选 body 的闭合无正文策略被错误阻塞；旧分页断言 Expected 13 / Received 12。第一次集成全量曾因调查恢复旧 revision 出现 38 项失败，修复后完整复验以上表为准，未修改业务预期掩盖问题。第一次沙箱 Vitest 临时文件失效、TestClient 内部 socketpair 停滞，按工具审查许可在沙箱外运行；默认网络阻断夹具未放宽。
+
+**仍未验证**：完整 Linux base/agent pytest、Linux Chromium E2E，以及修改后 GitHub Actions。WSL 隔离 base 安装因 PyPI 超时/重置且 `anyio==4.15.1` 无法解析而失败，未降级或动锁文件；Windows 的本地缓存缺 Linux 原生二进制包，不能替代；未用旧 CI 冒充本轮。DrvFS 首轮组件测试不支持 FIFO，且目录重命名后的 openat 返回 ENXIO、安全失败；原生 `/tmp` 回归全过，报告根应采用普通本地文件系统。
+
+**部署限制**：回环绑定、`--no-proxy-headers`、禁止无认证公网/共享/反向代理暴露。报告根/策略仍由可信操作员控制；无法独立复核的旧数值断言隐藏。网络盘/同步盘及断电后的目录项持久化不在当前保证范围。
+
+**下一准确里程碑**：先补齐 Linux Base/Agent、Linux Chromium 与远端 Windows/Linux 门禁，再另立 C 系列 Agent Eval v2 的标签设计、人工审阅与冻结。Windows Base/Agent 已本轮实测，当前代码整改前置风险已处理，但跨平台完整发布条件尚未齐备；未启动 v2、RAG、多 Agent、新页面、Web 执行或真实模型调查。
+
 ## OpenAPI 候选发现 MVP：阶段 B–E 最终验收（2026-10-12）
 
 在阶段 A 独立验收后实施纯离线 discovery：复用 ContractSummary、request_validation、PolicyRegistry.resolve、validate_plan 与 fingerprint。没有新增 Python/前端依赖，没有修改 Executor/Vault/Workflow/Intent、契约解析、请求校验、目标隔离、冻结策略/评测样本或历史成绩。验收后按用户后续明确授权提交并推送。

@@ -71,6 +71,11 @@ class CoverageRatio(StrictModel):
 
 class OperationCoverage(StrictModel):
     ratio: CoverageRatio
+    # Old discovery artifacts omit these; absence remains unknown, not fabricated zero.
+    with_normal_candidates: CoverageRatio | None = None
+    static_preflight: CoverageRatio | None = None
+    trusted_policy: CoverageRatio | None = None
+    execution: CoverageRatio | None = None
     contract_operations: int
     missing_operation_id: list[str]
     excluded_operations: list[str]

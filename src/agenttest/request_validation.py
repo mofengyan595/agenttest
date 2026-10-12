@@ -39,7 +39,30 @@ def supported_schema(schema: Any, depth: int = 0) -> None:
     }
     if any(key in schema and kind not in kinds for key, kinds in applicability.items()):
         raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT")
+    for key in ("minItems", "maxItems", "minLength", "maxLength"):
+        if key in schema and (type(schema[key]) is not int or schema[key] < 0):
+            raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT_VALUE")
+    for key in ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"):
+        if key not in schema:
+            continue
+        value = schema[key]
+        if key.startswith("exclusive") and type(value) is bool:
+            continue
+        try:
+            finite = type(value) in {int, float} and math.isfinite(value)
+        except OverflowError:
+            finite = False
+        if not finite:
+            raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT_VALUE")
+    if "nullable" in schema and type(schema["nullable"]) is not bool:
+        raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT_VALUE")
+    if "enum" in schema and (not isinstance(schema["enum"], list) or not schema["enum"]):
+        raise NeedsReview("UNSUPPORTED_REQUEST_ENUM")
     if kind == "object":
+        properties, required = schema.get("properties", {}), schema.get("required", [])
+        if (not isinstance(properties, dict) or not isinstance(required, list)
+                or any(not isinstance(name, str) for name in [*properties, *required])):
+            raise NeedsReview("UNSUPPORTED_REQUEST_OBJECT")
         if schema.get("additionalProperties", False) is not False:
             raise NeedsReview("OPEN_OBJECT_SCHEMA_NOT_SUPPORTED")
         for child in schema.get("properties", {}).values():

@@ -7,7 +7,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from agenttest.report import Outcome, ReportStore, RunReport, safe_value
+from agenttest.credentials import sensitive_field
+from agenttest.policies import PolicyRegistry
+from agenttest.report import Outcome, ReportStore, RunReport, fingerprint, safe_value
 
 MAX_CATALOG_ENTRIES = 2000
 MAX_CATALOG_BYTES = 32_000_000
@@ -34,18 +36,37 @@ class RunPage(BaseModel):
     skipped: int
 
 
-def public_report(report: RunReport) -> RunReport:
-    """Reapply the verifier's value allowlist; never expose stored string/object values."""
+def public_report(report: RunReport, registry: PolicyRegistry | None = None) -> RunReport:
+    """Only an independently loaded operator policy can approve stored numeric fields.
+
+    A digest/flag in an old report alone is not approval. Instantiated policies that
+    cannot be matched to the supplied snapshot stay redacted; no approval is inferred.
+    """
+    policies = {fingerprint(p.model_dump()): p for p in registry.definitions()} if registry else {}
     result = report.model_copy(deep=True)
     for step in [*result.steps, *result.investigations]:
+        policy = policies.get(step.policy_sha256)
         for check in step.checks:
             codes = check.expected
-            if (check.kind == "http_status" and isinstance(codes, list) and len(codes) <= 100
+            if (check.kind == "http_status" and check.selector is None
+                    and isinstance(codes, list) and 0 < len(codes) <= 100
                     and all(type(code) is int and 100 <= code <= 599 for code in codes)):
                 check.expected = list(codes)
+                check.actual = (check.actual if type(check.actual) is int
+                                and 100 <= check.actual <= 599 else "[REDACTED]")
             else:
-                check.expected = safe_value(codes, public_numeric=True)
-            check.actual = safe_value(check.actual, public_numeric=True)
+                approved = bool(
+                    policy and policy.operation_id == step.operation_id
+                    and policy.assertions.reviewed and policy.assertions.source.strip()
+                    and check.selector in policy.assertions.public_evidence
+                    and not sensitive_field(check.selector or "")
+                    and any(a.select == check.selector and a.operator == check.kind
+                            and type(a.expected) is type(codes) and a.expected == codes
+                            for a in policy.assertions.fields)
+                )
+                sensitive = sensitive_field(check.selector or "")
+                check.expected = "[REDACTED]" if sensitive else safe_value(codes, approved)
+                check.actual = "[REDACTED]" if sensitive else safe_value(check.actual, approved)
     return result
 
 

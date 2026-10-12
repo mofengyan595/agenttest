@@ -767,6 +767,12 @@
             "type": "string",
             "title": "Run Id"
           },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision",
+            "default": 0
+          },
           "started_at": {
             "type": "string",
             "title": "Started At"

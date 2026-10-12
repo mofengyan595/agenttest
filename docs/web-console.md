@@ -31,7 +31,7 @@ Node.js **22.12+**，Python 3.11；仅使用当前项目 `.venv`。首次安装�
 # normal / fault 只需要基础依赖；all 需要现有 agent,mcp 可选依赖。
 .\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console
 $env:AGENTTEST_RUNS_DIR = 'runs/web-console'
-.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
 ```
 
 另一个终端：
@@ -66,9 +66,11 @@ npm run preview
 | `GET /api/runs/{run_id}` | 现有脱敏详情；保留旧报告缺失字段，不补造历史校验结论 |
 | `GET /api/runs?limit=20&offset=0&outcome=PASS&order=desc` | 新增只读目录查询；limit 1–100、offset 0–2000、Outcome 枚举、asc/desc |
 
-列表最多检查 2,000 个顶层目录项，累计报告字节预算 32 MB；单报告上限 2 MB。超预算返回固定 503，不把部分扫描误报为全量。无效、不完整、身份不匹配、不可读报告跳过并计数。报告只允许 32 位小写十六进制 Run ID，固定 `report.json`，禁止 symlink / Windows reparse point；POSIX 使用目录相对 no-follow 打开，并验证打开文件身份和实际读取上限。文件系统和报告根目录仍由可信操作员控制，不提供抗恶意本机管理员并发篡改的沙箱承诺。
+列表最多检查 2,000 个顶层目录项，累计报告字节预算 32 MB；单报告上限 2 MB。超预算返回固定 503，不把部分扫描误报为全量。无效、不完整、身份不匹配、不可读报告跳过并计数。报告只允许 32 位小写十六进制 Run ID，固定 `report.json`，禁止 symlink / Windows reparse point；POSIX 使用目录相对 no-follow 打开，并验证普通文件、Run ID 一致性和实际读取上限。文件系统和报告根目录仍由可信操作员控制，不提供抗恶意本机管理员并发篡改的沙箱承诺。
 
-列表排序使用记录时间，无时间的旧报告显示“未记录”（desc 置后、asc 置前）；步骤或 Outcome 缺失也显示“未记录”，不补造零或 NEEDS_REVIEW。数字断言只展示已有公开证据；HTTP 预期状态只允许 100–599 整数列表，其余字符串/对象断言值再次脱敏。接口返回 Pydantic 校验后的允许字段，不返回文件路径、原始请求或响应正文。前端不显示服务端异常文本、上传内容或网络异常原文，15 秒超时，路由离开取消请求并忽略迟到响应。
+列表排序使用记录时间，无时间的旧报告显示“未记录”（desc 置后、asc 置前）；步骤或 Outcome 缺失也显示“未记录”，不补造零或 NEEDS_REVIEW。HTTP 预期/实际状态只公开有效 100–599 状态码证据。其他数字断言默认隐藏；必须由操作员通过 `AGENTTEST_PUBLIC_POLICIES` 指定独立审阅的 Registry JSON，核对策略摘要、operation、public_evidence 和字段断言后才公开统计值，敏感 selector 优先隐藏。历史报告自报标记和可解析数字都不授予公开资格。其余字符串/对象断言值再次脱敏。接口返回 Pydantic 校验后的允许字段，不返回文件路径、原始请求或响应正文。前端不显示服务端异常文本、上传内容或网络异常原文，15 秒超时，路由离开取消请求并忽略迟到响应。
+
+API 校验本地 Host（localhost/127.0.0.1/[::1]）、回环 peer、明确本地 Origin 和 Fetch Metadata，拒绝重复 Host/Origin 及 cross-site 请求；不依赖 CORS。默认 Origin 端口 8000/18000/5173/4173，其他完整本地集合用 `create_app(allowed_origins=...)` 显式配置。只允许回环启动并禁用代理头，禁止公网、共享和无认证反向代理部署；应用请求门禁不能替代 socket 绑定或生产认证。报告增加可选 revision，旧报告缺字段仍可读；同 ID 发布竞争显式失败，不能通过重跑业务处理发布错误。完整威胁模型、限制及回归见[审查整改](review-remediation.md)。
 
 四层严格区分：
 
@@ -99,11 +101,11 @@ npm run schema
 
 `api-schema.json` 来源是实际 FastAPI OpenAPI，`src/api/schema.ts` 自动生成；生成时忽略默认值带来的“必填”推断，避免 exclude_unset 的旧报告字段被错误视为总存在。`types.ts` 仅为三态展示补充兼容。不要手动修改生成类型。
 
-在 web 运行 `npm run test:e2e`，默认自动运行 `scripts/serve_console_e2e.py`：在忽略的 `runs/console-e2e/session-*` 中生成 4 个真实离线 showcase 报告，启动 127.0.0.1:18000 API 与 5173 Vite，同源代理到一次性 API。端口已有服务时失败，不复用未知服务。测试结束自动停止服务；正常退出清理临时报告，Windows 强制终止进程时可能保留忽略目录，不会在下次测试复用。需要现有 agent 可选依赖；Windows 默认本机 Edge，Linux 使用已安装的 Playwright Chromium。没有安装系统浏览器。PLAYWRIGHT_CHANNEL 可选择浏览器；CONSOLE_BASE_URL 可显式选择外部本地测试服务，此时不启动托管服务。
+在 web 运行 `npm run test:e2e`，默认自动运行 `scripts/serve_console_e2e.py`：在忽略的 `runs/console-e2e/session-*` 中生成 13 个真实离线 showcase 报告、两个无效/缺文件目录，并省略一份报告的部分历史元数据，启动 127.0.0.1:18000 API 与 5173 Vite，同源代理到一次性 API。实际检查 12/1 分页、前后按钮、筛选分页重置、空筛选、桌面/移动 ID 一致性及缺数据。端口已有服务时失败，不复用未知服务。测试结束自动停止服务；正常退出清理临时报告，Windows 强制终止进程时可能保留忽略目录，不会在下次测试复用。需要现有 agent 可选依赖；Windows 默认本机 Edge，Linux 使用已安装的 Playwright Chromium。没有安装系统浏览器。PLAYWRIGHT_CHANNEL 可选择浏览器；CONSOLE_BASE_URL 可显式选择外部本地测试服务，此时不启动托管服务，并且该服务也必须提供上述隔离夹具，不能指向用户日常报告目录。
 
 浏览器测试不依赖历史报告；截图生成到忽略的 `web/test-results/screenshots/`，不覆盖旧交付证据。测试请求与组件模拟请求分开，组件测试覆盖不是模型或 Java 实测。390px 历史页改为卡片，直接显示 Outcome、环境、步骤及 Workflow。阶段 A 实测截图保存在 `docs/screenshots/followup-2026-10-12/`；验收结果见 [进度](progress.md)。
 
-新增独立 `.github/workflows/web.yml`，Node 22 + npm ci/typecheck/test/build，不依赖 Python Job 结果。E2E 已具备临时离线数据与托管服务，可稳定迁入 CI；当前暂不纳入，以免基础前端 Job 为浏览器测试额外安装 Python agent 依赖与 Chromium。Linux CI 的浏览器实际运行仍未验收。
+独立 `.github/workflows/web.yml` 保留 Node 22 + npm ci/typecheck/test/build，新增 Windows/Linux 矩阵、冻结 Python agent 依赖、托管 Chromium E2E 与失败产物上传，不依赖 Python checks Job 结果。修改后的远端 CI 尚未触发或验收，不能用本机 Edge 结果代替 Linux Chromium 成绩。
 
 ![实际工作台](screenshots/workbench-desktop.png)
 
@@ -116,4 +118,4 @@ npm run schema
 - **RAG**：未来只能作为提供可追溯参考的独立候选信息源，不成为授权、断言或意图门禁的信任根。
 - **Observability**：RunReport 以后增加真实节点/端到端耗时和业务/调查分别计数后，前端再显示图表；不根据请求耗时相加伪造节点或端到端耗时。
 
-纯离线 OpenAPI 候选发现 MVP 已实现；下一准确里程碑为独立 C 系列 Agent Eval v2 的标签设计、审阅与冻结，尚不启动真实模型评测。任何 Web 执行或真实任务接入都另立授权与安全验收里程碑。
+纯离线 OpenAPI 候选发现 MVP 已实现，Windows Base/Agent 已实测；先补齐 Linux Base/Agent、Linux Chromium 与远端跨平台门禁，再另立 C 系列 Agent Eval v2 标签设计、审阅与冻结，尚不启动真实模型评测。任何 Web 执行或真实任务接入都另立授权与安全验收里程碑。

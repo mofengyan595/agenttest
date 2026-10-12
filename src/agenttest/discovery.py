@@ -156,7 +156,14 @@ def discover(
                 )
                 missing.add("RUNTIME_CREDENTIALS_REQUIRED")
             else:
+                include_body = bool(
+                    (op.request_body or {}).get("required")
+                    or any(location == "body" for location, _ in rules)
+                    or override and op_id == operation_id and override[0] == "body"
+                )
                 for field in specs:
+                    if field.location == "body" and not include_body:
+                        continue
                     rule = rules.get((field.location, field.name))
                     selected = bool(
                         override
@@ -236,7 +243,9 @@ def discover(
                             if extra is not None:
                                 validate_value(value, extra)
                         binding = ArgumentBinding(value=value)
-                        descriptions.append(describe(field, value).model_dump())
+                        descriptions.append(describe(
+                            field, value, private_enum=bool(extra and "enum" in extra),
+                        ).model_dump())
                     getattr(step, field.location)[field.name] = binding
                 if not any(
                     b.from_step
@@ -248,10 +257,12 @@ def discover(
                         {k: v.value for k, v in step.path_parameters.items()},
                         {k: v.value for k, v in step.query.items()},
                         {k: v.value for k, v in step.body.items()},
-                        media,
+                        media if include_body else None,
                     )
                 if op.request_body and op.request_body.get("required") and not step.body:
                     raise NeedsReview("EMPTY_REQUIRED_BODY_NOT_REPRESENTABLE")
+                if include_body and not step.body:
+                    raise NeedsReview("EMPTY_BODY_NOT_REPRESENTABLE")
             if op.security and {} not in op.security:
                 if not config or r not in config.roles:
                     raise NeedsReview("AUTHENTICATION_METADATA_REQUIRED")
@@ -424,6 +435,11 @@ def discover(
                         if kind == "required_missing"
                         else variant[0].basis + "/" + key
                     ]
+                    if kind.startswith("numeric_"):
+                        bound = keys[kind]
+                        schema_basis = [variant[0].basis + "/" + constraint
+                                        for constraint in (bound, "exclusive" + bound.capitalize())
+                                        if constraint in variant[0].schema]
                 if polarity == "negative":
                     emit(
                         Candidate(
@@ -508,6 +524,18 @@ def discover(
         coverage=StaticCoverage(
             operation=OperationCoverage(
                 ratio=CoverageRatio(numerator=len(covered), denominator=len(included)),
+                with_normal_candidates=CoverageRatio(
+                    numerator=len({c.operation_id for c in ordered if c.polarity == "normal"}),
+                    denominator=len(included)),
+                static_preflight=CoverageRatio(
+                    numerator=len({c.operation_id for c in ordered
+                                   if c.executable_status == "STATIC_VALIDATED"}),
+                    denominator=len(included)),
+                trusted_policy=CoverageRatio(
+                    numerator=len({p.operation_id for p in policies.values()
+                                   if p.operation_id in included and trusted(p)}),
+                    denominator=len(included)),
+                execution=CoverageRatio(numerator=0, denominator=len(included)),
                 contract_operations=len(contract.operations),
                 missing_operation_id=[
                     f"{op.method} {op.path}" for op in contract.operations if not op.operation_id

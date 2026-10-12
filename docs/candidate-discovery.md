@@ -90,6 +90,10 @@ Linux 将解释器替换为 `.venv/bin/python`，使用同样参数（可写成�
 
 分母为 0 时保留 0/0，不显示 100%。操作覆盖与场景覆盖都不是已执行覆盖率。
 
+审查整改后额外提供 `operation.with_normal_candidates`（至少有 normal 草案）、`static_preflight`（至少一项 STATIC_VALIDATED）、`trusted_policy`（纳入作用域且有已审阅策略）、`execution`（本模块恒 0）四个 numerator/denominator，分母均沿用 included operations。原 `ratio` 的正常+静态负例口径不变；旧 `.discovery.json` 缺细分字段时解析为未知，不回填历史成绩。
+
+本轮补查确认：可选 requestBody 可以完全省略；策略或变体选中 body 后才要求内部必填字段。无有界 witness、enum/约束冲突、矛盾边界均不能 STATIC_VALIDATED；非法约束类型/值安全进入 NEEDS_REVIEW。数值上下界同时声明 inclusive/exclusive 时，schema_basis 同时保留现有两项依据，并对规范化摘要实际逐条解引用。多条来源策略仍严格引用指定 source_policy_id，不自动换策略。来自 Policy enum、没有契约 enum 索引的数字/布尔不再输出字面量，以 approved_enum_shape 描述，原 witness/审批结果不变。完整逐项证据与平台限制见[审查整改](review-remediation.md)。
+
 ## 支持范围与预算
 
 支持标量 string/integer/number/boolean、required 参数/JSON body/顶层字段、enum、minimum/maximum、exclusiveMinimum/exclusiveMaximum、minLength/maxLength，以及批准资源关系的简单流程。JSON body 限顶层标量；必填 header/cookie、复杂编码和 multipart 继续待审，optional header/cookie 沿用原校验器的忽略行为。
@@ -104,7 +108,7 @@ oneOf/anyOf/allOf、pattern、未知 format、开放对象、嵌套请求值、�
 
 离线测试覆盖两个契约版本、正常/负例、枚举/数值/长度/类型、未知 Schema/Policy/selector、认证顺序/跨角色/循环、闭合参数、输入稳定性/去重/摘要、分母、脱敏、输出不覆盖、原门禁仍拒绝负例。验收命令与实际结果见 [进度](progress.md)。本机默认测试的网络保护始终保留。
 
-本轮不增加 Web API 或候选页面：把本地策略文件变成浏览器可传策略，会改变当前文件权限作为信任根的设计。后续可提供**服务器预先批准候选产物的只读查询**，仍不能执行。当前 FastAPI Schema 未修改，无需重生成 TS API 类型。
+发现模块不增加 Web API 或候选页面：把本地策略文件变成浏览器可传策略，会改变当前文件权限作为信任根的设计。后续可提供**服务器预先批准候选产物的只读查询**，仍不能执行。发现模块没有 FastAPI Schema；本轮 ReportStore 新增可选 revision 的 API Schema 与 TS 类型已另行重新生成。
 
 - **Planner**：后续把通过脱敏筛选的候选引用纳入 planning_context，仅建议计划；仍经过原 DSL/Policy/Intent 门禁。当前未改变 Planner 输入或 Prompt。
 - **Agent Eval**：另建、审阅并冻结新的 C 系列候选集；本轮 fixture 是开发回归，不作为独立泛化成绩或修改旧 Golden 标签。

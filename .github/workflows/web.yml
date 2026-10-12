@@ -11,9 +11,18 @@ permissions:
 
 jobs:
   web:
-    name: Web / Node 22
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: Web / ${{ matrix.os }} / Node 22
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            python: .venv/bin/python
+          - os: windows-latest
+            python: .venv/Scripts/python.exe
     defaults:
       run:
         working-directory: web
@@ -30,3 +39,27 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Disposable API dependencies
+        working-directory: .
+        shell: bash
+        run: |
+          python -m venv .venv
+          "${{ matrix.python }}" -m pip install -r requirements-agent.lock
+          "${{ matrix.python }}" -m pip install --no-build-isolation --no-deps -e '.[dev,agent,mcp]'
+      - name: Browser runtime
+        shell: bash
+        run: npx playwright install --with-deps chromium
+      - name: Isolated pagination and browser acceptance
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          LANGSMITH_TRACING: 'false'
+          LANGCHAIN_TRACING_V2: 'false'
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: console-e2e-${{ matrix.os }}
+          path: web/test-results/

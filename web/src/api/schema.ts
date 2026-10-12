@@ -313,6 +313,11 @@ export interface components {
     RunReport: {
       /** Run Id */
       run_id?: string;
+      /**
+       * Revision
+       * @default 0
+       */
+      revision?: number;
       /** Started At */
       started_at?: string;
       /** Scenario Sha256 */

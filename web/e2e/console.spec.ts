@@ -11,7 +11,8 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
   const response = await request.get("/api/runs?limit=100");
   expect(response.ok()).toBeTruthy();
   const catalog = await response.json();
-  expect(catalog.total).toBeGreaterThan(0);
+  expect(catalog.total).toBe(13);
+  expect(catalog.skipped).toBe(2);
   await page.goto("/");
   await expect(page.getByText("API 已连接")).toBeVisible();
   await page
@@ -36,7 +37,13 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
   await expect(page.getByRole("alert")).toContainText("输入格式无效");
   await page.getByRole("link", { name: "历史测试报告", exact: true }).click();
   await expect(page.getByRole("heading", { name: "运行记录" })).toBeVisible();
-  await expect(page.locator("tbody tr")).toHaveCount(catalog.total);
+  await expect(page.locator("tbody tr")).toHaveCount(12);
+  await expect(page.getByLabel("上一页", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("下一页", { exact: true })).toBeEnabled();
+  await expect(
+    page.getByText("2 个无效、不完整或不可读取的报告已跳过。"),
+  ).toBeVisible();
+  const desktopIds = await page.locator("tbody tr a").allTextContents();
   await page.keyboard.press("Control+Home");
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await page.screenshot({
@@ -46,7 +53,10 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".run-cards")).toBeVisible();
   await expect(page.locator(".run-table")).toBeHidden();
-  await expect(page.locator(".run-card")).toHaveCount(catalog.total);
+  await expect(page.locator(".run-card")).toHaveCount(12);
+  expect(await page.locator(".run-card a").allTextContents()).toEqual(
+    desktopIds,
+  );
   await expect(
     page
       .locator(".run-card")
@@ -63,17 +73,62 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
     fullPage: true,
   });
   await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByLabel("下一页", { exact: true }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByLabel("上一页", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("下一页", { exact: true })).toBeDisabled();
+  await expect(page.locator("tbody tr")).toContainText(
+    catalog.items[12].run_id,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".run-card")).toHaveCount(1);
+  await expect(page.locator(".run-card")).toContainText(
+    catalog.items[12].run_id,
+  );
+  await page.getByLabel("上一页", { exact: true }).click();
+  await expect(page.locator(".run-card")).toHaveCount(12);
+  await expect(page.getByLabel("上一页", { exact: true })).toBeDisabled();
+  await page.getByLabel("下一页", { exact: true }).click();
+  await expect(page.locator(".run-card")).toHaveCount(1);
+  await page.setViewportSize({ width: 1440, height: 1080 });
   await page
     .getByLabel("结果", { exact: true })
     .selectOption("ASSERTION_FAILED");
   await expect(page.locator("tbody tr").first()).toContainText(
     "ASSERTION_FAILED",
   );
+  await expect(page.locator("tbody tr")).toHaveCount(2);
+  await expect(page.getByLabel("上一页", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("下一页", { exact: true })).toBeDisabled();
+  await page.getByLabel("结果", { exact: true }).selectOption("TOOL_ERROR");
+  await expect(page.getByText("没有符合条件的报告")).toBeVisible();
+  await expect(page.locator("tbody tr")).toHaveCount(0);
+  await expect(page.getByLabel("上一页", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("下一页", { exact: true })).toBeDisabled();
+  await page.getByLabel("结果", { exact: true }).selectOption("");
+  await expect(page.locator("tbody tr")).toHaveCount(12);
   let investigationId: string | undefined;
+  let legacyId: string | undefined;
   for (const row of catalog.items) {
     const report = await (await request.get(`/api/runs/${row.run_id}`)).json();
     if (report.investigations?.length) investigationId = row.run_id;
+    if (!Object.hasOwn(report, "dsl_valid")) {
+      legacyId = row.run_id;
+      expect(report).not.toHaveProperty("workflow_completed");
+      expect(report).not.toHaveProperty("task_satisfied");
+    }
   }
+  expect(legacyId).toBeTruthy();
+  await page.goto(`/runs/${legacyId}`);
+  await expect(
+    page
+      .locator(".validation-card")
+      .filter({ hasText: "DSL Validity" })
+      .getByText("未记录", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Workflow · 未记录", { exact: true }),
+  ).toBeVisible();
   expect(investigationId).toBeTruthy();
   await page.goto(`/runs/${investigationId}`);
   await expect(
@@ -133,6 +188,8 @@ test("real API: missing report and invalid ID", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Run ID 格式无效" }),
   ).toBeVisible();
-  await page.goto(`/runs/${"0".repeat(32)}`);
-  await expect(page.getByRole("alert")).toContainText("未找到报告");
+  for (const character of ["0", "d", "e"]) {
+    await page.goto(`/runs/${character.repeat(32)}`);
+    await expect(page.getByRole("alert")).toContainText("未找到报告");
+  }
 });

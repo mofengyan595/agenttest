@@ -83,6 +83,7 @@ def assert_original_preserved(executor, report, calls):
     original = executor.store.original
     assert report.outcome == original.outcome == Outcome.ASSERTION_FAILED
     assert report.reason == original.reason and report.steps == original.steps
+    assert report.revision > original.revision
     assert sum(m == "POST" and p == "/api/courses" for m, p in calls) == 1
     assert sum(p.endswith("login") for _, p in calls) == 2
     raw = report.model_dump_json()

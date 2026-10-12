@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 import os
 import stat
 import time
@@ -9,11 +10,12 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Literal
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from agenttest.diagnostics import Diagnostic
+from agenttest.report_files import pinned_directory, writer_lock
 
 MAX_REPORT_BYTES = 2_000_000
 
@@ -98,6 +100,7 @@ class PlanStepEvidence(BaseModel):
 
 class RunReport(BaseModel):
     run_id: str = Field(default_factory=lambda: uuid4().hex)
+    revision: int = Field(default=0, ge=0, strict=True)
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     scenario_sha256: str
     contract_sha256: str
@@ -136,70 +139,79 @@ def fingerprint(value: Any) -> str:
 
 def safe_value(value: Any, public_numeric: bool = False) -> Any:
     """Only explicitly approved numeric evidence may leave the verifier."""
-    if value is None or type(value) is bool or (public_numeric and type(value) in {int, float}):
+    if value is None or type(value) is bool or (public_numeric and (
+        type(value) is int or type(value) is float and math.isfinite(value)
+    )):
         return value
     return "[REDACTED]"
 
 
 class ReportStore:
     def __init__(self, root: Path = Path("runs")) -> None:
-        self.root = root.resolve()
+        # Do not resolve away evidence of pre-planted links.
+        self.root = Path(os.path.abspath(root))
+
+    @staticmethod
+    def validate_id(run_id: str) -> None:
+        if len(run_id) != 32 or any(c not in "0123456789abcdef" for c in run_id):
+            raise ValueError("Invalid run id")
 
     def save(self, report: RunReport) -> Path:
-        UUID(report.run_id)
-        directory = self.root / report.run_id
-        directory.mkdir(parents=True, exist_ok=True)
-        path = directory / "report.json"
-        temporary = directory / "report.tmp"
-        temporary.write_text(report.model_dump_json(indent=2), encoding="utf-8")
-        for attempt in range(5):
-            try:
-                temporary.replace(path)
-                break
-            except PermissionError as exc:
-                # Windows readers can briefly deny replacement. Retry file publication only;
-                # no HTTP request or scenario is replayed, and permanent denial remains an error.
-                if getattr(exc, "winerror", None) not in {5, 32, 33} or attempt == 4:
-                    raise
-                time.sleep(.005 * 2 ** attempt)
-        return path
+        """Single publisher per ID, compare-and-swap revision; never replay execution.
+
+        Independent callers must read the latest report before updating. Conflicts
+        fail explicitly. Legacy reports without a revision start at version zero.
+        """
+        self.validate_id(report.run_id)
+        with pinned_directory(self.root, report.run_id, create=True) as directory:
+            with writer_lock(directory):
+                try:
+                    current = self._read(directory, report.run_id)
+                except FileNotFoundError:
+                    current = None
+                expected = current.revision if current else 0
+                if report.revision != expected:
+                    raise ValueError("Report revision conflict")
+                snapshot = report.model_copy(deep=True, update={"revision": expected + 1})
+                raw = snapshot.model_dump_json(indent=2).encode("utf-8")
+                if len(raw) > MAX_REPORT_BYTES:
+                    raise ValueError("Report exceeds size limit")
+                temporary = f"report-{uuid4().hex}.tmp"
+                descriptor = directory.open(temporary, create=True)
+                try:
+                    with os.fdopen(descriptor, "wb") as stream:
+                        stream.write(raw)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    for attempt in range(5):
+                        try:
+                            directory.replace(temporary, "report.json")
+                            break
+                        except PermissionError as exc:
+                            if getattr(exc, "winerror", None) not in {5, 32, 33} or attempt == 4:
+                                raise
+                            time.sleep(.005 * 2 ** attempt)
+                    report.revision = snapshot.revision
+                finally:
+                    try:
+                        directory.unlink(temporary)
+                    except FileNotFoundError:
+                        pass
+        return self.root / report.run_id / "report.json"
 
     def read(self, run_id: str) -> RunReport:
-        if UUID(run_id).hex != run_id:
-            raise ValueError("Invalid run id")
-        # Refuse links/reparse points and bound reads, including files that grow after stat.
-        directory = self.root / run_id
-        path = directory / "report.json"
-        for candidate in (directory, path):
-            info = candidate.lstat()
-            if (stat.S_ISLNK(info.st_mode)
-                    or getattr(info, "st_file_attributes", 0) & 0x400):
-                raise ValueError("Linked reports are forbidden")
-        if not stat.S_ISREG(info.st_mode):
-            raise ValueError("Report must be a regular file")
-        if not path.resolve().is_relative_to(self.root):
-            raise ValueError("Run path escapes report directory")
-        # POSIX directory-relative opens also close the directory replacement race.
-        if os.name == "posix":
-            flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
-            root_fd = os.open(self.root, flags | os.O_DIRECTORY)
-            try:
-                directory_fd = os.open(run_id, flags | os.O_DIRECTORY, dir_fd=root_fd)
-                try:
-                    descriptor = os.open("report.json", flags, dir_fd=directory_fd)
-                finally:
-                    os.close(directory_fd)
-            finally:
-                os.close(root_fd)
-        else:
-            descriptor = os.open(path, os.O_RDONLY | os.O_BINARY)
+        self.validate_id(run_id)
+        with pinned_directory(self.root, run_id, create=False) as directory:
+            return self._read(directory, run_id)
+
+    @staticmethod
+    def _read(directory, run_id: str) -> RunReport:
+        directory.inspect("report.json")
+        descriptor = directory.open("report.json", readonly=True)
         with os.fdopen(descriptor, "rb") as stream:
             opened = os.fstat(stream.fileno())
             if not stat.S_ISREG(opened.st_mode) or opened.st_size > MAX_REPORT_BYTES:
                 raise ValueError("Invalid report size or file type")
-            # Verify that the opened file is the inspected file on Windows as well.
-            if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
-                raise ValueError("Report changed during read")
             raw = stream.read(MAX_REPORT_BYTES + 1)
         if len(raw) > MAX_REPORT_BYTES:
             raise ValueError("Report exceeds size limit")

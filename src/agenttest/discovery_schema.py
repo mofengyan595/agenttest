@@ -160,7 +160,8 @@ def fields(operation: Operation, version: str, basis: str) -> tuple[list[FieldSp
     return result, media
 
 
-def describe(field: FieldSpec, value: Any, action: str = "synthetic") -> InputVariation:
+def describe(field: FieldSpec, value: Any, action: str = "synthetic", *,
+             private_enum: bool = False) -> InputVariation:
     enum = field.schema.get("enum", [])
     index = next(
         (i for i, item in enumerate(enum) if type(value) is type(item) and value == item), None
@@ -168,11 +169,12 @@ def describe(field: FieldSpec, value: Any, action: str = "synthetic") -> InputVa
     return InputVariation(
         location=field.location,
         name=field.name,
-        action=action,
+        action="approved_enum_shape" if private_enum and index is None else action,
         value_type=field.schema["type"],
         enum_index=index,
-        numeric_value=value if type(value) in {int, float} and index is None else None,
-        boolean_value=value if type(value) is bool and index is None else None,
+        numeric_value=(value if type(value) in {int, float}
+                       and index is None and not private_enum else None),
+        boolean_value=value if type(value) is bool and index is None and not private_enum else None,
         string_length=len(value) if type(value) is str and index is None else None,
     )
 

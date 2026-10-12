@@ -40,7 +40,7 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
             executor.config.model_dump(), executor.contract.model_dump(),
             executor.registry.digest(), [c.model_dump() for c in executor.capabilities.entries()],
             executor.investigation.model_dump(), executor.environ, scenario.model_dump(),
-            report.model_dump(exclude={"investigations", "investigation_error"}),
+            report.model_dump(exclude={"investigations", "investigation_error", "revision"}),
         ])
 
     frozen = digest()
@@ -189,7 +189,7 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
         result.requests_used = requests["requests"]
         # Restore the immutable original evidence even if an injected analyzer mutated a reference.
         for name in type(report).model_fields:
-            if name not in {"investigations", "investigation_error"}:
+            if name not in {"investigations", "investigation_error", "revision"}:
                 setattr(report, name, getattr(original, name))
         executor.config, executor.contract, executor.registry = config, contract, registry
         executor.capabilities = capabilities

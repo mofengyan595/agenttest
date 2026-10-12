@@ -10,6 +10,8 @@
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
 
+最新[审查整改与回归记录](docs/review-remediation.md)：报告单写者/版本冲突与路径防护、13 条隔离分页 E2E、本地 API 边界、历史数值二次脱敏及发现器边界。服务仅允许回环部署，禁用代理头；公开统计字段需要操作员独立指定可信策略文件，不能信任报告自报公开资格。
+
 ```powershell
 .\.venv\Scripts\python.exe -m agenttest discover --contract tests/fixtures/discovery/openapi-3.1.yaml --policies tests/fixtures/discovery/policies.json --target tests/fixtures/discovery/target.json --exclude-operation excludedOp --output runs/discovery/example.discovery.json
 ```
@@ -20,7 +22,7 @@
 # 根目录：先生成隔离离线报告，使用现有 .venv 与 agent/mcp 可选依赖
 .\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console
 $env:AGENTTEST_RUNS_DIR = 'runs/web-console'
-.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
 # 另一终端：Node.js 22.12+；Linux 使用 .venv/bin/python 与 export AGENTTEST_RUNS_DIR
 Set-Location web
 npm ci

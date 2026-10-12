@@ -7,12 +7,18 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, Request
 
 from agenttest.contracts import MAX_DOCUMENT_BYTES, ContractSummary, load_openapi
+from agenttest.local_access import DEFAULT_ORIGINS, LocalAccessMiddleware
+from agenttest.policies import PolicyRegistry
 from agenttest.report import Outcome, ReportStore, RunReport
 from agenttest.report_queries import CatalogLimit, RunPage, list_runs, public_report
 
 
-def create_app(runs_dir: Path = Path("runs")) -> FastAPI:
+def create_app(runs_dir: Path = Path("runs"), *,
+               public_policies: PolicyRegistry | None = None,
+               allowed_origins: frozenset[str] = DEFAULT_ORIGINS) -> FastAPI:
     app = FastAPI(title="AgentTest", version="0.1.0")
+    app.add_middleware(LocalAccessMiddleware, allowed_origins=allowed_origins)
+    registry = public_policies.snapshot() if public_policies else None
     store = ReportStore(runs_dir)
 
     @app.get("/health")
@@ -47,11 +53,17 @@ def create_app(runs_dir: Path = Path("runs")) -> FastAPI:
     @app.get("/api/runs/{run_id}", response_model=RunReport, response_model_exclude_unset=True)
     def run_result(run_id: str) -> RunReport:
         try:
-            return public_report(store.read(run_id))
+            return public_report(store.read(run_id), registry)
         except (ValueError, OSError):
             raise HTTPException(404, "Run not found") from None
 
     return app
 
 
-app = create_app(Path(os.environ.get("AGENTTEST_RUNS_DIR", "runs")))
+def configured_app() -> FastAPI:
+    policy_path = os.environ.get("AGENTTEST_PUBLIC_POLICIES")
+    registry = (PolicyRegistry.from_json(Path(policy_path).read_bytes()) if policy_path else None)
+    return create_app(Path(os.environ.get("AGENTTEST_RUNS_DIR", "runs")), public_policies=registry)
+
+
+app = configured_app()

@@ -121,7 +121,10 @@ def test_identity_size_and_catalog_budgets(tmp_path, monkeypatch):
     path.write_bytes(b" " * (MAX_REPORT_BYTES + 1))
     with pytest.raises(ValueError, match="size"):
         store.read(row.run_id)
-    store.save(row)
+    # Damaged current snapshots are not silently overwritten by the CAS publisher.
+    with pytest.raises(ValueError):
+        store.save(row)
+    path.write_text(row.model_dump_json(), encoding="utf-8")
     monkeypatch.setattr("agenttest.report_queries.MAX_CATALOG_BYTES", 1)
     assert TestClient(create_app(tmp_path)).get("/api/runs").status_code == 503
     monkeypatch.setattr("agenttest.report_queries.MAX_CATALOG_BYTES", 32_000_000)

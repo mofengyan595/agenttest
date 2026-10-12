@@ -600,3 +600,156 @@ def test_login_schema_values_remain_unknown_and_input_identity_binds_ids():
     assert {c.candidate_id for c in first.candidates}.isdisjoint(
         {c.candidate_id for c in second.candidates}
     )
+
+
+@pytest.mark.parametrize("version,schema,valid,invalid", [
+    ("3.0.3", {"type": "integer", "minimum": 1, "exclusiveMinimum": True}, 2, 1),
+    ("3.0.3", {"type": "integer", "maximum": 2, "exclusiveMaximum": True}, 1, 2),
+    ("3.1.0", {"type": "integer", "exclusiveMinimum": 1}, 2, 1),
+    ("3.1.0", {"type": "integer", "exclusiveMaximum": 2}, 1, 2),
+])
+def test_exclusive_dialects_really_validate_edges(version, schema, valid, invalid):
+    result = discover(single(schema, version=version), PolicyRegistry([policy()]),
+                      configured(single(schema, version=version)))
+    edge_kind = "numeric_lower" if "exclusiveMinimum" in schema else "numeric_upper"
+    candidate = next(c for c in result.candidates
+                     if c.scenario_kind == edge_kind and c.polarity == "normal")
+    assert candidate.input_variations[0].numeric_value == valid
+    assert candidate.executable_status == "STATIC_VALIDATED"
+    validate_value(valid, schema)
+    with pytest.raises(ValueError):
+        validate_value(invalid, schema)
+
+
+@pytest.mark.parametrize("schema", [
+    {"type": "integer", "enum": [1, 2], "minimum": 4},
+    {"type": "integer", "minimum": 4, "maximum": 2},
+    {"type": "number", "exclusiveMinimum": 2, "exclusiveMaximum": 2},
+    {"type": "string", "minLength": 4, "maxLength": 2},
+    {"type": "string", "minLength": 1000},
+    {"type": "integer", "minimum": "invalid"},
+    {"type": "integer", "minimum": float("inf")},
+    {"type": "integer", "minimum": 10 ** 1000},
+    {"type": "string", "minLength": -1},
+    {"type": "string", "maxLength": 1.5},
+    {"type": "integer", "enum": []},
+])
+def test_no_valid_witness_or_invalid_schema_never_becomes_static_validated(schema):
+    contract = single(schema)
+    result = discover(contract, PolicyRegistry([policy()]), configured(contract))
+    assert not any(c.executable_status == "STATIC_VALIDATED" for c in result.candidates)
+    assert all(c.polarity == "review" for c in result.candidates if c.scenario_kind == "normal")
+
+
+def optional_body_contract():
+    return ContractSummary(version="3.1.0", operations=[Operation(
+        operation_id="items", path="/items", method="GET", request_body={
+            "required": False, "content": {"application/json": {"schema": {
+                "type": "object", "required": ["value"], "additionalProperties": False,
+                "properties": {"value": {"type": "integer", "minimum": 1},
+                               "extra": {"type": "integer"}}}}}})])
+
+
+def test_optional_body_can_be_omitted_under_closed_no_body_policy():
+    contract = optional_body_contract()
+    result = discover(contract, PolicyRegistry([policy(closed_arguments=True)]),
+                      configured(contract))
+    normal = next(c for c in result.candidates if c.scenario_kind == "normal")
+    assert normal.executable_status == "STATIC_VALIDATED" and normal.input_variations == []
+    assert normal.schema_valid and normal.policy_match
+
+
+def test_optional_body_when_selected_must_include_required_fields():
+    contract = optional_body_contract()
+    p = policy(closed_arguments=True, binding_rules=[
+        {"location": "body", "name": "value", "literal_schema": {"type": "integer"}}])
+    result = discover(contract, PolicyRegistry([p]), configured(contract))
+    normal = next(c for c in result.candidates if c.scenario_kind == "normal")
+    assert normal.executable_status == "STATIC_VALIDATED"
+    assert [v.name for v in normal.input_variations] == ["value"]
+
+
+def test_source_policy_needs_independent_approval():
+    contract, registry, config = dependency_inputs()
+    entries = registry.definitions()
+    next(p for p in entries if p.id == "create_v1").assertions.reviewed = False
+    result = discover(contract, PolicyRegistry(entries), config)
+    flow = next(c for c in result.candidates if c.scenario_kind == "resource_flow")
+    assert flow.executable_status == "BLOCKED" and flow.policy_match is not True
+    assert flow.rejection_reason == "POLICY_SCOPE_MISMATCH"
+
+
+def test_multiple_source_policies_follow_exact_approved_reference():
+    contract, registry, config = dependency_inputs()
+    extra = policy("create", "create_alternative_v1", ["alice"], closed_arguments=True)
+    # The alternative is unusable; it must not replace the explicitly approved create_v1.
+    result = discover(contract, PolicyRegistry([extra, *registry.definitions()]), config)
+    flow = next(c for c in result.candidates if c.scenario_kind == "resource_flow")
+    assert flow.dependencies[0].source_policy_id == "create_v1"
+    assert "create_alternative_v1" not in flow.policy_refs
+    assert flow.policy_match is True and flow.executable_status == "BLOCKED"
+
+
+def test_every_schema_pointer_resolves_in_fingerprinted_summary():
+    contract = single({"type": "integer", "minimum": 2, "exclusiveMinimum": 1, "maximum": 5})
+    result = discover(contract, PolicyRegistry([policy()]), configured(contract))
+    from agenttest.report import fingerprint
+
+    summary = contract.model_dump()
+    assert fingerprint(summary) == result.contract_sha256
+    for candidate in result.candidates:
+        for pointer in candidate.schema_basis:
+            assert pointer.startswith("#/operations/")
+            value = summary
+            for token in pointer[2:].split("/"):
+                key = token.replace("~1", "/").replace("~0", "~")
+                value = value[int(key)] if isinstance(value, list) else value[key]
+    lower = next(c for c in result.candidates
+                 if c.scenario_kind == "numeric_lower" and c.polarity == "normal")
+    assert {p.rsplit("/", 1)[1] for p in lower.schema_basis} == {"minimum", "exclusiveMinimum"}
+
+
+def test_coverage_subsets_keep_static_negative_discovery_and_zero_execution():
+    contract = single({"type": "integer", "minimum": 5, "maximum": 1})
+    result = discover(contract, PolicyRegistry([policy()]), configured(contract))
+    coverage = result.coverage.operation
+    assert coverage.ratio.numerator == coverage.trusted_policy.numerator == 1
+    assert coverage.with_normal_candidates.numerator == coverage.static_preflight.numerator == 0
+    assert coverage.execution.model_dump() == {"numerator": 0, "denominator": 1}
+    assert all(c.review_status == "NEEDS_REVIEW" for c in result.candidates)
+    from agenttest.discovery_models import DiscoveryResult
+
+    legacy = result.model_dump()
+    for field in ("with_normal_candidates", "static_preflight", "trusted_policy", "execution"):
+        legacy["coverage"]["operation"].pop(field)
+    old = DiscoveryResult.model_validate(legacy)
+    assert old.coverage.operation.static_preflight is None
+
+
+def test_discovery_does_not_read_environment_or_construct_vault(monkeypatch):
+    import os
+
+    from agenttest.credentials import CredentialVault
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("No runtime environment or vault in discovery")
+
+    inputs = dependency_inputs("different")
+    monkeypatch.setattr(os, "getenv", forbidden)
+    monkeypatch.setattr(CredentialVault, "__init__", forbidden)
+    monkeypatch.setattr(type(os.environ), "__getitem__", forbidden)
+    result = discover(*inputs)
+    assert result.http_requests == result.model_calls == result.tests_executed == 0
+    assert not any(c.executable_status == "STATIC_VALIDATED" for c in result.candidates)
+
+
+def test_policy_numeric_enum_literal_is_not_exported_as_synthetic_value():
+    contract = single({"type": "integer"})
+    p = policy(binding_rules=[{"location": "query", "name": "value", "literal_schema": {
+        "type": "integer", "enum": [246810]}}])
+    result = discover(contract, PolicyRegistry([p]), configured(contract))
+    normal = next(c for c in result.candidates if c.scenario_kind == "normal")
+    assert normal.executable_status == "STATIC_VALIDATED"
+    assert normal.input_variations[0].numeric_value is None
+    assert normal.input_variations[0].action == "approved_enum_shape"
+    assert "246810" not in discovery_json(result)
