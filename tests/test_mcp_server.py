@@ -1,6 +1,9 @@
 """SDK client exercises protocol discovery, strict schemas and the redaction boundary."""
 
+import importlib.util
 import json
+from pathlib import Path
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -12,6 +15,21 @@ from mcp import Client  # noqa: E402
 from agenttest.demo import demo_inputs  # noqa: E402
 from agenttest.mcp_server import create_server  # noqa: E402
 from agenttest.mcp_service import REQUESTS, MCPService, MCPSettings  # noqa: E402
+
+
+@pytest.mark.parametrize("payload,expected", [
+    ({"error_code": "MCP_INTERNAL_ERROR"}, "MCP_INTERNAL_ERROR"),
+    ({"error_code": "private-token/path", "report": "private-body"}, "MCP_UNCLASSIFIED_ERROR"),
+    ({"error_code": {"password": "private-secret"}}, "MCP_UNCLASSIFIED_ERROR"),
+    ({"error_code": "X" * 65}, "MCP_UNCLASSIFIED_ERROR"),
+    (None, "MCP_UNCLASSIFIED_ERROR"),
+])
+def test_stdio_smoke_failure_shows_only_bounded_error_code(payload, expected):
+    path = Path(__file__).resolve().parents[1] / "scripts/smoke_mcp_stdio.py"
+    spec = importlib.util.spec_from_file_location("smoke_mcp_stdio", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.tool_error_code(SimpleNamespace(structured_content=payload)) == expected
 
 
 @pytest.fixture

@@ -1,5 +1,36 @@
 # 开发进度
 
+## Windows MCP stdio 路径兼容整改（2026-10-12）
+
+本轮基线 HEAD 为 `601b11bd3ad864dbc4e9b9672b8d41ddf442bffa`，初始工作区干净。用户要求检查该提交的全部 Actions、复现并最小修复 Windows MCP smoke；整改验收阶段未创建分支、提交或推送，后续用户已明确授权提交与推送，实际状态以 Git 记录为准。未开发新功能。
+
+先取得并读取 [Windows Agent 完整 Job 日志](https://github.com/mofengyan595/agenttest/actions/runs/38225168880/job/114730779167)：**748 passed、3 skipped**，Ruff/pip check 与三类回环 smoke 成功，首次 MCP run_scenario 在原脚本第 36 行失败。原断言没有输出 structured_content/error_code，日志不能直接证明底层异常；完整副本保存在忽略的 `runs/actions-601b11b-windows-agent.log`。
+
+根因复现：Windows 同一物理目录的长路径成功，GetShortPathNameW 得到的 8.3 别名失败；两者 resolve 后相同。原 MCPService._directory 将 `directory.resolve().parent` 与 ReportStore 故意保留的未解析根路径比较，短路径被误拒绝。真实 SDK stdio 在短路径临时目录复现 **MCP_INTERNAL_ERROR**，且 claim 未创建、Executor 未调用、ReportStore 锁未打开。CI 没有记录实际临时目录字符串，因此不把“runner 使用哪一种别名”当作日志直接事实；本地根因与 CI 症状一致，正常路径不出现该故障。
+
+最小修改：
+
+- `mcp_service.py`：比较时对两侧采用相同的 resolve 形式；先逐级 lstat 拒绝运行目录、根及祖先的 symlink/reparse，避免仅改比较后接受链接根。ReportStore 的未解析根、目录固定、OS 文件锁、revision、替换重试和一次运行边界均未修改。
+- `smoke_mcp_stdio.py`：失败断言仅附带有长度/格式限制的 error_code；无合法码时为 MCP_UNCLASSIFIED_ERROR，不打印报告、凭据、正文或异常文本。
+- `test_mcp_paths.py` / `test_mcp_server.py`：新增 12 项回归。覆盖相对/绝对路径、8.3 别名下存在/不存在的根、读回与跨实例缓存、不可重放、根/祖先/run 链接（含指向根内兄弟目录的 junction），以及诊断码脱敏。
+
+| 本轮实际验证 | 结果 |
+| --- | --- |
+| 修复前路径专项 | **3 failed、4 passed**；两项短路径场景实际失败，另有根内 junction 的拒绝分类差异 |
+| MCP + SDK + 文件发布专项 | **95 passed、11 skipped / 29.90s**；跳过为 Windows symlink 权限和 POSIX 专项 |
+| 独立 Windows Base：MCPService/路径专项 | **49 passed、1 skipped / 21.64s**；没有 Agent/MCP SDK 依赖，唯一跳过为 Windows symlink 权限 |
+| 完整 Windows Agent pytest | **750 passed、13 skipped / 245.71s**；`runs/mcp-fix-full-agent.txt`。10 项 symlink 权限、3 项 POSIX；新短路径与 junction 回归实际通过 |
+| MCP stdio smoke：普通系统临时目录、8.3 临时目录 | 两次均成功；正常 PASS / 9 请求、ownership ASSERTION_FAILED / 5 请求、terminal ASSERTION_FAILED / 8 请求；读回、重复缓存、四类拒绝不变；外网/学校/Java 写入均 0。输出 `runs/mcp-stdio-after.json`、`runs/mcp-stdio-short-after.json` |
+| showcase --case all | 五项 verified=true，故障/调查仍 ASSERTION_FAILED，学校/真实 Java 请求 0；`runs/mcp-fix-showcase.json` |
+| Ruff / pip check / git diff --check | 通过；ReportStore、report_files、依赖锁、CI 工作流和冻结样本/历史结果未改 |
+| WSL Linux 原生 /tmp 文件组件 | **7 tests / OK / 0.029s**；目录固定、nofollow、锁冲突/释放、独占创建、原子发布、hardlink/FIFO/目录替换均实际验证 |
+
+Linux 本轮 MCP 集成回归**未完成**：现有 WSL 为 Python 3.12，锁定 `pydantic_core==2.50.0` 在当前源无法取得；尝试由 Windows 下载锁定 Linux wheels 又遇到 files.pythonhosted.org TLS EOF。未降级、改锁、关闭证书校验、启用 Docker 集成或安装全局包。七项文件组件不能替代修改后的 Linux MCP 集成验收。
+
+修复后再次核对 `601b11b` 的全部 Actions（两个 workflow、六个 Job，均 completed）：[Python run 38225168880](https://github.com/mofengyan595/agenttest/actions/runs/38225168880) 中 Linux Agent 成功（748/3，stdio smoke 与 all showcase 成功）、Linux/Windows Base 成功（各 595/19、1 个既有 warning），Windows Agent 仍是上述 MCP smoke 失败；[Web run 38225168837](https://github.com/mofengyan595/agenttest/actions/runs/38225168837) 的 Windows/Linux 均成功（26 单测、2 E2E）。本地未提交修复不在这些远端 Job 中，不能声称 Actions 已全绿，也没有重跑旧代码冒充修复验收。
+
+下一步：按用户授权提交/推送后，以新 SHA 验收现有完整 Windows/Linux × Base/Agent 及双平台 Web 门禁；继续保留 MCP smoke、符号链接保护和文件锁。当前不进入 Agent Eval v2、RAG 或其他功能。
+
 ## 补充审查整改与 Candidate Discovery 质量门禁（2026-10-12）
 
 基线/开始 HEAD：`9e988d51bd34d7fabb00785f4737f4c5fcb0be93`，初始工作区干净。逐项文件行号、触发条件、复现、影响、兼容性和修复必要性见[完整核验表](review-remediation.md)。整改验收阶段未创建分支/提交/推送；后续用户已明确授权提交与推送，实际状态以 Git 记录为准。未调用收费模型、未向真实 Java 写入；冻结样本与历史成绩原样保留。

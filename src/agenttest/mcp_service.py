@@ -3,6 +3,7 @@
 import asyncio
 import json
 import secrets
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -173,7 +174,16 @@ class MCPService:
         if UUID(run_id).hex != run_id:
             raise ValueError("Invalid run id")
         directory = self._store.root / run_id
-        if directory.is_symlink() or directory.resolve().parent != self._store.root:
+        # resolve expands Windows 8.3 aliases. Check links BEFORE comparing both
+        # canonical paths; keep ReportStore's unresolved root for its pinned I/O.
+        for path in (directory, *directory.parents):
+            try:
+                info = path.lstat()
+            except FileNotFoundError:
+                continue
+            if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+                raise ValueError("Invalid run directory")
+        if directory.resolve().parent != self._store.root.resolve():
             raise ValueError("Invalid run directory")
         return directory
 

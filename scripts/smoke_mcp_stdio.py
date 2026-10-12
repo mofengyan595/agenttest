@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -10,6 +11,14 @@ from uuid import uuid4
 from mcp import Client, StdioServerParameters
 
 from agenttest.demo import demo_inputs
+
+
+def tool_error_code(result) -> str:
+    """Expose only a bounded protocol code, never the tool payload or exception text."""
+    payload = result.structured_content
+    code = payload.get("error_code") if isinstance(payload, dict) else None
+    return (code if isinstance(code, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,63}", code)
+            else "MCP_UNCLASSIFIED_ERROR")
 
 
 async def check() -> dict:
@@ -33,7 +42,7 @@ async def check() -> dict:
                                           ("mini_terminal_fault", "ASSERTION_FAILED")]:
                 args = {"scenario_id": scenario_id, "invocation_id": uuid4().hex}
                 executed = await client.call_tool("run_scenario", args)
-                assert not executed.is_error
+                assert not executed.is_error, tool_error_code(executed)
                 report = executed.structured_content["report"]
                 assert report["outcome"] == expected
                 saved = await client.call_tool("read_report", {"run_id": report["run_id"]})
