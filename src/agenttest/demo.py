@@ -46,7 +46,8 @@ async def run_demo(
         from agenttest.workflow import FakeLLM, Workflow
 
         return await Workflow(json.dumps(target.openapi()).encode(), config, registry,
-                              FakeLLM(scenario.model_dump_json()), store, transport, environ).run()
+                              FakeLLM(scenario.model_dump_json()), store, transport, environ,
+                              task_mode="operator_plan").run()
     executor = Executor(
         config, summarize_openapi(target.openapi()), store,
         transport, environ, registry=registry,

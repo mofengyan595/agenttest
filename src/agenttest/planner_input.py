@@ -5,6 +5,7 @@ import re
 import unicodedata
 
 from agenttest.contracts import ContractSummary
+from agenttest.intent import interpret_task, required_policy_roles
 from agenttest.policies import NeedsReview, PolicyRegistry
 from agenttest.request_validation import CONSTRAINTS, request_schemas
 from agenttest.safety import TargetConfig
@@ -43,6 +44,21 @@ def public_schema(schema: dict) -> dict:
 def planning_context(contract: ContractSummary, config: TargetConfig,
                      registry: PolicyRegistry, user_task: str, plan_schema: dict) -> dict:
     policies = registry.catalog(config.business_scenario)
+    roles = list(config.roles)
+    if config.business_scenario == "mini_target_nl_v1":
+        try:
+            intent = interpret_task(user_task)
+        except NeedsReview:
+            # Unknown tasks still face the mandatory post-plan gate; no guessed scope.
+            pass
+        else:
+            required = required_policy_roles(intent)
+            policies = [{**p, "roles": [r for r in p["roles"] if r in required[p["id"]]]}
+                        for p in policies if p["id"] in required]
+            roles = [role for role in roles if role in {intent.creator, intent.other}]
+    # Narrow candidates only. Neither catalog visibility nor schema enums grant authority.
+    policies = [{**p, "roles": [r for r in p["roles"] if r is None or r in roles]}
+                for p in policies if any(r is None or r in roles for r in p["roles"])]
     permitted = {p["operation_id"] for p in policies} & set(config.allowed_operations)
     operations = []
     for op in contract.operations:
@@ -87,7 +103,14 @@ def planning_context(contract: ContractSummary, config: TargetConfig,
                                           if key in {"type", "scheme"}}
                                     for name, definition in contract.security_schemes.items()
                                     if name in schemes},
-               "policies": visible_policies, "roles": list(config.roles),
+               "policies": visible_policies, "roles": roles,
+               "authentication": [
+                   {"role": role, "login_operation_id": config.roles[role].login_operation,
+                    "before_operation_ids": [op["id"] for op in operations
+                        if op["security"] and {} not in op["security"]
+                        and any(p["operation_id"] == op["id"] and role in p["roles"]
+                                for p in visible_policies)]}
+                   for role in roles if config.roles[role].login_operation in visible_ids],
                "plan_schema": plan_schema}
     raw = json.dumps(context, ensure_ascii=False)
     if len(raw.encode()) > 100_000:

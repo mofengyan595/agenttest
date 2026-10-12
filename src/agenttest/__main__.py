@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     investigation_demo.add_argument("--fault", choices=["none", "ownership"], default="ownership")
     execute = subcommands.add_parser("run", help="执行人工计划和显式授权的目标配置")
     workflow = subcommands.add_parser("workflow", help="通过 Fake LLM 规划样本运行状态图")
-    workflow.add_argument("--user-task", default="执行操作员提供的测试计划")
+    workflow.add_argument("--user-task", help="提供需求时必须通过意图校验；省略则执行固定人工计划")
     agent = subcommands.add_parser("agent", help="自然语言规划显式授权的目标")
     agent_demo = subcommands.add_parser("agent-demo", help="自然语言规划一次性 mini target")
     agent_demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
@@ -121,7 +121,10 @@ def main(argv: list[str] | None = None) -> int:
                 result = asyncio.run(Workflow(
                     bounded_read(args.contract), config, registry,
                     FakeLLM(bounded_read(args.plan).decode("utf-8")), store,
-                    user_task=args.user_task).run())
+                    user_task=("执行操作员提供的测试计划" if args.user_task is None
+                               else args.user_task),
+                    task_mode="operator_plan" if args.user_task is None
+                    else "natural_language").run())
             else:
                 contract = load_openapi(bounded_read(args.contract))
                 scenario = Scenario.model_validate_json(bounded_read(args.plan))

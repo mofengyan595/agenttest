@@ -40,7 +40,7 @@ def setup(tmp_path, output=None, handler=None, budget=None, **config):
     fake = FakeLLM(plan() if output is None else output)
     flow = Workflow(DOCUMENT, TargetConfig(allowed_operations=["items"], **config), registry(),
                     fake, ReportStore(tmp_path), httpx.MockTransport(handler or default_handler),
-                    environ={}, budget=budget)
+                    environ={}, budget=budget, task_mode="operator_plan")
     return flow, fake, calls
 
 

@@ -85,7 +85,8 @@ async def test_golden_labels_never_sent_and_call_limit_applies(tmp_path):
                             max_live_calls=1, max_total_tokens=60_000)
     assert result["attempted"] == 1 and result["not_run"] == 17 and len(requests) == 1
     context = json.loads(requests[0]["messages"][1]["content"])
-    assert set(context) == {"user_task", "operations", "policies", "roles", "security_schemes"}
+    assert set(context) == {"user_task", "operations", "policies", "roles", "security_schemes",
+                            "authentication"}
     for label in ("category", "creator", "course_name", "reviewed", "review_source", "cases"):
         assert label not in context
     assert result["intent_satisfied_rate"] == 1

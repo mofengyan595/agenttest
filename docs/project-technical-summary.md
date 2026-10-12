@@ -11,7 +11,7 @@ CourseInsight 是被测 Java/Spring Boot 服务。AgentTest 阅读实际 Control
 1. 操作员加载 TargetConfig、契约、Policy Registry、账号环境及预算。它们不属于模型输出。
 2. Workflow 过滤 OpenAPI 操作、参数 Schema、认证要求和批准策略目录，只向 Planner 提供公共上下文和有界中文需求。
 3. ChatECNU Planner 发送一次受约束的结构化 Chat Completions 请求。返回结果仍是不可信 DSL；不存在“结构化 JSON 就安全”的假设。
-4. Pydantic、OpenAPI、策略适用范围、资源来源、认证先后顺序及确定性意图检查全部通过后，才进入执行器。未知意图或预期 NEEDS_REVIEW，不能编造成功。
+4. Pydantic、OpenAPI、策略适用范围、资源来源、认证先后顺序及确定性意图检查全部通过后，才进入执行器。所有自然语言入口必须有意图校验，通用场景缺少校验器也 NEEDS_REVIEW。报告区分计划合法、策略授权、需求覆盖与最终 task_satisfied；显式人工计划 PASS 不声明自然语言目标完成。
 5. Executor 通过 Vault 登录并保管 Token；动态资源 ID 只可从批准来源绑定到后续请求。发送前记录唯一 attempt ID、检查请求预算和隔离授权。
 6. Verifier 对照可信状态码、字段及来源关系做断言；报告输出摘要和固定诊断，不保存原始正文、模型输出或认证。
 7. 只有操作员启用调查、原业务断言失败且有同 run 的可信资源时，FakeAnalyzer 才能选择批准只读能力。调查复用原会话和执行器，原失败不可改写。
@@ -64,6 +64,8 @@ LangGraph 只负责节点顺序和条件分支；不重复执行器，也没有�
 不要写“生产使用”“覆盖全部接口”“LLM 缺陷检出 100%”“自动修复”“微服务平台”或没有测量的效率提升。项目已适合用于 Java 后端/AI Agent 实习简历，但候选人仍需亲自运行演示并能解释信任边界与真实失败。
 
 ## 未实现与下一步
+
+2026-10-12 已完成通用意图门禁、固定方案模式、候选策略/角色收窄和认证前置元数据；没有新收费调用或真实 Java 写入。修改前失败回归、可复算 Prompt 字节数/目录规模及后续候选生成、独立 Eval、真实调查方案见 [工程升级记录](engineering-upgrade.md)。这些离线改进不能替代新的真实模型评测。
 
 没有 RAG、多 Agent、自动修复、前端工程、新数据库或 Kubernetes。真实 Java 只验收 admin 三步，不做跨用户权限推断；模型尚不能规划 CSV/异步流程；调查仅 FakeAnalyzer。没有跨进程事务、断点续传、生产权限系统、独立 wheel 资源打包、自动生成 pytest 脚本或大样本泛化证据。
 

@@ -65,14 +65,18 @@ class Executor:
         self.analyzer = analyzer
 
     def validate(
-        self, scenario: Scenario,
+        self, scenario: Scenario, *, report: RunReport | None = None,
     ) -> tuple[dict[str, Operation], dict[str, RegisteredPolicy]]:
         operations = validate_plan(scenario, self.contract, self.config, self.environ)
+        if report is not None:
+            report.dsl_valid = True
         policies, previous = {}, {}
         for step in scenario.steps:
             policies[step.id] = self.registry.resolve(
                 step, self.config.business_scenario, previous)
             previous[step.id] = step
+        if report is not None:
+            report.policy_authorized = True
         return operations, policies
 
     async def run(self, scenario: Scenario, *, report: RunReport | None = None) -> RunReport:
@@ -81,6 +85,7 @@ class Executor:
             scenario_sha256=fingerprint(scenario.model_dump()),
             contract_sha256=fingerprint(self.contract.model_dump()),
             environment=self.config.environment, target_origin=self.config.base_url,
+            task_mode="operator_plan",
         )
         if report.steps or report.completed:
             raise ValueError("RUN_NOT_RESUMABLE")
@@ -94,7 +99,7 @@ class Executor:
         report.contract_sha256 = fingerprint(self.contract.model_dump())
         self.store.save(report)
         try:
-            operations, policies = self.validate(scenario)
+            operations, policies = self.validate(scenario, report=report)
         except NeedsReview as exc:
             report.diagnostic = exc.diagnostic
             report.outcome, report.reason = Outcome.NEEDS_REVIEW, "REVIEW_REQUIRED"

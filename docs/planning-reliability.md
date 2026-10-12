@@ -1,5 +1,15 @@
 # 规划可靠性与安全诊断
 
+## 2026-10-12 通用入口与候选目录收紧
+
+Workflow 默认按自然语言任务处理，所有场景都必须有确定性意图检查；通用目标缺少校验器时以 `INTENT_VALIDATOR_REQUIRED` 零请求待审。操作员固定方案使用显式 `task_mode="operator_plan"`；CLI workflow 省略需求时保留该模式，agent 不自动降级。
+
+报告新增 dsl_valid / policy_authorized / task_mode / task_satisfied，保留既有 plan_valid 和 intent_verified；人工计划 PASS 的 task_satisfied 为 null，不能证明自然语言目标。受控意图验证且业务 PASS、图完整结束才声明任务满足；旧报告未知字段不追认成功。
+
+mini 已识别任务复用 interpret_task 收窄策略及角色，authentication 公共元数据显式声明登录前置操作；未知目标不猜测需求。Prompt 消除重复参数说明；错误计划不排序、不补步骤、不改断言。已有 bearer 也不能掩盖任务要求的登录顺序。
+
+详见 [本轮核验、离线对照与后续方案](engineering-upgrade.md)。本轮没有真实模型调用，不能宣称真实规划成功率改善；下文及原两轮数据保留历史口径。
+
 ## 执行前的意图检查
 
 `mini_target_nl_v1` 在现有 DSL、OpenAPI、Policy Registry 校验通过后，再由确定性代码检查任务和计划。没有模型自评、计划修补或断言降级。

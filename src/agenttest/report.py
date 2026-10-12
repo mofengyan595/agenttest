@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -110,12 +110,17 @@ class RunReport(BaseModel):
     workflow_completed: bool | None = None
     user_task_sha256: str | None = None
     plan_valid: bool = False
+    dsl_valid: bool = False
+    policy_authorized: bool = False
     selected_policy_ids: list[str] = Field(default_factory=list)
     model_call: ModelCallStats | None = None
     plan_structure: list[PlanStepEvidence] = Field(default_factory=list)
     validation_issue: str | None = None
     diagnostic: Diagnostic | None = None
     intent_verified: bool = False
+    # None preserves unknown semantics in legacy reports; manual PASS is not an NL claim.
+    task_mode: Literal["natural_language", "operator_plan"] | None = None
+    task_satisfied: bool | None = None
     investigations: list[InvestigationResult] = Field(default_factory=list)
     investigation_error: str | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"

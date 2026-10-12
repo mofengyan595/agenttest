@@ -88,6 +88,14 @@ flowchart TD
 
 技术栈：Python 3.11、FastAPI、Pydantic、HTTPX、OpenAPI validator、pytest / Ruff；可选 LangGraph **1.2.14**、官方 MCP Python SDK **2.3.0 / MCPServer**。模型适配使用 HTTPX 实现兼容 Chat Completions，按学校协议发送结构化输出，不需要 OpenAI SDK 或官方 OpenAI 账号。
 
+## 任务满足与固定计划
+
+自然语言入口默认必须通过确定性意图检查；mini 使用既有受控中文规则，Java 使用锁定 fixture 的校验器，其他目标须由操作员提供 intent_validator，否则 NEEDS_REVIEW、零 HTTP。`plan_valid` 表示 DSL/契约/策略通过，`intent_verified` 表示受控需求覆盖；只有业务 PASS 且图完整结束，`task_satisfied` 才为 true。
+
+`run` 仍执行操作员固定计划；`workflow` 省略 `--user-task` 使用固定方案，显式给需求就启用意图门禁。直接使用 Workflow 的固定样本须设置 `task_mode="operator_plan"`，且使用固定 FakeLLM。此类 PASS 的 `task_satisfied=null`，不能宣称自然语言目标已满足；`agent` 不自动降级。
+
+本轮还收窄了已识别任务的候选策略/角色、补充认证前置元数据并精简 mini Prompt。真实模型效果未重新测量。[问题核验、离线对照与后续实施方案](docs/engineering-upgrade.md)。
+
 ## 真实 Java + AI：显式、一次性入口
 
 需要现有 CourseInsight 独立源码、JDK 17、Maven 离线缓存及隔离 demo Docker 依赖。源码/配置有变化时预检会拒绝，必须人工审查；不会降级连接未知环境。凭据由本地 demo 配置进入 Vault，不发送给模型。

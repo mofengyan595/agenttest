@@ -29,6 +29,16 @@ class TaskIntent:
     other: str | None
 
 
+def required_policy_roles(intent: TaskIntent) -> dict[str, set[str]]:
+    """The same bounded goal scope drives catalog narrowing and post-plan validation."""
+    required = {policy: {intent.creator}
+                for policy in ("nl_login_v1", "nl_create_v1", "nl_read_v1")}
+    if intent.other:
+        required["nl_login_v1"].add(intent.other)
+        required["nl_forbidden_v1"] = {intent.other}
+    return required
+
+
 def interpret_task(task: str) -> TaskIntent:
     """Recognize explicit quoted-name/role tasks; ambiguous or extra objectives need review."""
     matches = list(re.finditer(r'“([^“”]+)”|"([^"\n]+)"', task))
@@ -88,9 +98,7 @@ def validate_intent(task: str, scenario: Scenario) -> None:
     grouped = {}
     for step in scenario.steps:
         grouped.setdefault(step.policy_id, []).append(step)
-    expected = {"nl_login_v1", "nl_create_v1", "nl_read_v1"}
-    if intent.other:
-        expected.add("nl_forbidden_v1")
+    expected = set(required_policy_roles(intent))
     if set(grouped) != expected or any(len(grouped[p]) != 1 for p in expected - {"nl_login_v1"}):
         raise NeedsReview("INTENT_PATH_MISMATCH")
     create, read = grouped["nl_create_v1"][0], grouped["nl_read_v1"][0]
@@ -102,6 +110,10 @@ def validate_intent(task: str, scenario: Scenario) -> None:
     logins = grouped["nl_login_v1"]
     if {s.role for s in logins} != roles or len(logins) != len(roles):
         raise NeedsReview("INTENT_AUTH_PATH_MISMATCH")
+    for login in logins:
+        if any(s.role == login.role and s.policy_id != "nl_login_v1"
+               for s in scenario.steps[:scenario.steps.index(login)]):
+            raise NeedsReview("INTENT_AUTH_ORDER_MISMATCH")
     reads = [read]
     if intent.other:
         forbidden = grouped["nl_forbidden_v1"][0]
@@ -110,5 +122,6 @@ def validate_intent(task: str, scenario: Scenario) -> None:
         if scenario.steps.index(forbidden) < scenario.steps.index(read):
             raise NeedsReview("INTENT_READ_ORDER_MISMATCH")
         reads.append(forbidden)
-    if any(s.path_parameters["courseId"].from_step != create.id for s in reads):
+    if any(s.path_parameters["courseId"].from_step != create.id
+           or s.path_parameters["courseId"].select != "$.courseId" for s in reads):
         raise NeedsReview("INTENT_RESOURCE_MISMATCH")

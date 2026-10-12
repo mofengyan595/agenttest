@@ -1,5 +1,33 @@
 # 开发进度
 
+## 工程升级：通用意图门禁与规划约束（2026-10-12）
+
+本轮新里程碑已完成，详细能力清单、问题证据、影响范围及后续设计见 [工程升级记录](engineering-upgrade.md)。只修改 AgentTest；未创建分支，提交与推送按用户后续授权执行；未安装依赖，学校模型调用和真实 Java 请求均为零。
+
+- 修改前两个新增回归都错误返回 PASS：通用场景未要求 intent_validator，且传入的通用校验器被忽略。修复后自然语言默认必须验证意图，否则 NEEDS_REVIEW、零 HTTP；明确的固定人工计划仍可执行。
+- 分离 dsl_valid / policy_authorized / intent_verified / task_satisfied；旧任务字段默认未知，人工计划 PASS 不声明需求满足。补充已有 bearer 下的登录顺序检查、校验器计划副本隔离、最终报告/图步数耗尽后的完成状态及分析码一致性。graph_steps=6 的残留成功已实际复现并修复。
+- 复用受控意图解析收窄候选策略和角色，增加 authentication 前置关系；mini Prompt 1,701 → 1,301 UTF-8 字节，保留仅用合成数据的要求。新单角色任务 policy-role 候选 8 → 3，新归属任务 8 → 5。没有自动排序、补步骤、改断言或重新调用模型；不能据此宣称真实模型成功率提高。
+- 新增 **35 项离线回归**；原预期仅为固定方案显式模式和公共 authentication 元数据作适配，未降低策略、断言、任务预期或安全校验。
+
+实际运行（最终代码）：
+
+| 命令 | 实际输出/结果 |
+| --- | --- |
+| `.\.venv\Scripts\python.exe -m pytest -q --basetemp runs/upgrade-final-source-tmp` | **595 passed, 1 skipped in 116.00s**；既有 Windows 符号链接权限项跳过 |
+| `.\.venv\Scripts\python.exe -m ruff check .` | `All checks passed!` |
+| `.\.venv\Scripts\python.exe -m pip check` | `No broken requirements found.` |
+| `.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/upgrade-final-source-showcase` | `verified: true`，五项全部通过；故障/调查保留 ASSERTION_FAILED；学校/真实 Java 请求 0 |
+| `.\.venv\Scripts\python.exe scripts/smoke_local_http.py --workflow --runs-dir runs/upgrade-final-source-loopback` | 8 步 / 9 请求 PASS，health/spec/report 均 200，自有服务退出；run `ff140a4cfde143119e4801ee84370b99` |
+| `.\.venv\Scripts\python.exe scripts/smoke_natural_http.py --runs-dir runs/upgrade-final-source-natural-http` | 两条 FakeLLM 路径均 PASS，3/3、5/5 步/请求，自有服务退出、真实模型调用 0；run `bffecff76e7d4c37828cc23ee1749681` / `c751c40b4afb4fd7b8789d50bf8c889a` |
+| `git diff --check` | 无输出，退出 0 |
+| `git diff --exit-code HEAD -- .github examples requirements-dev.lock requirements-agent.lock requirements-mcp.lock pyproject.toml docs/stage2a-results.json docs/stage2a-round2-results.json docs/stage3a-http-results.json docs/stage3b-results.json docs/stage4a-results.json docs/stage4b-results.json docs/delivery-results.json` | 无输出，退出 0；策略/任务/历史证据/锁文件/CI 原样保留 |
+
+相关分组曾实测 44 passed；最终完成声明发布边界、工作流、调查、自然语言和 showcase 分组 **84 passed in 21.88s**，最终以上全量为准。首轮相关检查的一项失败只是新增 authentication 公共字段尚未纳入测试白名单，已适配并保留 Golden Labels 不进入 Planner 的断言；两项修改前 P0 失败和图完成边界失败均作为回归保留。
+
+环境限制：Windows 沙箱默认 pytest 临时目录创建失败，且内部 asyncio socketpair 阻塞；未改测试网络保护，改用仓库 runs 临时目录并在获工具审查许可的环境运行。最终测试全部离线。未执行新的收费模型评测、真实 Java/MCP Java 写入、Linux/base 独立环境或远端四组 CI；历史四组 CI 不冒充本轮验收。
+
+**下一准确里程碑：纯离线 OpenAPI 候选发现 MVP。** 复用 ContractSummary / Schema 子集 / Registry，输出场景、依据、缺失批准及静态覆盖摘要；不自动执行写入，契约外负例先标 NEEDS_REVIEW。之后再做新的独立 Eval v2、本地耗时汇总，最后在独立 Token/时间/请求预算及离线安全验收后评估真实 LLM 只读调查。完整验收方案与收益/成本排序已写入工程升级记录。
+
 ## 最终交付验收：阶段 4A–5（2026-10-11）
 
 | 模块 | commit SHA |

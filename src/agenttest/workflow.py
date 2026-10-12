@@ -4,7 +4,7 @@ import asyncio
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Protocol, TypedDict
+from typing import Callable, Literal, Protocol, TypedDict
 
 import httpx
 from langgraph.errors import GraphRecursionError
@@ -65,17 +65,24 @@ def parse_plan(raw: str, limit: int) -> Scenario:
 
 
 class Workflow:
+    """NL plans need a deterministic goal validator; fixed approved plans opt in explicitly."""
+
     def __init__(
         self, contract_document: bytes, config: TargetConfig, registry: PolicyRegistry,
         planner: Planner, store: ReportStore | None = None,
         transport: httpx.AsyncBaseTransport | None = None, environ: dict[str, str] | None = None,
         budget: WorkflowBudget | None = None,
         *, user_task: str = "执行操作员提供的测试计划",
+        task_mode: Literal["natural_language", "operator_plan"] = "natural_language",
         investigation: InvestigationConfig | None = None,
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
         intent_validator: Callable[[str, Scenario], None] | None = None,
         execution_guard: Callable[[], None] | None = None,
     ) -> None:
+        if task_mode not in {"natural_language", "operator_plan"}:
+            raise ValueError("TASK_MODE_INVALID")
+        if task_mode == "operator_plan" and type(planner) is not FakeLLM:
+            raise ValueError("OPERATOR_PLAN_REQUIRES_FIXED_PLANNER")
         self._document = bytes(contract_document)
         self._config = TargetConfig.model_validate(config.model_dump())
         self._registry = registry.snapshot()
@@ -88,6 +95,7 @@ class Workflow:
         self._environ = dict(os.environ if environ is None else environ)
         self._budget = (budget or WorkflowBudget()).model_copy(deep=True)
         self._user_task = user_task
+        self._task_mode = task_mode
         self._investigation = (investigation or InvestigationConfig()).model_copy(deep=True)
         self._capabilities = (capabilities or ReadOnlyCapabilityRegistry()).snapshot()
         self._analyzer = analyzer
@@ -99,6 +107,8 @@ class Workflow:
             scenario_sha256=fingerprint(None), contract_sha256=fingerprint(self._document.hex()),
             environment=self._config.environment, target_origin=self._config.base_url,
             workflow_completed=False,
+            task_mode=self._task_mode,
+            task_satisfied=False if self._task_mode == "natural_language" else None,
         )
         executor: Executor | None = None
         contract: ContractSummary | None = None
@@ -116,6 +126,17 @@ class Workflow:
             else:
                 report.outcome, report.reason = outcome, reason
             return {"ready": False}
+
+        def summarize() -> None:
+            report.analysis_code = {
+                Outcome.PASS: (("COMPLETED" if report.intent_verified
+                                else "APPROVED_PLAN_COMPLETED")
+                               if report.workflow_completed else "POLICY_CHECKS_PASSED"),
+                Outcome.ASSERTION_FAILED: "REVIEW_FAILURE_EVIDENCE",
+                Outcome.TEST_INFRA_ERROR: "CHECK_TEST_ENVIRONMENT",
+                Outcome.TOOL_ERROR: "FIX_PLAN_OR_TOOL",
+                Outcome.NEEDS_REVIEW: "APPROVE_POLICY_OR_SCHEMA",
+            }[report.outcome]
 
         async def load_contract(state: GraphState) -> dict:
             nonlocal executor, contract
@@ -180,7 +201,7 @@ class Workflow:
                 vault = CredentialVault(self._config, self._environ)
                 if vault.contains_secret(scenario.model_dump()):
                     raise ValidationFailure(Layer.DSL, "DSL_SECRET_LITERAL")
-                executor.validate(scenario)
+                executor.validate(scenario, report=report)
                 report.plan_valid = True
                 report.selected_policy_ids = [s.policy_id for s in scenario.steps]
                 report.plan_structure = [PlanStepEvidence(
@@ -193,13 +214,14 @@ class Workflow:
                                   for key, b in getattr(s, loc).items() if b.from_step is not None},
                 ) for s in scenario.steps]
                 report.scenario_sha256 = fingerprint(scenario.model_dump())
-                if self._config.business_scenario == "mini_target_nl_v1":
-                    validate_intent(self._user_task, scenario)
-                    report.intent_verified = True
-                elif self._config.business_scenario == "courseinsight_demo_nl_v1":
-                    if self._intent_validator is None:
+                if self._task_mode == "natural_language":
+                    validator = (validate_intent
+                                 if self._config.business_scenario == "mini_target_nl_v1"
+                                 else self._intent_validator)
+                    if validator is None:
                         raise NeedsReview("INTENT_VALIDATOR_REQUIRED")
-                    self._intent_validator(self._user_task, scenario)
+                    # A validator checks a copy; it cannot repair the executable plan.
+                    validator(self._user_task, scenario.model_copy(deep=True))
                     report.intent_verified = True
                 return {"ready": True}
             except NeedsReview as exc:
@@ -240,19 +262,11 @@ class Workflow:
         async def analyze_or_finish(state: GraphState) -> dict:
             enter("analyze_or_finish")
             # Analysis cannot change an expectation, replan or replay a mutation.
-            report.analysis_code = {
-                Outcome.PASS: "COMPLETED",
-                Outcome.ASSERTION_FAILED: "REVIEW_FAILURE_EVIDENCE",
-                Outcome.TEST_INFRA_ERROR: "CHECK_TEST_ENVIRONMENT",
-                Outcome.TOOL_ERROR: "FIX_PLAN_OR_TOOL",
-                Outcome.NEEDS_REVIEW: "APPROVE_POLICY_OR_SCHEMA",
-            }[report.outcome]
+            summarize()
             return {"ready": True}
 
         async def finish_report(state: GraphState) -> dict:
             enter("report")
-            report.completed = report.workflow_completed = True
-            self._store.save(report)
             return {"ready": True}
 
         builder = StateGraph(GraphState)
@@ -269,6 +283,7 @@ class Workflow:
         builder.add_edge("analyze_or_finish", "report")
         builder.add_edge("report", END)
         graph = builder.compile()
+        graph_completed = False
         try:
             # Overrides inherited tracing environment without mutating process globals.
             with tracing_context(enabled=False):
@@ -276,6 +291,13 @@ class Workflow:
                     await graph.ainvoke({"ready": True}, config={
                         "recursion_limit": self._budget.graph_steps, "callbacks": [],
                     })
+            # Publish success only after the entire graph returns, never in its last node.
+            report.completed = report.workflow_completed = True
+            report.task_satisfied = (report.intent_verified and report.outcome == Outcome.PASS
+                                     if self._task_mode == "natural_language" else None)
+            summarize()
+            self._store.save(report)
+            graph_completed = True
         except GraphRecursionError:
             reject(Outcome.TEST_INFRA_ERROR, "GRAPH_STEP_LIMIT")
         except TimeoutError:
@@ -284,9 +306,11 @@ class Workflow:
             reject(Outcome.TOOL_ERROR, "WORKFLOW_ERROR")
         finally:
             raw_plan = None
-            if not report.workflow_completed:
+            if not graph_completed:
                 report.completed = True
                 report.workflow_completed = False
+                report.task_satisfied = (False if self._task_mode == "natural_language" else None)
+                summarize()
                 try:
                     self._store.save(report)
                 except OSError:
