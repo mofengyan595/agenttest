@@ -11,14 +11,16 @@ from pydantic import Field, model_validator
 from agenttest.contracts import load_openapi
 from agenttest.discovery import discover
 from agenttest.dsl import ArgumentBinding, Scenario, Step
+from agenttest.eval_v2.archive import seal
 from agenttest.eval_v2.context import build_context
 from agenttest.eval_v2.faults import pair_result, summarize_faults
 from agenttest.eval_v2.freeze import Freeze
 from agenttest.eval_v2.models import CaseResult, Source, Suite
+from agenttest.eval_v2.review import verify_review_lock
 from agenttest.eval_v2.scoring import capture_plan, score_report, summarize
 from agenttest.evaluation import save_evaluation
 from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner, PlannerFailure
-from agenttest.natural_demo import natural_inputs, run_natural_demo
+from agenttest.natural_demo import natural_inputs
 from agenttest.plan_json import bounded_json
 from agenttest.report import Outcome, ReportStore, fingerprint
 from agenttest.safety import StrictModel
@@ -36,6 +38,9 @@ class EvalConfig(StrictModel):
     allowed_model: str | None = None
     allowed_endpoint_sha256: str | None = None
     allowed_target: Literal["mini_nl_v1"] = "mini_nl_v1"
+    max_http_requests: int = Field(default=40, ge=1, le=40)
+    max_workflow_seconds: float = Field(default=90.0, gt=0, le=300)
+    max_tool_calls: int = Field(default=1, ge=0, le=1)
 
     @model_validator(mode="after")
     def explicit_real(self):
@@ -137,10 +142,11 @@ class Reject:
         raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_NO_APPROVED_PLAN")
 
 
-async def guarded_run(task, planner, store, budget, guard):
+async def guarded_run(task, planner, store, budget, guard, *, fault="none", max_requests=40):
     from agenttest.workflow import Workflow
 
-    target, target_config, registry, environ = natural_inputs()
+    target, target_config, registry, environ = natural_inputs(fault)
+    target_config.max_requests = min(target_config.max_requests, max_requests)
     return await Workflow(
         json.dumps(target.openapi()).encode(),
         target_config,
@@ -166,6 +172,7 @@ def load_responses(path):
 
 def prepare_inputs(suite, config):
     target, target_config, registry, _ = natural_inputs()
+    target_config.max_requests = min(target_config.max_requests, config.max_http_requests)
     contract = load_openapi(json.dumps(target.openapi()).encode())
     artifact = discover(contract, registry, target_config) if config.variant == "B" else None
     contexts, base_contexts = {}, {}
@@ -202,6 +209,7 @@ async def evaluate(
     responses_path: Path | None = None,
     suite_path: Path | None = None,
     settings: ModelSettings | None = None,
+    review_lock_path: Path | None = None,
 ) -> dict:
     """Only disposable ASGI business targets. Real opt-in applies solely to the model API."""
     from agenttest.workflow import FakeLLM, WorkflowBudget
@@ -211,6 +219,7 @@ async def evaluate(
     config = EvalConfig.model_validate(config.model_dump())
     if not config.development:
         suite.require_formal()
+        verify_review_lock(suite, review_lock_path)
     if config.source == "real" and (
         settings is None
         or settings.model != config.allowed_model
@@ -237,6 +246,7 @@ async def evaluate(
         suite_path=suite_path,
         response_path=responses_path,
         real=config.source == "real",
+        review_lock_path=review_lock_path,
     )
     # Claim an entirely new directory before any planner/Executor invocation.
     output.mkdir(parents=True, exist_ok=False)
@@ -247,7 +257,8 @@ async def evaluate(
     rows, pairs, calls, tokens, stop = [], [], 0, 0, None
     budget = WorkflowBudget(
         model_timeout=(settings.timeout + 1 if settings else 5),
-        workflow_timeout=min(300, settings.timeout + 90) if settings else 90,
+        workflow_timeout=config.max_workflow_seconds,
+        max_tool_calls=config.max_tool_calls,
     )
     for case in suite.cases:
         row = CaseResult(
@@ -318,7 +329,8 @@ async def evaluate(
                 )
                 started = time.monotonic()
                 report = await guarded_run(
-                    case.task.user_task, planner, store, budget, freeze.verify
+                    case.task.user_task, planner, store, budget, freeze.verify,
+                    max_requests=config.max_http_requests,
                 )
                 row.workflow_elapsed_ms = (time.monotonic() - started) * 1000
                 row.attempted = planner.attempted
@@ -371,16 +383,22 @@ async def evaluate(
                 if row.end_to_end_success and planner.output is not None:
                     for mechanism in scheduled:
                         # Same plan, fresh paired targets; no labels reach the planner.
-                        normal = await run_natural_demo(
-                            case.task.user_task, FakeLLM(planner.output), store, budget=budget
-                        )
-                        fault = await run_natural_demo(
-                            case.task.user_task,
-                            FakeLLM(planner.output),
-                            store,
-                            fault=mechanism,
-                            budget=budget,
-                        )
+                        try:
+                            freeze.verify()
+                            normal = await guarded_run(
+                                case.task.user_task, FakeLLM(planner.output), store, budget,
+                                freeze.verify, max_requests=config.max_http_requests,
+                            )
+                            freeze.verify()
+                            fault = await guarded_run(
+                                case.task.user_task, FakeLLM(planner.output), store, budget,
+                                freeze.verify, fault=mechanism,
+                                max_requests=config.max_http_requests,
+                            )
+                        except (ValueError, OSError):
+                            stop = "EVALUATION_CONFIGURATION_ERROR"
+                            row.diagnostics.append("PAIR_FREEZE_OR_IO_ERROR")
+                            break
                         pair = pair_result(case.case_id, mechanism, normal, fault, True)
                         pairs.append(pair)
                         save_evaluation(pair, output / f"{case.case_id}-{mechanism}.json")
@@ -442,6 +460,7 @@ async def evaluate(
     markdown = render_markdown(result)
     with (output / "summary.md").open("x", encoding="utf-8") as stream:
         stream.write(markdown)
+    seal(output)
     return result
 
 

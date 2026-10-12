@@ -1,5 +1,32 @@
 # 开发进度
 
+## Eval v2 代码审查与独立评测准备（2026-10-12）
+
+本轮实际基线为 `b7d69eaf58e596da018c7977e1d73757a07ce82b`，开始工作区干净、与远端 master 一致。该 SHA 的 [Python 四组](https://github.com/mofengyan595/agenttest/actions/runs/38239809911) 和 [Web 双平台](https://github.com/mofengyan595/agenttest/actions/runs/38239809890) 全成功。以下保留审查开发阶段的提交前记录；该阶段未创建分支、commit/push，后续操作员已明确授权提交推送到 master，交付状态以 Git 和新 SHA 的 Actions 为准。基线绿色不替代新代码 Linux 验收。
+
+评测器更新为 2.1.0。确认并修复任务/计划报告绑定缺口、缺陷步骤机制误认、部分故障 PASS 被计 FN、归档证据替换未阻断、正式审核缺记录/开发集重合检查；配对运行补齐冻结前置门禁。完整复现、逐 Case 追溯、误报排除和限制见[审查报告](eval-v2-review.md)。没有改动 Executor、Workflow、Policy、Intent、Planner、ReportStore 或历史 T/B 评分。
+
+新增空白人工登记、审核记录和版本锁工具，以及只生成不执行的真实 A/B 协议。详见[人工审核流程](eval-v2-human-review.md)和[实验协议准备](eval-v2-ab-protocol.md)。C 开发草案仍 27 个 UNREVIEWED，独立 HUMAN_REVIEWED 留出任务 0，真实模型/Java/数据库写入 0。审查结束时尚缺实际人工审核及新 SHA 远端 CI；本轮禁止收费模型调用，不能宣布进入真实 A/B 条件齐备。
+
+最终实际验收：
+
+| 检查 | 结果 |
+| --- | --- |
+| Windows Agent 全量 | **863 passed、13 skipped / 473.70s**；`runs/eval-v2-review-final-pytest-agent.txt` |
+| Windows Base 全量 | **688 passed、30 skipped、1 warning / 231.09s**；`runs/eval-v2-review-final-pytest-base.txt` |
+| Eval v2 专项四文件 | **113 passed / 149.24s** |
+| Ruff / Agent、Base pip check | 全通过；没有依赖变更 |
+| showcase --case all | 五项 verified=true；故障/调查仍 ASSERTION_FAILED，MCP 无重放，真实 Java/学校请求 0 |
+| Eval v2 CLI | **21 项预期退出码全部匹配**：validate、contexts、开发 manual/Fake/Mock、compare、rescore、预算/正式/覆盖/real 门禁、审核模板/冻结和实验协议 |
+
+最终 CLI 产物在 `runs/eval-v2-review-final-cli-20261012/`。manual 合法/独立意图/端到端均 8/8；Fake/Mock A/B 各合法 8/8、独立意图/端到端 1/8，7 个错误固定计划全部在请求前被拦截。A/B 27 条分类均不变，不声称真实增益。manual 5 个配对机制全部检出，正常对照全 PASS；Fake/Mock 均未执行，执行 FP/FN 为 null。Mock 各 16 次模拟调用、合成 usage=3200，真实调用 0。
+
+人工 8 条、Fake-A / Mock-B 各 16 条合法结构证据重新评分，与原分类/意图/端到端/拒绝逐条一致；其余行明确不重算。旧归档缺 seal 标为不可复核并退出 1，不补写历史文件。零预算仍总体 0/8、条件 0/0=null；两条部分运行总体 2/8、条件 2/2。正式草案、未审核版本冻结、目录覆盖和 real 未 opt-in 均退出 2；真实入口无运行目录。
+
+最后范围核对通过：旧 T/B、examples、Evaluation v1/Freeze、可信执行核心、锁文件、CI 和 Web 未修改。Windows 平台权限/POSIX 项及 Base 可选依赖跳过已详记在审查报告；既有 Starlette 警告保留。不涉及前端或公共 API Schema，开发阶段未重复前端门禁。上述结果仅属离线开发/回归验证；审查结束时新代码 Linux/远端 CI 未验收，不能把 b7d69ea 的绿色矩阵当作整改后验收。**人工独立任务仍 0，收费实验未授权**。
+
+后续提交前复核：21 个代码/测试/文档文件（8 个新增），逐项读取、Python 语法与敏感模式扫描通过；匹配的 API key 字面量均为明确的离线/合成占位值。提交范围不含 .env、runs、凭据、模型原始响应或历史 T/B 结果，27 个 C 草案保持 UNREVIEWED。提交后须检查新 SHA 的 Python 四组和 Web 双平台 CI，不能仅重用以上本地结果。
+
 ## Agent Eval v2：独立评测基础设施（2026-10-12）
 
 本轮开始工作区干净，本地和远端 master 为 `cd585ed9776913d41c5284d6e22a90dc4ce717a7`，MCP 短路径修复已提交。经 GitHub 专用能力读取该 SHA 的全部 push Actions 和六个 Job： [Python 38232681285](https://github.com/mofengyan595/agenttest/actions/runs/38232681285) 的 Windows/Linux × Base/Agent 全成功（含双平台 MCP stdio/all showcase），[Web 38232681172](https://github.com/mofengyan595/agenttest/actions/runs/38232681172) 的双平台 typecheck/Vitest/build/E2E 全成功。前置门禁已完成，没有以旧 `601b11b` 的成绩替代。

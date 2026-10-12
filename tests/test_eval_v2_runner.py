@@ -8,10 +8,12 @@ import pytest
 pytest.importorskip("langgraph", reason="Eval runner uses optional Agent graph")
 
 from test_eval_v2 import DATA, suite
+from test_eval_v2_review import reviewed_fixture
 
 from agenttest.demo import PROJECT_ROOT
 from agenttest.eval_v2.audit import rescore
 from agenttest.eval_v2.comparison import compare
+from agenttest.eval_v2.review import freeze_review
 from agenttest.eval_v2.runner import EvalConfig, evaluate
 from agenttest.executor import Executor
 from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
@@ -139,11 +141,8 @@ async def test_real_label_cannot_bypass_review_or_dirty_freeze(tmp_path, monkeyp
         await evaluate(
             suite("C004"), config, tmp_path / "real", root=PROJECT_ROOT, settings=settings
         )
-    tasks = suite("C004")
-    tasks.split = "independent_holdout"
-    tasks.cases[0].labels.review_status = "HUMAN_REVIEWED"
-    tasks.cases[0].labels.review_source = "synthetic operator fixture; NOT shipped dataset"
-    tasks.cases[0].labels.label_provenance = "independent_human"
+    tasks = reviewed_fixture("C004")
+    freeze_review(tasks, tmp_path / "reviews")
     monkeypatch.setattr(
         "agenttest.eval_v2.freeze.checkout_identity",
         lambda root: {
@@ -153,7 +152,8 @@ async def test_real_label_cannot_bypass_review_or_dirty_freeze(tmp_path, monkeyp
         },
     )
     with pytest.raises(ValueError, match="clean committed"):
-        await evaluate(tasks, config, tmp_path / "dirty", root=PROJECT_ROOT, settings=settings)
+        await evaluate(tasks, config, tmp_path / "dirty", root=PROJECT_ROOT, settings=settings,
+                       review_lock_path=tmp_path / "reviews" / (tasks.dataset_version + ".json"))
 
 
 def test_cli_validation_and_explicit_real_opt_in(tmp_path, capsys):
@@ -197,18 +197,14 @@ async def test_ab_comparison_checks_frozen_pair_identity(tmp_path):
     value = json.loads(path.read_text())
     value["labels_sha256"] = "changed-labels"
     path.write_text(json.dumps(value), encoding="utf-8")
-    with pytest.raises(ValueError, match="Unpaired"):
+    with pytest.raises(ValueError, match="integrity"):
         compare(tmp_path / "A", tmp_path / "B")
 
 
 @pytest.mark.asyncio
 async def test_live_budget_insufficient_never_constructs_transport(tmp_path, monkeypatch):
-    tasks = suite("C004", "C005")
-    tasks.split = "independent_holdout"
-    for case in tasks.cases:
-        case.labels.review_status = "HUMAN_REVIEWED"
-        case.labels.review_source = "synthetic preflight test labels"
-        case.labels.label_provenance = "independent_human"
+    tasks = reviewed_fixture("C004", "C005")
+    freeze_review(tasks, tmp_path / "reviews")
     monkeypatch.setattr(
         "agenttest.eval_v2.freeze.checkout_identity",
         lambda root: {"commit": "synthetic", "worktree_status": "", "checkout_sha256": "fixed"},
@@ -228,8 +224,114 @@ async def test_live_budget_insufficient_never_constructs_transport(tmp_path, mon
         allowed_endpoint_sha256=fingerprint(settings.base_url),
     )
     result = await evaluate(
-        tasks, config, tmp_path / "budget", root=PROJECT_ROOT, settings=settings
+        tasks, config, tmp_path / "budget", root=PROJECT_ROOT, settings=settings,
+        review_lock_path=tmp_path / "reviews" / (tasks.dataset_version + ".json")
     )
     assert result["summary"]["real_api_calls"] == result["summary"]["attempted"] == 0
     assert result["summary"]["plan_validity"]["denominator"] == 2
     assert all(r["classification"] == "NOT_ATTEMPTED_BUDGET" for r in result["results"])
+
+
+@pytest.mark.asyncio
+async def test_partial_budget_keeps_scheduled_and_conditional_denominators(tmp_path):
+    result = await evaluate(
+        suite("C004", "C005", "C022"),
+        EvalConfig(development=True, max_cases_attempted=1),
+        tmp_path / "partial", root=PROJECT_ROOT,
+    )
+    summary = result["summary"]
+    assert summary["requested"] == 3 and summary["attempted"] == summary["executed"] == 1
+    assert summary["end_to_end_success"]["denominator"] == 2
+    assert summary["end_to_end_success"]["rate"] == 0.5
+    assert summary["conditional_end_to_end_success"]["rate"] == 1
+    assert summary["safe_rejection"]["denominator"] == 1
+    assert summary["safe_rejection"]["rate"] == 0
+
+
+@pytest.mark.asyncio
+async def test_execution_budget_interrupt_is_not_a_success(tmp_path):
+    result = await evaluate(
+        suite("C004"), EvalConfig(development=True, max_tool_calls=0),
+        tmp_path / "interrupted", root=PROJECT_ROOT,
+    )
+    summary = result["summary"]
+    assert summary["plan_validity"]["rate"] == 1
+    assert summary["intent_satisfaction"]["rate"] == 1
+    assert summary["end_to_end_success"]["rate"] == 0
+    assert result["results"][0]["classification"] == "TEST_INFRA_ERROR"
+    assert "TOOL_CALL_LIMIT" in result["results"][0]["diagnostics"]
+
+
+@pytest.mark.asyncio
+async def test_freeze_change_after_original_prevents_all_paired_requests(tmp_path, monkeypatch):
+    from agenttest import llm_planner
+    from agenttest.eval_v2 import runner
+
+    original, calls = runner.guarded_run, []
+
+    async def changed(*args, **kwargs):
+        calls.append(kwargs.get("fault", "none"))
+        report = await original(*args, **kwargs)
+        monkeypatch.setattr(llm_planner, "SYSTEM_PROMPT", "Changed before paired controls")
+        return report
+
+    monkeypatch.setattr(runner, "guarded_run", changed)
+    result = await evaluate(
+        suite("C016"), EvalConfig(development=True), tmp_path / "drift", root=PROJECT_ROOT
+    )
+    assert calls == ["none"]
+    assert not result["freeze_valid"] and result["stop_reason"] == "EVALUATION_CONFIGURATION_ERROR"
+    assert result["fault_detection"]["not_executed"] == 3
+    assert result["paired_http_requests"] == 0
+
+
+@pytest.mark.asyncio
+async def test_injected_mock_cannot_claim_real_transport(tmp_path, monkeypatch):
+    import httpx
+
+    tasks = reviewed_fixture()
+    freeze_review(tasks, tmp_path / "reviews")
+    monkeypatch.setattr(
+        "agenttest.eval_v2.freeze.checkout_identity",
+        lambda root: {"commit": "a" * 40, "worktree_status": "", "checkout_sha256": "fixed"},
+    )
+    monkeypatch.setattr("httpx.AsyncHTTPTransport", lambda **kwargs: httpx.MockTransport(
+        lambda request: pytest.fail("Provenance mismatch must prevent any model call")
+    ))
+    settings = ModelSettings(model="synthetic", base_url="https://mock.invalid", api_key="private")
+    config = EvalConfig(
+        source="real", real_opt_in=True, max_calls=1, max_total_tokens=25000,
+        allowed_model="synthetic", allowed_endpoint_sha256=fingerprint(settings.base_url),
+    )
+    with pytest.raises(ValueError, match="provenance mismatch"):
+        await evaluate(
+            tasks, config, tmp_path / "injected", root=PROJECT_ROOT, settings=settings,
+            review_lock_path=tmp_path / "reviews" / (tasks.dataset_version + ".json"),
+        )
+
+
+@pytest.mark.asyncio
+async def test_hidden_labels_do_not_enter_adapter_http_payload(monkeypatch):
+    import httpx
+
+    from agenttest.eval_v2.runner import prepare_inputs
+
+    tasks, payloads = suite("C004"), []
+    response = json.loads((PROJECT_ROOT / "examples/eval-v2/mock-responses.json").read_bytes())
+
+    def capture(request):
+        payloads.append(json.loads(request.content))
+        return httpx.Response(200, json=response["default"])
+
+    settings = ModelSettings(
+        model="synthetic", base_url="https://mock.invalid", api_key="offline-only"
+    )
+    for iteration in range(2):
+        if iteration:
+            tasks.cases[0].labels.rubric.steps[1].arguments[0].value = "HIDDEN_SENTINEL"
+            tasks.cases[0].labels.faults = ["response_name"]
+        context = prepare_inputs(tasks, EvalConfig(variant="B"))[1]["C004"]
+        await OpenAICompatiblePlanner(settings, httpx.MockTransport(capture)).generate(context)
+    assert payloads[0] == payloads[1]
+    assert "HIDDEN_SENTINEL" not in json.dumps(payloads)
+    assert "labels" not in payloads[0]["messages"][1]["content"]

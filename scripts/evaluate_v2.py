@@ -9,6 +9,8 @@ from agenttest.demo import PROJECT_ROOT
 from agenttest.eval_v2.audit import rescore
 from agenttest.eval_v2.comparison import compare
 from agenttest.eval_v2.models import Suite
+from agenttest.eval_v2.protocol import prepare_protocol
+from agenttest.eval_v2.review import freeze_review, review_template, verify_review_lock
 from agenttest.eval_v2.runner import EvalConfig, evaluate, prepare_inputs
 from agenttest.evaluation import save_evaluation
 from agenttest.llm_planner import ModelSettings
@@ -16,6 +18,10 @@ from agenttest.report import fingerprint
 
 
 def run(args):
+    if args.command == "review-template":
+        args.output.mkdir(parents=True, exist_ok=False)
+        save_evaluation(review_template(), args.output / "enrollment.json")
+        return {"review_status": "UNREVIEWED", "output": str(args.output)}
     if args.command == "compare":
         if args.a is None or args.b is None:
             raise ValueError("A/B directories required")
@@ -24,6 +30,21 @@ def run(args):
         save_evaluation(result, args.output / "comparison.json")
         return result
     suite = Suite.load(args.suite)
+    if args.command == "review-freeze":
+        return freeze_review(suite, args.output)
+    if args.command == "protocol":
+        result = prepare_protocol(
+            suite, PROJECT_ROOT, review_lock=args.review_lock, model=args.allow_model,
+            endpoint=args.allow_endpoint, max_calls=args.max_calls,
+            max_total_tokens=args.max_total_tokens, max_input_tokens=args.max_input_tokens,
+            max_output_tokens=args.max_output_tokens, timeout=args.timeout,
+            max_http_requests=args.max_http_requests,
+            max_workflow_seconds=args.max_workflow_seconds,
+            candidate_max_bytes=args.candidate_max_bytes,
+        )
+        args.output.mkdir(parents=True, exist_ok=False)
+        save_evaluation(result, args.output / "protocol.json")
+        return result
     if args.command == "rescore":
         if args.run_dir is None:
             raise ValueError("Archived run directory required")
@@ -33,7 +54,7 @@ def run(args):
         return result
     if args.command == "validate":
         if args.formal:
-            suite.require_formal()
+            verify_review_lock(suite, args.review_lock)
         return {
             "valid": True,
             "dataset_version": suite.dataset_version,
@@ -74,6 +95,9 @@ def run(args):
         allowed_endpoint_sha256=fingerprint(args.allow_endpoint.rstrip("/"))
         if args.allow_endpoint
         else None,
+        max_http_requests=args.max_http_requests,
+        max_workflow_seconds=args.max_workflow_seconds,
+        max_tool_calls=args.max_tool_calls,
     )
     settings = None
     if args.source == "real":
@@ -100,6 +124,7 @@ def run(args):
             responses_path=args.responses,
             suite_path=args.suite,
             settings=settings,
+            review_lock_path=args.review_lock,
         )
     )
     return {key: value for key, value in result.items() if key not in {"results", "pairs"}}
@@ -107,7 +132,8 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["validate", "contexts", "run", "compare", "rescore"])
+    parser.add_argument("command", choices=["validate", "contexts", "run", "compare", "rescore",
+                                          "review-template", "review-freeze", "protocol"])
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--a", type=Path)
     parser.add_argument("--b", type=Path)
@@ -115,6 +141,7 @@ def main():
         "--suite", type=Path, default=PROJECT_ROOT / "examples/eval-v2/c-drafts.json"
     )
     parser.add_argument("--formal", action="store_true", help="校验独立人工审核留出集")
+    parser.add_argument("--review-lock", type=Path)
     parser.add_argument("--development", action="store_true", help="仅开发验证，不能称为独立评测")
     parser.add_argument(
         "--source", choices=["manual", "fake", "mock_transport", "real"], default="manual"
@@ -133,13 +160,18 @@ def main():
     parser.add_argument("--max-input-tokens", type=int, default=20000)
     parser.add_argument("--max-output-tokens", type=int, default=2048)
     parser.add_argument("--timeout", type=float, default=30)
+    parser.add_argument("--max-http-requests", type=int, default=40)
+    parser.add_argument("--max-workflow-seconds", type=float, default=90.0)
+    parser.add_argument("--max-tool-calls", type=int, default=1)
     args = parser.parse_args()
     if args.command != "validate" and args.output is None:
         parser.error("--output is required")
     try:
         result = run(args)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 1 if result.get("stop_reason") else 0
+        return 1 if result.get("stop_reason") or result.get("audit_status") == (
+            "UNVERIFIABLE_LEGACY_OR_INCOMPLETE_ARCHIVE"
+        ) else 0
     except (ValueError, OSError, ImportError):
         print(
             json.dumps(

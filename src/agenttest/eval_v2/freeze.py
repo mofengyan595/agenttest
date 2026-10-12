@@ -8,6 +8,7 @@ from pathlib import Path
 
 from agenttest import llm_planner
 from agenttest.eval_v2 import EVALUATOR_VERSION, SCHEMA_VERSION
+from agenttest.eval_v2.review import verify_review_lock
 from agenttest.evaluation import save_evaluation
 from agenttest.evaluation_freeze import _git, _version, public_model_config
 from agenttest.llm_planner import PlannerDraft
@@ -44,13 +45,15 @@ class Freeze:
         suite_path=None,
         response_path=None,
         real=False,
+        review_lock_path=None,
     ):
         self.root, self.suite, self.inputs = root, suite, inputs
         self.config, self.settings = config, settings
         self.suite_path, self.response_path = suite_path, response_path
         self.output, self.real = output, real
+        self.review_lock_path = review_lock_path
         payload = self._payload()
-        if real:
+        if not config.development:
             suite.require_formal()
             if payload["git"]["worktree_status"]:
                 raise ValueError("Real evaluation requires a clean committed checkout")
@@ -72,6 +75,8 @@ class Freeze:
             "responses_sha256": fingerprint(self.response_path.read_bytes().hex())
             if self.response_path
             else None,
+            "review_lock_sha256": verify_review_lock(self.suite, self.review_lock_path)
+            if not self.config.development else None,
             "inputs": self.inputs,
             "prompt_sha256": fingerprint(llm_planner.SYSTEM_PROMPT),
             "planner_schema_sha256": fingerprint(PlannerDraft.model_json_schema()),

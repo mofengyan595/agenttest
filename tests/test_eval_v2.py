@@ -23,7 +23,15 @@ from agenttest.eval_v2.scoring import (
     score_report,
     summarize,
 )
-from agenttest.report import AttemptEvidence, CheckResult, Outcome, RunReport, StepResult
+from agenttest.report import (
+    AttemptEvidence,
+    CheckResult,
+    Outcome,
+    PlanStepEvidence,
+    RunReport,
+    StepResult,
+    fingerprint,
+)
 
 DATA = PROJECT_ROOT / "examples/eval-v2/c-drafts.json"
 
@@ -62,6 +70,9 @@ def report():
                 attempts=[AttemptEvidence(attempt=1, status_code=200, elapsed_ms=1)],
             )
         ],
+        plan_structure=[PlanStepEvidence(
+            step_id="read", operation_id="getCourse", role="alice", policy_id="nl_read_v1"
+        )],
     )
 
 
@@ -225,7 +236,12 @@ def test_selectors_are_not_replaced_by_intent_verified_flag():
 
 def test_pass_with_only_one_of_the_planned_steps_is_incomplete():
     case = suite("C004").cases[0]
-    score = score_report(case, report(), oracle_plan(case))
+    plan, result = oracle_plan(case), report()
+    result.scenario_sha256 = fingerprint(plan.model_dump())
+    result.plan_structure = [PlanStepEvidence(**{
+        k: getattr(s, k) for k in PlanStepEvidence.model_fields
+    }) for s in capture_plan(plan).steps]
+    score = score_report(case, result, plan)
     assert score["plan_valid"] and score["intent"].passed
     assert not score["end_to_end_success"] and score["classification"] == "TASK_MISMATCH"
 
@@ -304,6 +320,7 @@ def test_rejection_requires_annotated_basis_no_execution_and_no_error(kind):
     result.steps = []
     result.outcome = Outcome.NEEDS_REVIEW
     result.diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_NO_APPROVED_PLAN")
+    result.user_task_sha256 = fingerprint(case.task.user_task)
     if kind == "model_error":
         result.outcome = Outcome.TOOL_ERROR
         result.diagnostic.code = "MODEL_INVALID_RESPONSE"
@@ -398,7 +415,7 @@ def test_provenance_comes_from_transport_not_baseline():
 )
 def test_paired_faults_fp_fn_and_inconclusive(kind, status):
     normal, fault = report(), report()
-    fault.steps[0].checks = [CheckResult(kind="field", selector="$.name", passed=False)]
+    fault.steps[0].checks = [CheckResult(kind="equals", selector="$.name", passed=False)]
     if kind != "pass":
         fault.outcome = Outcome.ASSERTION_FAILED
     if kind == "wrong":

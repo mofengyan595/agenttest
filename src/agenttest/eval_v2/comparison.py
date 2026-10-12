@@ -1,17 +1,12 @@
 """Paired A/B auditing. A development comparison never claims a model improvement."""
 
-from agenttest.plan_json import bounded_json
-
-
-def _read(path):
-    with path.open("rb") as stream:
-        raw = stream.read(5_000_001)
-    return bounded_json(raw.decode("utf-8"), 5_000_000)
+from agenttest.eval_v2.archive import verify_archive
 
 
 def compare(a_directory, b_directory):
-    a, b = [_read(path / "results.json") for path in (a_directory, b_directory)]
-    af, bf = [_read(path / "freeze.json") for path in (a_directory, b_directory)]
+    (a, af), (b, bf) = [verify_archive(path) for path in (a_directory, b_directory)]
+    if not a["freeze_valid"] or not b["freeze_valid"]:
+        raise ValueError("Invalid freeze cannot support a comparison")
     if a["variant"] != "A" or b["variant"] != "B":
         raise ValueError("Expected distinct A and B runs")
     for key in ("schema_version", "source", "dataset_version", "review_status"):
@@ -27,6 +22,7 @@ def compare(a_directory, b_directory):
         "planner_schema_sha256",
         "model_config",
         "responses_sha256",
+        "review_lock_sha256",
         "environment",
     ):
         if af[key] != bf[key]:
@@ -47,6 +43,9 @@ def compare(a_directory, b_directory):
     fields = (
         "classification",
         "plan_valid",
+        "intent",
+        "safe_rejection",
+        "rejection_kind",
         "end_to_end_success",
         "context_bytes",
         "model_calls",
@@ -72,6 +71,10 @@ def compare(a_directory, b_directory):
                 "A": {k: ar[key][k] for k in fields},
                 "B": {k: br[key][k] for k in fields},
             }
+            for key in ar
+        ],
+        "classification_transitions": [
+            {"case_id": key, "from": ar[key]["classification"], "to": br[key]["classification"]}
             for key in ar
         ],
     }

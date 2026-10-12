@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
+from agenttest.eval_v2.review import ReviewRecord
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import validate_user_task
 from agenttest.safety import StrictModel
@@ -21,6 +22,12 @@ Category = Literal[
     "injection",
 ]
 Source = Literal["manual", "fake", "mock_transport", "real"]
+REJECTION_CODES = frozenset({
+    "MODEL_NO_APPROVED_PLAN", "MODEL_REFUSAL", "INTENT_UNSUPPORTED_OBJECTIVE",
+    "INTENT_UNSUPPORTED_LANGUAGE", "INTENT_EXPLICIT_NAME_REQUIRED", "INTENT_CREATOR_AMBIGUOUS",
+    "INTENT_READ_REQUIRED", "INTENT_NAME_UNSUPPORTED", "INTENT_ROLE_AMBIGUOUS",
+    "INTENT_RELATION_AMBIGUOUS",
+})
 ResultStatus = Literal[
     "PASS",
     "TASK_MISMATCH",
@@ -140,6 +147,10 @@ class Labels(StrictModel):
             raise ValueError("Non-executable case cannot carry execution labels")
         if self.expected_behavior == "reject" and not self.rejection_basis:
             raise ValueError("Rejection requires explicit independently reviewed basis")
+        if self.expected_behavior == "reject" and self.support_status != "unsupported":
+            raise ValueError("Rejection labels must explicitly be unsupported")
+        if not set(self.rejection_basis) <= REJECTION_CODES:
+            raise ValueError("Errors cannot be labeled as safe rejection")
         if self.review_status == "HUMAN_REVIEWED" and (
             not (self.review_source or "").strip() or self.label_provenance == "ai_generated_draft"
         ):
@@ -154,6 +165,7 @@ class Case(StrictModel):
     category: Category
     task: PublicTask
     labels: Labels
+    review_record: ReviewRecord | None = None
 
 
 class Suite(StrictModel):
@@ -177,6 +189,9 @@ class Suite(StrictModel):
             for c in self.cases
         ):
             raise ValueError("Formal evaluation requires independently human-reviewed holdout")
+        from agenttest.eval_v2.review import require_review
+
+        require_review(self)
 
     @classmethod
     def load(cls, path):
@@ -210,6 +225,19 @@ class StepEvidence(StrictModel):
 class PlanEvidence(StrictModel):
     scenario_sha256: str
     steps: list[StepEvidence]
+
+    @model_validator(mode="after")
+    def unambiguous(self):
+        ids = [s.step_id for s in self.steps]
+        if not ids or len(set(ids)) != len(ids):
+            raise ValueError("Plan evidence requires unique step IDs")
+        for step in self.steps:
+            if (
+                set(step.argument_sha256) & set(step.dependencies)
+                or set(step.selectors) != set(step.dependencies)
+            ):
+                raise ValueError("Ambiguous archived argument evidence")
+        return self
 
 
 class CaseResult(StrictModel):
