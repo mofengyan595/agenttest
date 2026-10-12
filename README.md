@@ -6,6 +6,22 @@
 
 用户用中文描述测试目标，模型输出不可信 DSL；通过契约、策略、资源依赖和意图检查后，已有 Executor 执行 HTTP，生成脱敏报告。支持失败后的单次只读调查和 MCP stdio 工具封装。默认演示和测试无需 API Key、Docker 或外网。
 
+**新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
+
+```powershell
+# 根目录：先生成隔离离线报告，使用现有 .venv 与 agent/mcp 可选依赖
+.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console
+$env:AGENTTEST_RUNS_DIR = 'runs/web-console'
+.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000
+# 另一终端：Node.js 22.12+；Linux 使用 .venv/bin/python 与 export AGENTTEST_RUNS_DIR
+Set-Location web
+npm ci
+npm run dev
+# http://127.0.0.1:5173；npm run build 构建，npm run preview 预览，npm test 测试
+```
+
+工作台上传/粘贴 JSON 或 YAML → 查看真实摘要；目标可下载本地草稿，尚不发起规划。运行 CLI 演示 → 历史页刷新 → 点击 Run ID → 展开断言、HTTP 尝试与调查。默认同源 Vite Proxy，不放宽 CORS；API 地址通过 `web/.env.local` 配置。禁止填写密码/JWT/模型 Key；详情不提供原始 HTTP 正文。当前没有 Web 执行、生产认证、深色主题或任意目标入口。
+
 已实际跑通 **中文需求 → 学校 ecnu-plus → 安全校验 → CourseInsight Java 登录/创建/查询 → 14 项断言 PASS**。这是独立项目；不修改 CourseInsight 业务代码，不在生产或真实用户数据上测试。
 
 ## 快速复现
@@ -179,7 +195,7 @@ B02 的 `DSL_AUTHENTICATION_ORDER` 零请求；B03/B04 的 `INTENT_UNSUPPORTED_O
 | TOOL_ERROR | 非法计划、依赖绑定或工具错误 |
 | NEEDS_REVIEW | 无批准策略、未支持约束或不可靠的意图 |
 
-可选 FastAPI 只读 API：`GET /health`、`POST /api/spec/summary`（JSON/YAML）、`GET /api/runs/{run_id}`；`python -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000`。没有任意目标执行 API，离线不依赖 Swagger 的 CDN 页面。
+可选 FastAPI API：`GET /health`、`POST /api/spec/summary`（JSON/YAML）、`GET /api/runs/{run_id}`，新增有界只读 `GET /api/runs`（分页、Outcome 筛选和时间排序）；`python -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000`。没有任意目标执行 API，离线不依赖 Swagger 的 CDN 页面。
 
 ## 项目结构与交付资料
 
@@ -196,6 +212,7 @@ src/agenttest/
   defect_evaluation.py, showcase.py   # 独立评测与统一离线演示
 examples/                            # 操作员配置、可信策略及合成任务
 scripts/                             # 安装、明确启用的实测与回环检查
+web/                                 # 独立 React/TypeScript 控制台与前端测试
 tests/                               # 默认离线回归，禁止意外网络
 docs/                                # 各阶段原始评测与技术说明
 ```
@@ -206,4 +223,4 @@ docs/                                # 各阶段原始评测与技术说明
 
 Windows/Linux × base/agent 四组 Actions 保留；pytest、Ruff、pip check、真实回环 HTTP、Fake 自然语言/调查和 MCP stdio 自动验证。CI **不调用学校模型、Docker 或真实 Java 写入**。本机完整结果与最终 CI 在进度文档记录；仅基础安装会明确跳过可选 Agent/MCP 测试。
 
-当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；无 RAG、多 Agent、复杂前端、Kubernetes 或新数据库。文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。
+当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；无 RAG、多 Agent、Kubernetes 或新数据库。新增轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。

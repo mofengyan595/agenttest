@@ -1,0 +1,117 @@
+# AgentTest Web Console（2026-10-12）
+
+这是当前仓库新增的本地 Web 里程碑。复用 FastAPI、ReportStore 和脱敏 RunReport；不重建 Agent，也不修改 Executor、Vault、Policy、Intent Validator、MCP 或冻结评测数据。CourseInsight 只是验证对象之一。
+
+## 页面与架构
+
+- **测试工作台 `/`**：自然语言目标草稿、下载本地 `.txt` 草稿、清空、JSON/YAML 文件上传或文本粘贴、真实 OpenAPI 摘要、最近运行。草稿在页面会话内保留，刷新即消失；不写 localStorage/sessionStorage，不向 API 发送目标草稿。请勿在目标或契约中填写凭据。
+- **运行详情 `/runs/:runId`**：五种 Outcome、四层校验、Workflow 完成情况、实际节点、步骤 / AttemptEvidence / CheckResult、独立只读调查、诊断、真实模型用量。`/inspect` 提供 Run ID 查询入口。
+- **历史报告 `/runs`**：结果筛选、时间排序、每页 12 条、有界目录总数、无效报告提示、详情跳转。统计范围是服务端配置的一个目录，不递归合并 MCP 等嵌套命名空间。
+
+```text
+web/src/pages           React 页面与路由
+web/src/components      契约导入、流程、四层校验、步骤证据、通用状态
+web/src/api             请求封装、FastAPI 生成类型、旧报告兼容类型
+web/src/status.ts       集中解释 Outcome / 三态 / Workflow
+FastAPI main.py         health / spec summary / run / bounded run list
+report_queries.py       列表投影与公开断言值保护
+ReportStore             现有报告存储 + 有界、身份匹配、链接检查
+```
+
+技术栈：React 19、TypeScript 5.9、Vite 8、React Router 7、Lucide、原生 CSS。没有复杂状态管理或 UI 框架。Vitest / Testing Library 做组件测试，Playwright 做真实前后端浏览器测试；Prettier 只整理本轮新增前端。
+
+## 安装与启动
+
+Node.js **22.12+**，Python 3.11；仅使用当前项目 `.venv`。首次安装需要包源，安装后前端不加载外部字体、脚本或图像，基础测试和演示无需 API Key / Docker / LLM。
+
+仓库根目录，Windows PowerShell：
+
+```powershell
+# Python 首次安装沿用 README / scripts/setup_env.ps1；已有 .venv 不必重复创建。
+# normal / fault 只需要基础依赖；all 需要现有 agent,mcp 可选依赖。
+.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console
+$env:AGENTTEST_RUNS_DIR = 'runs/web-console'
+.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000
+```
+
+另一个终端：
+
+```powershell
+Set-Location web
+npm ci
+npm run dev
+# 打开 http://127.0.0.1:5173
+```
+
+Linux：使用 `.venv/bin/python`，后端启动前 `export AGENTTEST_RUNS_DIR=runs/web-console`；其余 npm 命令相同。必须从仓库根目录启动后端，或为 AGENTTEST_RUNS_DIR 指定操作员核对过的绝对目录。
+
+默认 `/api` 和 `/health` 通过 Vite 同源代理到 `http://127.0.0.1:8000`，没有放宽 CORS。需要改端口时，在 `web/.env.local` 配置 `AGENTTEST_API_PROXY`；`VITE_API_BASE` 留空。只有部署环境已经正确提供同源反向代理或受限跨域策略时，才配置浏览器可见的 VITE_API_BASE。所有 VITE_* 都是公开构建配置，不能放密钥。
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+npm run preview
+# 生产构建本地预览 http://127.0.0.1:4173，仍使用同源代理。
+```
+
+构建输出在 `web/dist/`，不纳入 Git。此项目没有生产部署、认证或多租户支持。请只监听回环地址；localhost 本身不构成执行授权。本轮没有 Web 执行接口，页面不接受目标 URL、DSL、策略、断言或脚本。
+
+## API 与报告语义
+
+| API | 功能与边界 |
+| --- | --- |
+| `GET /health` | 真实后端连接状态 |
+| `POST /api/spec/summary` | 现有 JSON/YAML 解析；最大 1,000,000 bytes；不连接契约 servers，不代表业务兼容性验证 |
+| `GET /api/runs/{run_id}` | 现有脱敏详情；保留旧报告缺失字段，不补造历史校验结论 |
+| `GET /api/runs?limit=20&offset=0&outcome=PASS&order=desc` | 新增只读目录查询；limit 1–100、offset 0–2000、Outcome 枚举、asc/desc |
+
+列表最多检查 2,000 个顶层目录项，累计报告字节预算 32 MB；单报告上限 2 MB。超预算返回固定 503，不把部分扫描误报为全量。无效、不完整、身份不匹配、不可读报告跳过并计数。报告只允许 32 位小写十六进制 Run ID，固定 `report.json`，禁止 symlink / Windows reparse point；POSIX 使用目录相对 no-follow 打开，并验证打开文件身份和实际读取上限。文件系统和报告根目录仍由可信操作员控制，不提供抗恶意本机管理员并发篡改的沙箱承诺。
+
+列表排序使用记录时间，无时间的旧报告显示“未记录”（desc 置后、asc 置前）；步骤或 Outcome 缺失也显示“未记录”，不补造零或 NEEDS_REVIEW。数字断言只展示已有公开证据；HTTP 预期状态只允许 100–599 整数列表，其余字符串/对象断言值再次脱敏。接口返回 Pydantic 校验后的允许字段，不返回文件路径、原始请求或响应正文。前端不显示服务端异常文本、上传内容或网络异常原文，15 秒超时，路由离开取消请求并忽略迟到响应。
+
+四层严格区分：
+
+1. `dsl_valid`：DSL / 契约 / 目标预检。
+2. `policy_authorized`：可信 Registry 授权。
+3. `intent_verified`：受控自然语言意图覆盖。
+4. `task_satisfied`：仅 true 代表经验证的自然语言任务完成；false 未满足；null 不适用/未确认；缺字段未记录。
+
+operator_plan 的 PASS 只表示批准计划通过，意图与任务满足标不适用。Workflow 完整结束不表示业务 PASS。节点已进入也不等于节点成功；Verifier 在 Executor 内部执行，图中依据 CheckResult 标注“存在检查证据”，不虚构独立图节点。tool_calls 是 Executor 调用次数，HTTP 尝试另计；Planner / FakeLLM 调用不能冒充收费模型。Token 缺失保持未知，不根据字节数估算。
+
+## 演示与尚未开放能力
+
+CLI 演示复用既有一次性内存 mini target / MockTransport 与固定预算，无真实 Java 请求、收费模型、业务数据库。报告由同一 ReportStore 写入并可查询。故障检测成功的验收含义是原报告保持 ASSERTION_FAILED，而非改成 PASS。
+
+**本轮没有 Web 规划、Web 演示执行或真实业务执行入口。** 原 CLI 函数本身不能提供浏览器鉴权、持久化幂等 claim 和进程级总预算，因此不直接暴露成 POST。未来即使只开放内存演示，也需独立审阅：固定场景、服务端授权、持久化重复提交保护、预算、取消与报告关联；不得把任意 URL/DSL/Policy 透传给既有执行器。
+
+未实现深色主题、全目录递归索引、自动刷新、报告导出原始 HTTP、通用自然语言规划、生产权限与部署。保留当前轻量浅色方案。
+
+## 类型与验收复现
+
+API 变更后，从仓库根目录运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/export_web_schema.py
+Set-Location web
+npm run schema
+```
+
+`api-schema.json` 来源是实际 FastAPI OpenAPI，`src/api/schema.ts` 自动生成；生成时忽略默认值带来的“必填”推断，避免 exclude_unset 的旧报告字段被错误视为总存在。`types.ts` 仅为三态展示补充兼容。不要手动修改生成类型。
+
+前后端已启动并有 showcase 报告时，在 web 运行 `npm run test:e2e`。Windows 默认使用本机 Edge；Linux 默认使用 Playwright Chromium，须事先按 Playwright 官方方法准备浏览器；本轮没有安装系统浏览器。可用 PLAYWRIGHT_CHANNEL 和 CONSOLE_BASE_URL 调整测试环境。
+
+浏览器测试读取真实目录，要求其中有 investigation 报告；截图保存到 `docs/screenshots/`。测试请求与组件模拟请求分开，组件测试覆盖不是模型或 Java 实测。真实截图包括工作台、历史、展开步骤的详情，以及 768 / 390 宽度；验收结果见 [进度](progress.md)。
+
+![实际工作台](screenshots/workbench-desktop.png)
+
+![实际运行详情](screenshots/run-detail-desktop.png)
+
+## 后续扩展点（尚未实现）
+
+- **OpenAPI 候选发现**：在现有 ContractSummary 之后接只读候选列表，显示依据和待审缺口，不自动批准或执行负例。
+- **Agent Eval**：另建新版本套件与独立指标接口，区分 requested/attempted、固定计划/Fake/真实模型；不从运行页 PASS 比例推算历史成绩。
+- **RAG**：未来只能作为提供可追溯参考的独立候选信息源，不成为授权、断言或意图门禁的信任根。
+- **Observability**：RunReport 以后增加真实节点/端到端耗时和业务/调查分别计数后，前端再显示图表；不根据请求耗时相加伪造节点或端到端耗时。
+
+下一准确里程碑仍为工程升级记录中的**纯离线 OpenAPI 候选发现 MVP**。任何 Web 执行或真实任务接入都另立授权与安全验收里程碑。

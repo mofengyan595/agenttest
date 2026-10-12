@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import os
+import stat
 import time
 from datetime import datetime, timezone
 from enum import Enum
@@ -12,6 +14,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from agenttest.diagnostics import Diagnostic
+
+MAX_REPORT_BYTES = 2_000_000
 
 
 class Outcome(str, Enum):
@@ -163,10 +167,46 @@ class ReportStore:
     def read(self, run_id: str) -> RunReport:
         if UUID(run_id).hex != run_id:
             raise ValueError("Invalid run id")
-        path = self.root / run_id / "report.json"
+        # Refuse links/reparse points and bound reads, including files that grow after stat.
+        directory = self.root / run_id
+        path = directory / "report.json"
+        for candidate in (directory, path):
+            info = candidate.lstat()
+            if (stat.S_ISLNK(info.st_mode)
+                    or getattr(info, "st_file_attributes", 0) & 0x400):
+                raise ValueError("Linked reports are forbidden")
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("Report must be a regular file")
         if not path.resolve().is_relative_to(self.root):
             raise ValueError("Run path escapes report directory")
-        return RunReport.model_validate_json(path.read_bytes())
+        # POSIX directory-relative opens also close the directory replacement race.
+        if os.name == "posix":
+            flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+            root_fd = os.open(self.root, flags | os.O_DIRECTORY)
+            try:
+                directory_fd = os.open(run_id, flags | os.O_DIRECTORY, dir_fd=root_fd)
+                try:
+                    descriptor = os.open("report.json", flags, dir_fd=directory_fd)
+                finally:
+                    os.close(directory_fd)
+            finally:
+                os.close(root_fd)
+        else:
+            descriptor = os.open(path, os.O_RDONLY | os.O_BINARY)
+        with os.fdopen(descriptor, "rb") as stream:
+            opened = os.fstat(stream.fileno())
+            if not stat.S_ISREG(opened.st_mode) or opened.st_size > MAX_REPORT_BYTES:
+                raise ValueError("Invalid report size or file type")
+            # Verify that the opened file is the inspected file on Windows as well.
+            if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                raise ValueError("Report changed during read")
+            raw = stream.read(MAX_REPORT_BYTES + 1)
+        if len(raw) > MAX_REPORT_BYTES:
+            raise ValueError("Report exceeds size limit")
+        report = RunReport.model_validate_json(raw)
+        if report.run_id != run_id:
+            raise ValueError("Report identity mismatch")
+        return report
 
 
 def aggregate(steps: list[StepResult]) -> Outcome:

@@ -1,0 +1,1145 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AgentTest",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spec/summary": {
+      "post": {
+        "summary": "Spec Summary",
+        "operationId": "spec_summary_api_spec_summary_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs": {
+      "get": {
+        "summary": "Run List",
+        "operationId": "run_list_api_runs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Outcome"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outcome"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["asc", "desc"],
+              "type": "string",
+              "default": "desc",
+              "title": "Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}": {
+      "get": {
+        "summary": "Run Result",
+        "operationId": "run_result_api_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AttemptEvidence": {
+        "properties": {
+          "attempt": {
+            "type": "integer",
+            "title": "Attempt"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code"
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms"
+          },
+          "response_bytes": {
+            "type": "integer",
+            "title": "Response Bytes",
+            "default": 0
+          },
+          "response_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Sha256"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          }
+        },
+        "type": "object",
+        "required": ["attempt", "elapsed_ms"],
+        "title": "AttemptEvidence"
+      },
+      "CheckResult": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "selector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "expected": {
+            "title": "Expected"
+          },
+          "actual": {
+            "title": "Actual"
+          }
+        },
+        "type": "object",
+        "required": ["kind", "passed"],
+        "title": "CheckResult"
+      },
+      "ContractSummary": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            },
+            "type": "array",
+            "title": "Operations"
+          },
+          "security_schemes": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Security Schemes"
+          }
+        },
+        "type": "object",
+        "required": ["version"],
+        "title": "ContractSummary"
+      },
+      "Diagnostic": {
+        "properties": {
+          "layer": {
+            "$ref": "#/components/schemas/Layer"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,95}$",
+            "title": "Code"
+          },
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": ["layer", "code"],
+        "title": "Diagnostic"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvestigationResult": {
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "title": "Step Id"
+          },
+          "step_run_id": {
+            "type": "string",
+            "title": "Step Run Id"
+          },
+          "operation_id": {
+            "type": "string",
+            "title": "Operation Id"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "path_template": {
+            "type": "string",
+            "title": "Path Template"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "policy_sha256": {
+            "type": "string",
+            "title": "Policy Sha256"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "type": "array",
+            "title": "Checks"
+          },
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptEvidence"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "parent_step_id": {
+            "type": "string",
+            "title": "Parent Step Id"
+          },
+          "capability_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "source_step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Step Id"
+          },
+          "resource_ref_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Ref Sha256"
+          },
+          "requests_used": {
+            "type": "integer",
+            "title": "Requests Used",
+            "default": 0
+          },
+          "rounds_used": {
+            "type": "integer",
+            "title": "Rounds Used",
+            "default": 0
+          },
+          "model_calls_used": {
+            "type": "integer",
+            "title": "Model Calls Used",
+            "default": 0
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_id",
+          "operation_id",
+          "method",
+          "path_template",
+          "outcome",
+          "reason",
+          "policy_sha256",
+          "parent_step_id"
+        ],
+        "title": "InvestigationResult"
+      },
+      "Layer": {
+        "type": "string",
+        "enum": [
+          "json",
+          "model",
+          "dsl",
+          "openapi",
+          "policy",
+          "dependency",
+          "intent"
+        ],
+        "title": "Layer"
+      },
+      "ModelCallStats": {
+        "properties": {
+          "diagnostic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Diagnostic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calls": {
+            "type": "integer",
+            "title": "Calls",
+            "default": 0
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "model_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Sha256"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms",
+            "default": 0
+          },
+          "request_bytes": {
+            "type": "integer",
+            "title": "Request Bytes",
+            "default": 0
+          },
+          "request_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Sha256"
+          },
+          "response_bytes": {
+            "type": "integer",
+            "title": "Response Bytes",
+            "default": 0
+          },
+          "input_token_upper_bound": {
+            "type": "integer",
+            "title": "Input Token Upper Bound",
+            "default": 0
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "total_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Tokens"
+          },
+          "output_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Sha256"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "ModelCallStats"
+      },
+      "Operation": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Id"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "parameters": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Parameters"
+          },
+          "request_body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Body"
+          },
+          "responses": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Responses"
+          },
+          "security": {
+            "items": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Security"
+          }
+        },
+        "type": "object",
+        "required": ["method", "path"],
+        "title": "Operation"
+      },
+      "Outcome": {
+        "type": "string",
+        "enum": [
+          "PASS",
+          "ASSERTION_FAILED",
+          "TEST_INFRA_ERROR",
+          "TOOL_ERROR",
+          "NEEDS_REVIEW"
+        ],
+        "title": "Outcome"
+      },
+      "PlanStepEvidence": {
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "title": "Step Id"
+          },
+          "operation_id": {
+            "type": "string",
+            "title": "Operation Id"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "policy_id": {
+            "type": "string",
+            "title": "Policy Id"
+          },
+          "argument_sha256": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Argument Sha256"
+          },
+          "dependencies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Dependencies"
+          }
+        },
+        "type": "object",
+        "required": ["step_id", "operation_id", "role", "policy_id"],
+        "title": "PlanStepEvidence"
+      },
+      "RunPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": ["items", "total", "offset", "limit", "skipped"],
+        "title": "RunPage"
+      },
+      "RunReport": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "scenario_sha256": {
+            "type": "string",
+            "title": "Scenario Sha256"
+          },
+          "contract_sha256": {
+            "type": "string",
+            "title": "Contract Sha256"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome",
+            "default": "NEEDS_REVIEW"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepResult"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "target_origin": {
+            "type": "string",
+            "title": "Target Origin"
+          },
+          "workflow_nodes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Workflow Nodes"
+          },
+          "planner_calls": {
+            "type": "integer",
+            "title": "Planner Calls",
+            "default": 0
+          },
+          "tool_calls": {
+            "type": "integer",
+            "title": "Tool Calls",
+            "default": 0
+          },
+          "analysis_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Code"
+          },
+          "workflow_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Completed"
+          },
+          "user_task_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Task Sha256"
+          },
+          "plan_valid": {
+            "type": "boolean",
+            "title": "Plan Valid",
+            "default": false
+          },
+          "dsl_valid": {
+            "type": "boolean",
+            "title": "Dsl Valid",
+            "default": false
+          },
+          "policy_authorized": {
+            "type": "boolean",
+            "title": "Policy Authorized",
+            "default": false
+          },
+          "selected_policy_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Policy Ids"
+          },
+          "model_call": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelCallStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan_structure": {
+            "items": {
+              "$ref": "#/components/schemas/PlanStepEvidence"
+            },
+            "type": "array",
+            "title": "Plan Structure"
+          },
+          "validation_issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation Issue"
+          },
+          "diagnostic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Diagnostic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "intent_verified": {
+            "type": "boolean",
+            "title": "Intent Verified",
+            "default": false
+          },
+          "task_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["natural_language", "operator_plan"]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Mode"
+          },
+          "task_satisfied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Satisfied"
+          },
+          "investigations": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationResult"
+            },
+            "type": "array",
+            "title": "Investigations"
+          },
+          "investigation_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Error"
+          },
+          "cleanup": {
+            "type": "string",
+            "title": "Cleanup",
+            "default": "In-memory demo state discarded; external target cleanup is operator-owned"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_sha256",
+          "contract_sha256",
+          "environment",
+          "target_origin"
+        ],
+        "title": "RunReport"
+      },
+      "RunSummary": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Outcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          },
+          "workflow_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "started_at",
+          "environment",
+          "outcome",
+          "steps",
+          "workflow_completed"
+        ],
+        "title": "RunSummary"
+      },
+      "StepResult": {
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "title": "Step Id"
+          },
+          "step_run_id": {
+            "type": "string",
+            "title": "Step Run Id"
+          },
+          "operation_id": {
+            "type": "string",
+            "title": "Operation Id"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "path_template": {
+            "type": "string",
+            "title": "Path Template"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "policy_sha256": {
+            "type": "string",
+            "title": "Policy Sha256"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "type": "array",
+            "title": "Checks"
+          },
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptEvidence"
+            },
+            "type": "array",
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_id",
+          "operation_id",
+          "method",
+          "path_template",
+          "outcome",
+          "reason",
+          "policy_sha256"
+        ],
+        "title": "StepResult"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

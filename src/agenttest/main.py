@@ -1,11 +1,14 @@
 """Local contract import and read-only run queries. Execution is operator-owned CLI."""
 
+import os
 from pathlib import Path
+from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 
 from agenttest.contracts import MAX_DOCUMENT_BYTES, ContractSummary, load_openapi
-from agenttest.report import ReportStore, RunReport
+from agenttest.report import Outcome, ReportStore, RunReport
+from agenttest.report_queries import CatalogLimit, RunPage, list_runs, public_report
 
 
 def create_app(runs_dir: Path = Path("runs")) -> FastAPI:
@@ -32,14 +35,23 @@ def create_app(runs_dir: Path = Path("runs")) -> FastAPI:
             # Never echo the untrusted document (which may contain credentials).
             raise HTTPException(422, "Invalid or unsupported OpenAPI contract") from None
 
-    @app.get("/api/runs/{run_id}", response_model=RunReport)
+    @app.get("/api/runs", response_model=RunPage)
+    def run_list(limit: int = Query(20, ge=1, le=100),
+                 offset: int = Query(0, ge=0, le=2000), outcome: Outcome | None = None,
+                 order: Literal["asc", "desc"] = "desc") -> RunPage:
+        try:
+            return list_runs(store, limit=limit, offset=offset, outcome=outcome, order=order)
+        except (CatalogLimit, OSError):
+            raise HTTPException(503, "Report catalog unavailable or over budget") from None
+
+    @app.get("/api/runs/{run_id}", response_model=RunReport, response_model_exclude_unset=True)
     def run_result(run_id: str) -> RunReport:
         try:
-            return store.read(run_id)
+            return public_report(store.read(run_id))
         except (ValueError, OSError):
             raise HTTPException(404, "Run not found") from None
 
     return app
 
 
-app = create_app()
+app = create_app(Path(os.environ.get("AGENTTEST_RUNS_DIR", "runs")))

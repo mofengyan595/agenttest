@@ -1,5 +1,38 @@
 # 开发进度
 
+## 本地 Web Console：真实报告与只读集成（2026-10-12）
+
+本轮按用户明确要求新增独立 `web/`，覆盖先前“暂不开发前端”的范围限制。React / TypeScript / Vite / Router / Lucide + 原生 CSS；没有引入新 Python 依赖、修改执行引擎、使用收费模型或真实 Java/数据库写入。未创建分支；验收后按用户后续明确授权提交并推送。
+
+- 工作台：会话内目标草稿及本地文本下载、清空、JSON/YAML 上传/粘贴和真实摘要、最近报告；没有虚构规划或“开始测试”按钮。
+- 详情：五种 Outcome、四层校验、Workflow 独立状态、实际节点与检查证据、可展开步骤/HTTP/断言、只读调查、诊断及真实 ModelCallStats；unknown/null/false 不混用，operator_plan PASS 不追认为 NL 完成。
+- 历史：新增只读 `/api/runs`，有界分页、筛选、时间排序；总数来自当前目录完整的有界扫描，不冒充跨目录全量。保留旧报告未记录的时间、Outcome 和步骤，不使用模型默认值补造事实。
+- 报告防护：严格 Run ID 与文件内身份、固定路径、禁止链接/reparse point、单文件 2 MB、目录 2,000 项/32 MB 扫描预算；仅输出 Pydantic 允许字段，字符串/对象断言再次脱敏，批准 HTTP 整数状态码列表仍可读。旧详情缺字段通过 exclude_unset 保留。
+- 请求独立封装、15 秒超时、取消与迟到响应保护、固定错误提示；同源 Vite Proxy，没有放宽 CORS，也没有浏览器 URL/DSL/Policy/断言执行入口。
+- FastAPI Schema 导出并生成 TS 类型，页面/组件/状态语义分离；Windows/Linux 启动说明、源码清单、安全限制及未来候选/Eval/RAG/Observability 接点见 [控制台文档](web-console.md)。
+
+最终实际验收：
+
+| 命令 | 输出 / 结果 |
+| --- | --- |
+| `.\.venv\Scripts\python.exe -m pytest -q --basetemp runs/web-delivery-final-tmp` | **602 passed, 3 skipped in 192.33s**；3 项均为 Windows 符号链接权限限制（原有 1、新增 2） |
+| `.\.venv\Scripts\python.exe -m ruff check .` | `All checks passed!` |
+| `.\.venv\Scripts\python.exe -m pip check` | `No broken requirements found.` |
+| `.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console` | **verified: true**，normal/fault/investigation/java-mock/mcp 五项通过；真实 Java / 学校 API 请求均 0 |
+| `npm --prefix web run build`（含 `tsc --noEmit`） | **成功**，Vite 4.15s；JS 301.46 kB / gzip 96.13 kB，CSS 19.49 kB / gzip 5.11 kB |
+| `npm --prefix web test` | **3 files / 23 tests passed**；Outcome、任务三态/缺字段、固定计划、旧元数据、证据脱敏、未知 Token、调查、加载/空/错误、超时、导入与草稿 |
+| `npm --prefix web run test:e2e` | **2 passed (13.0s)**，本机 Edge + 真实 FastAPI/Vite；文件导入成功/错误、下载、历史、筛选、展开证据、非法/不存在 ID；1440/768/390 宽度无横向溢出，pageerror 为空 |
+| `git diff --check` | 退出 0，无输出 |
+| 冻结文件/执行核心 `git diff --exit-code HEAD -- ...` | 退出 0；examples、锁文件、CI、2A/3A/3B/4A/4B/交付历史 JSON，以及 Executor/Vault/Workflow/Intent/MCP/目标隔离文件未改 |
+
+真实演示报告：正常 `ccfb0aca319b47b5a563309ad19ba23b`、故障 `c80d2bb2ca204a1f816aeb8303ea458c`、调查 `3a172950ce404e3993aea769800d3bfe`、Java 格式 Mock `727f7976dcdc448db53b8b6444941ed0`。MCP `60c6cc22b0d54ae492e4092b2534c4b3` 在嵌套命名空间，不自动混入列表。报告均在忽略的 runs/；7 张实际界面截图保存在 docs/screenshots/，已进行桌面与移动视觉检查。
+
+过程中曾遇到：沙箱阻止 npm 代理与 Windows TestClient 内部 socketpair，获工具审查许可后安装项目内依赖并离线验证；类型生成器将默认值推成必填，改用官方生成参数保留缺字段；浏览器筛选标签补充明确名称；新增组件测试选择器与同名标题冲突后收紧选择器。最后所有上述可运行门禁均通过，未跳过失败断言。
+
+**尚未实现**：Web 规划、Web 演示/真实业务执行、生产认证、多租户、深色主题、跨命名空间递归索引。演示沿用 CLI；直接暴露 CLI 缺少浏览器鉴权、持久化幂等与总预算，本轮不开放。**未验证**：Linux/base 独立环境、新的远端 CI、Windows symlink/reparse 实测（相关拒绝逻辑已实现，2 项新增链接测试受权限跳过）；没有用历史 CI 冒充本轮结果。
+
+**下一准确里程碑：纯离线 OpenAPI 候选发现 MVP**，方案仍见工程升级记录。Web 执行必须另立授权、安全设计和验收里程碑。原历史记录在下方保持不变。
+
 ## 工程升级：通用意图门禁与规划约束（2026-10-12）
 
 本轮新里程碑已完成，详细能力清单、问题证据、影响范围及后续设计见 [工程升级记录](engineering-upgrade.md)。只修改 AgentTest；未创建分支，提交与推送按用户后续授权执行；未安装依赖，学校模型调用和真实 Java 请求均为零。
