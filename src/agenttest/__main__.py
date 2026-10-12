@@ -25,6 +25,16 @@ def bounded_read(path: Path, limit: int = MAX_DOCUMENT_BYTES) -> bytes:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="AgentTest 确定性 API 测试")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    discovery = subcommands.add_parser("discover", help="离线发现 OpenAPI 测试候选；不执行测试")
+    discovery.add_argument("--contract", type=Path, required=True)
+    discovery.add_argument("--policies", type=Path, required=True,
+                           help="操作员选择的已批准 Registry；不会从契约或模型接受策略")
+    discovery.add_argument("--target", type=Path, help="可选的操作员目标配置；只读元数据")
+    discovery.add_argument("--business-scenario", default="default",
+                           help="未提供 target 时使用的策略作用域")
+    discovery.add_argument("--exclude-operation", action="append", default=[])
+    discovery.add_argument("--output", type=Path, required=True,
+                           help="新的 *.discovery.json 文件；拒绝覆盖已有文件")
     showcase = subcommands.add_parser("showcase", help="统一离线演示；故障检出也视为演示成功")
     showcase.add_argument("--case", choices=["normal", "fault", "investigation", "java-mock",
                                            "mcp", "all"], default="normal")
@@ -63,8 +73,30 @@ def main(argv: list[str] | None = None) -> int:
                     agent, agent_demo, report):
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
-    store = ReportStore(args.runs_dir)
     try:
+        if args.command == "discover":
+            from agenttest.discovery import discover, discovery_json
+
+            if not args.output.name.endswith(".discovery.json"):
+                raise ValueError("Discovery output must use .discovery.json suffix")
+            result = discover(load_openapi(bounded_read(args.contract)),
+                PolicyRegistry.from_json(bounded_read(args.policies)),
+                (TargetConfig.model_validate_json(bounded_read(args.target))
+                 if args.target else None),
+                business_scenario=args.business_scenario,
+                excluded_operation_ids=args.exclude_operation)
+            content = discovery_json(result)
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            with args.output.open("x", encoding="utf-8", newline="\n") as destination:
+                destination.write(content)
+            print(json.dumps({"format_version": result.format_version,
+                "candidates": len(result.candidates),
+                "operation_coverage": result.coverage.operation.ratio.model_dump(),
+                "scenario_coverage": result.coverage.scenario.model_dump(),
+                "needs_review": len(result.candidates), "tests_executed": 0,
+                "http_requests": 0, "model_calls": 0}, ensure_ascii=False))
+            return 0
+        store = ReportStore(args.runs_dir)
         if args.command == "showcase":
             from agenttest.showcase import showcase
 

@@ -143,6 +143,11 @@ class PolicyRegistry:
         return PolicyRegistry([RegisteredPolicy.model_validate_json(raw)
                                for raw in self._entries.values()])
 
+    def definitions(self) -> list[RegisteredPolicy]:
+        """Independent copies for offline auditing; visibility grants no approval."""
+        return [RegisteredPolicy.model_validate_json(self._entries[key])
+                for key in sorted(self._entries)]
+
     def digest(self) -> str:
         from agenttest.report import fingerprint
 

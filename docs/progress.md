@@ -1,5 +1,50 @@
 # 开发进度
 
+## OpenAPI 候选发现 MVP：阶段 B–E 最终验收（2026-10-12）
+
+在阶段 A 独立验收后实施纯离线 discovery：复用 ContractSummary、request_validation、PolicyRegistry.resolve、validate_plan 与 fingerprint。没有新增 Python/前端依赖，没有修改 Executor/Vault/Workflow/Intent、契约解析、请求校验、目标隔离、冻结策略/评测样本或历史成绩。验收后按用户后续明确授权提交并推送。
+
+- 新增 discovery_models.py / discovery_schema.py / discovery.py，以及 CLI `discover --contract --policies [--target] --output *.discovery.json`。有界读取、作用域/排除项、稳定输入摘要与候选 ID、排序去重、排他创建文件；不输出 DSL/RunReport，不读取凭据环境，不调用模型、HTTP 或执行器。
+- 发现 scalar required/enum/数值上下界/排他边界/字符串长度/类型变化。正常 witness 同时核验契约与批准 literal_schema，冲突保留 review。负例固定 STATIC_ONLY_NEGATIVE、无正常断言/Policy 复用；所有候选 NEEDS_REVIEW。
+- 仅使用批准 source_policy_id / source_selector / role_relation / 登录元数据组合资源流，检查缺失 selector/策略/角色、认证顺序、循环与预算；动态资源和认证值保持未知，不用假凭据把预检变成成功。未知 Schema 明确待审；3.0/3.1 exclusive 语义区分。
+- 静态 Operation/Scenario 分母与 slots 明列；Policy 分开列接口存在、作用域、可信断言、候选及静态预检。六类缺陷没有统一可信映射，保持 NOT_MAPPED；静态涉及/批准/执行/检出分别列出，不计算检出率。
+- 阶段 E 评估后保持 CLI：不增加 Web API、浏览器策略信任根或执行入口，FastAPI/TS Schema 无变化。后续只读产物展示与 Planner/Eval 接点见 [完整文档](candidate-discovery.md)。
+
+最终实际验证：
+
+| 命令 | 实际结果 |
+| --- | --- |
+| `.\.venv\Scripts\python.exe -m pytest -q --basetemp runs/discovery-final-full-tmp` | **646 passed, 3 skipped in 115.19s**；3 项为既有 Windows 链接权限限制，本轮新增 44 项离线回归 |
+| `.\.venv\Scripts\python.exe -m pytest -q tests/test_discovery.py --basetemp runs/discovery-test4-tmp` | **44 passed in 2.16s** |
+| `.\.venv\Scripts\python.exe -m ruff check .` | `All checks passed!` |
+| `.\.venv\Scripts\python.exe -m pip check` | `No broken requirements found.` |
+| `.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/discovery-final-showcase` | **verified: true**；五项通过，学校/真实 Java 请求均 0，故障与调查原结果保留 ASSERTION_FAILED |
+| `npm ci` | 成功；锁文件未修改，142 packages，审计 0 漏洞 |
+| `npm run typecheck` | 成功 |
+| `npm test` | **4 files / 26 tests passed**；最终 8.44s，包含明确模型诊断与仅节点观测的区别 |
+| `npm run build` | 成功，Vite 1.09s；JS 303.67 kB / gzip 96.87 kB；CSS 20.19 kB / gzip 5.28 kB |
+| `npm run test:e2e` | **2 passed (19.1s)**；Edge + 托管临时离线 API/Vite，手机历史卡片、导入、筛选、证据、1440/768/390 布局及错误状态；服务监听已退出 |
+| Web Actions YAML/门禁结构检查 | Node 22 与 npm ci/typecheck/test/build 均正确；**远端 Actions 未触发、未验收** |
+| `git diff --check` | 退出 0；范围外核心/样本/历史结果/依赖锁/API Schema `git diff --exit-code HEAD -- ...` 退出 0 |
+
+实际候选产物 `runs/discovery/final-fixture.discovery.json`（忽略目录）：**19 候选 = 7 正常 + 11 负例 + 1 不支持待审；静态 Operation 1/2、Scenario 8/9；执行、HTTP、模型调用均 0**。7 项 STATIC_VALIDATED 仍为 NEEDS_REVIEW。CLI 同输入输出字节一致、拒绝覆盖既有文件已有自动回归。JSON 全量清单与静态覆盖由 CLI 一并输出，不是业务运行结果。
+
+新增真实截图在 `docs/screenshots/followup-2026-10-12/`。E2E 现在在忽略的 runs/console-e2e/session-* 创建一次性报告，正常退出清理；Windows 强制终止可保留忽略目录，下一次不会复用。原截图未覆盖。
+
+首次新增 YAML fixture 的 flow description 漏引号，契约校验正确拒绝，修正后通过；默认沙箱 Vitest 临时缓存读取失败后，在工具审查许可环境执行同一门禁通过。没有降低断言或禁用安全校验。最终无测试 warning；Playwright 的 NO_COLOR/FORCE_COLOR 提示不影响验收。
+
+**未验证**：Linux/base 独立环境、新远端 CI、Linux 浏览器验收。**尚未实现**：负例执行、Web 候选页/执行入口、复杂 Schema/嵌套输入/数组/multipart/异步发现、六机制自动映射、LLM 自主规划增强。不会据此宣称真实模型效果、完整业务覆盖或缺陷检出率提高。
+
+**下一准确里程碑：独立 C 系列 Agent Eval v2 标签设计、审阅与冻结**；保留旧 T/B 数据，先离线定义候选/意图/执行分母和不可支持项，不启动未经新授权的真实模型或业务写入实验。
+
+## 候选发现阶段 A：Web 收尾检查点（2026-10-12）
+
+- 新增独立 Web CI（Node 22、npm ci、typecheck、test、build），不合并 Python Job。远端 CI 尚未触发。
+- Workflow 明确区分已观测、已成功、已失败、未执行/未记录；false 默认值不推断失败，NEEDS_REVIEW 不归为 HTTP 失败。390px 历史改为完整 Outcome 卡片。
+- E2E 自动生成一次性离线 showcase 报告并启动回环服务，停止依赖历史 runs。输出在忽略的 web/test-results/screenshots，不覆盖旧截图。
+- 独立实测：npm ci 成功；typecheck 成功；4 files / 25 tests passed；Production Build 成功（2.94s）；Edge 真实 E2E 2 passed（27.0s）；ruff check . 通过。默认沙箱首次 Vitest 临时缓存 ENOENT，工具审查许可后同一门禁通过。已检查 390px 实际截图。
+- 阶段 A 已验证，下一步进入纯离线 OpenAPI 候选发现，不增加 Web 执行入口。
+
 ## 本地 Web Console：真实报告与只读集成（2026-10-12）
 
 本轮按用户明确要求新增独立 `web/`，覆盖先前“暂不开发前端”的范围限制。React / TypeScript / Vite / Router / Lucide + 原生 CSS；没有引入新 Python 依赖、修改执行引擎、使用收费模型或真实 Java/数据库写入。未创建分支；验收后按用户后续明确授权提交并推送。

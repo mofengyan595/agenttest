@@ -77,7 +77,7 @@ npm run preview
 3. `intent_verified`：受控自然语言意图覆盖。
 4. `task_satisfied`：仅 true 代表经验证的自然语言任务完成；false 未满足；null 不适用/未确认；缺字段未记录。
 
-operator_plan 的 PASS 只表示批准计划通过，意图与任务满足标不适用。Workflow 完整结束不表示业务 PASS。节点已进入也不等于节点成功；Verifier 在 Executor 内部执行，图中依据 CheckResult 标注“存在检查证据”，不虚构独立图节点。tool_calls 是 Executor 调用次数，HTTP 尝试另计；Planner / FakeLLM 调用不能冒充收费模型。Token 缺失保持未知，不根据字节数估算。
+operator_plan 的 PASS 只表示批准计划通过，意图与任务满足标不适用。Workflow 完整结束不表示业务 PASS。流程图区分蓝色眼睛“已观测”、有明确结论的对勾“已成功”与叉号“已失败”、灰色“未执行/未记录”；旧报告 false 默认值不作为失败证据。Planner 交到 validate 只说明规划返回，不说明计划合法；Validator 使用实际门禁结论/validation_issue；Executor 使用已完成的步骤结论；Verifier 仅表示已记录的 CheckResult，仍在 Executor 内部执行。NEEDS_REVIEW 不归为 HTTP 失败。tool_calls 是 Executor 调用次数，HTTP 尝试另计；Planner / FakeLLM 调用不能冒充收费模型。Token 缺失保持未知，不根据字节数估算。
 
 ## 演示与尚未开放能力
 
@@ -99,9 +99,11 @@ npm run schema
 
 `api-schema.json` 来源是实际 FastAPI OpenAPI，`src/api/schema.ts` 自动生成；生成时忽略默认值带来的“必填”推断，避免 exclude_unset 的旧报告字段被错误视为总存在。`types.ts` 仅为三态展示补充兼容。不要手动修改生成类型。
 
-前后端已启动并有 showcase 报告时，在 web 运行 `npm run test:e2e`。Windows 默认使用本机 Edge；Linux 默认使用 Playwright Chromium，须事先按 Playwright 官方方法准备浏览器；本轮没有安装系统浏览器。可用 PLAYWRIGHT_CHANNEL 和 CONSOLE_BASE_URL 调整测试环境。
+在 web 运行 `npm run test:e2e`，默认自动运行 `scripts/serve_console_e2e.py`：在忽略的 `runs/console-e2e/session-*` 中生成 4 个真实离线 showcase 报告，启动 127.0.0.1:18000 API 与 5173 Vite，同源代理到一次性 API。端口已有服务时失败，不复用未知服务。测试结束自动停止服务；正常退出清理临时报告，Windows 强制终止进程时可能保留忽略目录，不会在下次测试复用。需要现有 agent 可选依赖；Windows 默认本机 Edge，Linux 使用已安装的 Playwright Chromium。没有安装系统浏览器。PLAYWRIGHT_CHANNEL 可选择浏览器；CONSOLE_BASE_URL 可显式选择外部本地测试服务，此时不启动托管服务。
 
-浏览器测试读取真实目录，要求其中有 investigation 报告；截图保存到 `docs/screenshots/`。测试请求与组件模拟请求分开，组件测试覆盖不是模型或 Java 实测。真实截图包括工作台、历史、展开步骤的详情，以及 768 / 390 宽度；验收结果见 [进度](progress.md)。
+浏览器测试不依赖历史报告；截图生成到忽略的 `web/test-results/screenshots/`，不覆盖旧交付证据。测试请求与组件模拟请求分开，组件测试覆盖不是模型或 Java 实测。390px 历史页改为卡片，直接显示 Outcome、环境、步骤及 Workflow。阶段 A 实测截图保存在 `docs/screenshots/followup-2026-10-12/`；验收结果见 [进度](progress.md)。
+
+新增独立 `.github/workflows/web.yml`，Node 22 + npm ci/typecheck/test/build，不依赖 Python Job 结果。E2E 已具备临时离线数据与托管服务，可稳定迁入 CI；当前暂不纳入，以免基础前端 Job 为浏览器测试额外安装 Python agent 依赖与 Chromium。Linux CI 的浏览器实际运行仍未验收。
 
 ![实际工作台](screenshots/workbench-desktop.png)
 
@@ -109,9 +111,9 @@ npm run schema
 
 ## 后续扩展点（尚未实现）
 
-- **OpenAPI 候选发现**：在现有 ContractSummary 之后接只读候选列表，显示依据和待审缺口，不自动批准或执行负例。
+- **OpenAPI 候选发现**：CLI 核心已实现，见 [候选发现](candidate-discovery.md)。前端只读列表仍为后续集成，不能从浏览器接受可信 Policy 或执行负例。
 - **Agent Eval**：另建新版本套件与独立指标接口，区分 requested/attempted、固定计划/Fake/真实模型；不从运行页 PASS 比例推算历史成绩。
 - **RAG**：未来只能作为提供可追溯参考的独立候选信息源，不成为授权、断言或意图门禁的信任根。
 - **Observability**：RunReport 以后增加真实节点/端到端耗时和业务/调查分别计数后，前端再显示图表；不根据请求耗时相加伪造节点或端到端耗时。
 
-下一准确里程碑仍为工程升级记录中的**纯离线 OpenAPI 候选发现 MVP**。任何 Web 执行或真实任务接入都另立授权与安全验收里程碑。
+纯离线 OpenAPI 候选发现 MVP 已实现；下一准确里程碑为独立 C 系列 Agent Eval v2 的标签设计、审阅与冻结，尚不启动真实模型评测。任何 Web 执行或真实任务接入都另立授权与安全验收里程碑。

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "list_v1",
+    "operation_id": "listResources",
+    "roles": [null],
+    "business_scenario": "default",
+    "assertions": {
+      "reviewed": true,
+      "source": "Synthetic operator approval for offline discovery regression",
+      "status": {"codes": [200]}
+    },
+    "binding_rules": [
+      {"location": "query", "name": "limit", "literal_schema": {"type": "integer", "minimum": 2, "maximum": 5}},
+      {"location": "query", "name": "label", "literal_schema": {"type": "string", "minLength": 2, "maxLength": 4}}
+    ]
+  }
+]

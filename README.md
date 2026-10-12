@@ -8,6 +8,14 @@
 
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
+**新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
+
+```powershell
+.\.venv\Scripts\python.exe -m agenttest discover --contract tests/fixtures/discovery/openapi-3.1.yaml --policies tests/fixtures/discovery/policies.json --target tests/fixtures/discovery/target.json --exclude-operation excludedOp --output runs/discovery/example.discovery.json
+```
+
+示例实际发现 19 项（正常 7、静态负例 11、未支持待审 1），Operation 1/2、Scenario 8/9；执行数、模型与 HTTP 调用均为 0。输出必须是新的 `.discovery.json` 文件。候选数量与静态覆盖不代表缺陷检出率。
+
 ```powershell
 # 根目录：先生成隔离离线报告，使用现有 .venv 与 agent/mcp 可选依赖
 .\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/web-console
@@ -219,8 +227,10 @@ docs/                                # 各阶段原始评测与技术说明
 
 [面试技术说明](docs/project-technical-summary.md) · [进度和各模块 SHA](docs/progress.md) · [2A 原始首次结果](docs/stage2a-evaluation.md) · [2A 第二轮结果](docs/stage2a-round2-evaluation.md) · [阶段 4 数据与方法](docs/stage4-evaluation.md)
 
-最终代码四组 CI 已通过：完整 agent **561 项**，base **436 通过 / 15 可选跳过**；本轮新增 52 项，原有 31 个测试文件保留。[验收统计](docs/delivery-results.json)。
+阶段 4A–5 冻结代码四组 CI 已通过：完整 agent **561 项**，base **436 通过 / 15 可选跳过**；当时新增 52 项，原有 31 个测试文件保留。[历史验收统计](docs/delivery-results.json)。后续 Web / 候选发现的当前验收见 [进度](docs/progress.md)，不将历史 CI 冒充新代码结果。
 
 Windows/Linux × base/agent 四组 Actions 保留；pytest、Ruff、pip check、真实回环 HTTP、Fake 自然语言/调查和 MCP stdio 自动验证。CI **不调用学校模型、Docker 或真实 Java 写入**。本机完整结果与最终 CI 在进度文档记录；仅基础安装会明确跳过可选 Agent/MCP 测试。
+
+独立 Web Actions 固定 Node 22 主版本，使用 package-lock 执行 npm ci、typecheck、test、build。浏览器 E2E 暂为本地验收：`cd web` 后 `npm run test:e2e` 会自动生成一次性离线报告并启动回环服务，不依赖用户历史 runs；需要 agent 可选依赖及本机 Edge/Playwright Chromium。新增 CI 的远端结果以本轮提交后的 Actions 为准，尚未验收。
 
 当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；无 RAG、多 Agent、Kubernetes 或新数据库。新增轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。

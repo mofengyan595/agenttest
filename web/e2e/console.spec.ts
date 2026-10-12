@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
 
-const shots = path.resolve("../docs/screenshots");
+const shots = path.resolve("test-results/screenshots");
 test("real API: draft, import, history, evidence and responsive layouts", async ({
   page,
   request,
@@ -43,6 +43,26 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
     path: path.join(shots, "history-desktop.png"),
     fullPage: true,
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".run-cards")).toBeVisible();
+  await expect(page.locator(".run-table")).toBeHidden();
+  await expect(page.locator(".run-card")).toHaveCount(catalog.total);
+  await expect(
+    page
+      .locator(".run-card")
+      .first()
+      .getByText(/PASS|ASSERTION_FAILED/),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+  await page.screenshot({
+    path: path.join(shots, "history-390.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1080 });
   await page
     .getByLabel("结果", { exact: true })
     .selectOption("ASSERTION_FAILED");

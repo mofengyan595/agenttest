@@ -1,69 +1,43 @@
 import type { RunReport } from "../api/types";
-import { Check, CircleDashed } from "lucide-react";
+import { Check, CircleDashed, Eye, X } from "lucide-react";
+import { evidenceLabels, workflowStages } from "../workflowStatus";
 import { Badge } from "./ui";
 export function WorkflowEvidence({ run }: { run: RunReport }) {
   const nodes = run.workflow_nodes || [];
-  const stages = [
-    {
-      title: "用户目标",
-      evidence: run.user_task_sha256
-        ? "已记录目标摘要"
-        : run.task_mode === "operator_plan"
-          ? "操作员固定计划"
-          : "未记录目标",
-      seen: !!run.user_task_sha256 || run.task_mode === "operator_plan",
-    },
-    {
-      title: "Planner",
-      evidence: nodes.includes("plan") ? "plan 节点已进入" : "未记录规划节点",
-      seen: nodes.includes("plan"),
-    },
-    {
-      title: "Validator",
-      evidence: nodes.includes("validate")
-        ? "validate 节点已进入"
-        : "未记录校验节点",
-      seen: nodes.includes("validate"),
-    },
-    {
-      title: "Executor",
-      evidence: nodes.includes("execute")
-        ? "execute 节点已进入"
-        : run.steps?.length
-          ? "存在步骤证据"
-          : "未记录执行",
-      seen: nodes.includes("execute") || !!run.steps?.length,
-    },
-    {
-      title: "Verifier",
-      evidence: run.steps?.some((s) => s.checks?.length)
-        ? "存在断言检查证据"
-        : "未记录检查证据",
-      seen: !!run.steps?.some((s) => s.checks?.length),
-    },
-    { title: "Report", evidence: "当前报告已可读取", seen: true },
-  ];
+  const stages = workflowStages(run);
+  const icons = {
+    success: Check,
+    failed: X,
+    observed: Eye,
+    unknown: CircleDashed,
+  };
   return (
     <>
       <div className="flow">
-        {stages.map((stage, i) => (
-          <div key={stage.title} className={stage.seen ? "observed" : ""}>
-            <div className="flow-icon">
-              {stage.seen ? <Check size={17} /> : <CircleDashed size={17} />}
+        {stages.map((stage, i) => {
+          const Icon = icons[stage.state];
+          return (
+            <div key={stage.title} className={`flow-${stage.state}`}>
+              <div className="flow-icon">
+                <Icon size={17} aria-hidden="true" />
+              </div>
+              <strong>{stage.title}</strong>
+              <small className="flow-state">
+                {evidenceLabels[stage.state]}
+              </small>
+              <small>{stage.evidence}</small>
+              {i < 5 && (
+                <span className="flow-arrow" aria-hidden="true">
+                  →
+                </span>
+              )}
             </div>
-            <strong>{stage.title}</strong>
-            <small>{stage.evidence}</small>
-            {i < 5 && (
-              <span className="flow-arrow" aria-hidden="true">
-                →
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
       <p className="caption">
-        流程图表示已记录的节点或证据存在，进入节点不等于校验成功。Verifier
-        在执行器内部进行。
+        眼睛表示已进入 / 已观测，不表示成功；缺少证据统一显示未执行 /
+        未记录。Verifier 在执行器内部进行。NEEDS_REVIEW 不作为 HTTP 失败。
       </p>
       <div className="node-list">
         <span>实际 Workflow 节点</span>
