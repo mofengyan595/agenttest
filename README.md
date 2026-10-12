@@ -10,6 +10,13 @@
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
 
+**Agent Eval v2**：独立 Schema、确定性意图评分、完整分母、配对缺陷、来源与冻结审计，以及 Candidate Discovery A/B。27 个 C 系列草案全部待人工审核，默认只做离线开发验证；不改历史 T/B 成绩。[设计、评分公式、CLI 与实验边界](docs/agent-eval-v2.md)。
+
+```powershell
+.\.venv\Scripts\python.exe scripts/evaluate_v2.py validate
+.\.venv\Scripts\python.exe scripts/evaluate_v2.py run --development --source manual --output runs/eval-v2-manual
+```
+
 最新[审查整改与回归记录](docs/review-remediation.md)：报告单写者/版本冲突与路径防护、13 条隔离分页 E2E、本地 API 边界、历史数值二次脱敏及发现器边界。服务仅允许回环部署，禁用代理头；公开统计字段需要操作员独立指定可信策略文件，不能信任报告自报公开资格。
 
 ```powershell

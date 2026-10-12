@@ -1,0 +1,17 @@
+{
+  "default": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "message": {
+          "content": "{\"name\": \"fixed offline response\", \"steps\": [{\"id\": \"auth\", \"operation_id\": \"login\", \"role\": \"alice\", \"policy_id\": \"nl_login_v1\", \"arguments\": []}, {\"id\": \"new\", \"operation_id\": \"createCourse\", \"role\": \"alice\", \"policy_id\": \"nl_create_v1\", \"arguments\": [{\"location\": \"body\", \"name\": \"name\", \"value\": \"晴川研讨\", \"from_step\": null, \"select\": null}]}, {\"id\": \"read\", \"operation_id\": \"getCourse\", \"role\": \"alice\", \"policy_id\": \"nl_read_v1\", \"arguments\": [{\"location\": \"path_parameters\", \"name\": \"courseId\", \"value\": null, \"from_step\": \"new\", \"select\": \"$.courseId\"}]}]}"
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 120,
+      "completion_tokens": 80,
+      "total_tokens": 200
+    }
+  }
+}

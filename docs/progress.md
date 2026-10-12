@@ -1,5 +1,36 @@
 # 开发进度
 
+## Agent Eval v2：独立评测基础设施（2026-10-12）
+
+本轮开始工作区干净，本地和远端 master 为 `cd585ed9776913d41c5284d6e22a90dc4ce717a7`，MCP 短路径修复已提交。经 GitHub 专用能力读取该 SHA 的全部 push Actions 和六个 Job： [Python 38232681285](https://github.com/mofengyan595/agenttest/actions/runs/38232681285) 的 Windows/Linux × Base/Agent 全成功（含双平台 MCP stdio/all showcase），[Web 38232681172](https://github.com/mofengyan595/agenttest/actions/runs/38232681172) 的双平台 typecheck/Vitest/build/E2E 全成功。前置门禁已完成，没有以旧 `601b11b` 的成绩替代。
+
+新增 `src/agenttest/eval_v2/`、`scripts/evaluate_v2.py`、`examples/eval-v2/`、两份专项测试及[完整说明](agent-eval-v2.md)。公开任务/隐藏标签严格分型，确定性 Rubric 独立核验 Operation/Role/Policy/参数值/依赖/Selector/顺序/子目标/额外步骤；合法计划保存无原文参数的结构证据，可离线 rescore。预算/配置未执行逐行保留，空分母为 null；端到端必须完整 Workflow、任务满足及全部步骤请求/可信 PASS。来源跟随实际传输，未知 usage 停止后续调用；新目录/文件独占创建，冻结任务/标签/契约/策略/Prompt/候选/模型/预算/代码内容与环境。
+
+C 系列版本 `c-development-0.1.0`：**27 个 UNREVIEWED AI 开发草案、0 人工审核**；8 个当前受控 mini 执行、8 个安全拒绝、11 个未来能力/fixture/review。与旧 T/B 共享的受控模板明确声明，不作为独立泛化集。正式模式拒绝默认草案，真实入口要求独立人工留出集、干净已提交代码及明确模型/endpoint/预算授权。本轮模型收费调用、真实 Java 请求、数据库写入均 **0**；未创建分支，没有新依赖、前端或公共 API Schema 变化。开发验收阶段未提交或推送，后续用户已明确授权提交与推送，实际状态以 Git 记录为准。
+
+阶段检查：初版专项 **68 passed**；补齐配对审计/预算后，Agent 全量 **823 passed / 13 skipped / 387.94s**、独立 Base 全量 **653 passed / 30 skipped / 1 warning / 187.16s**。交付前补齐脱敏结构证据和 rescore 后，最终专项 **74 passed / 58.36s**，最终全量及 CLI 实测如下。
+
+| 最终实际命令 / 检查 | 结果 |
+| --- | --- |
+| `.venv/Scripts/python.exe -m pytest -q --basetemp runs/eval-v2-final-full-agent -rs` | **824 passed、13 skipped / 385.65s**；日志 `runs/eval-v2-final-pytest-agent.txt`。10 项 Windows symlink 权限、3 项 POSIX 专项；junction/短路径回归实际通过 |
+| `runs/review-windows-base/.venv/Scripts/python.exe -m pytest -q --basetemp runs/eval-v2-final-full-base -rs` | **654 passed、30 skipped、1 warning / 179.02s**；日志 `runs/eval-v2-final-pytest-base.txt`。无 LangGraph/MCP；可选图/SDK 集成与上述平台项跳过；警告为既有 Starlette TestClient 弃用提醒 |
+| `.venv/Scripts/python.exe -m ruff check .`；主 Agent / 独立 Base `-m pip check` | **All checks passed! / No broken requirements found.** |
+| `.venv/Scripts/python.exe -m agenttest showcase --case all --runs-dir runs/eval-v2-final-showcase` | 五项 **verified=true**，原故障/调查仍 ASSERTION_FAILED，MCP cached_without_replay；学校/真实 Java 请求 0；输出 `runs/eval-v2-showcase.json` |
+| `scripts/evaluate_v2.py validate`；`contexts` | 27 个草案、人工审核 0；A/B context 构造零模型/业务请求 |
+| `run --development --source manual` | requested=27 / attempted=16 / executed=8；合法计划、独立意图、端到端各 8/8；8 个拒绝，11 个 future；5 个 Case/机制对全部目标检出、正常对照全部 PASS；28 原始 + 37 配对 = 65 个进程内请求 |
+| `run --development --source fake`，A/B 各一次 | 合法计划各 8/8，但意图/端到端各 **1/8**；7 个 INTENT_MISMATCH 未执行；8 个 safety_gate 拒绝；5 个机制 NOT_EXECUTED，执行 FP/FN 分母为 0、rate=null |
+| `run --development --source mock_transport`，A/B 各一次 | 同上规划分类；每组 16 次模拟 API 请求，合成 usage=3200，真实调用 0；不能称作真实成本/性能 |
+| `compare`：Fake、Mock 各一对 | 冻结身份/预算/权限相同，分类未变化；统计显著性 NOT_ESTABLISHED，不声称候选真实增益 |
+| `rescore` 及独立归档核对 | 人工 8 个、Fake-A / Mock-B 各 16 个有效计划的结构重评分，与原分类/意图/端到端完全一致；零模型/HTTP，不修改原结果 |
+| 正式审核、零预算、覆盖目录、real 未 opt-in 四种 CLI 门禁 | 退出码依次 **2 / 1 / 2 / 2**；预算支持任务仍 0/8、条件分母为 0；真实阻断未创建运行目录 |
+| `git diff --check` 与范围核对 | 通过。旧评测/冻结引擎、Executor/Policy/Vault/Workflow/Intent/Planner/Discovery/Report、T/B 原始数据/成绩、依赖锁及 CI 均无改动 |
+
+最终 CLI 及归档产物位于忽略目录 `runs/eval-v2-final-delivery-20261012/`，包含各来源/变体的冻结、逐 Case 结构证据、报告、配对、JSON/Markdown、A/B 比较与重评分；不覆盖初轮目录。开发验证中所有 source 的真实 API 调用均 0。没有修改前端或公共 FastAPI Schema，故本轮不重复 Web 测试；前置 Web CI 的六个相关步骤均已核实成功。**以上为提交前的本地验收记录；v2 的 Linux/远端 CI 必须核对新提交 SHA，不能把基线绿色矩阵称作 v2 的跨平台验收。**
+
+首次沙箱异步验证被 Windows 标准库内部 socketpair 阻塞，faulthandler 堆栈确认停在 socket.accept → _fallback_socketpair → Proactor 初始化，尚未进入评测逻辑。经工具审查许可在沙箱外执行离线异步测试和 showcase，原禁止 DNS/网络连接夹具不变，没有关闭安全检查、变更依赖或重试真实请求。非异步 Schema/评分测试可在沙箱内通过。
+
+当前可计算：开发集中的计划/独立意图/端到端/拒绝分类、完整分母、配对机制覆盖、实际本地观测。尚不可计算正式独立模型成绩、真实 Token/模型性能、候选发现真实增益；n<20 的 P50/P95 保持 null。下一准确里程碑：独立人员另行采样、逐条审核并冻结少量支持/拒绝留出任务，固定同模型/Prompt/权限与双组预算，获得明确收费模型授权后才做 A/B；不增加 Java 写入或异步规划能力。
+
 ## Windows MCP stdio 路径兼容整改（2026-10-12）
 
 本轮基线 HEAD 为 `601b11bd3ad864dbc4e9b9672b8d41ddf442bffa`，初始工作区干净。用户要求检查该提交的全部 Actions、复现并最小修复 Windows MCP smoke；整改验收阶段未创建分支、提交或推送，后续用户已明确授权提交与推送，实际状态以 Git 记录为准。未开发新功能。

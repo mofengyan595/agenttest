@@ -1,0 +1,36 @@
+{
+  "default": {
+    "name": "fixed offline response",
+    "steps": [
+      {
+        "id": "auth",
+        "operation_id": "login",
+        "role": "alice",
+        "policy_id": "nl_login_v1"
+      },
+      {
+        "id": "new",
+        "operation_id": "createCourse",
+        "role": "alice",
+        "policy_id": "nl_create_v1",
+        "body": {
+          "name": {
+            "value": "晴川研讨"
+          }
+        }
+      },
+      {
+        "id": "read",
+        "operation_id": "getCourse",
+        "role": "alice",
+        "policy_id": "nl_read_v1",
+        "path_parameters": {
+          "courseId": {
+            "from_step": "new",
+            "select": "$.courseId"
+          }
+        }
+      }
+    ]
+  }
+}
