@@ -1,0 +1,49 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "same_frozen_model_and_protocol": true,
+  "repeat_vector_max_absolute_difference": 0.0,
+  "repeat_ranks_metrics_costs_identical": true,
+  "request_packages_byte_identical": 48,
+  "source_citations_verified": 27,
+  "first_preflight": {
+    "outcome": "STOPPED_BEFORE_INFERENCE",
+    "reason": "str.splitlines treated vocabulary U+2028 as a record boundary; fixed to literal LF splitting before any C scores existed",
+    "protocol_sha256": "88dcdfd8c1e3a6b490e4882b42ecfbf2c04a48f69b8260ddf181ad3b72a77184",
+    "scored_results": false
+  },
+  "truncated_documents": [
+    "ci.csv.code",
+    "ci.csv.tests",
+    "ci.batch.routes",
+    "ci.analysis.doc",
+    "mini.batch.source",
+    "mini.batch.rules",
+    "mini.fault.tests",
+    "mini.fault.history"
+  ],
+  "tokenizer": {
+    "native_parity_verified": false,
+    "encoded_document_tokens": 8814,
+    "encoded_document_UNK_tokens": 1150,
+    "encoded_query_tokens_including_DEMO_ONLY": 815,
+    "encoded_query_UNK_tokens_including_DEMO_ONLY": 22
+  },
+  "model_asset_bytes": 24561772,
+  "inference_ms": {
+    "first_documents": 1062.759,
+    "first_queries_including_DEMO_ONLY": 82.854,
+    "repeat_total": 1190.838
+  },
+  "estimated_tokens_sum_utf8_div4": {
+    "A": 18073,
+    "B3": 33531,
+    "B5": 45708,
+    "C3": 33926,
+    "C5": 46509
+  },
+  "C_stale_control_probe": "NOT_RUN; main twelve questions returned zero stale docs; metadata exclusion tested separately",
+  "LLM_API_calls": 0,
+  "java_requests": 0,
+  "database_writes": 0
+}

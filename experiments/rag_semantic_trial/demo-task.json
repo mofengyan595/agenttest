@@ -1,0 +1,6 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "purpose": "Existing approved mini batch replay; excluded from the twelve retrieval questions",
+  "user_task": "alice 登录后创建课程“批量分析验收”，使用批准的两行 CSV fixture mini_two_rows_v1 创建批处理任务，使用创建响应中的 courseId 和 batchId，有界轮询直到 SUCCEEDED，读取结果并验证条数为 2。"
+}

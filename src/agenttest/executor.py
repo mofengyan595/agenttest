@@ -182,6 +182,24 @@ class Executor:
 
                     await investigate(self, client, scenario, report, state, vault, authenticated,
                                       last_request=budget["last_request"])
+        except asyncio.CancelledError:
+            if report.investigations:
+                report.investigation_error = "RUN_CANCELLED"
+            elif not report.completed:
+                if report.steps:
+                    result = report.steps[-1]
+                    result.outcome = Outcome.TEST_INFRA_ERROR
+                    result.reason = ("ATTEMPT_OUTCOME_UNKNOWN" if result.attempts
+                                     and result.attempts[-1].error_code == "ATTEMPT_OUTCOME_UNKNOWN"
+                                     else "RUN_CANCELLED")
+                report.outcome, report.reason = Outcome.TEST_INFRA_ERROR, "RUN_CANCELLED"
+            report.completed = True
+            try:
+                self.store.save(report)
+            except OSError:
+                # Best-effort journaling must not replace the caller's cancellation.
+                pass
+            raise
         except TimeoutError:
             if report.steps:
                 report.steps[-1].outcome = Outcome.TEST_INFRA_ERROR

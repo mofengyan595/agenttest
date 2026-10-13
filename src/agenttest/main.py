@@ -1,6 +1,9 @@
 """Local contract import and read-only run queries. Execution is operator-owned CLI."""
 
+import asyncio
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Literal
 
@@ -11,6 +14,11 @@ from agenttest.local_access import DEFAULT_ORIGINS, LocalAccessMiddleware
 from agenttest.policies import PolicyRegistry
 from agenttest.report import Outcome, ReportStore, RunReport
 from agenttest.report_queries import CatalogLimit, RunPage, list_runs, public_report
+
+MAX_CONCURRENT_IMPORTS = 2
+_IMPORT_WORKERS = ThreadPoolExecutor(max_workers=MAX_CONCURRENT_IMPORTS,
+                                     thread_name_prefix="agenttest-contract")
+_IMPORT_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENT_IMPORTS)
 
 
 def create_app(runs_dir: Path = Path("runs"), *,
@@ -30,16 +38,26 @@ def create_app(runs_dir: Path = Path("runs"), *,
         content_type = request.headers.get("content-type", "").split(";")[0]
         if content_type not in {"application/json", "application/yaml", "text/yaml", "text/plain"}:
             raise HTTPException(415, "Use JSON or YAML")
-        raw = bytearray()
-        async for chunk in request.stream():
-            raw.extend(chunk)
-            if len(raw) > MAX_DOCUMENT_BYTES:
-                raise HTTPException(413, "Contract exceeds size limit")
+        if not _IMPORT_SLOTS.acquire(blocking=False):
+            raise HTTPException(429, "Too many contract imports", headers={"Retry-After": "1"})
+        pending = None
         try:
-            return load_openapi(bytes(raw), unwrap=True)
+            raw = bytearray()
+            async for chunk in request.stream():
+                if len(raw) + len(chunk) > MAX_DOCUMENT_BYTES:
+                    raise HTTPException(413, "Contract exceeds size limit")
+                raw.extend(chunk)
+            pending = _IMPORT_WORKERS.submit(load_openapi, bytes(raw), unwrap=True)
+            # A running parser cannot be cancelled. Its actual completion owns the slot,
+            # even if the awaiting request is cancelled or its event loop closes.
+            pending.add_done_callback(lambda completed: _IMPORT_SLOTS.release())
+            return await asyncio.wrap_future(pending)
         except (ValueError, TypeError, RecursionError):
             # Never echo the untrusted document (which may contain credentials).
             raise HTTPException(422, "Invalid or unsupported OpenAPI contract") from None
+        finally:
+            if pending is None:
+                _IMPORT_SLOTS.release()
 
     @app.get("/api/runs", response_model=RunPage)
     def run_list(limit: int = Query(20, ge=1, le=100),

@@ -1,0 +1,2 @@
+# Preserve exact experiment code/protocol bytes without changing repository defaults.
+* -text

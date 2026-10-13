@@ -1,0 +1,2915 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_holdout": false,
+  "same_corpus_and_tasks": true,
+  "BM25_matches_archived_results": true,
+  "summary": {
+    "B": {
+      "raw": {
+        "3": {
+          "macro_recall": 0.3333333333333333,
+          "returned": 36,
+          "unrelated": 27,
+          "cross_system": 12,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 6
+        },
+        "5": {
+          "macro_recall": 0.3333333333333333,
+          "returned": 60,
+          "unrelated": 51,
+          "cross_system": 24,
+          "stale": 0,
+          "private": 2,
+          "conflict_fixture": 11
+        }
+      },
+      "scoped": {
+        "3": {
+          "macro_recall": 0.375,
+          "returned": 36,
+          "unrelated": 26,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 7
+        },
+        "5": {
+          "macro_recall": 0.6388888888888888,
+          "returned": 58,
+          "unrelated": 41,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 7
+        }
+      }
+    },
+    "C": {
+      "raw": {
+        "3": {
+          "macro_recall": 0.34722222222222215,
+          "returned": 36,
+          "unrelated": 27,
+          "cross_system": 11,
+          "stale": 0,
+          "private": 3,
+          "conflict_fixture": 11
+        },
+        "5": {
+          "macro_recall": 0.4166666666666666,
+          "returned": 60,
+          "unrelated": 49,
+          "cross_system": 21,
+          "stale": 0,
+          "private": 6,
+          "conflict_fixture": 17
+        }
+      },
+      "scoped": {
+        "3": {
+          "macro_recall": 0.4166666666666666,
+          "returned": 36,
+          "unrelated": 25,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 6
+        },
+        "5": {
+          "macro_recall": 0.5555555555555555,
+          "returned": 60,
+          "unrelated": 45,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 7
+        }
+      }
+    }
+  },
+  "delivered_recall": {
+    "B3": 0.3333333333333333,
+    "B5": 0.5277777777777778,
+    "C3": 0.37499999999999994,
+    "C5": 0.5138888888888888
+  },
+  "request_bytes": {
+    "A": 72270,
+    "B3": 134102,
+    "B5": 182819,
+    "C3": 135690,
+    "C5": 186018
+  },
+  "embedding": {
+    "backend": "REAL_LOCAL_ONNX_CPU",
+    "runtime": {
+      "python": "3.13.12",
+      "onnxruntime": "1.20.1",
+      "numpy": "2.4.6",
+      "providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    "sequences": 40,
+    "weight_sha256": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc",
+    "revision": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+    "truncated_documents": [
+      "ci.csv.code",
+      "ci.csv.tests",
+      "ci.batch.routes",
+      "ci.analysis.doc",
+      "mini.batch.source",
+      "mini.batch.rules",
+      "mini.fault.tests",
+      "mini.fault.history"
+    ],
+    "encoding_ms_total": 1145.6129999999998,
+    "model_loading_ms": 139.342
+  },
+  "protocol_sha256": "6fa4f1d4372d00ffd6624d0af0496597c2e20fef20909ac4402931da112de865",
+  "vector_cache_sha256": "e8df0ccb6af38571dece8f96a04766ced17414607d7d27f82e61578a1d26092b",
+  "planning_accuracy": null,
+  "real_end_to_end_success": null,
+  "LLM_API_calls": 0,
+  "java_requests": 0,
+  "database_writes": 0,
+  "rows": [
+    {
+      "id": "R01",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "ci.csv.doc",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.rules",
+              "ci.csv.doc",
+              "ci.analysis.doc",
+              "ci.progress.doc",
+              "negative.conflicting-current"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "negative.private-note"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "negative.private-note",
+              "negative.conflicting-current",
+              "ci.analysis.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "ci.progress.doc",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.csv.tests",
+              "ci.csv.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.task.code"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 9604,
+          "estimated_tokens_utf8_div4": 2401,
+          "conservative_token_upper_bound": 10116,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "766704d4bd92aa46b999ad2636f66b61f459b27a7494b39e47eaac6e8422db4d"
+        },
+        "B5": {
+          "request_bytes": 12627,
+          "estimated_tokens_utf8_div4": 3157,
+          "conservative_token_upper_bound": 13139,
+          "measured_tokens": null,
+          "omitted": [
+            "ci.csv.code"
+          ],
+          "context_sha256": "81f47dc8044ef3d3eca968bc251507557d7541e643134413d42b5f7347cbb671"
+        },
+        "C3": {
+          "request_bytes": 9604,
+          "estimated_tokens_utf8_div4": 2401,
+          "conservative_token_upper_bound": 10116,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "aff6ab1a02056b11f6b34ce2b72c0178f65d69cbea78a7ce2f7ab2a4ee1ed5cf"
+        },
+        "C5": {
+          "request_bytes": 13621,
+          "estimated_tokens_utf8_div4": 3406,
+          "conservative_token_upper_bound": 14133,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "a7a3f9afe4099ac3575c841141245aad3f3f8da85193e2ab42e546bbe3d4a805"
+        },
+        "A": {
+          "request_bytes": 4722,
+          "estimated_tokens_utf8_div4": 1181,
+          "conservative_token_upper_bound": 5234,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.csv.tests"
+          ],
+          "recall": 0.5
+        },
+        "C3": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "negative.conflicting-current"
+          ],
+          "recall": 0.0
+        },
+        "C5": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.task.code"
+          ],
+          "recall": 0.0
+        }
+      }
+    },
+    {
+      "id": "R02",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "mini.batch.doc"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "negative.private-note",
+              "mini.batch.doc"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "ci.analysis.code",
+              "ci.retry.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "ci.task.code",
+              "ci.analysis.code"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 9624,
+          "estimated_tokens_utf8_div4": 2406,
+          "conservative_token_upper_bound": 10136,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "637a2b85d47949a87183035274bfdd7ef9f1e204d7202ede2da83d198f627cd2"
+        },
+        "B5": {
+          "request_bytes": 14822,
+          "estimated_tokens_utf8_div4": 3706,
+          "conservative_token_upper_bound": 15334,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "ae6fde47c6179c590b1528c191e201adf2fb1194d423bb6e11de070d746ce6b2"
+        },
+        "C3": {
+          "request_bytes": 9624,
+          "estimated_tokens_utf8_div4": 2406,
+          "conservative_token_upper_bound": 10136,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "637a2b85d47949a87183035274bfdd7ef9f1e204d7202ede2da83d198f627cd2"
+        },
+        "C5": {
+          "request_bytes": 13641,
+          "estimated_tokens_utf8_div4": 3411,
+          "conservative_token_upper_bound": 14153,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "49db5277068a533ff44c05bb64729e2474921832968d188c9e9fc36e90ab4bba"
+        },
+        "A": {
+          "request_bytes": 4742,
+          "estimated_tokens_utf8_div4": 1186,
+          "conservative_token_upper_bound": 5254,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.retry.code"
+          ],
+          "recall": 0.5
+        },
+        "C3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.5
+        },
+        "C5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.task.code",
+            "ci.analysis.code"
+          ],
+          "recall": 0.5
+        }
+      }
+    },
+    {
+      "id": "R03",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "ci.analysis.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.progress.doc",
+              "ci.task.code"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.progress.doc",
+              "ci.task.code",
+              "mini.batch.rules",
+              "ci.analysis.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "ci.analysis.code",
+              "ci.task.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.progress.doc",
+              "ci.task.code"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.progress.doc",
+              "ci.task.code",
+              "ci.analysis.code",
+              "ci.analysis.doc"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 9619,
+          "estimated_tokens_utf8_div4": 2405,
+          "conservative_token_upper_bound": 10131,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "5d950173b4caad88fcf636c579d911b16ed9e92631c1c075005b1f58ed45e9ee"
+        },
+        "B5": {
+          "request_bytes": 13636,
+          "estimated_tokens_utf8_div4": 3409,
+          "conservative_token_upper_bound": 14148,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "abfba66e755820d97d62aae4b33354169e386ba4da79f4bccedec93d464154d0"
+        },
+        "C3": {
+          "request_bytes": 8364,
+          "estimated_tokens_utf8_div4": 2091,
+          "conservative_token_upper_bound": 8876,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "f4dbc9290b47aa2d589d9a96789bace7c3c428e6510c6e4da0fd8b125c1be0ed"
+        },
+        "C5": {
+          "request_bytes": 13636,
+          "estimated_tokens_utf8_div4": 3409,
+          "conservative_token_upper_bound": 14148,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "e57699c09043cc9ffe238112d7ade396932ff89622dc667b63d7b503fd2960ee"
+        },
+        "A": {
+          "request_bytes": 4737,
+          "estimated_tokens_utf8_div4": 1185,
+          "conservative_token_upper_bound": 5249,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.task.code"
+          ],
+          "recall": 0.0
+        },
+        "C3": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.progress.doc",
+            "ci.task.code"
+          ],
+          "recall": 0.0
+        },
+        "C5": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.progress.doc",
+            "ci.task.code",
+            "ci.analysis.code",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.0
+        }
+      }
+    },
+    {
+      "id": "R04",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.csv.doc",
+              "mini.batch.rules"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 1,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "negative.private-note"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.csv.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 1,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.retry.tests"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 11034,
+          "estimated_tokens_utf8_div4": 2759,
+          "conservative_token_upper_bound": 11546,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "3c2550db11c52e653541f5abbf880c99a625e64d3dd11b2079e6f1cd7bae0baf"
+        },
+        "B5": {
+          "request_bytes": 12734,
+          "estimated_tokens_utf8_div4": 3184,
+          "conservative_token_upper_bound": 13246,
+          "measured_tokens": null,
+          "omitted": [
+            "ci.csv.code"
+          ],
+          "context_sha256": "b6127fe856f4c63393b6f75eef3e36ce48fe37eb28215fd051a2ff924320e01e"
+        },
+        "C3": {
+          "request_bytes": 11750,
+          "estimated_tokens_utf8_div4": 2938,
+          "conservative_token_upper_bound": 12262,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "c442d41cddbec0802915768019c5fbfbfbab10fd18834b5ca8d3feefca043d32"
+        },
+        "C5": {
+          "request_bytes": 15468,
+          "estimated_tokens_utf8_div4": 3867,
+          "conservative_token_upper_bound": 15980,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "4ec53c2f12979b088e35a9c48cf2fbf92b5b2571510b989858113d4857fc56a5"
+        },
+        "A": {
+          "request_bytes": 4755,
+          "estimated_tokens_utf8_div4": 1189,
+          "conservative_token_upper_bound": 5267,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.task.code"
+          ],
+          "recall": 1.0
+        },
+        "C3": {
+          "ids": [
+            "ci.analysis.code",
+            "ci.task.code",
+            "ci.analysis.doc"
+          ],
+          "recall": 1.0
+        },
+        "C5": {
+          "ids": [
+            "ci.analysis.code",
+            "ci.task.code",
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.retry.tests"
+          ],
+          "recall": 1.0
+        }
+      }
+    },
+    {
+      "id": "R05",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "ci.analysis.doc"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.doc",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current",
+              "ci.retry.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "ci.retry.code",
+              "ci.task.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 1,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.retry.code"
+            ]
+          },
+          "5": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.retry.code",
+              "ci.progress.mapper",
+              "ci.task.code"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 9609,
+          "estimated_tokens_utf8_div4": 2403,
+          "conservative_token_upper_bound": 10121,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "5cf8ecfdfe674ca44cd9cfdd60f543620f07c37afb36d519867a1b8298ef958b"
+        },
+        "B5": {
+          "request_bytes": 14190,
+          "estimated_tokens_utf8_div4": 3548,
+          "conservative_token_upper_bound": 14702,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "ec1906f6617ee924a2088ae68157876e154a7f648a90df9b92c2d8582957ea62"
+        },
+        "C3": {
+          "request_bytes": 9535,
+          "estimated_tokens_utf8_div4": 2384,
+          "conservative_token_upper_bound": 10047,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "e7804465a9dc9b842b8b124a2fe314ddf371ab96374824a43bf6e4bac5a8c6ee"
+        },
+        "C5": {
+          "request_bytes": 13311,
+          "estimated_tokens_utf8_div4": 3328,
+          "conservative_token_upper_bound": 13823,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "d0d51f39da5ed1bde4e9fdee99456ba9adfd92225bb215e05b0dabdfa27d0bb5"
+        },
+        "A": {
+          "request_bytes": 4727,
+          "estimated_tokens_utf8_div4": 1182,
+          "conservative_token_upper_bound": 5239,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.3333333333333333
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.task.code"
+          ],
+          "recall": 0.6666666666666666
+        },
+        "C3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.retry.code"
+          ],
+          "recall": 0.6666666666666666
+        },
+        "C5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.retry.code",
+            "ci.progress.mapper",
+            "ci.task.code"
+          ],
+          "recall": 0.6666666666666666
+        }
+      }
+    },
+    {
+      "id": "R06",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.analysis.doc",
+              "mini.batch.rules",
+              "ci.csv.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.analysis.doc",
+              "mini.batch.rules",
+              "ci.csv.doc",
+              "mini.batch.doc",
+              "ci.analysis.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "negative.private-note",
+              "mini.batch.rules"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "ci.analysis.code",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "ci.analysis.code",
+              "negative.conflicting-current",
+              "ci.task.code",
+              "ci.csv.tests"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.analysis.doc",
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.task.code",
+              "ci.csv.tests"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 11021,
+          "estimated_tokens_utf8_div4": 2756,
+          "conservative_token_upper_bound": 11533,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "ed2c90d7b786bc49199e86e0206c3d55f02cd946fe23f04bb44496d7a1a39892"
+        },
+        "B5": {
+          "request_bytes": 15744,
+          "estimated_tokens_utf8_div4": 3936,
+          "conservative_token_upper_bound": 16256,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "8262fad76294f23c3b25dfc1b1ac5625a17ba8a51d1a562b712bae6d3ef098aa"
+        },
+        "C3": {
+          "request_bytes": 11021,
+          "estimated_tokens_utf8_div4": 2756,
+          "conservative_token_upper_bound": 11533,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "0d8eea49b24135df11ce6264b4842a2628c58f745114b347610f0339636f8360"
+        },
+        "C5": {
+          "request_bytes": 15744,
+          "estimated_tokens_utf8_div4": 3936,
+          "conservative_token_upper_bound": 16256,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "867317129e14d3a3a4573213eac7793216c799c56f34d5498a5818fe7f02ebb1"
+        },
+        "A": {
+          "request_bytes": 4742,
+          "estimated_tokens_utf8_div4": 1186,
+          "conservative_token_upper_bound": 5254,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current",
+            "ci.task.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.0
+        },
+        "C3": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code"
+          ],
+          "recall": 0.0
+        },
+        "C5": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.task.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.0
+        }
+      }
+    },
+    {
+      "id": "R07",
+      "system": "mini",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.code"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 3,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.code",
+              "mini.batch.doc",
+              "ci.csv.doc"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 4,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current",
+              "ci.batch.routes",
+              "ci.retry.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.prompt",
+              "mini.batch.source"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.prompt",
+              "mini.batch.source"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 12769,
+          "estimated_tokens_utf8_div4": 3193,
+          "conservative_token_upper_bound": 13281,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "4cd06b57328ab4731151984e3623f60f16792120ceaaa5cad0756cf7e73c6c5c"
+        },
+        "B5": {
+          "request_bytes": 17200,
+          "estimated_tokens_utf8_div4": 4300,
+          "conservative_token_upper_bound": 17712,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "335420d8ef4755ed2044bf1b214f60fa3800286716bbe44653179085b5b06885"
+        },
+        "C3": {
+          "request_bytes": 12769,
+          "estimated_tokens_utf8_div4": 3193,
+          "conservative_token_upper_bound": 13281,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "4cd06b57328ab4731151984e3623f60f16792120ceaaa5cad0756cf7e73c6c5c"
+        },
+        "C5": {
+          "request_bytes": 17200,
+          "estimated_tokens_utf8_div4": 4300,
+          "conservative_token_upper_bound": 17712,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "335420d8ef4755ed2044bf1b214f60fa3800286716bbe44653179085b5b06885"
+        },
+        "A": {
+          "request_bytes": 8597,
+          "estimated_tokens_utf8_div4": 2150,
+          "conservative_token_upper_bound": 9109,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ],
+          "recall": 1.0
+        },
+        "C3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "C5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ],
+          "recall": 1.0
+        }
+      }
+    },
+    {
+      "id": "R08",
+      "system": "mini",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 4,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.doc",
+              "negative.conflicting-current",
+              "negative.private-note"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "negative.private-note",
+              "negative.conflicting-current",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 4,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "negative.private-note",
+              "negative.conflicting-current",
+              "mini.batch.rules",
+              "ci.progress.doc",
+              "ci.task.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.prompt",
+              "mini.batch.source"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 2,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.rules",
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.source",
+              "mini.batch.prompt"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 12788,
+          "estimated_tokens_utf8_div4": 3197,
+          "conservative_token_upper_bound": 13300,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "0d70a820fce6bc9e0eb6d24e2120f00db88ab5862cc7555a26c3e74ebe1328bd"
+        },
+        "B5": {
+          "request_bytes": 17219,
+          "estimated_tokens_utf8_div4": 4305,
+          "conservative_token_upper_bound": 17731,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "61c602f75665c9b15fba986305237f414bd7b22e59dde997eed9552326dfa149"
+        },
+        "C3": {
+          "request_bytes": 12788,
+          "estimated_tokens_utf8_div4": 3197,
+          "conservative_token_upper_bound": 13300,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "0d70a820fce6bc9e0eb6d24e2120f00db88ab5862cc7555a26c3e74ebe1328bd"
+        },
+        "C5": {
+          "request_bytes": 17219,
+          "estimated_tokens_utf8_div4": 4305,
+          "conservative_token_upper_bound": 17731,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "c1509d647ec4089e43b220aa06a6b6fd9e30cfab865caf41c43c500d542acfd7"
+        },
+        "A": {
+          "request_bytes": 8616,
+          "estimated_tokens_utf8_div4": 2154,
+          "conservative_token_upper_bound": 9128,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ],
+          "recall": 1.0
+        },
+        "C3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "C5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.source",
+            "mini.batch.prompt"
+          ],
+          "recall": 1.0
+        }
+      }
+    },
+    {
+      "id": "R09",
+      "system": "mini",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "ci.analysis.doc",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.doc",
+              "ci.analysis.doc",
+              "mini.batch.rules",
+              "negative.conflicting-current",
+              "mini.fault.history"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.doc",
+              "ci.progress.doc",
+              "negative.conflicting-current"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 3,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.doc",
+              "ci.progress.doc",
+              "negative.conflicting-current",
+              "ci.analysis.doc",
+              "mini.batch.rules"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 4,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.fault.history",
+              "mini.batch.source"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.batch.source"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.batch.source",
+              "mini.fault.history",
+              "mini.batch.prompt"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 12758,
+          "estimated_tokens_utf8_div4": 3190,
+          "conservative_token_upper_bound": 13270,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "34234d7a5363573369415f6dc71bd813af314dc671e280b8cc9adc1dd7fb2750"
+        },
+        "B5": {
+          "request_bytes": 15675,
+          "estimated_tokens_utf8_div4": 3919,
+          "conservative_token_upper_bound": 16187,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "ece6254cd763821fcbdd35cf3009cbb9f7831527ae1e8d9a6ece521b0a3398e2"
+        },
+        "C3": {
+          "request_bytes": 15675,
+          "estimated_tokens_utf8_div4": 3919,
+          "conservative_token_upper_bound": 16187,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "ece6254cd763821fcbdd35cf3009cbb9f7831527ae1e8d9a6ece521b0a3398e2"
+        },
+        "C5": {
+          "request_bytes": 17189,
+          "estimated_tokens_utf8_div4": 4298,
+          "conservative_token_upper_bound": 17701,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "5a7b2efeaddbb1e13a79b7fc6e644a47a949ee30943a809e3e7f8cbd37b7c5fa"
+        },
+        "A": {
+          "request_bytes": 8586,
+          "estimated_tokens_utf8_div4": 2147,
+          "conservative_token_upper_bound": 9098,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source"
+          ],
+          "recall": 0.5
+        },
+        "C3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source"
+          ],
+          "recall": 0.5
+        },
+        "C5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source",
+            "mini.batch.prompt"
+          ],
+          "recall": 0.5
+        }
+      }
+    },
+    {
+      "id": "R10",
+      "system": "mini",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "mini.batch.doc",
+              "mini.batch.rules"
+            ]
+          },
+          "5": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 5,
+            "cross_system": 3,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.doc"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.0,
+            "relevant_returned": 0,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 3,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.doc",
+              "negative.conflicting-current",
+              "ci.progress.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 3,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "mini.batch.doc",
+              "negative.conflicting-current",
+              "ci.progress.doc",
+              "mini.fault.history",
+              "ci.task.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.fault.history"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 4,
+            "unrelated": 3,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.batch.rules",
+              "mini.fault.history",
+              "mini.batch.source"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.source"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "mini.batch.doc",
+              "mini.fault.history",
+              "mini.batch.source",
+              "mini.batch.rules",
+              "mini.batch.prompt"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 12758,
+          "estimated_tokens_utf8_div4": 3190,
+          "conservative_token_upper_bound": 13270,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "d965b18e1b0c892146ca8ce8cb95a6ef66455f4418bfef603d6030cbf6c0b039"
+        },
+        "B5": {
+          "request_bytes": 15675,
+          "estimated_tokens_utf8_div4": 3919,
+          "conservative_token_upper_bound": 16187,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "80e965f367eb0b7db794a670547df6ebf2466a8d35cf73d540ff8d323ff54cc8"
+        },
+        "C3": {
+          "request_bytes": 12368,
+          "estimated_tokens_utf8_div4": 3092,
+          "conservative_token_upper_bound": 12880,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "9798773ef20fcd438a80fcf38e9a55b027e011fc5454a7c4f40278c4b2b7dd82"
+        },
+        "C5": {
+          "request_bytes": 17189,
+          "estimated_tokens_utf8_div4": 4298,
+          "conservative_token_upper_bound": 17701,
+          "measured_tokens": null,
+          "omitted": [
+            "mini.fault.history"
+          ],
+          "context_sha256": "5bcda0d754085e072bd0969e0905c10b20c947dfdc8494945dba0adf331ec0fc"
+        },
+        "A": {
+          "request_bytes": 8586,
+          "estimated_tokens_utf8_div4": 2147,
+          "conservative_token_upper_bound": 9098,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source"
+          ],
+          "recall": 0.0
+        },
+        "C3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.source"
+          ],
+          "recall": 0.0
+        },
+        "C5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.source",
+            "mini.batch.rules",
+            "mini.batch.prompt"
+          ],
+          "recall": 0.0
+        }
+      }
+    },
+    {
+      "id": "R11",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 2,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.rules",
+              "ci.analysis.doc",
+              "ci.csv.doc",
+              "mini.batch.doc"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.doc",
+              "ci.batch.routes"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "mini.batch.doc",
+              "ci.batch.routes",
+              "ci.task.code",
+              "ci.progress.code"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "ci.retry.code"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "ci.analysis.doc",
+              "ci.retry.code",
+              "ci.analysis.code",
+              "ci.csv.tests"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "ci.batch.routes",
+              "ci.task.code"
+            ]
+          },
+          "5": {
+            "recall": 0.5,
+            "relevant_returned": 1,
+            "relevant_total": 2,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 0,
+            "ids": [
+              "ci.progress.doc",
+              "ci.batch.routes",
+              "ci.task.code",
+              "ci.progress.code",
+              "ci.retry.code"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 11489,
+          "estimated_tokens_utf8_div4": 2873,
+          "conservative_token_upper_bound": 12001,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "b559f7d051ee079b45bb40893275793500f416ab1e5e5bdead8ad9f4267d2d1d"
+        },
+        "B5": {
+          "request_bytes": 16829,
+          "estimated_tokens_utf8_div4": 4208,
+          "conservative_token_upper_bound": 17341,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "3e981a2d3c0fabfb53ad8379b62bf1951b9fbc8d4c69729b844de035328cd305"
+        },
+        "C3": {
+          "request_bytes": 11095,
+          "estimated_tokens_utf8_div4": 2774,
+          "conservative_token_upper_bound": 11607,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "b99bb7e2bcc71c9f16e6966e64cb7d711e99d878ea13ef0665117a58e2091322"
+        },
+        "C5": {
+          "request_bytes": 16483,
+          "estimated_tokens_utf8_div4": 4121,
+          "conservative_token_upper_bound": 16995,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "81692a6efbf2339fdaab1c85d1774a8462d597987b6fc79d48ff8e974007454e"
+        },
+        "A": {
+          "request_bytes": 4710,
+          "estimated_tokens_utf8_div4": 1178,
+          "conservative_token_upper_bound": 5222,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.analysis.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.5
+        },
+        "C3": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.batch.routes",
+            "ci.task.code"
+          ],
+          "recall": 0.5
+        },
+        "C5": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.batch.routes",
+            "ci.task.code",
+            "ci.progress.code",
+            "ci.retry.code"
+          ],
+          "recall": 0.5
+        }
+      }
+    },
+    {
+      "id": "R12",
+      "system": "courseinsight",
+      "raw": {
+        "B": {
+          "3": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 1,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 3,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.analysis.doc",
+              "mini.batch.rules",
+              "negative.private-note"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "negative.private-note"
+            ]
+          },
+          "5": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 4,
+            "cross_system": 1,
+            "stale": 0,
+            "private": 1,
+            "conflict_fixture": 2,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "negative.private-note",
+              "mini.batch.rules",
+              "ci.csv.tests"
+            ]
+          }
+        }
+      },
+      "scoped": {
+        "B": {
+          "3": {
+            "recall": 0.6666666666666666,
+            "relevant_returned": 2,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 1,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.analysis.doc"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 3,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.analysis.doc",
+              "ci.csv.code",
+              "ci.manage.code"
+            ]
+          }
+        },
+        "C": {
+          "3": {
+            "recall": 0.3333333333333333,
+            "relevant_returned": 1,
+            "relevant_total": 3,
+            "returned": 3,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.csv.tests"
+            ]
+          },
+          "5": {
+            "recall": 1.0,
+            "relevant_returned": 3,
+            "relevant_total": 3,
+            "returned": 5,
+            "unrelated": 2,
+            "cross_system": 0,
+            "stale": 0,
+            "private": 0,
+            "conflict_fixture": 1,
+            "ids": [
+              "negative.conflicting-current",
+              "ci.analysis.code",
+              "ci.csv.tests",
+              "ci.manage.code",
+              "ci.analysis.doc"
+            ]
+          }
+        }
+      },
+      "requests": {
+        "B3": {
+          "request_bytes": 11029,
+          "estimated_tokens_utf8_div4": 2758,
+          "conservative_token_upper_bound": 11541,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "0dc01403d6ef4d3c85a6b96c5656bda9f595c89dec0851b61008846054b2b0a6"
+        },
+        "B5": {
+          "request_bytes": 16468,
+          "estimated_tokens_utf8_div4": 4117,
+          "conservative_token_upper_bound": 16980,
+          "measured_tokens": null,
+          "omitted": [
+            "ci.manage.code"
+          ],
+          "context_sha256": "f9bd7e0426e67bcb3cb1dc6fa3e117877c97e9200f3e05f9d4ce93ee33b632d4"
+        },
+        "C3": {
+          "request_bytes": 11097,
+          "estimated_tokens_utf8_div4": 2775,
+          "conservative_token_upper_bound": 11609,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "f2fd2cc0d33fa692feef1c8e7c0b89c6c4c2e4b52cb1251c3ca20f1d634d0cc7"
+        },
+        "C5": {
+          "request_bytes": 15317,
+          "estimated_tokens_utf8_div4": 3830,
+          "conservative_token_upper_bound": 15829,
+          "measured_tokens": null,
+          "omitted": [],
+          "context_sha256": "1f5b4bf62bf42f14708bc5757465dc0c45c5eef97349b076aaa53f16054f79ce"
+        },
+        "A": {
+          "request_bytes": 4750,
+          "estimated_tokens_utf8_div4": 1188,
+          "conservative_token_upper_bound": 5262,
+          "measured_tokens": null
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.6666666666666666
+        },
+        "B5": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc",
+            "ci.csv.code"
+          ],
+          "recall": 0.6666666666666666
+        },
+        "C3": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.3333333333333333
+        },
+        "C5": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.csv.tests",
+            "ci.manage.code",
+            "ci.analysis.doc"
+          ],
+          "recall": 1.0
+        }
+      }
+    }
+  ]
+}

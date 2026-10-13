@@ -1,0 +1,136 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "planner": "FIXED_FAKE_PLAN",
+  "retrieval": "REAL_LOCAL_ONNX_CACHED",
+  "target": "IN_PROCESS_MINI_ASGI",
+  "planning_quality_measured": false,
+  "LLM_API_calls": 0,
+  "java_requests": 0,
+  "database_writes": 0,
+  "rows": [
+    {
+      "case": "A-none",
+      "outcome": "PASS",
+      "task_satisfied": true,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": []
+    },
+    {
+      "case": "A-terminal",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": false,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": []
+    },
+    {
+      "case": "A-result_count",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": false,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": []
+    },
+    {
+      "case": "C-none",
+      "outcome": "PASS",
+      "task_satisfied": true,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "C-terminal",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": false,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "C-result_count",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": false,
+      "workflow_completed": true,
+      "tool_calls": 1,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "reject-role",
+      "outcome": "TOOL_ERROR",
+      "task_satisfied": false,
+      "tool_calls": 0,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "reject-operation",
+      "outcome": "TOOL_ERROR",
+      "task_satisfied": false,
+      "tool_calls": 0,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "reject-assertion",
+      "outcome": "TOOL_ERROR",
+      "task_satisfied": false,
+      "tool_calls": 0,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "reject-resource",
+      "outcome": "NEEDS_REVIEW",
+      "task_satisfied": false,
+      "tool_calls": 0,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    },
+    {
+      "case": "reject-csv",
+      "outcome": "NEEDS_REVIEW",
+      "task_satisfied": false,
+      "tool_calls": 0,
+      "retrieved": [
+        "mini.batch.rules",
+        "mini.batch.prompt",
+        "mini.batch.doc",
+        "mini.batch.source"
+      ]
+    }
+  ]
+}

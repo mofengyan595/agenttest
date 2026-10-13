@@ -1,5 +1,7 @@
 # AgentTest RAG 必要性离线评估
 
+> 这是首次评估的归档记录，C = NOT_RUN 仅描述当时状态。用户随后授权的[本地语义检索补充试验](rag-semantic-trial-20261013.md)另有真实 C 成绩；原语料、问题、协议和成绩不改，默认 No-RAG 决策继续保留。
+
 日期：2026-10-13。分类：**DEVELOPMENT_ONLY / UNREVIEWED**。独立留出集：否。
 
 **决策：当前生产路径保持 No-RAG，不开发 Embedding／向量数据库。允许保留独立的离线检索实验。**

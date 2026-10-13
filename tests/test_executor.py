@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 
@@ -101,3 +102,72 @@ async def test_rejected_plan_sends_nothing(tmp_path: Path) -> None:
 
     report = await setup(tmp_path, never).run(plan(operation_id="missing"))
     assert report.outcome == Outcome.TOOL_ERROR and report.reason == "PLAN_REJECTED"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_cancellation_journals_unknown_request_without_replay(tmp_path, monkeypatch, method):
+    from agenttest.credentials import CredentialVault
+
+    entered = asyncio.Event()
+    calls, closed = [], []
+    original_close = CredentialVault.close
+
+    def close(vault):
+        original_close(vault)
+        closed.append(vault)
+
+    monkeypatch.setattr(CredentialVault, "close", close)
+
+    async def interrupted(request):
+        calls.append(request)
+        entered.set()
+        await asyncio.Event().wait()
+
+    executor = setup(tmp_path, interrupted, method)
+    execution = asyncio.create_task(executor.run(plan(read_retries=2 if method == "GET" else 0)))
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+    finally:
+        execution.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await execution
+    report = executor.store.read(next(tmp_path.iterdir()).name)
+    assert report.outcome == Outcome.TEST_INFRA_ERROR and report.completed
+    assert report.reason == "RUN_CANCELLED"
+    assert report.steps[0].reason == "ATTEMPT_OUTCOME_UNKNOWN"
+    assert report.steps[0].attempts[0].error_code == "ATTEMPT_OUTCOME_UNKNOWN"
+    assert len(calls) == len(report.steps[0].attempts) == 1
+    assert closed and all(not v._tokens and not v._secrets and not v._environ for v in closed)
+    with pytest.raises(ValueError, match="RUN_NOT_RESUMABLE"):
+        await executor.run(plan(), report=report)
+
+
+@pytest.mark.asyncio
+async def test_cancellation_before_next_send_does_not_mark_it_as_attempted(tmp_path):
+    entered, calls = asyncio.Event(), []
+
+    class RecordingStore(ReportStore):
+        def save(self, report):
+            path = super().save(report)
+            if len(report.steps) == 2:
+                entered.set()
+            return path
+
+    executor = setup(tmp_path, lambda req: calls.append(req) or httpx.Response(200, json={}))
+    executor.store = RecordingStore(tmp_path)
+    executor.config.min_request_interval = 5.0
+    scenario = plan()
+    scenario.steps.append(scenario.steps[0].model_copy(update={"id": "second"}))
+    execution = asyncio.create_task(executor.run(scenario))
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+    finally:
+        execution.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await execution
+    report = executor.store.read(next(tmp_path.iterdir()).name)
+    assert len(calls) == 1 and report.steps[0].outcome == Outcome.PASS
+    assert report.reason == report.steps[1].reason == "RUN_CANCELLED"
+    assert report.steps[1].outcome == Outcome.TEST_INFRA_ERROR
+    assert not report.steps[1].attempts

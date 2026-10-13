@@ -77,6 +77,35 @@ async def test_workflow_timeout_during_analysis_preserves_business_failure(tmp_p
 
 
 @pytest.mark.asyncio
+async def test_parent_cancellation_during_analysis_preserves_business_failure(tmp_path):
+    entered = asyncio.Event()
+
+    class InterruptedAnalyzer(FakeAnalyzer):
+        async def generate(self, context):
+            entered.set()
+            await asyncio.Event().wait()
+
+    plan, config, capabilities = investigation_inputs()
+    store = ReportStore(tmp_path)
+    execution = asyncio.create_task(run_natural_demo(
+        DEMO_TASK, FakeLLM(plan.model_dump_json()), store, fault="ownership",
+        investigation=config, capabilities=capabilities, analyzer=InterruptedAnalyzer()))
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+    finally:
+        execution.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await execution
+    report = store.read(next(tmp_path.iterdir()).name)
+    assert report.outcome == Outcome.ASSERTION_FAILED
+    assert report.analysis_code == "REVIEW_FAILURE_EVIDENCE"
+    assert report.investigation_error == "WORKFLOW_CANCELLED"
+    assert report.investigations[0].reason == "INVESTIGATION_CANCELLED"
+    assert len(report.steps) == 5 and not report.workflow_completed
+    assert report.task_satisfied is False
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("permanent", [False, True])
 async def test_workflow_report_failure_does_not_replay_or_change_original(tmp_path, permanent):
     class FailingStore(ReportStore):

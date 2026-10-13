@@ -1,0 +1,41 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_holdout": false,
+  "reused_questions": 12,
+  "files": {
+    "experiments/rag_semantic_trial/wordpiece.py": "a316da159c7213c62b9967722f017b21cafdd92415b94bb90a15e8a1957f0b42",
+    "experiments/rag_semantic_trial/encode.py": "6904196d2698c2272ecde93200267f26be5a08ac0687419a82c039bce2223790",
+    "experiments/rag_semantic_trial/trial.py": "a8b04c7b4c0dfc8f3169c223272996330603e4e1704909453c8e10c49237e0a7",
+    "experiments/rag_semantic_trial/replay.py": "86fdc3a3266843fdb7344839feee2aa21f7013728d9ed576e516ae8ea339605c",
+    "experiments/rag_semantic_trial/demo-task.json": "5ffaef91adee3f8f6502d4ec28b7f449aceb927516dbf8136ccdc89c4223d7f9",
+    "experiments/rag_semantic_trial/model-manifest.json": "611f1d8fc44dbe3f04fec4339a952dc13eea0550b9f6d8bba7ae0403e08590cf",
+    "experiments/rag_necessity/corpus.json": "aa4ad56eeefd8192cf7d80f77ef4cfbee68effe7f8745ec9eedb784c2c943116",
+    "experiments/rag_necessity/suite.json": "25eb34589d050dbd1452ccc49b7af36f00e5386779c04a7e986ff65636635936",
+    "experiments/rag_necessity/protocol.json": "2558c70b0f0d5dab0b62c9862abd1b98c63a372aa4c0ed152541d5e490b49775",
+    "experiments/rag_necessity/results.json": "d7656cd136aab0bb50f24cee2e56884a188d5c29fb62e734354ed85f9fd0e616"
+  },
+  "model_manifest_sha256": "611f1d8fc44dbe3f04fec4339a952dc13eea0550b9f6d8bba7ae0403e08590cf",
+  "model_revision": "75c43b069aac4d136ba6bc1122f995fedcfd2781",
+  "weight_sha256": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc",
+  "parameters": {
+    "maximum_tokens": 512,
+    "pooling": "CLS_L2_NORMALIZED",
+    "similarity": "cosine",
+    "query_prefix": "为这个句子生成表示以用于检索相关文章：",
+    "top_k": [
+      3,
+      5
+    ],
+    "note_budget_bytes": 12000,
+    "default_enabled": false
+  },
+  "limitations": [
+    "same twelve UNREVIEWED development questions; no new holdout",
+    "quantized Chinese model; not a claim about all embedding models",
+    "stdlib WordPiece subset; native tokenizer parity unverified",
+    "first 512 tokens only; record every truncation",
+    "no paid LLM or Java execution; no planning-quality claim"
+  ],
+  "trust": "quoted planning references only; no new permissions or assertions"
+}

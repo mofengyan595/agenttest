@@ -229,3 +229,76 @@ async def test_invalid_contract_stops_before_model(tmp_path):
     report = await flow.run()
     assert report.outcome == Outcome.TOOL_ERROR and report.reason == "INVALID_CONTRACT"
     assert fake.calls == 0 and not calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["planner", "request"])
+@pytest.mark.parametrize("task_mode", ["operator_plan", "natural_language"])
+async def test_parent_cancellation_is_infrastructure_failure(
+    tmp_path, monkeypatch, phase, task_mode,
+):
+    entered = asyncio.Event()
+    calls = []
+
+    async def interrupted_request(request):
+        calls.append(request)
+        entered.set()
+        await asyncio.Event().wait()
+
+    flow, fake, _ = setup(tmp_path, handler=interrupted_request)
+    flow._task_mode = task_mode
+    flow._intent_validator = lambda task, scenario: None
+    if phase == "planner":
+        async def interrupted_planner(context):
+            entered.set()
+            await asyncio.Event().wait()
+
+        monkeypatch.setattr(fake, "generate", interrupted_planner)
+    execution = asyncio.create_task(flow.run())
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+    finally:
+        execution.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await execution
+    report = flow._store.read(next(tmp_path.iterdir()).name)
+    assert report.outcome == Outcome.TEST_INFRA_ERROR and report.completed
+    assert report.reason == report.analysis_code == "WORKFLOW_CANCELLED"
+    assert report.workflow_completed is False
+    assert report.task_satisfied is (False if task_mode == "natural_language" else None)
+    if phase == "request":
+        assert len(calls) == 1 and len(report.steps) == 1
+        assert report.steps[0].outcome == Outcome.TEST_INFRA_ERROR
+        assert report.steps[0].reason == "ATTEMPT_OUTCOME_UNKNOWN"
+    else:
+        assert not calls and not report.steps
+
+
+@pytest.mark.asyncio
+async def test_cancellation_is_not_replaced_by_report_io_failure(tmp_path, monkeypatch):
+    entered = asyncio.Event()
+
+    async def interrupted(context):
+        entered.set()
+        await asyncio.Event().wait()
+
+    class UnavailableStore(ReportStore):
+        def save(self, report):
+            if report.reason == "WORKFLOW_CANCELLED":
+                raise OSError("private-report-location")
+            return super().save(report)
+
+    flow, fake, calls = setup(tmp_path)
+    flow._store = UnavailableStore(tmp_path)
+    monkeypatch.setattr(fake, "generate", interrupted)
+    execution = asyncio.create_task(flow.run())
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+    finally:
+        execution.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await execution
+    assert not calls
+    saved = flow._store.read(next(tmp_path.iterdir()).name)
+    assert not saved.completed and not saved.workflow_completed
+    assert "private-report-location" not in saved.model_dump_json()

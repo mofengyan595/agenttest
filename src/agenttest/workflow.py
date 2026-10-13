@@ -128,6 +128,9 @@ class Workflow:
             return {"ready": False}
 
         def summarize() -> None:
+            if report.reason == "WORKFLOW_CANCELLED":
+                report.analysis_code = "WORKFLOW_CANCELLED"
+                return
             report.analysis_code = {
                 Outcome.PASS: (("COMPLETED" if report.intent_verified
                                 else "APPROVED_PLAN_COMPLETED")
@@ -284,6 +287,7 @@ class Workflow:
         builder.add_edge("report", END)
         graph = builder.compile()
         graph_completed = False
+        cancelled = False
         try:
             # Overrides inherited tracing environment without mutating process globals.
             with tracing_context(enabled=False):
@@ -298,6 +302,10 @@ class Workflow:
             summarize()
             self._store.save(report)
             graph_completed = True
+        except asyncio.CancelledError:
+            cancelled = True
+            reject(Outcome.TEST_INFRA_ERROR, "WORKFLOW_CANCELLED")
+            raise
         except GraphRecursionError:
             reject(Outcome.TEST_INFRA_ERROR, "GRAPH_STEP_LIMIT")
         except TimeoutError:
@@ -315,7 +323,9 @@ class Workflow:
                     self._store.save(report)
                 except OSError:
                     if not report.investigations:
-                        raise
-                    report.investigation_error = "INVESTIGATION_REPORT_ERROR"
+                        if not cancelled:
+                            raise
+                    else:
+                        report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         # Graph nodes share a single event loop; no cancellable thread may keep changing a report.
         return report.model_copy(deep=True)
