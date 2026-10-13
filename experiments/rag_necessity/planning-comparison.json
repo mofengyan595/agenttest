@@ -1,0 +1,84 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "status": "PREPARATION_ONLY_NO_MODEL_CALLS",
+  "task_source": "suite.json / cases[*].query; identical across arms",
+  "current_tasks_are_information_questions": true,
+  "no_claim_that_questions_are_executable_test_intents": true,
+  "arms": {
+    "A": "complete existing planning_context, no retrieval",
+    "B": "same context plus scoped BM25 Top 5 within 12000 UTF-8 note bytes",
+    "C": "same context plus offline embedding Top 5 from identical frozen corpus; NOT_RUN"
+  },
+  "common_inputs": {
+    "corpus": "corpus.json",
+    "tasks": "suite.json",
+    "source_code_and_configuration": "protocol.json / files",
+    "prompt": "existing selected profile prompt plus identical protocol.guard in every arm",
+    "dsl": "existing Scenario and selected profile draft schema",
+    "policy": "existing profile registry, never from retrieval",
+    "executor": "existing deterministic Executor, no alternative HTTP engine",
+    "scoring": "development rubric below; no modifications to Eval v2",
+    "temperature": "freeze one supported explicit value for all arms before a future real run",
+    "model_identity": "offline-placeholder for serialization; exact real model/endpoint NOT_SELECTED",
+    "model_settings_status": "must freeze actual supported protocol and settings after separate authorization",
+    "ordering": "future paired runs with fixed, balanced arm order; no retries/replans",
+    "target_version": "corpus.revisions; source-review authorization gates remain unchanged"
+  },
+  "rubric": {
+    "retrieval": "macro Recall@3/5 and delivered-context recall; not plan or execution success",
+    "citation": "exact file/version/line range/text/hash; provenance is not semantic truth",
+    "plan_validity": "existing DSL, contract, policy and dependency validators; report diagnostics",
+    "intent": "existing deterministic intent validator for supported execution tasks; otherwise null",
+    "task_satisfaction": "all requested approved goals completed; safe rejection alone is not success",
+    "execution": "separate in-process replay from real end-to-end; Java requires separate approval",
+    "cost": "actual usage and latency only after real calls; byte estimates remain explicitly estimates",
+    "business_facts": "future independent reviewer checks expected_facts against listed current sources",
+    "unknown_or_conflicting_expectations": "NEEDS_REVIEW; do not modify assertions or invent authority"
+  },
+  "readiness": {
+    "context_packages_prepared": ["A", "B3", "B5"],
+    "C_context_packages": "NOT_CREATED_NO_EMBEDDING_RESULTS",
+    "unsupported_Java_cases": ["R01", "R02", "R03", "R04", "R05", "R06", "R11", "R12"],
+    "mini_diagnostic_questions_require_execution_task_mapping": ["R07", "R08", "R09", "R10"],
+    "unsupported_actions_must_remain_unapproved": true,
+    "current_profile_constraints_limit_planning_comparison": true,
+    "next_steps_before_plan_quality_claim": [
+      "Obtain a second real business-domain source bundle; mini is disposable and shares the course domain",
+      "Independently review information-gap and relevance labels; current author both built and scored the development set",
+      "Create a separate frozen planning-task mapping and reviewed trusted adapter for new operations",
+      "Freeze independent holdout tasks before further retrieval tuning",
+      "Only if justified, separately authorize a bounded paid plan-only comparison; Java writes stay disabled"
+    ]
+  },
+  "budget_suggestion": {
+    "current_round_money": 0,
+    "current_round_paid_calls": 0,
+    "first_optional_plan_only_pilot": {
+      "tasks": 12,
+      "arms_without_embedding": 2,
+      "repeats": 1,
+      "calls": 24,
+      "max_input_tokens_per_call": 20000,
+      "max_output_tokens_per_call": 2048,
+      "max_reserved_tokens": 529152,
+      "execution_permission": "NONE",
+      "statistical_claim": "DEVELOPMENT_ONLY; no significance or generalization claim"
+    },
+    "adding_C_requires_local_model_first": {
+      "tasks": 12,
+      "arms": 3,
+      "repeats": 1,
+      "calls": 36,
+      "max_reserved_tokens": 793728
+    },
+    "three_repeat_followup_only_after_pilot_and_new_approval": {
+      "calls": 108,
+      "max_reserved_tokens": 2381184
+    },
+    "currency": "NOT_QUOTED_MODEL_AND_PRICE_NOT_SELECTED",
+    "cost_formula": "(measured_input_tokens*input_price_per_million + measured_output_tokens*output_price_per_million)/1000000",
+    "stop_conditions": ["budget exhausted", "unknown usage consumes full reservation", "source/config drift", "unsafe output", "required review missing"],
+    "recommendation": "Do not spend now; resolve source packaging, authority and task readiness first"
+  }
+}

@@ -1,5 +1,17 @@
 # 开发进度
 
+## RAG 必要性零收费离线评估（2026-10-13）
+
+本轮明确授权恢复评估，仅在独立 `experiments/rag_necessity/` 建立可复现检索实验，没有接入生产 RAG。保留开始时已有文档与静态证据修改，不修改正式 Eval v2、历史 A/B、公共 Planner、Executor 或 CourseInsight。
+
+重新只读核对 CourseInsight 远端 main／本地 HEAD `fbaf08f`，选定当前源码与提交一致；旧 `430c23e` 的三步契约仍保留原来源门禁。建立 12 条 DEVELOPMENT_ONLY / UNREVIEWED 信息问题、27 份可追溯语料及共同冻结协议。七题有额外业务语义、一题缺可信适配、三题已有信息、一题历史诊断可选；不从 A 删除原有信息。mini 与 Java 属于不同实现但共享课程业务域，不能宣称已验证独立业务域泛化。
+
+实测 BM25 raw Recall@3/@5 均 33.33%；系统／版本／可见性过滤后为 37.50%／63.89%，12 KB 上下文预算内 @5 为 52.78%。raw Top 5 混入 24 个跨系统和 2 个 PRIVATE 文档，scoped 为 0，但仍有 7 个同版本冲突样本命中。主题集旧版本命中为 0，独立控制探针 raw 第2位返回真实旧 DTO，过滤后排除。引用与实时来源摘要均 27/27 通过；两次新目录运行结果相同，36 份请求包逐字节一致。B5 请求字节为 A 的 2.53 倍，Token 仅估算，不是模型成本。C 无可用本地模型和组件，明确 NOT_RUN，不编造分数。
+
+准备共同任务、Prompt、DSL、Policy、Executor、评分维度和后续 Token 预算；12 题仍是信息问题，不能冒充已映射的执行需求。Fake 的角色／Operation／断言／资源／CSV 越权在执行前拒绝，Mock＋进程内 target 保持 normal PASS、terminal/result_count ASSERTION_FAILED。相关回归 **199 passed / 49.26s**，最终独立实验测试 **22 passed / 7.76s**，Ruff 与 diff 检查通过。首次夹具构造错误已修正；Windows 沙箱 asyncio 内部 socketpair 阻塞通过有证据的沙箱外离线运行解决，现有断网保护保留。
+
+结论：**当前生产 No-Go，保持 No-RAG**。信息缺口不等于必须检索；当前 BM25 不够可靠，Embedding 收益未知，首先补最新业务资料包、可信适配与独立任务审阅。完整证据和预算建议见 [RAG 必要性报告](rag-necessity-20261013.md)。下一准确里程碑：先取得第二个真实业务域的版本化代码／契约／规则资料与独立审阅问题，再决定是否建立新冻结检索集；不直接开发向量数据库、修改正式门禁或进行收费模型／Java 写入。本轮所有真实收费模型调用、Java 请求、数据库写入、提交推送均为 0；未重跑全量 Python/Web/Java 或新 CI。
+
 ## Batch 提交审查与单次模型预检准备（2026-10-13）
 
 本次授权仅包含审查、最小修复、离线测试、master 提交推送和同 SHA CI 核验；收费调用尚未授权。保留以下已有 batch 与 Candidate Discovery 审计摘要作为当前交付背景，私有运行记录不加入提交。

@@ -1,0 +1,4 @@
+# Frozen experimental evidence uses exact byte digests.
+* -text
+# Original frozen JSON may use CRLF; continue checking other trailing whitespace.
+*.json whitespace=cr-at-eol

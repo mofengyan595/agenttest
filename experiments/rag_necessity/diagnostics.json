@@ -1,0 +1,234 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "repeat_identical_except_measured_latency": true,
+  "live_source_hashes_verified": 27,
+  "source_ids": [
+    "courseinsight:README.md",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisBatchCsvParser.java",
+    "courseinsight:courseinsight-server/src/test/java/com/courseinsight/server/service/AnalysisBatchCsvParserTests.java",
+    "courseinsight:docs/development.md",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/dto/AnalysisBatchProgressResponse.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/mapper/AnalysisBatchProgressMapper.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/mapper/AnalysisBatchResultMapper.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisBatchResultService.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/controller/AnalysisBatchController.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisBatchCreationService.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/dto/AnalysisBatchCreateResponse.java",
+    "courseinsight:docs/teacher-comment-analysis.md",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/CommentAnalysisService.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisTaskService.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/controller/AnalysisTaskController.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/CourseManagementAccessService.java",
+    "courseinsight:courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisBatchRecoveryService.java",
+    "courseinsight:courseinsight-server/src/test/java/com/courseinsight/server/service/AnalysisBatchRecoveryServiceTests.java",
+    "mini:docs/demo-policy.md",
+    "mini:src/agenttest/mini_target.py",
+    "mini:src/agenttest/batch_plan.py",
+    "mini:docs/batch-natural-language.md",
+    "mini:tests/test_batch_workflow.py",
+    "mini:docs/demo-evidence/batch-smoke.json",
+    "courseinsight:old-progress",
+    "experiment:conflicting-current.md",
+    "experiment:private-note.md"
+  ],
+  "controlled_version_probe": {
+    "query": "AnalysisBatchStatus resolveStatus total success failed COMPLETED PARTIAL_FAILED",
+    "raw_top5": [
+      "ci.progress.code",
+      "ci.progress.old",
+      "ci.progress.mapper",
+      "ci.batch.routes",
+      "ci.task.route"
+    ],
+    "scoped_top5": [
+      "ci.progress.code",
+      "ci.progress.mapper",
+      "ci.batch.routes",
+      "ci.task.route",
+      "negative.conflicting-current"
+    ]
+  },
+  "courseinsight_prefilter_exclusions": [
+    {
+      "id": "ci.csv.doc",
+      "reasons": [
+        "PRIVATE_LITERAL_PATTERN"
+      ]
+    },
+    {
+      "id": "mini.batch.doc",
+      "reasons": [
+        "WRONG_SYSTEM"
+      ]
+    },
+    {
+      "id": "mini.batch.source",
+      "reasons": [
+        "WRONG_SYSTEM"
+      ]
+    },
+    {
+      "id": "mini.batch.prompt",
+      "reasons": [
+        "WRONG_SYSTEM"
+      ]
+    },
+    {
+      "id": "mini.batch.rules",
+      "reasons": [
+        "WRONG_SYSTEM"
+      ]
+    },
+    {
+      "id": "mini.fault.tests",
+      "reasons": [
+        "WRONG_SYSTEM",
+        "PRIVATE_LITERAL_PATTERN"
+      ]
+    },
+    {
+      "id": "mini.fault.history",
+      "reasons": [
+        "WRONG_SYSTEM"
+      ]
+    },
+    {
+      "id": "ci.progress.old",
+      "reasons": [
+        "STALE_VERSION"
+      ]
+    },
+    {
+      "id": "negative.private-note",
+      "reasons": [
+        "PRIVATE"
+      ]
+    }
+  ],
+  "zero_real_model_calls": true,
+  "zero_java_requests": true,
+  "zero_database_writes": true,
+  "request_packages_byte_identical": 36,
+  "legacy_review_current_comparison": {
+    "checked": 16,
+    "raw_matches": 14,
+    "lf_matches": 16,
+    "current_git_blob_matches": 14,
+    "sha_gate_still_not_approved": true,
+    "files": [
+      {
+        "path": "courseinsight-server/pom.xml",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/controller/AuthController.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/controller/CourseController.java",
+        "raw_match": false,
+        "lf_match": true,
+        "current_git_blob_match": false,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/config/SecurityConfig.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/dto/CourseCreateRequest.java",
+        "raw_match": false,
+        "lf_match": true,
+        "current_git_blob_match": false,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/dto/CourseDetailResponse.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/dto/UserLoginRequest.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/dto/UserLoginResponse.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/common/ApiResponse.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/java/com/courseinsight/server/service/CourseService.java",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/resources/application.yaml",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "courseinsight-server/src/main/resources/application-demo.yaml",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "compose.yaml",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "compose.demo.yaml",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "scripts/demo.ps1",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      },
+      {
+        "path": "scripts/demo.sh",
+        "raw_match": true,
+        "lf_match": true,
+        "current_git_blob_match": true,
+        "current_file_matches_blob_after_LF": true
+      }
+    ]
+  }
+}

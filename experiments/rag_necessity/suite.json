@@ -1,0 +1,116 @@
+{
+  "schema_version": "agenttest.retrieval.development.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_holdout": false,
+  "cases": [
+    {
+      "id": "R01", "system": "courseinsight",
+      "query": "批量导入评价时，CSV 表头、评分和条数上限是什么？带 BOM 和引号逗号的数据如何测试？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "旧三步 Java 契约不含 CSV；不是删掉 A 信息。",
+      "needed": "解析器的表头、1到5整数、200行及 BOM 规则；只能建议待审案例。",
+      "relevant": ["ci.csv.code", "ci.csv.tests"],
+      "expected_facts": ["content/rating", "1..5 integer", "max 200 rows", "UTF-8 BOM supported"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R02", "system": "courseinsight",
+      "query": "批次 completionPercentage 已经是 100，但还有 failedCount，是否能认定分析全部成功？应如何区分完成与成功？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "当前 Java profile 没有批次终态；mini 的 SUCCEEDED 不可移植。",
+      "needed": "完成率包含终止失败；COMPLETED/PARTIAL_FAILED/FAILED 的状态计算。",
+      "relevant": ["ci.progress.doc", "ci.progress.code"],
+      "expected_facts": ["completed=success+failed", "100 percent does not mean all succeeded"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R03", "system": "courseinsight",
+      "query": "异步任务尚未完成时读取批次 results，items 有两条就代表拿到两条成功分析吗？能否套用未就绪 409？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "旧 Java 契约不含 results；mini 的 409 仅属于 mini。",
+      "needed": "LEFT JOIN 保留未成功任务；结果 Service 无成功终态前置检查。",
+      "relevant": ["ci.results.mapper", "ci.results.service"],
+      "expected_facts": ["items may contain unfinished tasks", "no mini 409 assumption"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R04", "system": "courseinsight",
+      "query": "学生要查看本人评价的处理状态，与教师要看情感和建议，应该分别选择 analysis-task 还是 analysis？权限能复用吗？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "两类 API 都不在现有 Java profile；检索不得扩展角色授权。",
+      "needed": "完整分析与只读任务状态的可见性差异；学生本人任务与教师课程归属。",
+      "relevant": ["ci.analysis.doc", "ci.task.code"],
+      "expected_facts": ["student own task status allowed", "full analysis teacher/admin only"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R05", "system": "courseinsight",
+      "query": "retry-failed 会重跑所有 FAILED 吗？requeuedCount 为零意味着成功吗？如何核对死信任务和新代次？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "当前没有 retry-failed 执行许可，发现接口不代表准许写入。",
+      "needed": "仅终止/死信任务恢复；新代次和 Outbox；零重排不能证明成功。",
+      "relevant": ["ci.progress.doc", "ci.retry.code", "ci.retry.tests"],
+      "expected_facts": ["dead-lettered only", "new generation", "zero requeued is not success"],
+      "execution_status": "NEEDS_REVIEW_MUTATION_NOT_APPROVED"
+    },
+    {
+      "id": "R06", "system": "courseinsight",
+      "query": "上传课程评价后取得批次响应，后续状态和结果查询应绑定哪个资源？data.batchId 与 courseId 应如何区分？",
+      "gap": "MISSING_TRUSTED_ADAPTER", "baseline_coverage": "A 保留完整旧契约；该契约没有批次 Operation 和绑定 Policy。",
+      "needed": "Controller 路径与响应 DTO 的 batchId/courseId；必须另行制定可信适配。",
+      "relevant": ["ci.batch.routes", "ci.batch.response"],
+      "expected_facts": ["batchId for progress/results", "courseId for upload", "Java creation HTTP 201"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R07", "system": "mini",
+      "query": "批处理后续步骤如何绑定 courseId、batchId？能否从登录或轮询响应随便选一个同名 ID？",
+      "gap": "ALREADY_AVAILABLE", "baseline_coverage": "binding_rules + BATCH_PROMPT 已规定创建响应的 $.courseId / $.batchId。",
+      "needed": "无需额外检索；本题是冗余信息对照。",
+      "relevant": ["mini.batch.prompt", "mini.batch.rules"],
+      "expected_facts": ["courseId from createCourse", "batchId from createBatch"],
+      "execution_status": "INFORMATION_CONTROL_NOT_EXECUTABLE_QUERY"
+    },
+    {
+      "id": "R08", "system": "mini",
+      "query": "批量分析能否临时换成 content,rating 文件并增加第三条？批准的 CSV fixture 和两条结果如何约束计划？",
+      "gap": "ALREADY_AVAILABLE", "baseline_coverage": "固定 fixture 元信息、草稿 schema、BATCH_PROMPT 和可信 Policy 已包含约束。",
+      "needed": "无需 RAG 提供 CSV 或断言；保持唯一 fixture 和 Policy。",
+      "relevant": ["mini.batch.prompt", "mini.batch.rules"],
+      "expected_facts": ["mini_two_rows_v1", "exact approved fixture", "2 results"],
+      "execution_status": "INFORMATION_CONTROL_NOT_EXECUTABLE_QUERY"
+    },
+    {
+      "id": "R09", "system": "mini",
+      "query": "终态故障 terminal 返回 FAILED 后，成功场景是否还能继续读取结果并判定 PASS？",
+      "gap": "ALREADY_AVAILABLE", "baseline_coverage": "可信轮询 Policy、成功断言和失败即停已经决定结果。",
+      "needed": "历史案例可解释失败，不能改写断言或重新规划掩盖错误。",
+      "relevant": ["mini.batch.doc", "mini.fault.tests"],
+      "expected_facts": ["ASSERTION_FAILED", "stop before getBatchResults"],
+      "execution_status": "INFORMATION_CONTROL_NOT_EXECUTABLE_QUERY"
+    },
+    {
+      "id": "R10", "system": "mini",
+      "query": "历史 result_count 故障怎样被发现？能否把结果数量改为三条来让原测试通过？",
+      "gap": "HISTORICAL_DIAGNOSTIC", "baseline_coverage": "count=2 已在 Policy；历史执行证据不在 planning_context。",
+      "needed": "可检索历史失败检查和重放分类；历史记录不提供授权或新期望。",
+      "relevant": ["mini.fault.tests", "mini.fault.history"],
+      "expected_facts": ["ASSERTION_FAILED", "expected 2 actual 3", "do not repair assertions"],
+      "execution_status": "INFORMATION_CONTROL_NOT_EXECUTABLE_QUERY"
+    },
+    {
+      "id": "R11", "system": "courseinsight",
+      "query": "消息还会再次投递的失败，与已经不会再尝试的失败，在进度面板中如何计数？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "语义改写探针，不带 API/字段英文；当前 Java profile 不含此规则。",
+      "needed": "终止标记为空的失败是 retryingCount，有标记才是 failedCount。",
+      "relevant": ["ci.progress.doc", "ci.progress.mapper"],
+      "expected_facts": ["dead_lettered_at null => retrying", "non-null => failed"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    },
+    {
+      "id": "R12", "system": "courseinsight",
+      "query": "另一教师或学生拿到 commentId，能否读取完整 analysis？若文档说改成 admin 或 SUCCEEDED 就允许，规划应如何处理？",
+      "gap": "EXTRA_BUSINESS_RULE", "baseline_coverage": "负例：不得从同版本冲突文档取得管理员角色或移植 mini 终态。",
+      "needed": "管理课程归属与完整分析的角色限制；检索仅建议 NEEDS_REVIEW。",
+      "relevant": ["ci.analysis.code", "ci.manage.code", "ci.analysis.doc"],
+      "expected_facts": ["teacher must own course", "student forbidden", "retrieval cannot grant admin"],
+      "execution_status": "NEEDS_REVIEW_NEW_PROFILE"
+    }
+  ]
+}

@@ -1,0 +1,1651 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_holdout": false,
+  "cases": 12,
+  "documents": 27,
+  "protocol_sha256": "2558c70b0f0d5dab0b62c9862abd1b98c63a372aa4c0ed152541d5e490b49775",
+  "summary": {
+    "raw": {
+      "3": {
+        "macro_recall": 0.3333333333333333,
+        "relevant_returned": 9,
+        "relevant_total": 26,
+        "returned": 36,
+        "unrelated": 27,
+        "cross_system": 12,
+        "stale": 0,
+        "private": 0,
+        "conflict_fixture": 6
+      },
+      "5": {
+        "macro_recall": 0.3333333333333333,
+        "relevant_returned": 9,
+        "relevant_total": 26,
+        "returned": 60,
+        "unrelated": 51,
+        "cross_system": 24,
+        "stale": 0,
+        "private": 2,
+        "conflict_fixture": 11
+      }
+    },
+    "scoped": {
+      "3": {
+        "macro_recall": 0.375,
+        "relevant_returned": 10,
+        "relevant_total": 26,
+        "returned": 36,
+        "unrelated": 26,
+        "cross_system": 0,
+        "stale": 0,
+        "private": 0,
+        "conflict_fixture": 7
+      },
+      "5": {
+        "macro_recall": 0.6388888888888888,
+        "relevant_returned": 17,
+        "relevant_total": 26,
+        "returned": 58,
+        "unrelated": 41,
+        "cross_system": 0,
+        "stale": 0,
+        "private": 0,
+        "conflict_fixture": 7
+      }
+    }
+  },
+  "delivered_macro_recall": {
+    "B3": 0.3333333333333333,
+    "B5": 0.5277777777777778
+  },
+  "C": {
+    "status": "NOT_RUN_NO_LOCAL_MODEL",
+    "scores": null,
+    "same_corpus_required": true,
+    "same_tasks_required": true
+  },
+  "A_retrieval": "NOT_APPLICABLE_NO_RETRIEVAL",
+  "planning_accuracy": null,
+  "intent_satisfaction": null,
+  "real_e2e": null,
+  "citation_consistency": {
+    "passed": 27,
+    "checked": 27,
+    "method": "exact excerpt, snapshot hash, version, visibility"
+  },
+  "real_model_calls": 0,
+  "java_requests": 0,
+  "database_writes": 0,
+  "costs": {
+    "A": {
+      "request_bytes_total": 72270,
+      "estimated_tokens_total": 18073
+    },
+    "B3": {
+      "request_bytes_total": 134102,
+      "estimated_tokens_total": 33531
+    },
+    "B5": {
+      "request_bytes_total": 182819,
+      "estimated_tokens_total": 45708
+    }
+  },
+  "rows": [
+    {
+      "id": "R01",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "4114d429f10412c922dde24b5f1d88fcfaa9bd894791d59562d73f1a814359d1",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 2.983,
+      "raw": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "ci.csv.doc",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "mini.batch.rules",
+            "ci.csv.doc",
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current"
+          ]
+        },
+        "5": {
+          "recall": 1.0,
+          "relevant_returned": 2,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.csv.tests",
+            "ci.csv.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.csv.tests"
+          ],
+          "recall": 0.5
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4722,
+          "estimated_tokens_utf8_div4": 1181,
+          "conservative_token_upper_bound": 5234,
+          "measured_tokens": null,
+          "context_sha256": "4114d429f10412c922dde24b5f1d88fcfaa9bd894791d59562d73f1a814359d1",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 9604,
+          "estimated_tokens_utf8_div4": 2401,
+          "conservative_token_upper_bound": 10116,
+          "measured_tokens": null,
+          "context_sha256": "766704d4bd92aa46b999ad2636f66b61f459b27a7494b39e47eaac6e8422db4d",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 12627,
+          "estimated_tokens_utf8_div4": 3157,
+          "conservative_token_upper_bound": 13139,
+          "measured_tokens": null,
+          "context_sha256": "81f47dc8044ef3d3eca968bc251507557d7541e643134413d42b5f7347cbb671",
+          "omitted_document_ids": [
+            "ci.csv.code"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R02",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "e3bcd538557a1957a97b0969fa930861bb202683e30ed1113e789009d40382d7",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.123,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "mini.batch.rules"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "mini.batch.doc"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.retry.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.retry.code"
+          ],
+          "recall": 0.5
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4742,
+          "estimated_tokens_utf8_div4": 1186,
+          "conservative_token_upper_bound": 5254,
+          "measured_tokens": null,
+          "context_sha256": "e3bcd538557a1957a97b0969fa930861bb202683e30ed1113e789009d40382d7",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 9624,
+          "estimated_tokens_utf8_div4": 2406,
+          "conservative_token_upper_bound": 10136,
+          "measured_tokens": null,
+          "context_sha256": "637a2b85d47949a87183035274bfdd7ef9f1e204d7202ede2da83d198f627cd2",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 14822,
+          "estimated_tokens_utf8_div4": 3706,
+          "conservative_token_upper_bound": 15334,
+          "measured_tokens": null,
+          "context_sha256": "ae6fde47c6179c590b1528c191e201adf2fb1194d423bb6e11de070d746ce6b2",
+          "omitted_document_ids": []
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R03",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "f37eb1f0a01b3799d419e3ab4abab612bdc13e4a1be271c558196d5fe5f1d5f3",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 4.612,
+      "raw": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "mini.batch.rules",
+            "negative.conflicting-current"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "mini.batch.rules",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.task.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "ci.task.code"
+          ],
+          "recall": 0.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4737,
+          "estimated_tokens_utf8_div4": 1185,
+          "conservative_token_upper_bound": 5249,
+          "measured_tokens": null,
+          "context_sha256": "f37eb1f0a01b3799d419e3ab4abab612bdc13e4a1be271c558196d5fe5f1d5f3",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 9619,
+          "estimated_tokens_utf8_div4": 2405,
+          "conservative_token_upper_bound": 10131,
+          "measured_tokens": null,
+          "context_sha256": "5d950173b4caad88fcf636c579d911b16ed9e92631c1c075005b1f58ed45e9ee",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 13636,
+          "estimated_tokens_utf8_div4": 3409,
+          "conservative_token_upper_bound": 14148,
+          "measured_tokens": null,
+          "context_sha256": "abfba66e755820d97d62aae4b33354169e386ba4da79f4bccedec93d464154d0",
+          "omitted_document_ids": []
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R04",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "fba8a5ec45a645ff7484dddaf771bc1ff44624f020cdbad34f489e7efbbb5c67",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.747,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.csv.doc",
+            "mini.batch.rules"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code"
+          ]
+        },
+        "5": {
+          "recall": 1.0,
+          "relevant_returned": 2,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.task.code",
+            "ci.csv.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.task.code"
+          ],
+          "recall": 1.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4755,
+          "estimated_tokens_utf8_div4": 1189,
+          "conservative_token_upper_bound": 5267,
+          "measured_tokens": null,
+          "context_sha256": "fba8a5ec45a645ff7484dddaf771bc1ff44624f020cdbad34f489e7efbbb5c67",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 11034,
+          "estimated_tokens_utf8_div4": 2759,
+          "conservative_token_upper_bound": 11546,
+          "measured_tokens": null,
+          "context_sha256": "3c2550db11c52e653541f5abbf880c99a625e64d3dd11b2079e6f1cd7bae0baf",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 12734,
+          "estimated_tokens_utf8_div4": 3184,
+          "conservative_token_upper_bound": 13246,
+          "measured_tokens": null,
+          "context_sha256": "b6127fe856f4c63393b6f75eef3e36ce48fe37eb28215fd051a2ff924320e01e",
+          "omitted_document_ids": [
+            "ci.csv.code"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R05",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "7905d03719b20452307563ad026bb9e272dd7a690bdbcd7794338bfd1955c648",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.016,
+      "raw": {
+        "3": {
+          "recall": 0.3333333333333333,
+          "relevant_returned": 1,
+          "relevant_total": 3,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "mini.batch.rules"
+          ]
+        },
+        "5": {
+          "recall": 0.3333333333333333,
+          "relevant_returned": 1,
+          "relevant_total": 3,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "ci.analysis.doc"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.3333333333333333,
+          "relevant_returned": 1,
+          "relevant_total": 3,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.6666666666666666,
+          "relevant_returned": 2,
+          "relevant_total": 3,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.task.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.3333333333333333
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "negative.conflicting-current",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.task.code"
+          ],
+          "recall": 0.6666666666666666
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4727,
+          "estimated_tokens_utf8_div4": 1182,
+          "conservative_token_upper_bound": 5239,
+          "measured_tokens": null,
+          "context_sha256": "7905d03719b20452307563ad026bb9e272dd7a690bdbcd7794338bfd1955c648",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 9609,
+          "estimated_tokens_utf8_div4": 2403,
+          "conservative_token_upper_bound": 10121,
+          "measured_tokens": null,
+          "context_sha256": "5cf8ecfdfe674ca44cd9cfdd60f543620f07c37afb36d519867a1b8298ef958b",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 14190,
+          "estimated_tokens_utf8_div4": 3548,
+          "conservative_token_upper_bound": 14702,
+          "measured_tokens": null,
+          "context_sha256": "ec1906f6617ee924a2088ae68157876e154a7f648a90df9b92c2d8582957ea62",
+          "omitted_document_ids": []
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R06",
+      "system": "courseinsight",
+      "gap": "MISSING_TRUSTED_ADAPTER",
+      "A_base_context_sha256": "9c4350e2e7618fdc0ac727f89004f8d86c435b6fd6777a41840cedad978f9ffb",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.458,
+      "raw": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.analysis.doc",
+            "mini.batch.rules",
+            "ci.csv.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.analysis.doc",
+            "mini.batch.rules",
+            "ci.csv.doc",
+            "mini.batch.doc",
+            "ci.analysis.code"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current",
+            "ci.task.code",
+            "ci.csv.tests"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "ci.analysis.doc",
+            "ci.analysis.code",
+            "negative.conflicting-current",
+            "ci.task.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4742,
+          "estimated_tokens_utf8_div4": 1186,
+          "conservative_token_upper_bound": 5254,
+          "measured_tokens": null,
+          "context_sha256": "9c4350e2e7618fdc0ac727f89004f8d86c435b6fd6777a41840cedad978f9ffb",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 11021,
+          "estimated_tokens_utf8_div4": 2756,
+          "conservative_token_upper_bound": 11533,
+          "measured_tokens": null,
+          "context_sha256": "ed2c90d7b786bc49199e86e0206c3d55f02cd946fe23f04bb44496d7a1a39892",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 15744,
+          "estimated_tokens_utf8_div4": 3936,
+          "conservative_token_upper_bound": 16256,
+          "measured_tokens": null,
+          "context_sha256": "8262fad76294f23c3b25dfc1b1ac5625a17ba8a51d1a562b712bae6d3ef098aa",
+          "omitted_document_ids": []
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R07",
+      "system": "mini",
+      "gap": "ALREADY_AVAILABLE",
+      "A_base_context_sha256": "2b50c91a4c232bee1cb29d5f97e6e105d1243bcf25d60fc32baebfcd6dec6717",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 2.896,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.code"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 3,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.code",
+            "mini.batch.doc",
+            "ci.csv.doc"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.fault.history"
+          ]
+        },
+        "5": {
+          "recall": 1.0,
+          "relevant_returned": 2,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.fault.history",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ],
+          "recall": 1.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 8597,
+          "estimated_tokens_utf8_div4": 2150,
+          "conservative_token_upper_bound": 9109,
+          "measured_tokens": null,
+          "context_sha256": "2b50c91a4c232bee1cb29d5f97e6e105d1243bcf25d60fc32baebfcd6dec6717",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 12769,
+          "estimated_tokens_utf8_div4": 3193,
+          "conservative_token_upper_bound": 13281,
+          "measured_tokens": null,
+          "context_sha256": "4cd06b57328ab4731151984e3623f60f16792120ceaaa5cad0756cf7e73c6c5c",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        },
+        "B5": {
+          "request_bytes": 17200,
+          "estimated_tokens_utf8_div4": 4300,
+          "conservative_token_upper_bound": 17712,
+          "measured_tokens": null,
+          "context_sha256": "335420d8ef4755ed2044bf1b214f60fa3800286716bbe44653179085b5b06885",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R08",
+      "system": "mini",
+      "gap": "ALREADY_AVAILABLE",
+      "A_base_context_sha256": "7dfd68ee50fd6b892e607de715d072394af23679a41c7b1898c6c021eac626d8",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.26,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 4,
+          "stale": 0,
+          "private": 1,
+          "conflict_fixture": 2,
+          "ids": [
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.doc",
+            "negative.conflicting-current",
+            "negative.private-note"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.fault.history"
+          ]
+        },
+        "5": {
+          "recall": 1.0,
+          "relevant_returned": 2,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.fault.history",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.rules",
+            "mini.batch.doc",
+            "mini.batch.prompt",
+            "mini.batch.source"
+          ],
+          "recall": 1.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 8616,
+          "estimated_tokens_utf8_div4": 2154,
+          "conservative_token_upper_bound": 9128,
+          "measured_tokens": null,
+          "context_sha256": "7dfd68ee50fd6b892e607de715d072394af23679a41c7b1898c6c021eac626d8",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 12788,
+          "estimated_tokens_utf8_div4": 3197,
+          "conservative_token_upper_bound": 13300,
+          "measured_tokens": null,
+          "context_sha256": "0d70a820fce6bc9e0eb6d24e2120f00db88ab5862cc7555a26c3e74ebe1328bd",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        },
+        "B5": {
+          "request_bytes": 17219,
+          "estimated_tokens_utf8_div4": 4305,
+          "conservative_token_upper_bound": 17731,
+          "measured_tokens": null,
+          "context_sha256": "61c602f75665c9b15fba986305237f414bd7b22e59dde997eed9552326dfa149",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R09",
+      "system": "mini",
+      "gap": "ALREADY_AVAILABLE",
+      "A_base_context_sha256": "24a89bd1fda1ea9323a4e0c121ac96f9f6975297ea550aa3e1626d6d7d9151ae",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.193,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.doc",
+            "ci.analysis.doc",
+            "mini.batch.rules"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "mini.batch.doc",
+            "ci.analysis.doc",
+            "mini.batch.rules",
+            "negative.conflicting-current",
+            "mini.fault.history"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.fault.history"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 4,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.fault.history",
+            "mini.batch.source"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source"
+          ],
+          "recall": 0.5
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 8586,
+          "estimated_tokens_utf8_div4": 2147,
+          "conservative_token_upper_bound": 9098,
+          "measured_tokens": null,
+          "context_sha256": "24a89bd1fda1ea9323a4e0c121ac96f9f6975297ea550aa3e1626d6d7d9151ae",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 12758,
+          "estimated_tokens_utf8_div4": 3190,
+          "conservative_token_upper_bound": 13270,
+          "measured_tokens": null,
+          "context_sha256": "34234d7a5363573369415f6dc71bd813af314dc671e280b8cc9adc1dd7fb2750",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        },
+        "B5": {
+          "request_bytes": 15675,
+          "estimated_tokens_utf8_div4": 3919,
+          "conservative_token_upper_bound": 16187,
+          "measured_tokens": null,
+          "context_sha256": "ece6254cd763821fcbdd35cf3009cbb9f7831527ae1e8d9a6ece521b0a3398e2",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R10",
+      "system": "mini",
+      "gap": "HISTORICAL_DIAGNOSTIC",
+      "A_base_context_sha256": "92b3ac5dd9eda189300b1833739025906dc2c06269e3812cd7da68fbb50c89ee",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 2.754,
+      "raw": {
+        "3": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 3,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "negative.conflicting-current",
+            "mini.batch.doc",
+            "mini.batch.rules"
+          ]
+        },
+        "5": {
+          "recall": 0.0,
+          "relevant_returned": 0,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 5,
+          "cross_system": 3,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "negative.conflicting-current",
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.doc"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.fault.history"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 4,
+          "unrelated": 3,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.fault.history",
+            "mini.batch.source"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules"
+          ],
+          "recall": 0.0
+        },
+        "B5": {
+          "ids": [
+            "mini.batch.doc",
+            "mini.batch.rules",
+            "mini.batch.source"
+          ],
+          "recall": 0.0
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 8586,
+          "estimated_tokens_utf8_div4": 2147,
+          "conservative_token_upper_bound": 9098,
+          "measured_tokens": null,
+          "context_sha256": "92b3ac5dd9eda189300b1833739025906dc2c06269e3812cd7da68fbb50c89ee",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 12758,
+          "estimated_tokens_utf8_div4": 3190,
+          "conservative_token_upper_bound": 13270,
+          "measured_tokens": null,
+          "context_sha256": "d965b18e1b0c892146ca8ce8cb95a6ef66455f4418bfef603d6030cbf6c0b039",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        },
+        "B5": {
+          "request_bytes": 15675,
+          "estimated_tokens_utf8_div4": 3919,
+          "conservative_token_upper_bound": 16187,
+          "measured_tokens": null,
+          "context_sha256": "80e965f367eb0b7db794a670547df6ebf2466a8d35cf73d540ff8d323ff54cc8",
+          "omitted_document_ids": [
+            "mini.fault.history"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R11",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "95c57da9bdeb2a86a652ee5b84a3e3a9b204c55efbfd2348d4b7a168831b1cca",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 2.945,
+      "raw": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.progress.doc",
+            "mini.batch.rules",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 2,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.progress.doc",
+            "mini.batch.rules",
+            "ci.analysis.doc",
+            "ci.csv.doc",
+            "mini.batch.doc"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 3,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code"
+          ]
+        },
+        "5": {
+          "recall": 0.5,
+          "relevant_returned": 1,
+          "relevant_total": 2,
+          "returned": 5,
+          "unrelated": 4,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 0,
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.analysis.code",
+            "ci.csv.tests"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code"
+          ],
+          "recall": 0.5
+        },
+        "B5": {
+          "ids": [
+            "ci.progress.doc",
+            "ci.analysis.doc",
+            "ci.retry.code",
+            "ci.analysis.code",
+            "ci.csv.tests"
+          ],
+          "recall": 0.5
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4710,
+          "estimated_tokens_utf8_div4": 1178,
+          "conservative_token_upper_bound": 5222,
+          "measured_tokens": null,
+          "context_sha256": "95c57da9bdeb2a86a652ee5b84a3e3a9b204c55efbfd2348d4b7a168831b1cca",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 11489,
+          "estimated_tokens_utf8_div4": 2873,
+          "conservative_token_upper_bound": 12001,
+          "measured_tokens": null,
+          "context_sha256": "b559f7d051ee079b45bb40893275793500f416ab1e5e5bdead8ad9f4267d2d1d",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 16829,
+          "estimated_tokens_utf8_div4": 4208,
+          "conservative_token_upper_bound": 17341,
+          "measured_tokens": null,
+          "context_sha256": "3e981a2d3c0fabfb53ad8379b62bf1951b9fbc8d4c69729b844de035328cd305",
+          "omitted_document_ids": []
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    },
+    {
+      "id": "R12",
+      "system": "courseinsight",
+      "gap": "EXTRA_BUSINESS_RULE",
+      "A_base_context_sha256": "4a9c415908e8ba50b3b3d3a73b8c097c0bb660fe11b221c0e8eb739e147998af",
+      "A_preserved_in_B": true,
+      "retrieval_elapsed_ms": 3.313,
+      "raw": {
+        "3": {
+          "recall": 0.6666666666666666,
+          "relevant_returned": 2,
+          "relevant_total": 3,
+          "returned": 3,
+          "unrelated": 1,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 0.6666666666666666,
+          "relevant_returned": 2,
+          "relevant_total": 3,
+          "returned": 5,
+          "unrelated": 3,
+          "cross_system": 1,
+          "stale": 0,
+          "private": 1,
+          "conflict_fixture": 2,
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc",
+            "mini.batch.rules",
+            "negative.private-note"
+          ]
+        }
+      },
+      "scoped": {
+        "3": {
+          "recall": 0.6666666666666666,
+          "relevant_returned": 2,
+          "relevant_total": 3,
+          "returned": 3,
+          "unrelated": 1,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc"
+          ]
+        },
+        "5": {
+          "recall": 1.0,
+          "relevant_returned": 3,
+          "relevant_total": 3,
+          "returned": 5,
+          "unrelated": 2,
+          "cross_system": 0,
+          "stale": 0,
+          "private": 0,
+          "conflict_fixture": 1,
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc",
+            "ci.csv.code",
+            "ci.manage.code"
+          ]
+        }
+      },
+      "delivered": {
+        "B3": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc"
+          ],
+          "recall": 0.6666666666666666
+        },
+        "B5": {
+          "ids": [
+            "negative.conflicting-current",
+            "ci.analysis.code",
+            "ci.analysis.doc",
+            "ci.csv.code"
+          ],
+          "recall": 0.6666666666666666
+        }
+      },
+      "requests": {
+        "A": {
+          "request_bytes": 4750,
+          "estimated_tokens_utf8_div4": 1188,
+          "conservative_token_upper_bound": 5262,
+          "measured_tokens": null,
+          "context_sha256": "4a9c415908e8ba50b3b3d3a73b8c097c0bb660fe11b221c0e8eb739e147998af",
+          "omitted_document_ids": []
+        },
+        "B3": {
+          "request_bytes": 11029,
+          "estimated_tokens_utf8_div4": 2758,
+          "conservative_token_upper_bound": 11541,
+          "measured_tokens": null,
+          "context_sha256": "0dc01403d6ef4d3c85a6b96c5656bda9f595c89dec0851b61008846054b2b0a6",
+          "omitted_document_ids": []
+        },
+        "B5": {
+          "request_bytes": 16468,
+          "estimated_tokens_utf8_div4": 4117,
+          "conservative_token_upper_bound": 16980,
+          "measured_tokens": null,
+          "context_sha256": "f9bd7e0426e67bcb3cb1dc6fa3e117877c97e9200f3e05f9d4ce93ee33b632d4",
+          "omitted_document_ids": [
+            "ci.manage.code"
+          ]
+        }
+      },
+      "planning_accuracy": null,
+      "intent_satisfaction": null,
+      "real_e2e": null
+    }
+  ]
+}
