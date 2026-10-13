@@ -1,6 +1,6 @@
 # 自然语言异步批量测试最小闭环
 
-本轮基线 `d34e153`。场景、CSV、草稿和离线记录均为 **DEVELOPMENT_ONLY / UNREVIEWED**；没有真实模型成绩、独立留出成绩或真实 Java/数据库执行证据。
+开发起始基线 `d34e153`，最终实现提交 `0e684b2`。场景、CSV、草稿和记录均为 **DEVELOPMENT_ONLY / UNREVIEWED**；已有一次真实模型 mini Smoke 证据，没有独立留出成绩或本场景真实 Java/数据库执行证据。[完整 Demo 与脱敏结构](batch-demo.md)。下文离线验收和预检段落保留其阶段范围。
 
 ## 已复用与新增
 
@@ -93,4 +93,10 @@ mini target 的未就绪结果接口返回 409。独立人工计划可以用明�
 
 一个预检记录只可消费一次；失败也不退还调用槽位，拒绝覆盖输出。调用前和业务执行前检查冻结状态。真实计划由本次模型响应生成；不读取开发标准计划构造答案。保存原文、脱敏结构和 Selector、fixture/hash、upload/poll、逐步骤报告、真实 usage、耗时与诊断，不保存原始模型正文或凭据。仅原始流程成功后复用内存中同一计划在两个新的进程内 target 上重放 terminal/result_count，不追加模型调用；单独保存回放报告，手工回放不声称自然语言任务成功。所有记录保持 DEVELOPMENT_ONLY / UNREVIEWED、Eval v2 意图分数为空。
 
-兼容 Schema 的字段必填与禁止额外字段规则已按 [OpenAI Structured Outputs 文档](https://developers.openai.com/api/docs/guides/structured-outputs) 核对；这不能替代学校服务兼容性的真实 Smoke Test。本轮只做预检与 Mock 验证。
+兼容 Schema 的字段必填与禁止额外字段规则已按 [OpenAI Structured Outputs 文档](https://developers.openai.com/api/docs/guides/structured-outputs) 核对；这不能替代学校服务兼容性的真实 Smoke Test。入口开发阶段仅做预检与 Mock 验证，之后在 CI 全绿及操作员另行批准后完成一次真实调用。
+
+## 真实 Smoke 验收补记（2026-10-13）
+
+`0e684b2` 上的唯一真实 ecnu-plus 调用生成合法五步计划，正常流程 PASS / task_satisfied=true；实际输入 2,155、输出 610、合计 2,765 Token，模型/正常 Workflow 耗时 13.375/15.657 秒。可信 fixture、`$.courseId`/`$.batchId` 来源、upload/poll 和全部断言通过；轮询 2 次，业务请求 6 次，全部进程内 ASGI。
+
+同一计划 terminal 重放在状态断言失败后停止读取结果；result_count 重放在 count 断言得到实际 3、预期 2；两项原业务结果均为 ASSERTION_FAILED，重放没有模型调用。原始归档完整性已核对，展示用[静态副本](demo-evidence/batch-smoke.json)不包含原始模型响应或秘密。累计本次 Smoke 模型调用 1、真实 Java/数据库访问 0，不产生完整 Eval v2 意图分数，不授权再次调用。

@@ -1,0 +1,177 @@
+{
+  "schema_version": "agenttest.candidate.ab.static.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "artifact_kind": "CURATED_STATIC_EVIDENCE",
+  "formal_independent_evaluation": false,
+  "source_comparison_sha256": "a0c003fab6cdfdd16300f31ff15a5305c7d31e089293453667136e174803aa0c",
+  "execution_order": "A cases, then B cases; no replay or retry",
+  "sample_limit": "Two reused AI development cases; no generalization claim",
+  "statistical_significance": "NOT_ESTABLISHED",
+  "variants": {
+    "A": {
+      "requested": 2,
+      "attempted": 2,
+      "executed": 2,
+      "end_to_end_success": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "input_tokens": 3109,
+      "output_tokens": 721,
+      "total_tokens": 3830,
+      "model_latency_ms": {
+        "n": 2,
+        "method": "nearest_rank; percentiles require n>=20",
+        "mean": 6289.0,
+        "p50": null,
+        "p95": null
+      },
+      "http_requests": 8
+    },
+    "B": {
+      "requested": 2,
+      "attempted": 2,
+      "executed": 2,
+      "end_to_end_success": {
+        "numerator": 2,
+        "denominator": 2,
+        "rate": 1.0
+      },
+      "input_tokens": 5291,
+      "output_tokens": 740,
+      "total_tokens": 6031,
+      "model_latency_ms": {
+        "n": 2,
+        "method": "nearest_rank; percentiles require n>=20",
+        "mean": 5539.0,
+        "p50": null,
+        "p95": null
+      },
+      "http_requests": 8
+    }
+  },
+  "paired_results": [
+    {
+      "case_id": "C101",
+      "A": {
+        "classification": "PASS",
+        "plan_valid": true,
+        "intent": {
+          "passed": true,
+          "diagnostics": [],
+          "covered_goals": [
+            "named_resource_created",
+            "owner_authenticated",
+            "owner_read_same_id_and_name"
+          ]
+        },
+        "safe_rejection": false,
+        "rejection_kind": null,
+        "end_to_end_success": true,
+        "context_bytes": 4385,
+        "model_calls": 1,
+        "real_api_calls": 1,
+        "input_tokens": 1480,
+        "output_tokens": 273,
+        "total_tokens": 1753,
+        "model_elapsed_ms": 5141.0,
+        "workflow_elapsed_ms": 7390.00000001397,
+        "http_requests": 3
+      },
+      "B": {
+        "classification": "PASS",
+        "plan_valid": true,
+        "intent": {
+          "passed": true,
+          "diagnostics": [],
+          "covered_goals": [
+            "named_resource_created",
+            "owner_authenticated",
+            "owner_read_same_id_and_name"
+          ]
+        },
+        "safe_rejection": false,
+        "rejection_kind": null,
+        "end_to_end_success": true,
+        "context_bytes": 5978,
+        "model_calls": 1,
+        "real_api_calls": 1,
+        "input_tokens": 2144,
+        "output_tokens": 281,
+        "total_tokens": 2425,
+        "model_elapsed_ms": 4140.0,
+        "workflow_elapsed_ms": 6375.0,
+        "http_requests": 3
+      }
+    },
+    {
+      "case_id": "C105",
+      "A": {
+        "classification": "PASS",
+        "plan_valid": true,
+        "intent": {
+          "passed": true,
+          "diagnostics": [],
+          "covered_goals": [
+            "named_resource_created",
+            "other_authenticated",
+            "other_read_denied",
+            "owner_authenticated",
+            "owner_read_same_id_and_name"
+          ]
+        },
+        "safe_rejection": false,
+        "rejection_kind": null,
+        "end_to_end_success": true,
+        "context_bytes": 4889,
+        "model_calls": 1,
+        "real_api_calls": 1,
+        "input_tokens": 1629,
+        "output_tokens": 448,
+        "total_tokens": 2077,
+        "model_elapsed_ms": 7437.0,
+        "workflow_elapsed_ms": 9984.99999998603,
+        "http_requests": 5
+      },
+      "B": {
+        "classification": "PASS",
+        "plan_valid": true,
+        "intent": {
+          "passed": true,
+          "diagnostics": [],
+          "covered_goals": [
+            "named_resource_created",
+            "other_authenticated",
+            "other_read_denied",
+            "owner_authenticated",
+            "owner_read_same_id_and_name"
+          ]
+        },
+        "safe_rejection": false,
+        "rejection_kind": null,
+        "end_to_end_success": true,
+        "context_bytes": 8939,
+        "model_calls": 1,
+        "real_api_calls": 1,
+        "input_tokens": 3147,
+        "output_tokens": 459,
+        "total_tokens": 3606,
+        "model_elapsed_ms": 6938.0,
+        "workflow_elapsed_ms": 9671.999999991385,
+        "http_requests": 5
+      }
+    }
+  ],
+  "batch_ledger": {
+    "slots": 4,
+    "reserved_tokens": 88192,
+    "calls": 4,
+    "real_calls": 4,
+    "observed_tokens": 9861,
+    "usage_complete": true,
+    "stop": null,
+    "classification": "DEVELOPMENT_ONLY"
+  }
+}

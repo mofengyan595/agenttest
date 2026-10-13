@@ -1,0 +1,787 @@
+{
+  "schema_version": "agenttest.batch.demo.static.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "artifact_kind": "CURATED_STATIC_EVIDENCE",
+  "generated_plan_representation": "Redacted converted DSL evidence; original model response was not retained",
+  "source_commit": "0e684b2a5522f33ed45bc13f79b6feccc49af7f4",
+  "source_archive_sha256": "37d70a96e97bdd516d141daf5c750bd34963651e8ce28fdf38af491d8c3b2f7b",
+  "source_files_sha256": {
+    "plan-evidence.json": "07c3ae96f4a5b429b769d0d2564daedd26cc3b6e0042b3e7585ab974c3bad0bf",
+    "preflight.json": "cc41a85eeb845c477a771e5d31b585724e1b7bd1b95d249e7cb73ee6487066a3",
+    "results.json": "a6fc17520436561ef495c210620e81deaf56192b787b00e43453a27ca66a0317",
+    "reports/27b5d3c0c7704f4d9791bb24dc8f2b17/report.json": "41cb4b1777617f7e8f23d1cf8712fc3b937b675628493661f4aa0ba4b77d694c",
+    "reports/7226884b575e4861b61812f5a6771331/report.json": "2ed92296a0cc132abf6658a8b67916076f54b08ca7840ac7465d6e0ad7b287bd",
+    "reports/aa87baeff37b4914a31412e1cfc92a55/report.json": "f560891a9182b8a6f5783fb0ca906ef71550e13115bf2429dd8da67f5980258f"
+  },
+  "user_task": "使用 alice 创建课程“批量分析验收”，使用已批准的两行 CSV 测试数据创建批量分析任务，等待任务成功后读取结果，并验证返回两条记录。",
+  "environment": {
+    "target": "in_process_mini_ASGI",
+    "java_requests": 0,
+    "database_writes": 0
+  },
+  "budget": {
+    "max_calls": 1,
+    "max_input_tokens": 20000,
+    "max_output_tokens": 2048,
+    "max_total_tokens": 22048,
+    "model_timeout": 30,
+    "workflow_timeout": 120,
+    "retries": 0,
+    "replans": 0,
+    "probes": 0
+  },
+  "reserved_tokens": 22048,
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-plus",
+    "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+    "http_status": 200,
+    "elapsed_ms": 13375.0,
+    "request_bytes": 8253,
+    "request_sha256": "d9d1ced2aa740e4755a11286db0fa7d35ec1d2d23222aa351a84c1dd25f8ce3d",
+    "response_bytes": 2571,
+    "input_token_upper_bound": 8765,
+    "input_tokens": 2155,
+    "output_tokens": 610,
+    "total_tokens": 2765,
+    "output_sha256": "31bbe513b51ace767b3b12a5d45bc914bb5e1e11f524b7470d434f318ff2d85d",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "workflow_elapsed_ms": 15657.0,
+  "real_model_calls": 1,
+  "eval_v2_intent_score": null,
+  "freeze_valid_at_execution": true,
+  "plan": {
+    "plan_evidence": {
+      "scenario_sha256": "12ccd1cf109c67802594a2ce0618c0bf6d7734556b672a49dfc6c3bf7bda7d99",
+      "steps": [
+        {
+          "step_id": "step_login",
+          "operation_id": "login",
+          "role": "alice",
+          "policy_id": "batch_login_v1",
+          "argument_sha256": {},
+          "dependencies": {},
+          "selectors": {},
+          "upload": false,
+          "poll": false,
+          "read_retries": 0
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "role": "alice",
+          "policy_id": "batch_course_v1",
+          "argument_sha256": {
+            "body.name": "21424c13188e037db522c2e40d83aad616135aa4a95ca73764046b03afcf21e6"
+          },
+          "dependencies": {},
+          "selectors": {},
+          "upload": false,
+          "poll": false,
+          "read_retries": 0
+        },
+        {
+          "step_id": "step_create_batch",
+          "operation_id": "createBatch",
+          "role": "alice",
+          "policy_id": "batch_upload_v1",
+          "argument_sha256": {},
+          "dependencies": {
+            "path_parameters.courseId": "step_create_course"
+          },
+          "selectors": {
+            "path_parameters.courseId": "$.courseId"
+          },
+          "upload": true,
+          "poll": false,
+          "read_retries": 0
+        },
+        {
+          "step_id": "step_get_batch",
+          "operation_id": "getBatch",
+          "role": "alice",
+          "policy_id": "batch_poll_v1",
+          "argument_sha256": {},
+          "dependencies": {
+            "path_parameters.batchId": "step_create_batch"
+          },
+          "selectors": {
+            "path_parameters.batchId": "$.batchId"
+          },
+          "upload": false,
+          "poll": true,
+          "read_retries": 0
+        },
+        {
+          "step_id": "step_get_batch_results",
+          "operation_id": "getBatchResults",
+          "role": "alice",
+          "policy_id": "batch_results_v1",
+          "argument_sha256": {},
+          "dependencies": {
+            "path_parameters.batchId": "step_create_batch"
+          },
+          "selectors": {
+            "path_parameters.batchId": "$.batchId"
+          },
+          "upload": false,
+          "poll": false,
+          "read_retries": 0
+        }
+      ]
+    },
+    "options": [
+      {
+        "step_id": "step_login",
+        "policy_sha256": "145fd9cebae7cf802b7587765c3fe7299397b83328039b7701c79963d7ffaa0f",
+        "fixture_id": null,
+        "upload_sha256": null,
+        "poll_policy": null,
+        "assertions": {
+          "reviewed": true,
+          "source": "docs/batch-natural-language.md",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.access_token",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        }
+      },
+      {
+        "step_id": "step_create_course",
+        "policy_sha256": "783dfb5e22a8f1ebe071b80ce3588cdfe5130b38d0797365c753899aad9fceef",
+        "fixture_id": null,
+        "upload_sha256": null,
+        "poll_policy": null,
+        "assertions": {
+          "reviewed": true,
+          "source": "docs/batch-natural-language.md",
+          "status": {
+            "codes": [
+              201
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.courseId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        }
+      },
+      {
+        "step_id": "step_create_batch",
+        "policy_sha256": "6a3e2c2ec47496c8d9a71a9cd7ba1c6b48e4bf65ab45a810820810a2d561d40e",
+        "fixture_id": "mini_two_rows_v1",
+        "upload_sha256": "3e2eb6e903d0a094390ab4d3abf0a7530323cff139f2681e2c13601e9e882e02",
+        "poll_policy": null,
+        "assertions": {
+          "reviewed": true,
+          "source": "docs/batch-natural-language.md",
+          "status": {
+            "codes": [
+              202
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.batchId",
+              "operator": "exists",
+              "expected": null
+            },
+            {
+              "select": "$.state",
+              "operator": "equals",
+              "expected": "QUEUED"
+            }
+          ],
+          "public_evidence": []
+        }
+      },
+      {
+        "step_id": "step_get_batch",
+        "policy_sha256": "6bf6d4eb46447f9ffb62c27f66a7501dcc884a0818157639a701a9d8add232f2",
+        "fixture_id": null,
+        "upload_sha256": null,
+        "poll_policy": {
+          "select": "$.state",
+          "terminal_values": [
+            "SUCCEEDED",
+            "FAILED"
+          ],
+          "progress_values": [
+            "QUEUED",
+            "RUNNING"
+          ],
+          "progress_fields": [
+            {
+              "select": "$.count",
+              "operator": "equals",
+              "expected": 2
+            }
+          ],
+          "max_attempts": 4,
+          "interval": 0.01
+        },
+        "assertions": {
+          "reviewed": true,
+          "source": "docs/batch-natural-language.md",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.state",
+              "operator": "equals",
+              "expected": "SUCCEEDED"
+            },
+            {
+              "select": "$.count",
+              "operator": "equals",
+              "expected": 2
+            }
+          ],
+          "public_evidence": [
+            "$.count"
+          ]
+        }
+      },
+      {
+        "step_id": "step_get_batch_results",
+        "policy_sha256": "9223fe0405d989ede0f7aafc722b22c134e55e3257d9be78680af8038e9198b3",
+        "fixture_id": null,
+        "upload_sha256": null,
+        "poll_policy": null,
+        "assertions": {
+          "reviewed": true,
+          "source": "docs/batch-natural-language.md",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.items",
+              "operator": "count",
+              "expected": 2
+            }
+          ],
+          "public_evidence": [
+            "$.items"
+          ]
+        }
+      }
+    ],
+    "policy_authorized": true,
+    "intent_verified": true
+  },
+  "cases": [
+    {
+      "case": "normal",
+      "run_id": "aa87baeff37b4914a31412e1cfc92a55",
+      "report_sha256": "12a5db82b085558137343b1304d34f4962592499b1172a7b499671ed73caf702",
+      "outcome": "PASS",
+      "task_satisfied": true,
+      "planner_calls": 1,
+      "tool_calls": 1,
+      "steps": [
+        {
+          "step_id": "step_login",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "exists",
+              "selector": "$.access_token",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            200
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                201
+              ],
+              "actual": 201
+            },
+            {
+              "kind": "exists",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            201
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                202
+              ],
+              "actual": 202
+            },
+            {
+              "kind": "exists",
+              "selector": "$.batchId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            202
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_get_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.count",
+              "passed": true,
+              "expected": 2,
+              "actual": 2
+            }
+          ],
+          "http_statuses": [
+            200,
+            200
+          ],
+          "attempt_count": 2
+        },
+        {
+          "step_id": "step_get_batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "count",
+              "selector": "$.items",
+              "passed": true,
+              "expected": 2,
+              "actual": 2
+            }
+          ],
+          "http_statuses": [
+            200
+          ],
+          "attempt_count": 1
+        }
+      ]
+    },
+    {
+      "case": "terminal",
+      "run_id": "7226884b575e4861b61812f5a6771331",
+      "report_sha256": "e17750d8715b77a15caf626d587bbd452dc6299c7e13947043249c3bda4aad1e",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": null,
+      "planner_calls": 0,
+      "tool_calls": 0,
+      "steps": [
+        {
+          "step_id": "step_login",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "exists",
+              "selector": "$.access_token",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            200
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                201
+              ],
+              "actual": 201
+            },
+            {
+              "kind": "exists",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            201
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                202
+              ],
+              "actual": 202
+            },
+            {
+              "kind": "exists",
+              "selector": "$.batchId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            202
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_get_batch",
+          "operation_id": "getBatch",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.count",
+              "passed": true,
+              "expected": 2,
+              "actual": 2
+            }
+          ],
+          "http_statuses": [
+            200,
+            200
+          ],
+          "attempt_count": 2
+        }
+      ]
+    },
+    {
+      "case": "result_count",
+      "run_id": "27b5d3c0c7704f4d9791bb24dc8f2b17",
+      "report_sha256": "0f286827aede647a44ab5173e22774ac9070eb82d3c24d292a0f42741a604daa",
+      "outcome": "ASSERTION_FAILED",
+      "task_satisfied": null,
+      "planner_calls": 0,
+      "tool_calls": 0,
+      "steps": [
+        {
+          "step_id": "step_login",
+          "operation_id": "login",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "exists",
+              "selector": "$.access_token",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            200
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_course",
+          "operation_id": "createCourse",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                201
+              ],
+              "actual": 201
+            },
+            {
+              "kind": "exists",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            201
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_create_batch",
+          "operation_id": "createBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                202
+              ],
+              "actual": 202
+            },
+            {
+              "kind": "exists",
+              "selector": "$.batchId",
+              "passed": true,
+              "expected": null,
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ],
+          "http_statuses": [
+            202
+          ],
+          "attempt_count": 1
+        },
+        {
+          "step_id": "step_get_batch",
+          "operation_id": "getBatch",
+          "outcome": "PASS",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.count",
+              "passed": true,
+              "expected": 2,
+              "actual": 2
+            }
+          ],
+          "http_statuses": [
+            200,
+            200
+          ],
+          "attempt_count": 2
+        },
+        {
+          "step_id": "step_get_batch_results",
+          "operation_id": "getBatchResults",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "POLICY_EVALUATED",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "count",
+              "selector": "$.items",
+              "passed": false,
+              "expected": 2,
+              "actual": 3
+            }
+          ],
+          "http_statuses": [
+            200
+          ],
+          "attempt_count": 1
+        }
+      ]
+    }
+  ]
+}

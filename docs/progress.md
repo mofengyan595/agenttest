@@ -1,5 +1,17 @@
 # 开发进度
 
+## RAG 决策归档与现有功能冻结（2026-10-13）
+
+本轮基线 `e394dfb`，已核对与远端 master 相同；其 Python 四组／Web 双平台 CI 均完成成功。用户明确授权本轮整理、审查、提交与推送，不授权新增检索／Embedding／Agent 功能或真实模型、Java、数据库操作。
+
+统一 README、项目技术说明、RAG 报告和 Candidate Discovery 的 No-Go 表述，补记可信执行依据、Java 扩展信息缺口、真实 BM25 召回／成本／污染及重新考虑条件。保留 12 条开发问题、有限语料／课程业务域、Golden Labels 未独立人工审核、Embedding 未运行、无真实规划／端到端 RAG 收益等限制。实验原语料、问题、协议、结果与正式门禁／历史成绩不改。
+
+本阶段未提交内容经分类，仅发布文档与两份选取的脱敏静态展示副本；补充公开证据边界。完整运行报告／上下文、私有 Suite、预检／claim、压缩原型、备份、测试输出与凭据继续留在忽略目录，不整目录提交。修正旧 Java 清单“哈希全一致”的早期说法：原始字节为 14/16，一致换行后 16/16；历史进度记录保留，不能据此放行新 SHA。
+
+冻结判断：**现有本地演示与受控研究功能具备冻结条件**，无必须新增功能的展示阻塞；当前 Java 版本／batch 适配、隔离与副作用回收、正式独立评测／batch 评分、跨业务域收益及生产能力仍未验收，另立里程碑处理。完成本轮资料检查、相关回归和同提交全矩阵 CI 后验收归档，不用旧 SHA 成绩替代。
+
+本轮实际验证：相关离线回归 **291 passed / 92.05s**；Ruff 与 diff 检查通过；9 份文档的 122 处本地链接／锚点、围栏、UTF-8、指标一致性及公开内容敏感模式检查通过。batch 的 6 份来源文件／3 份报告、Candidate A/B 的两组归档／逐字段配对投影及私有压缩审计统计核对通过；27 条 RAG 引用与保存指标核对通过，既有 20 条 batch 离线 Demo 归档校验通过。最终暂存再次核对公开路径与原字节；私有输出在 `runs/rag-closeout-20261013/`，不随提交发布。没有新增收费模型、Java／数据库操作，也未本地重跑全量 Python/Web/Java；同新提交 CI 最终状态以 GitHub 和交付记录为准。
+
 ## RAG 必要性零收费离线评估（2026-10-13）
 
 本轮明确授权恢复评估，仅在独立 `experiments/rag_necessity/` 建立可复现检索实验，没有接入生产 RAG。保留开始时已有文档与静态证据修改，不修改正式 Eval v2、历史 A/B、公共 Planner、Executor 或 CourseInsight。
@@ -11,6 +23,20 @@
 准备共同任务、Prompt、DSL、Policy、Executor、评分维度和后续 Token 预算；12 题仍是信息问题，不能冒充已映射的执行需求。Fake 的角色／Operation／断言／资源／CSV 越权在执行前拒绝，Mock＋进程内 target 保持 normal PASS、terminal/result_count ASSERTION_FAILED。相关回归 **199 passed / 49.26s**，最终独立实验测试 **22 passed / 7.76s**，Ruff 与 diff 检查通过。首次夹具构造错误已修正；Windows 沙箱 asyncio 内部 socketpair 阻塞通过有证据的沙箱外离线运行解决，现有断网保护保留。
 
 结论：**当前生产 No-Go，保持 No-RAG**。信息缺口不等于必须检索；当前 BM25 不够可靠，Embedding 收益未知，首先补最新业务资料包、可信适配与独立任务审阅。完整证据和预算建议见 [RAG 必要性报告](rag-necessity-20261013.md)。下一准确里程碑：先取得第二个真实业务域的版本化代码／契约／规则资料与独立审阅问题，再决定是否建立新冻结检索集；不直接开发向量数据库、修改正式门禁或进行收费模型／Java 写入。本轮所有真实收费模型调用、Java 请求、数据库写入、提交推送均为 0；未重跑全量 Python/Web/Java 或新 CI。
+
+## 功能收尾与 CourseInsight 只读接入审查（2026-10-13）
+
+本轮基线 `0e684b2`，与远端 master 一致。核查已有真实 batch 归档：唯一模型调用 2,765 Token，正常五步 PASS / task_satisfied=true；同计划 terminal/result_count 重放均 ASSERTION_FAILED，无新增模型调用。6 个归档 JSON 摘要与 3 份报告摘要核对通过。补记上一阶段固定最终状态的全量结果为 984 passed / 13 skipped，Python 四组和 Web 两组 CI 均在该 SHA 成功；此前“预检阶段真实调用 0”的记录保留其当时范围。
+
+本轮整理 [项目说明](project-technical-summary.md)、[批处理 Demo](batch-demo.md)、[工程审查与最小接入方案](engineering-review-20261013.md)及脱敏静态证据副本，修正 README 的 CSV/轮询规划状态。复核旧开发 A/B 两组归档，各 2/2；A/B 总 Token 为 3,830/6,031，未观察到质量增益，维持 A 默认、压缩原型私有，不改原标签或评分。
+
+只读核对 CourseInsight 本地/远端 main `fbaf08f`：batch 上传 201、content/rating CSV、data.status 终态 COMPLETED/PARTIAL_FAILED/FAILED、分页结果与导出；结果列表包含未成功任务，条数不能单独证明完成。旧 source-review 固定 `430c23e`，16 个旧文件哈希虽一致，SHA 门禁仍会拒绝当前版本；新 batch 源码不在旧清单中。Java 课程 GET 无 mini 归属 403 语义；batch 由管理员/课程所属教师管理。专用环境、清理、来源审查与新 profile 均仍待实施和验收。
+
+本轮没有修改业务代码、正式 Eval v2、原始实验结果或 CourseInsight；已有 Java `.gitignore` 修改保留。新增模型调用、真实 Java/数据库访问、提交与推送均为 0。
+
+本轮实际验证：batch 四模块、既有 natural/intent/ownership 与 CourseInsight 人工/NL/环境/Mock harness 回归 **244 passed / 89.62s**；Ruff 全项目通过，diff 检查通过；7 个文档的本地链接、代码围栏、UTF-8 和两份静态证据与原档逐字段核对通过。现有 `check_batch_workflow.py` 新离线 Demo 及 `--verify` 通过，20 条记录保留 3 PASS、6 ASSERTION_FAILED、9 NEEDS_REVIEW、2 TOOL_ERROR。输出位于忽略目录 `runs/engineering-review-20261013-batch-demo`，测试 XML 为 `runs/engineering-review-20261013-pytest.xml`。重新查询远端确认旧基线 SHA 的六项 CI 成功；本轮未提交新 SHA，未触发新 CI，也未重跑全量 Python/Web 测试。
+
+下一准确里程碑建议：仅在获得新开发授权后，在 AgentTest 新增 Java batch 的源码审核契约/策略/两行 fixture，先用人工 DSL + Fake/Mock 验收，不启动真实 Java 或收费模型；真实写入与模型调用继续另行授权。面试展示可直接使用现有证据，无需先完成该适配。
 
 ## Batch 提交审查与单次模型预检准备（2026-10-13）
 

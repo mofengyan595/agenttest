@@ -110,7 +110,15 @@ oneOf/anyOf/allOf、pattern、未知 format、开放对象、嵌套请求值、�
 
 发现模块不增加 Web API 或候选页面：把本地策略文件变成浏览器可传策略，会改变当前文件权限作为信任根的设计。后续可提供**服务器预先批准候选产物的只读查询**，仍不能执行。发现模块没有 FastAPI Schema；本轮 ReportStore 新增可选 revision 的 API Schema 与 TS 类型已另行重新生成。
 
-- **Planner**：后续把通过脱敏筛选的候选引用纳入 planning_context，仅建议计划；仍经过原 DSL/Policy/Intent 门禁。当前未改变 Planner 输入或 Prompt。
+- **Planner**：默认 planning_context 不追加候选；Eval v2 与独立开发 A/B 已有显式 B 组，通过脱敏筛选追加正常候选，仅建议计划，仍经过原 DSL/Policy/Intent 门禁。没有启用默认增强。
 - **Agent Eval**：另建、审阅并冻结新的 C 系列候选集；本轮 fixture 是开发回归，不作为独立泛化成绩或修改旧 Golden 标签。
 - **Web**：未来展示稳定候选 ID、依据、NEEDS_REVIEW 与静态分母，不能把 STATIC_VALIDATED 显示为执行 PASS。
-- **Observability / RAG**：只作为以后可追溯的观测/参考扩展；本轮无服务依赖、新业务权限、收费模型或真实 Java 写入。
+- **Observability / RAG**：后续独立 RAG 离线评估已作出 No-Go，默认保持 No-RAG，见[技术决策](project-technical-summary.md#rag-技术选型记录no-go)。候选和检索文本均不能授予业务权限；当前不增加服务依赖或新实验。
+
+## 后续开发 A/B 与默认策略（2026-10-13）
+
+两个已使用的 AI 开发样本在 A/B 均为 2/2 端到端成功；四次真实调用合计 9,861 Token。A 输入/输出/总量为 3,109/721/3,830，B 为 5,291/740/6,031；B 未观察到质量收益，用量增加。每组两条、固定 A→B 顺序、Prompt 已明确提示路径，不能据此计算显著性或广泛泛化。[脱敏统计副本](demo-evidence/candidate-ab-summary.json)、[开发协议](development-ab.md)。
+
+私有离线审计确认：B 预组合的信息在 A 的 Policy/binding_rules/authentication 中已有；存在登录/依赖重复，且公开投影缺少逐步骤角色对应，反向角色路径可能显示相同。旧执行门禁仍有效，未发现越权执行。压缩原型在 36 个开发上下文中减少 23.64% 字节，58 个上下文可恢复，144 行 Fake/Mock 对照结果一致；没有新真实调用，也没有证明实际 Token 节省或模型质量改善。
+
+因此当前 mini 维持 A 默认，B 仅显式实验；原型留在私有研究档案，不接入生产。新增 batch 的有类型规划与可信执行不代表 Discovery 已支持 CSV/异步候选。完整取舍见[项目说明](project-technical-summary.md)与[工程审查](engineering-review-20261013.md)。历史数据和正式门禁均保留。

@@ -1,72 +1,158 @@
-# AgentTest：实习面试技术说明
+# AgentTest：项目能力与工程决策
 
-## 定位与实际贡献
+核查日期：2026-10-13；收尾基线 `e394dfb`，业务功能沿用 `0e684b2`。本页面向 GitHub 读者和技术面试官，描述已经存在的代码与证据。详细接入判断见[工程审查报告](engineering-review-20261013.md)，真实异步样例见[批处理 Demo](batch-demo.md)，RAG 决策依据见[离线评估](rag-necessity-20261013.md)。
 
-这是独立的 Python AI API 测试项目。解决的具体问题是：模型可以提出测试步骤，但不能同时决定服务地址、身份、业务预期和是否通过。项目把规划与授权分离，使用确定性程序执行经过批准的测试。
+## 项目解决什么问题
 
-CourseInsight 是被测 Java/Spring Boot 服务。AgentTest 阅读实际 Controller、DTO 和 Security 配置建立适配，在隔离 demo 完成真实调用；没有修改 Java 业务代码。描述简历时应区分“Java 服务测试集成”与“实现 Java 业务功能”，不能把 AgentTest 的 Python 模块说成 Java 实现。
+API 测试的难点不只是发请求，还包括登录顺序、前后接口的资源依赖、异步任务何时结束，以及用什么依据判定通过。LLM 可以提出步骤，但它的输出可能格式正确、业务目标却错误，也可能多做一次写入。因此 AgentTest 将规划、授权、执行和判定分开。
 
-## 一次请求如何完成
+用户输入受控中文需求，模型选择批准的操作、角色和策略，生成有类型的计划。可信代码验证整个计划后才发送请求；凭据、服务地址、CSV 内容、轮询预算和断言均由操作员配置。它是独立 Python 项目；CourseInsight 是 Java 被测系统，未为迎合测试修改其业务代码。
 
-1. 操作员加载 TargetConfig、契约、Policy Registry、账号环境及预算。它们不属于模型输出。
-2. Workflow 过滤 OpenAPI 操作、参数 Schema、认证要求和批准策略目录，只向 Planner 提供公共上下文和有界中文需求。
-3. ChatECNU Planner 发送一次受约束的结构化 Chat Completions 请求。返回结果仍是不可信 DSL；不存在“结构化 JSON 就安全”的假设。
-4. Pydantic、OpenAPI、策略适用范围、资源来源、认证先后顺序及确定性意图检查全部通过后，才进入执行器。所有自然语言入口必须有意图校验，通用场景缺少校验器也 NEEDS_REVIEW。报告区分计划合法、策略授权、需求覆盖与最终 task_satisfied；显式人工计划 PASS 不声明自然语言目标完成。
-5. Executor 通过 Vault 登录并保管 Token；动态资源 ID 只可从批准来源绑定到后续请求。发送前记录唯一 attempt ID、检查请求预算和隔离授权。
-6. Verifier 对照可信状态码、字段及来源关系做断言；报告输出摘要和固定诊断，不保存原始正文、模型输出或认证。
-7. 只有操作员启用调查、原业务断言失败且有同 run 的可信资源时，FakeAnalyzer 才能选择批准只读能力。调查复用原会话和执行器，原失败不可改写。
+当前适合展示的是“有限业务范围内可审计的测试 Agent”。不是输入任意需求、导入任意文档就能测试任意系统的通用平台。
 
-完整架构和请求流程图见 [README](../README.md)。
+## 架构与模块职责
 
-## 技术难点与取舍
+```mermaid
+flowchart TD
+    O[操作员：契约、目标、角色、策略、fixture、预算] --> W[Workflow]
+    U[受控中文需求] --> W
+    W --> C[planning_context：公共契约与策略目录]
+    C --> P[Planner：一次结构化输出]
+    P --> D[草稿转 DSL：仍不可信]
+    D --> V[DSL / OpenAPI / Policy / Intent 校验]
+    V --> E[Executor：Vault、资源绑定、HTTP、轮询]
+    E --> T[隔离测试目标]
+    T --> A[Verifier：可信断言]
+    A --> R[ReportStore：脱敏证据与固定分类]
+    R --> Q[本地 CLI / 只读 API / Web Console]
+```
 
-| 问题 | 实现 | 明确取舍 |
+| 模块 | 实际职责 | 边界 |
 | --- | --- | --- |
-| 模型伪造 reviewed/source | DSL 只引用策略 ID，独立 Registry 匹配接口/角色/场景/绑定 | 配置文件权限与人工审阅是信任根，尚无多租户审批平台 |
-| 计划能执行却不符合任务 | 封闭中文意图检查，名称/创建者/关系必须匹配 | 保守拒绝开放式需求，不能宣称通用语言推理 |
-| JWT 被模型作为业务参数引用 | 认证由 Vault 管理；认证响应禁止普通步骤绑定，已知秘密和敏感字段清理 | bearer / 批准登录流程为主，不支持任意认证插件 |
-| Java 返回封装与 mini 不同 | token `$.data.accessToken`、创建 ID `$.data`、详情 `$.data.id`、code=0 | 可信适配配置，不写第二套 HTTP 引擎，不照搬 mini 的 403 |
-| 唯一代码与动态 ID | 操作员生成 AT4A 代码锁定输入；查询必须引用创建 ID | 不通过更换 ID、改字段、重试创建掩盖失败 |
-| Java 字符串校验 | 明确支持 UTF-16 长度及非空的受控子集 | 不声称实现全部 Bean Validation / JSON Schema |
-| 调查需要认证生命周期 | 同 run 受限内存会话；结束后清除 Vault/响应状态 | 不持久化 JWT，不恢复未完成 HTTP，不重新登录或创建 |
-| GET 可能有副作用 | 操作员 ReadOnlyCapability Registry 记录安全依据 | 会推进状态的 getBatch 不批准，方法名不能证明安全 |
-| 请求可能已写入但响应丢失 | 请求前审计、写入不自动重试、MCP/Java invocation claim 拒绝重放 | 不承诺 exactly-once；网络异常后实际服务器状态仍需人工核实 |
-| 模型输出错误/工具错误混淆 | 固定 JSON/MODEL/DSL/OPENAPI/POLICY/DEPENDENCY/INTENT 诊断 | 不保存 Pydantic 输入或原异常文本，部分细节有意不留存 |
-| MCP 客户端越权 | 五个工具、严格参数 Schema、固定场景、独立预算、报告命名空间 | stdio 本地连接；不开放 Java 写入、任意 URL 或任意计划执行 |
+| [contracts.py](../src/agenttest/contracts.py)、[request_validation.py](../src/agenttest/request_validation.py) | OpenAPI 3.0/3.1 JSON/YAML 解析、局部引用展开、请求约束校验 | 拒绝远程引用；请求 Schema 是受支持子集，不完整模拟 Bean Validation |
+| [planner_input.py](../src/agenttest/planner_input.py) | 筛选可见 Operation/Role/Policy、参数约束、登录前置关系 | 去除文档自由文本、默认值、账号及目标地址；目录可见不等于授权 |
+| [llm_planner.py](../src/agenttest/llm_planner.py)、[batch_plan.py](../src/agenttest/batch_plan.py) | 兼容 Chat Completions、用量/预算核查、严格 PlannerDraft 转 DSL | 普通草稿只表达标量参数/引用；batch 专用草稿增加 fixture 与 poll 策略 ID |
+| [dsl.py](../src/agenttest/dsl.py)、[policies.py](../src/agenttest/policies.py) | 步骤类型、认证顺序、绑定规则、批准断言、可信 CSV 与 PollPolicy | 模型不能新增策略或凭据；只准引用已有策略 ID |
+| [intent.py](../src/agenttest/intent.py)、[batch_intent.py](../src/agenttest/batch_intent.py)、[courseinsight_nl.py](../src/agenttest/courseinsight_nl.py) | 检查任务名称、角色、目标、顺序、资源来源与完整路径 | 封闭语法与规则；不支持的说法保守待审，不用模型自评替代 |
+| [workflow.py](../src/agenttest/workflow.py) | LangGraph 节点、一次规划/执行、预算、错误分支、最终任务满足标志 | 没有自动修复或重新规划循环 |
+| [executor.py](../src/agenttest/executor.py)、[credentials.py](../src/agenttest/credentials.py) | Vault 登录、multipart、前序成功响应绑定、有界轮询、发送前审计 | 不执行模型代码；写入不自动重试，不恢复未知结果的请求 |
+| [verifier.py](../src/agenttest/verifier.py)、[report.py](../src/agenttest/report.py) | 状态/字段/条数断言、报告快照、摘要、脱敏与分类 | 无可信预期则待审；断言失败不能直接等同已确认服务 Bug |
+| [safety.py](../src/agenttest/safety.py)、[local_access.py](../src/agenttest/local_access.py)、[report_files.py](../src/agenttest/report_files.py) | 固定目标、隔离写入、回环 API、路径/链接防护、报告写入边界 | Target 仅 IP/localhost 或明确批准的隔离私网 IP；阻断重定向和环境代理 |
+| [discovery.py](../src/agenttest/discovery.py)、[eval_v2/](../src/agenttest/eval_v2/) | 离线候选发现；独立意图评分、分母、故障配对、审核与归档审计 | 候选不执行；正式评测仍须独立审核，batch 暂无完整评分表达 |
+| [investigation.py](../src/agenttest/investigation.py)、[mcp_service.py](../src/agenttest/mcp_service.py) | 单次批准只读调查；五项固定场景 MCP stdio 工具 | 调查当前为 FakeAnalyzer；MCP 不开放任意 DSL、URL 或 Java 写入 |
+| [main.py](../src/agenttest/main.py)、[web/](../web/) | 契约导入、报告查询、React/TypeScript 本地只读控制台 | 没有浏览器业务执行、多租户审批或生产部署认证 |
 
-LangGraph 只负责节点顺序和条件分支；不重复执行器，也没有引入自动修复循环。模型服务使用 HTTPX 兼容协议，按学校官方参数处理 json_schema/max_tokens，避免依赖不必要的 SDK。MCP 使用官方 SDK 2.3.0 的 MCPServer，独立 stdio 入口，不默认启动 HTTP Server。
+## 一次自然语言任务的完整调用关系
 
-## 真实证据与能说的指标
+实际图为 `load_contract → plan → validate → execute → analyze_or_finish → report`。校验拒绝跳过 execute，仍保存诊断；setup/verify 没有另建图节点，认证和断言在 Executor 内完成。
 
-- 原 2A 人工审核的 18 条任务：首轮端到端 13/18，第二轮 16/18；旧结果和失败保留，后来不再反复优化此集合。它们只覆盖两个意图的措辞/角色/数据变体。
-- 4A 真实学校模型 + 隔离 Java：一次登录/创建/查询，200/201/200，动态 ID 和 code/name/teacherName 一致，14 项断言通过。模型一次 1,794 Token / 21,891 ms；HTTP 分别 375.224 / 91.208 / 29.235 ms。
-- 4B 新 B01–B04：两条支持任务中真实模型只有 1/2 有效计划和端到端成功。B02 认证顺序错误在发送前拒绝；两条非法意图也零请求拦截。样本为开发者构造，未冒称逐条人工评测批准。
-- 真实计划已执行三类缺陷全部检出，误报 0/3，执行漏报 0/3；第四类归属缺陷因规划失败没有执行。总体覆盖 **3/4**，端到端未检出 **1/4（规划失败）**，不能只说 100% 检出。
-- 人工固定计划对六类机制检出 6/6、误报 0/6、漏报 0/6，包含异步终态和结果条数。固定 FakeLLM 是链路基线；人工异步数字不属于真实模型规划成绩。
-- 本轮共五次学校调用，7,290 Token。4B 平均模型耗时 4,816.5 ms；这是少量实际调用耗时，未做并发/压力测试，不能换成吞吐量、提效百分比或生产 SLA。
+1. 入口传入操作员选择的契约、TargetConfig、Registry、预算和 Intent Validator。Workflow 复制目标配置与策略快照，秘密不进入图状态或模型上下文。
+2. `load_contract` 解析契约，检查有界任务及已知秘密，构造 Executor。`plan` 通过 `planning_context` 构造公开视图，调用 Planner 一次。
+3. 真实 Planner 校验服务响应、usage、严格草稿和重复参数，再转换成 Scenario。batch 转换器按固定 `csv_fixture_id` 注入 CSV，按 `poll_policy_id` 设置是否轮询；没有读取模型给出的路径。
+4. `validate` 解析 DSL；`Executor.validate` 先做操作、角色、认证、依赖与请求约束检查，再逐步 `Registry.resolve` 核对场景、角色、封闭参数、准确来源及 Selector。随后 Intent Validator 校验完整任务与计划。校验器只收到副本，不能修补可执行计划。
+5. `execute` 在操作员执行前门禁通过后调用同一个 Executor；Executor 再次预检。Vault 注入登录凭据并持有 JWT；消费者只引用前序成功响应。每次发送前保存 attempt ID，检查大小、请求数与超时。
+6. 状态轮询先验证允许状态与进度约束，遇到批准终态后执行最终断言。终态 FAILED 可以结束等待，但不能通过 SUCCEEDED 断言。任何失败停止后续业务步骤。
+7. `analyze_or_finish` 输出固定结论，不能改断言、重规划或重放写入。只有整个图返回且 Intent 通过、业务 PASS，才发布 `task_satisfied=true`。
 
-数据出处：[4A](stage4a-results.json)、[4B](stage4b-results.json)、[指标分母与失败说明](stage4-evaluation.md)。ecnu-plus 为学校可变别名，跨日期结果不能直接作模型/代码单因素比较。
+`dsl_valid`、`policy_authorized`、`intent_verified`、`workflow_completed`、`task_satisfied` 分别回答结构是否合法、策略是否授权、是否覆盖需求、图是否结束、需求是否完成。显式 `operator_plan` 的 PASS 不声明自然语言满足，`task_satisfied=null`。
 
-## 验证与可复现性
+## 模型与可信代码的权限
 
-完整依赖冻结在项目 .venv；默认 pytest 禁止意外网络，FakeLLM、MockTransport 和 ASGITransport 覆盖规划、凭据、策略、状态机、预算、报告与故障注入。另有真正 loopback HTTP 和 SDK stdio 子进程验证，避免只测函数调用。Windows/Linux × base/agent 四组 CI 执行 pytest、Ruff、pip check 与演示，真实 Java/学校 API 不进入 CI。
+| 模型可以提出 | 可信代码决定 |
+| --- | --- |
+| 可见目录内的 Operation、Role、Policy 与步骤 ID | 可访问的目标、操作白名单、角色账号和写入授权 |
+| 受控课程名与前序步骤引用 | 参数范围、来源策略、Selector、角色关系与认证顺序 |
+| batch 的固定 fixture ID、poll 策略 ID | CSV 字节、multipart 字段/文件名、允许状态、次数/间隔与超时 |
+| 计划或空步骤弃权 | 可信断言、错误分类、最终 PASS/任务满足 |
 
-执行入口：`python -m agenttest showcase --case all`。查看本机输出的报告路径；真实调用通过显式脚本与人工批准，不是演示命令的默认副作用。最终测试数和 CI SHA 见 [进度](progress.md)，不把历史 CI 当本轮结果。
+结构化输出解决格式问题，不产生业务权限。模型不能提交 reviewed/source、任意请求体、Header、URL、文件路径或代码来替代配置。文件选择与人工审查是现有信任根，尚无多人审批系统。报告不保存原始模型响应、HTTP 正文或认证秘密；哈希能发现改动，不能防御有操作系统写权限的人整体改写证据。
 
-## 简历表述建议
+## 可验证的真实实验
 
-可以写：
+不同日期、Prompt、任务集和服务后端不能合并成一个“总体成功率”。学校 `ecnu-plus` 是可变服务别名，temperature=0 也不等于固定权重和结果。
 
-- 独立实现受控 API 测试 Agent，基于 LangGraph 编排结构化 LLM 规划、DSL/OpenAPI 校验、可信策略和确定性 HTTP 执行；隔离模型的目标、凭据和断言授权。
-- 对接 Spring Boot CourseInsight demo，完成中文需求到学校 ecnu-plus 规划、动态资源绑定、登录/创建/查询及 14 项一致性断言的真实闭环；提供脱敏审计报告。
-- 实现受限只读失败调查和五项 MCP stdio 工具；以六类配对缺陷验证执行器，保留真实模型认证顺序失败及 Windows/Linux 四组离线 CI。
+| 证据 | 已观察结果 | 不能推出的结论 |
+| --- | --- | --- |
+| [2A 首轮](stage2a-evaluation.md) / [第二轮](stage2a-round2-evaluation.md) | 相同 18 条受控课程任务，端到端 13/18 → 16/18；原失败保留 | 多处实现/Prompt 同时变化，不能归因单一优化，也不是广泛泛化 |
+| [4A Java](stage4a-results.json) | 1 次模型规划 + 隔离 Java 登录/创建/查询，14 项断言；1,794 Token | 没有验收 Java CSV/异步链或跨用户权限 |
+| [4B](stage4b-results.json) | 支持任务成功 1/2，另两条越权需求零请求拒绝；真实计划检出 3/3 已执行缺陷，总覆盖 3/4 | 未执行的归属故障不能计为已检出；门禁拒绝不是模型主动拒绝 |
+| [开发 Candidate A/B 摘要](demo-evidence/candidate-ab-summary.json) | 两个已用样本，两组均 2/2；A 3,830、B 6,031 Token，合计 4 次 / 9,861 Token | 没有观察到质量增益；固定 A→B、每组两条，不能宣称显著性或速度改善 |
+| [batch 真实 Smoke](batch-demo.md) | 1 次模型调用 / 2,765 Token，五步 PASS；同计划 terminal / result_count 均断言失败 | 只有一种流程、一条需求；DEVELOPMENT_ONLY / UNREVIEWED，无完整 Eval v2 分数 |
 
-不要写“生产使用”“覆盖全部接口”“LLM 缺陷检出 100%”“自动修复”“微服务平台”或没有测量的效率提升。项目已适合用于 Java 后端/AI Agent 实习简历，但候选人仍需亲自运行演示并能解释信任边界与真实失败。
+batch 的模型耗时 13.375 秒，正常 Workflow 15.657 秒；业务请求 6 次，全部进程内 ASGI，无真实 Java/数据库访问。Prompt 明确给出流程和选择规则；模型完成受约束填充与依赖表达，未验证自主发现接口或开放式规划。故障重放是同计划的确定性验证，不是两次新增模型规划。
 
-## 未实现与下一步
+## Candidate Discovery 为什么不默认启用
 
-2026-10-12 已完成通用意图门禁、固定方案模式、候选策略/角色收窄和认证前置元数据；没有新收费调用或真实 Java 写入。修改前失败回归、可复算 Prompt 字节数/目录规模及后续候选生成、独立 Eval、真实调查方案见 [工程升级记录](engineering-upgrade.md)。这些离线改进不能替代新的真实模型评测。
+发现器离线读取契约与批准策略，有限搜索标量输入、边界、认证和资源关系，生成稳定候选 ID、缺失依据与静态覆盖。所有候选保持 NEEDS_REVIEW；负例为 STATIC_ONLY_NEGATIVE，没有负例执行授权；缺陷映射为 NOT_MAPPED。示例 19 项、Operation 1/2、Scenario 8/9 均为静态发现口径，执行数为 0。
 
-没有 RAG、多 Agent、自动修复、前端工程、新数据库或 Kubernetes。真实 Java 只验收 admin 三步，不做跨用户权限推断；模型尚不能规划 CSV/异步流程；调查仅 FakeAnalyzer。没有跨进程事务、断点续传、生产权限系统、独立 wheel 资源打包、自动生成 pytest 脚本或大样本泛化证据。
+A 已包含 Operation/Role/Policy、认证顺序、来源 Selector 和 same/different 关系；B 仅追加过滤后的正常候选元数据，仍走同一门禁。开发 A/B 两条都成功，B 输入从 3,109 增至 5,291 Token，未观察到质量收益。[设计与历史结果](candidate-discovery.md)。
 
-后续应先审查新的业务目标和只读能力，构造未使用过的任务，再决定是否改进规划。扩大模型能力或 Java 写入范围需要独立授权和新的评测，当前不继续堆功能。
+离线审计还发现重复登录候选、重复依赖及审计元数据；候选投影只检查角色集合，缺少逐步骤角色对应，反向跨用户链可能显示为同一投影。原 Policy/Intent 仍拦截不合法计划；这是提示质量问题，不能表述为已发生越权。
+
+私有压缩原型可恢复 58 个上下文；36 个开发上下文合计字节减少 23.64%，Fake/Mock 的 144 行结果一致。这只证明格式往返与引擎兼容，不是实测 Token 节省或真实模型收益。原型未接入生产；A 保持默认，B 仅显式实验。暂不投入新的压缩、A/B 或候选架构工作。
+
+## RAG 技术选型记录（No-Go）
+
+考虑 RAG 的原因是：扩展到不同系统时，Schema 往往不能完整表达业务状态、资源关系和接口语义，希望从版本化文档、规范及历史案例中补充规划依据。这是信息需求假设，不是已有收益。
+
+当前 Agent 已从操作员配置取得 Operation/Role/Policy 目录、认证顺序、绑定来源与 Selector，并由可信组件掌握固定 CSV、PollPolicy、断言、目标和执行预算。现有 mini 五步链无需检索即可运行。OpenAPI 描述仍按不可信输入解析；契约结构和文档引用不能扩大执行白名单。
+
+Java 扩展确有额外语义：CSV 的 content/rating 和评分约束、重投失败与终止失败的计数、完成率不等于成功率、结果列表可能含未成功任务，以及 analysis 与 analysis-task 的权限差异。这些信息来自核对版本的源码和业务文档；同时，当前 Java 契约、Policy 和 Intent 尚未覆盖这些操作。检索不能补发授权，也不能代替可信适配。
+
+| 本次 BM25 结果 | 实际观察 |
+| --- | --- |
+| 语料与标签 | 12 条 DEVELOPMENT_ONLY / UNREVIEWED 问题、27 份文档，26 个关联标签；Golden Labels 未独立人工审核 |
+| raw Recall@3/@5 | 33.33% / 33.33% |
+| 系统／版本／可见性过滤后 Recall@3/@5 | 37.50% / 63.89%；12 KB notes 预算内 Top 5 实际证据召回 52.78% |
+| 请求成本 | A 72,270 字节，B5 182,819 字节，约 2.53 倍；仅粗估 Token，没有实测模型成本 |
+| Top 5 污染 | raw 有 24 个跨系统、2 个 PRIVATE、11 个冲突样本命中；过滤后跨系统／PRIVATE 为 0，冲突仍为 7；类别可重叠 |
+| 旧版本控制探针 | raw 第 2 位返回旧 DTO，过滤后排除；主问题旧版本命中 0 不证明不存在风险 |
+
+污染数字是各题 Top 5 中的命中次数，同一文档可重复出现，类别也可重叠；故意构造的负例不能用来估计真实环境发生率。
+
+检索文本、历史案例、未审核文档与模型计划均为**非可信证据**，只能辅助提出待审建议。执行依据仍是操作员批准的 TargetConfig／Registry／fixture／预算，以及独立 DSL、Policy、Intent 和执行前检查；检索命中不能产生 reviewed 标记、断言、管理员角色或写入许可。
+
+因此当前选择 **No-RAG**：本次词法基线有漏检、预算内信息损失与冲突风险，尚无模型规划或端到端收益，已增加上下文成本；有限场景优先直接提供小型版本化资料与可信结构化输入。mini 与 CourseInsight 共享课程业务域，语料规模有限；Embedding 未运行，不能据此判断其增益，也不能宣称跨业务域泛化。
+
+只有在新里程碑中取得独立业务域资料、独立人工审核的新问题与标签，确认静态上下文不足，并以同数据、同权限、同预算对照证明收益大于成本且污染可控，才重新考虑 RAG。届时仍须另行授权；本次归档不继续开发检索、Embedding、向量数据库或收费比较。
+
+## 已实现、有限支持和未来方案
+
+| 状态 | 能力 |
+| --- | --- |
+| 已实现且可离线展示 | 安全契约解析、DSL、Registry、Vault、JSON/CSV、有界轮询、动态绑定、确定性断言、报告与故障注入；受控课程/归属/batch NL；Fake/Mock 工作流；MCP stdio；本地只读 Web |
+| 有真实小样本证据 | 两轮 mini 课程实验、Java admin 三步、开发 Candidate A/B、单条 mini batch smoke；各自证据和分母独立 |
+| 有实现但范围有限 | Schema/JSONPath 子集；封闭中文意图；FakeAnalyzer 调查；来源固定的 Java 三步适配；Eval v2 正式门禁存在但 C 草案未独立审核 |
+| 未实现或未验收 | AgentTest 到 Java 的批处理闭环、通用 NL/认证插件、CSV 导出内容校验、自动清理、写入恢复、自动 pytest 导出、独立大样本 benchmark、生产多租户/分布式运行 |
+| 当前不做 | 生产 RAG、Embedding／向量数据库、多 Agent、自动修复、Kubernetes、继续使用旧题调参；RAG 离线实验只归档，Candidate 压缩保持私有研究证据 |
+
+源码检验与默认测试不需要 Key、Docker 或外网；可选 Agent/MCP 依赖由锁文件固定。业务基线 `0e684b2` 本地历史验收为 984 passed / 13 平台或权限 skip；该 SHA 及 RAG 归档 `e394dfb` 的 Python 四组与 Web 两组 CI 均全部通过。它们属于既有证据，不能冒充本次文档工作重新执行的测试。
+
+## 功能冻结判断
+
+**现有本地演示与受控研究功能具备冻结条件。** 已有契约、规划、安全执行、断言、报告、故障重放、MCP 和只读控制台；RAG 已得到 No-Go 取舍，没有必须新增 Agent 功能才能完成展示的阻塞。本轮完成文档、公开资料审核与相关回归后提交，最终以该提交的全部 CI 成功作为归档验收，不用旧 SHA 的成绩替代。
+
+以下限制继续公开保留，不扩大冻结范围来掩盖：
+
+| 未验收范围 | 仍存在的阻塞 |
+| --- | --- |
+| 当前版本 Java／Java batch | 审核仍固定旧 SHA；新契约、Policy、Intent、隔离环境、后台任务及副作用回收未验收，不能直接真实执行 |
+| 正式独立模型评测 | 人工独立审核／留出与完整 batch 评分表达不足；历史开发集、门禁拒绝和检索命中不计为独立成功率 |
+| 跨业务域／RAG 收益 | 仅 12 条未独立审核开发问题，有限课程语料；Embedding、真实模型规划和端到端 RAG 收益均未测 |
+| 生产交付 | 当前为本地单机研究工具，没有生产多租户审批、通用适配、自动清理或写入恢复等验收 |
+
+Java 扩展、正式 benchmark 和生产验收是另立里程碑的工作，不是当前演示功能冻结前必须补齐的功能。冻结后优先维护缺陷和依赖兼容，不继续旧题调参或追加功能。
+
+## 公开资料与私有运行数据
+
+公开保留 `experiments/rag_necessity/` 中已审核的实验代码、冻结语料／问题／协议、结果和负例，以及本阶段文档、[两份脱敏静态展示副本](demo-evidence/README.md)。实验中的 PRIVATE 文档是明确标注、无真实秘密的合成可见性负例；UNREVIEWED 标签不变。资料获准公开不等于业务预期已获独立审核。
+
+`.env`、真实凭据、原始运行报告／上下文、私有任务、预检与 claim、候选压缩原型、备份、测试临时目录和调试输出继续保存在忽略的 `runs/` 或其他私有目录，不随文档提交。不能因为某次输出脱敏过，就整目录公开。静态副本、来源摘要和历史案例用于说明证据，不是可执行计划或执行授权。
+
+## 面试时怎样讲
+
+“我做的是一个受控 API 测试 Agent。LLM 只生成计划，目标、凭据、测试数据、轮询预算和断言由可信代码掌握。我重点解决了跨接口 ID 传递、异步任务等待、写入不重试，以及计划合法但不满足需求的问题。真实模型已经跑通 mini 的五步批处理；Java 目前只真实验收了三步课程链，批处理接入还需要契约与安全环境适配。”
+
+可以展开三个具体决策：为什么结构化 JSON 之后仍要 Intent/Policy；为什么终态错误与超时属于不同分类；为什么不把结果条数当作 Java 分析成功。保留 B02 认证顺序失败与 Candidate 无增益观察，比只报成功数字更能说明工程判断。
+
+面试前优先熟练解释和演示现有闭环。最小 Java 接入范围、阻塞项及可推迟工作见[本轮工程审查](engineering-review-20261013.md)。

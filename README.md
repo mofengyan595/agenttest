@@ -14,7 +14,11 @@
 
 未审核 AI 开发样本的真实模型小规模 A/B 使用[独立开发诊断入口](docs/development-ab.md)，先准备和 Mock 验收，真实调用另行授权；正式 Eval v2 门禁保持不变。
 
-新增[自然语言异步批量测试开发闭环](docs/batch-natural-language.md)：受控中文需求 → 批准 CSV fixture → 资源绑定 → 有界等待 SUCCEEDED → 结果条数断言。复用现有执行引擎，只在离线 mini target 上验收；数据为 DEVELOPMENT_ONLY，尚无完整 Eval v2 意图分数或真实模型成绩。
+新增[自然语言异步批量测试闭环](docs/batch-natural-language.md)：受控中文需求 → 批准 CSV fixture → 资源绑定 → 有界等待 SUCCEEDED → 结果条数断言。已在 `0e684b2` 上完成一次真实 ecnu-plus 规划，进程内 mini target 五步 PASS；2,765 Token，同计划两项离线故障均被断言发现。数据为 DEVELOPMENT_ONLY / UNREVIEWED，尚无完整 Eval v2 意图分数。[真实五步 Demo 与静态脱敏证据](docs/batch-demo.md)。
+
+项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
+
+**RAG 决策：No-Go，保持 No-RAG。** [离线评估](docs/rag-necessity-20261013.md)包含 12 条开发问题、27 份文档；BM25 过滤后 Recall@3/@5 为 37.50%/63.89%，预算内 Top 5 证据召回为 52.78%，B5 请求字节为 A 的 2.53 倍。同版本冲突仍会命中；标签未经独立人工审核，业务域有限，Embedding 未运行，也没有真实模型规划或端到端 RAG 收益。检索证据不授予执行权限，实验已归档，不接入运行时。[技术选型与功能冻结边界](docs/project-technical-summary.md#rag-技术选型记录no-go)。
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/evaluate_v2.py validate
@@ -131,11 +135,11 @@ flowchart TD
 
 `run` 仍执行操作员固定计划；`workflow` 省略 `--user-task` 使用固定方案，显式给需求就启用意图门禁。直接使用 Workflow 的固定样本须设置 `task_mode="operator_plan"`，且使用固定 FakeLLM。此类 PASS 的 `task_satisfied=null`，不能宣称自然语言目标已满足；`agent` 不自动降级。
 
-本轮还收窄了已识别任务的候选策略/角色、补充认证前置元数据并精简 mini Prompt。真实模型效果未重新测量。[问题核验、离线对照与后续实施方案](docs/engineering-upgrade.md)。
+已收窄识别任务的候选策略/角色、补充认证前置元数据并精简 mini Prompt；早期离线改进记录见[工程升级](docs/engineering-upgrade.md)，后续开发 A/B 和 batch 真实证据见[项目说明](docs/project-technical-summary.md)。不同实验不能用作单一改动的因果证明。
 
 ## 真实 Java + AI：显式、一次性入口
 
-需要现有 CourseInsight 独立源码、JDK 17、Maven 离线缓存及隔离 demo Docker 依赖。源码/配置有变化时预检会拒绝，必须人工审查；不会降级连接未知环境。凭据由本地 demo 配置进入 Vault，不发送给模型。
+需要现有 CourseInsight 独立源码、JDK 17、Maven 离线缓存及隔离 demo Docker 依赖。源码/配置有变化时预检会拒绝，必须人工审查；不会降级连接未知环境。凭据由本地 demo 配置进入 Vault，不发送给模型。**当前适配审核固定 `430c23e`，CourseInsight main 已为 `fbaf08f`，现有预检会因版本不符拒绝；下面真实入口是既有使用方式，不能直接用于当前版本。** Java batch 尚未适配，详见[只读审查](docs/engineering-review-20261013.md)。
 
 本地 `.env` 配置 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`AGENTTEST_MODEL`；学校 Base URL 使用学校官方地址，当前验证模型 `ecnu-plus`。**不要提交 `.env` 或在终端打印 Key**。[配置与协议](docs/model-configuration.md)。
 
@@ -204,7 +208,7 @@ B02 的 `DSL_AUTHENTICATION_ORDER` 零请求；B03/B04 的 `INTENT_UNSUPPORTED_O
 - TargetConfig、Policy Registry、Vault、只读能力和预算均来自操作员；模型不能自报 reviewed/source 获得授权。策略必须匹配操作、角色、业务场景和资源来源。
 - 固定 IP / localhost、白名单和隔离写入；不使用契约 servers 选目标，所有重定向阻断，关闭环境代理；不执行模型生成的 Python/Shell。
 - 请求 Schema 校验字段、严格基本类型、required、enum、对象/数组、长度及数值边界；不支持的组合、正则和未知 format 明确待审，**不是完整 JSON Schema / Bean Validation 实现**。Java 输入额外采用 UTF-16 长度和非空安全子集。
-- 真实模型当前只规划标量 JSON 参数和资源引用，不支持 CSV/轮询规划；确定性 DSL 支持这些功能。中文意图识别是封闭词汇和模板，不是通用语义推理。
+- 普通 PlannerDraft 表达标量 JSON 参数和资源引用；独立 batch profile 已支持批准 fixture/poll 策略 ID，并有一次真实 mini Smoke 证据。模型不控制上传内容或轮询参数；Java batch 与通用 CSV 规划未支持。中文意图识别是封闭语法和规则，不是通用语义推理。
 - Vault 只对批准登录操作读取凭据；JWT 与步骤状态仅在 run 内存中存在，结束销毁。认证响应不可当业务参数引用，不支持跨 run、恢复请求或自动修复。
 - 报告记录 run/step/attempt ID、契约/计划/策略摘要、状态/字节数/摘要/延迟、固定诊断及预算；不保存原始模型、HTTP 正文或敏感认证。数值密码、验证码、身份字段、自定义敏感字段及已知秘密也脱敏。
 
@@ -225,12 +229,14 @@ src/agenttest/
   contracts.py, request_validation.py  # 契约与约束
   dsl.py, policies.py, intent.py       # 不可信计划 / 可信策略 / 意图
   llm_planner.py, workflow.py          # 结构化模型与 LangGraph
+  batch_*.py                          # 独立 batch 草稿、意图、可信 fixture 与诊断
   executor.py, credentials.py         # 唯一 HTTP 执行器及运行时 Vault
   verifier.py, report.py              # 确定性断言与脱敏证据
   investigation*.py                   # 受控只读调查
   courseinsight*.py                   # Java 适配及隔离预检
   mcp_service.py, mcp_server.py        # 能力边界与 SDK stdio
   defect_evaluation.py, showcase.py   # 独立评测与统一离线演示
+  discovery*.py, eval_v2/              # 静态候选发现与独立审核/评分门禁
 examples/                            # 操作员配置、可信策略及合成任务
 scripts/                             # 安装、明确启用的实测与回环检查
 web/                                 # 独立 React/TypeScript 控制台与前端测试
@@ -244,6 +250,8 @@ docs/                                # 各阶段原始评测与技术说明
 
 Windows/Linux × base/agent 四组 Actions 保留；pytest、Ruff、pip check、真实回环 HTTP、Fake 自然语言/调查和 MCP stdio 自动验证。CI **不调用学校模型、Docker 或真实 Java 写入**。本机完整结果与最终 CI 在进度文档记录；仅基础安装会明确跳过可选 Agent/MCP 测试。
 
-独立 Web Actions 固定 Node 22 主版本，使用 package-lock 执行 npm ci、typecheck、test、build。浏览器 E2E 暂为本地验收：`cd web` 后 `npm run test:e2e` 会自动生成一次性离线报告并启动回环服务，不依赖用户历史 runs；需要 agent 可选依赖及本机 Edge/Playwright Chromium。新增 CI 的远端结果以本轮提交后的 Actions 为准，尚未验收。
+独立 Web Actions 固定 Node 22 主版本，使用 package-lock 执行 npm ci、typecheck、test、build 和隔离浏览器 E2E。业务基线 `0e684b2` 的 Python 四组与 Web 两组 CI 均已通过。`cd web` 后 `npm run test:e2e` 会自动生成一次性离线报告并启动回环服务，不依赖用户历史 runs；需要 agent 可选依赖及本机 Edge/Playwright Chromium。本轮收尾不重跑本地 Web，新的提交另行接受同 SHA CI 检查。
 
-当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；无 RAG、多 Agent、Kubernetes 或新数据库。新增轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。
+RAG 归档提交 `e394dfb` 的 [Python 四组 CI](https://github.com/mofengyan595/agenttest/actions/runs/38367571712)与 [Web 双平台 CI](https://github.com/mofengyan595/agenttest/actions/runs/38367571716)也全部成功；这些是该 SHA 的验收，不替代后续提交的检查。本地演示与受控研究范围具备功能冻结条件，Java 最新版本适配、正式独立评测和生产能力仍未验收，见[冻结判断](docs/project-technical-summary.md#功能冻结判断)。
+
+当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；运行时保持 No-RAG，无多 Agent、Kubernetes 或新数据库。已有轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。公开仓库只保留审核后的脱敏展示副本与明确标注的开发实验，原始运行记录、私有任务、候选压缩原型和凭据继续留在忽略目录。
