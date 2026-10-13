@@ -1,0 +1,225 @@
+[
+  {
+    "id": "batch_login_v1",
+    "operation_id": "login",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_batch_nl_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/batch-natural-language.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.access_token",
+          "operator": "exists"
+        }
+      ]
+    },
+    "binding_rules": [],
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    }
+  },
+  {
+    "id": "batch_course_v1",
+    "operation_id": "createCourse",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_batch_nl_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/batch-natural-language.md",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.courseId",
+          "operator": "exists"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "name",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "response_selector": "$.name"
+      }
+    ],
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    }
+  },
+  {
+    "id": "batch_upload_v1",
+    "operation_id": "createBatch",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_batch_nl_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/batch-natural-language.md",
+      "status": {
+        "codes": [
+          202
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.batchId",
+          "operator": "exists"
+        },
+        {
+          "select": "$.state",
+          "expected": "QUEUED"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "courseId",
+        "source_policy_id": "batch_course_v1",
+        "source_selector": "$.courseId",
+        "role_relation": "same"
+      }
+    ],
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    },
+    "csv_fixture": {
+      "id": "mini_two_rows_v1",
+      "classification": "DEVELOPMENT_ONLY",
+      "upload": {
+        "field": "file",
+        "filename": "input.csv",
+        "content": "text\nfirst synthetic row\nsecond synthetic row\n"
+      }
+    }
+  },
+  {
+    "id": "batch_poll_v1",
+    "operation_id": "getBatch",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_batch_nl_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/batch-natural-language.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.state",
+          "expected": "SUCCEEDED"
+        },
+        {
+          "select": "$.count",
+          "expected": 2
+        }
+      ],
+      "public_evidence": [
+        "$.count"
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "batchId",
+        "source_policy_id": "batch_upload_v1",
+        "source_selector": "$.batchId",
+        "role_relation": "same"
+      }
+    ],
+    "required_bindings": {
+      "poll": true,
+      "read_retries": 0
+    },
+    "poll": {
+      "select": "$.state",
+      "terminal_values": [
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "progress_values": [
+        "QUEUED",
+        "RUNNING"
+      ],
+      "progress_fields": [
+        {
+          "select": "$.count",
+          "expected": 2
+        }
+      ],
+      "max_attempts": 4,
+      "interval": 0.01
+    }
+  },
+  {
+    "id": "batch_results_v1",
+    "operation_id": "getBatchResults",
+    "roles": [
+      "alice"
+    ],
+    "business_scenario": "mini_target_batch_nl_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/batch-natural-language.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.items",
+          "operator": "count",
+          "expected": 2
+        }
+      ],
+      "public_evidence": [
+        "$.items"
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "batchId",
+        "source_policy_id": "batch_upload_v1",
+        "source_selector": "$.batchId",
+        "role_relation": "same"
+      }
+    ],
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    }
+  }
+]

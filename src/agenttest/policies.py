@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import Field
 
 from agenttest.diagnostics import Layer, ValidationFailure
-from agenttest.dsl import AssertionPolicy, FieldAssertion, PollPolicy, Step
+from agenttest.dsl import AssertionPolicy, CSVUpload, FieldAssertion, PollPolicy, Step
 from agenttest.safety import StrictModel
 
 
@@ -33,6 +33,14 @@ class BindingRule(StrictModel):
     source_body_equalities: dict[str, str] = Field(default_factory=dict)
 
 
+class ApprovedCSVFixture(StrictModel):
+    """Operator-owned bytes; planners receive only public fixture metadata."""
+
+    id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
+    classification: Literal["DEVELOPMENT_ONLY"]
+    upload: CSVUpload
+
+
 class RegisteredPolicy(StrictModel):
     id: str
     operation_id: str
@@ -44,6 +52,7 @@ class RegisteredPolicy(StrictModel):
     required_bindings: dict = Field(default_factory=dict)
     binding_rules: list[BindingRule] = Field(default_factory=list)
     closed_arguments: bool = False
+    csv_fixture: ApprovedCSVFixture | None = None
 
 
 class PolicyRegistry:
@@ -81,10 +90,13 @@ class PolicyRegistry:
         for field, expected in policy.required_bindings.items():
             if step.model_dump().get(field) != expected:
                 raise NeedsReview("POLICY_BINDING_MISMATCH")
+        if policy.csv_fixture is not None and step.upload != policy.csv_fixture.upload:
+            raise NeedsReview("POLICY_CSV_FIXTURE_MISMATCH")
         if policy.closed_arguments:
             for location in ("body", "path_parameters", "query"):
                 names = {r.name for r in policy.binding_rules if r.location == location}
-                if set(getattr(step, location)) != names or step.upload is not None:
+                if (set(getattr(step, location)) != names
+                        or (step.upload is not None and policy.csv_fixture is None)):
                     raise NeedsReview("POLICY_ARGUMENT_MISMATCH")
         for rule in policy.binding_rules:
             binding = getattr(step, rule.location).get(rule.name)
@@ -135,7 +147,10 @@ class PolicyRegistry:
                  "required_bindings": item.required_bindings,
                  "binding_rules": [r.model_dump() for r in item.binding_rules],
                  "closed_arguments": item.closed_arguments,
-                 "poll_allowed": item.poll is not None}
+                 "poll_allowed": item.poll is not None,
+                 **({"csv_fixture": {"id": item.csv_fixture.id,
+                                      "classification": item.csv_fixture.classification}}
+                    if item.csv_fixture else {})}
                 for item in entries if item.business_scenario == business_scenario
                 and item.assertions.reviewed]
 

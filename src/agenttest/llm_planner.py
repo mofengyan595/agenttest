@@ -184,10 +184,16 @@ class OpenAICompatiblePlanner:
     """One bounded request, no retries, fallback format, tracing or raw response persistence."""
 
     def __init__(self, settings: ModelSettings, transport: httpx.AsyncBaseTransport | None = None,
-                 *, profile: Literal["mini", "courseinsight"] = "mini"):
-        if profile not in {"mini", "courseinsight"}:
+                 *, profile: Literal["mini", "courseinsight", "mini_batch"] = "mini"):
+        if profile not in {"mini", "courseinsight", "mini_batch"}:
             raise ValueError("Unknown planner profile")
+        self._draft_type = PlannerDraft
         self._prompt = SYSTEM_PROMPT if profile == "mini" else COURSEINSIGHT_PROMPT
+        if profile == "mini_batch":
+            from agenttest.batch_plan import BATCH_PROMPT, BatchPlannerDraft
+
+            self._draft_type = BatchPlannerDraft
+            self._prompt = BATCH_PROMPT
         self._settings = settings.model_copy(deep=True)
         self._transport = transport
         self.stats = ModelCallStats()
@@ -230,14 +236,17 @@ class OpenAICompatiblePlanner:
         finally:
             self.stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
 
-    async def _generate(self, context: dict) -> str:
+    def prepare_request(self, context: dict) -> bytes:
+        """Encode and budget-check the exact request without opening a connection."""
         settings = self._settings
-        schema = PlannerDraft.model_json_schema()
-        definitions = schema["$defs"]["DraftStep"]["properties"]
+        schema = self._draft_type.model_json_schema()
+        step_type = "BatchDraftStep" if self._draft_type is not PlannerDraft else "DraftStep"
+        definitions = schema["$defs"][step_type]["properties"]
         definitions["operation_id"]["enum"] = [op["id"] for op in context["operations"]]
         definitions["policy_id"]["enum"] = [p["id"] for p in context["policies"]]
-        definitions["role"] = {"type": ["string", "null"],
-                               "enum": [*context["roles"], None]}
+        definitions["role"] = ({"type": "string", "enum": context["roles"]}
+                               if step_type == "BatchDraftStep" else
+                               {"type": ["string", "null"], "enum": [*context["roles"], None]})
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         payload = {
             "model": settings.model, "store": False,
@@ -266,6 +275,11 @@ class OpenAICompatiblePlanner:
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TOKEN_BUDGET")
         self.stats.request_bytes = len(encoded)
         self.stats.request_sha256 = fingerprint(payload)
+        return encoded
+
+    async def _generate(self, context: dict) -> str:
+        settings = self._settings
+        encoded = self.prepare_request(context)
         async with asyncio.timeout(settings.timeout):
             async with httpx.AsyncClient(
                     transport=self._transport, trust_env=False,
@@ -308,7 +322,7 @@ class OpenAICompatiblePlanner:
         self.stats.output_sha256 = fingerprint(content)
         if settings.api_key.get_secret_value() in content:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_SECRET_OUTPUT")
-        draft = PlannerDraft.model_validate(bounded_json(content, settings.max_response_bytes))
+        draft = self._draft_type.model_validate(bounded_json(content, settings.max_response_bytes))
         if not draft.steps:
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_NO_APPROVED_PLAN")
         self.stats.reason = "MODEL_OUTPUT_RECEIVED"

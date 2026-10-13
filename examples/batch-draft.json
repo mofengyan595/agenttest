@@ -1,0 +1,82 @@
+{
+  "name": "DEVELOPMENT_ONLY mini batch",
+  "steps": [
+    {
+      "id": "auth",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "batch_login_v1",
+      "arguments": [],
+      "csv_fixture_id": null,
+      "poll_policy_id": null
+    },
+    {
+      "id": "course",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "policy_id": "batch_course_v1",
+      "arguments": [
+        {
+          "location": "body",
+          "name": "name",
+          "value": "批量分析验收",
+          "from_step": null,
+          "select": null
+        }
+      ],
+      "csv_fixture_id": null,
+      "poll_policy_id": null
+    },
+    {
+      "id": "batch",
+      "operation_id": "createBatch",
+      "role": "alice",
+      "policy_id": "batch_upload_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "courseId",
+          "value": null,
+          "from_step": "course",
+          "select": "$.courseId"
+        }
+      ],
+      "csv_fixture_id": "mini_two_rows_v1",
+      "poll_policy_id": null
+    },
+    {
+      "id": "wait",
+      "operation_id": "getBatch",
+      "role": "alice",
+      "policy_id": "batch_poll_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "batchId",
+          "value": null,
+          "from_step": "batch",
+          "select": "$.batchId"
+        }
+      ],
+      "csv_fixture_id": null,
+      "poll_policy_id": "batch_poll_v1"
+    },
+    {
+      "id": "results",
+      "operation_id": "getBatchResults",
+      "role": "alice",
+      "policy_id": "batch_results_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "batchId",
+          "value": null,
+          "from_step": "batch",
+          "select": "$.batchId"
+        }
+      ],
+      "csv_fixture_id": null,
+      "poll_policy_id": null
+    }
+  ]
+}

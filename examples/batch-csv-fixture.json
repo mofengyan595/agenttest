@@ -1,0 +1,9 @@
+{
+  "id": "mini_two_rows_v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "upload": {
+    "field": "file",
+    "filename": "input.csv",
+    "content": "text\nfirst synthetic row\nsecond synthetic row\n"
+  }
+}

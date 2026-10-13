@@ -14,6 +14,8 @@
 
 未审核 AI 开发样本的真实模型小规模 A/B 使用[独立开发诊断入口](docs/development-ab.md)，先准备和 Mock 验收，真实调用另行授权；正式 Eval v2 门禁保持不变。
 
+新增[自然语言异步批量测试开发闭环](docs/batch-natural-language.md)：受控中文需求 → 批准 CSV fixture → 资源绑定 → 有界等待 SUCCEEDED → 结果条数断言。复用现有执行引擎，只在离线 mini target 上验收；数据为 DEVELOPMENT_ONLY，尚无完整 Eval v2 意图分数或真实模型成绩。
+
 ```powershell
 .\.venv\Scripts\python.exe scripts/evaluate_v2.py validate
 .\.venv\Scripts\python.exe scripts/evaluate_v2.py run --development --source manual --output runs/eval-v2-manual

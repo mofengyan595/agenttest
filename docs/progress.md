@@ -1,5 +1,46 @@
 # 开发进度
 
+## Batch 提交审查与单次模型预检准备（2026-10-13）
+
+本次授权仅包含审查、最小修复、离线测试、master 提交推送和同 SHA CI 核验；收费调用尚未授权。保留以下已有 batch 与 Candidate Discovery 审计摘要作为当前交付背景，私有运行记录不加入提交。
+
+核对 `reject_role` 为 DSL 层 `DSL_UNKNOWN_ROLE`，`reject_extra` 为 DSL 层 `DSL_STEP_LIMIT`，均为 `PLAN_REJECTED`、0 工具执行、0 HTTP 请求，属于正确输入拒绝，保持 TOOL_ERROR。补充精确诊断断言，不调整评分或把拒绝美化成 NEEDS_REVIEW。此前全量唯一失败的归档记录明确为 `EVALUATION_FREEZE_CHANGED`：验证期间编辑工作区，A 结束后 B 的冻结复核拒绝继续；原门禁正确阻止了后续请求。本次最终测试启动后固定所有正式文件，以前后 Git 内容摘要相等核查，不在运行期间更新文档或代码。
+
+审查发现本次要求的自然语言原文不在既有受控语法中；增加完整、严格、顺序一致的整句表达，明确绑定唯一批准 fixture、SUCCEEDED 和两条结果，仍要求登录和正确资源来源，拒绝追加/缺失目标。batch 目标配置直接读取配置文件，避免无用地读取 demo 标准计划。Executor、Workflow、mini target、既有课程/403 策略、正式 Eval v2 与历史标签不作修改。
+
+新增 `scripts/batch_smoke.py prepare/run` 薄入口，复用 batch 自然语言链路、学校协议适配器、私有产物边界和现有归档摘要机制。抽出适配器的无网络请求编码/预算检查，用于准确预检同一请求；不改变现有协议负载和重试行为。固定 ecnu-plus/chatecnu 与学校 Endpoint，输入/输出上限 20,000/2,048、总预留 22,048 Token，模型/Workflow 超时 30/120 秒，至多一次调用；预检只读 `.env`，无探针。每份预检用独占消费记录防止失败后重复调用，调用前与执行前检查冻结，生成计划只保存在内存中并脱敏归档。只有成功后才能复用同一模型计划离线注入两个故障；没有标准答案构造或额外模型调用。
+
+针对性审查回归实际结果为 **126 passed / 43.12s**（全部 Fake/Mock/ASGI）；后续最终全量、Ruff、差异/敏感检查及同 SHA Python 四组和 Web 两组 CI，以本次提交的交付记录及 GitHub Checks 为准，不提前声明通过。真实收费调用仍为 0；下一步仅在新 SHA 全部 CI 成功后生成无网络预检记录，报告具体命令与预算，等待操作员另行确认。
+
+## 自然语言异步批量测试最小闭环（2026-10-13）
+
+基线核对为 `d34e15325d04f6cc00a413622db111cc58024067`；保留本文件原有未提交的 Candidate Discovery 审计记录。本轮只在 AgentTest 中开发独立 `mini_target_batch_nl_v1`，未修改 CourseInsight 仓库、已有 mini consistency / ownership 场景、Executor、Workflow、mini target 或 Eval v2 评分器和历史标签。
+
+复用既有 multipart、成功响应资源绑定、有界轮询、超时、失败即停、凭据隔离和脱敏报告。新增 batch 类型草稿、固定两行合成 CSV、5 项可信策略和完整顺序中文语法校验。模型只能选 fixture/poll 策略标识；可信组件注入 CSV，策略要求精确上传内容、alice 角色、正确 `$.courseId` / `$.batchId` 来源、零重试、最多 4 次轮询、SUCCEEDED 终态和 2 条结果。步骤 ID 与课程名可变化；额外操作、错误来源或未识别需求在执行前拒绝。
+
+当前 Eval v2 仅记录 upload/poll 布尔值，缺少完整 fixture、PollPolicy 和断言的质量标签及归档重评分表达。本轮采用明确允许的独立 DEVELOPMENT_ONLY / UNREVIEWED 诊断，保留 `UNLABELED_EXECUTION_OPTION`，`eval_v2_intent_score=null`，不声明独立留出成绩。34 个相关源码/配置文件及目标、契约、策略、Schema、Prompt 均有冻结摘要；归档复核不重放请求。
+
+实际验收（Windows / Python 3.11.15，未安装或升级依赖）：
+
+- batch 专项最终运行：`python -m pytest -q tests/test_batch_plan.py tests/test_batch_workflow.py tests/test_batch_diagnostics.py` → **85 passed / 43.47s**；实际使用项目 `.venv` 和 `runs/` 下隔离临时目录。
+- 全量首跑：`python -m pytest -q` → **968 passed、13 skipped、1 failed / 671.59s**。唯一失败为开发预算测试 `[4-22048-1]`：运行期间仍有文件调整，触发 `EVALUATION_FREEZE_CHANGED`，而非预期预算耗尽；没有放宽门禁或修改该测试。停止文件调整后，预算与归档专项 **6 passed / 60.25s**，最终预算 + 既有自然语言/Intent/Planner/Java Mock 回归 **81 passed / 62.12s**。13 项为既有环境条件跳过，未计为通过；没有未解决的测试失败，但不把首跑描述为单次全量全绿。
+- `python -m ruff check .` → **All checks passed**；`git diff --check` 无错误。
+- `python scripts/check_batch_workflow.py --output runs/batch-development-20261013-final` 与 `--verify` 均通过；20 条记录为 **3 PASS、6 ASSERTION_FAILED、9 NEEDS_REVIEW、2 TOOL_ERROR**，11 项拒绝均为 0 请求。手工、FakeLLM、MockTransport 各自验证 normal/terminal/result_count；故障没有转为 PASS。终态故障停止结果读取，数量故障由 count 断言检出。Mock target 还验证任意资源 ID、轮询耗尽、未知状态、HTTP 错误、超时和 409 分类；独立人工计划的预期 409 不等于自然语言任务成功。
+
+最终归档位于 `runs/batch-development-20261013-final`，已确认与最终相关源码摘要一致；新增数据与运行产物均未进入 Git 暂存。详细设计和复制命令见 [batch-natural-language.md](batch-natural-language.md)。本轮真实收费模型、Candidate Discovery 实验、真实 Java、数据库写入、提交和推送均为 0；本地离线回归内的既有 A/B 单元测试仅使用 Fake/Mock。
+
+下一精确里程碑：先人工审阅并冻结 1 条 batch 正常需求、CSV、策略和单次 Token 预算；另行授权最多 1 次真实模型 mini-target Smoke Test，无重规划/重试。得到一次草稿后，可复用它做离线 normal/terminal/result_count，不追加模型调用。该阶段仍是开发 smoke，不产生正式 Eval v2 留出成绩。
+
+## Candidate Discovery 冗余离线审计（2026-10-13）
+
+基线 d34e153；读取真实 A/B 上下文和归档，确认 B 的 Operation/Role/Policy 与依赖规则均已有于 A。重复来自登录 normal/role_scope、重复 runtime 条件、审计 ID/哈希及平铺路径。另发现 4 个开发任务的候选投影与任务角色视图不一致；反向跨用户路径丢失逐步骤角色后呈现相同投影，不能据此删除原始业务路径。
+
+遵循本轮优先只读分析的范围，仅在 Git 忽略目录建立可逆压缩原型，未修改生产代码、默认上下文、Prompt、正式门禁或标签。36 个开发上下文与 22 个历史任务上下文均可逐字段恢复；原始真实 A/B 归档及私有 Suite 摘要未改变。36 个完整上下文合计字节减少 23.64%，不是实测 Token 节省。
+
+实际验收：原型 **8 passed / 7.72s**，已有 Discovery/公开上下文/Eval v2 回归 **149 passed / 23.24s**，Ruff、diff 检查通过。36 条开发任务的原始/压缩 × Fake/Mock 共 144 行结果及缺陷指标一致；每组 14 PASS、11 安全门禁拒绝、11 待审未执行，冻结、归档和离线重评分均通过。固定夹具只验证引擎，不证明模型效果；22 条历史 T/B 仅检查上下文，不重评历史成绩。
+
+当前 mini 场景建议维持 A 默认、B 显式实验。先解决有类型的角色/步骤关联与任务范围过滤，再离线评估精简表达；后续需要更深资源依赖、角色和合法业务错误状态，不能只换课程名称。现有 async/CSV fixture 也需自然语言、Planner/Discovery 和评分表达共同扩展，不能直接宣布支持。本轮真实 API、真实 Java/数据库写入均为 0，未提交推送；详细证据保存在私有审计包。
+
 ## 开发 A/B 提交与真实实验验收准备（2026-10-13）
 
 操作员已明确授权将本轮入口、测试和必要文档提交推送到 master，并在新 SHA 的 Python 四组、Web 双平台 CI 全成功且工作区干净后，执行限定的 C101/S01、C105/S05 真实 A/B。顺序固定 A/S01、A/S05、B/S01、B/S05，最多 4 次、总预留 88,192 Token，无重试或追加实验；结果仅 DEVELOPMENT_ONLY。
