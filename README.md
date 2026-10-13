@@ -12,6 +12,8 @@
 
 **Agent Eval v2**：独立 Schema、确定性意图评分、完整分母、配对缺陷、来源与冻结审计，以及 Candidate Discovery A/B。27 个 C 系列草案全部待人工审核，默认只做离线开发验证；不改历史 T/B 成绩。[设计、评分公式、CLI 与实验边界](docs/agent-eval-v2.md)。
 
+未审核 AI 开发样本的真实模型小规模 A/B 使用[独立开发诊断入口](docs/development-ab.md)，先准备和 Mock 验收，真实调用另行授权；正式 Eval v2 门禁保持不变。
+
 ```powershell
 .\.venv\Scripts\python.exe scripts/evaluate_v2.py validate
 .\.venv\Scripts\python.exe scripts/evaluate_v2.py run --development --source manual --output runs/eval-v2-manual
