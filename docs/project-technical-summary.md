@@ -120,6 +120,8 @@ Java 扩展确有额外语义：CSV 的 content/rating 和评分约束、重投�
 
 ## 已实现、有限支持和未来方案
 
+用户另行授权的[受控目标组合里程碑](composed-workflows.md)新增同目录内的目标选择、偏序校验与 CSV／轮询／断言模板证据。它复用原执行引擎，使用单独的 UNREVIEWED 开发协议；固定计划机制验收不升级为真实模型成绩，正式 Eval v2 的 batch／独立审核限制仍保留。
+
 | 状态 | 能力 |
 | --- | --- |
 | 已实现且可离线展示 | 安全契约解析、DSL、Registry、Vault、JSON/CSV、有界轮询、动态绑定、确定性断言、报告与故障注入；受控课程/归属/batch NL；Fake/Mock 工作流；MCP stdio；本地只读 Web |

@@ -16,6 +16,8 @@
 
 新增[自然语言异步批量测试闭环](docs/batch-natural-language.md)：受控中文需求 → 批准 CSV fixture → 资源绑定 → 有界等待 SUCCEEDED → 结果条数断言。已在 `0e684b2` 上完成一次真实 ecnu-plus 规划，进程内 mini target 五步 PASS；2,765 Token，同计划两项离线故障均被断言发现。数据为 DEVELOPMENT_ONLY / UNREVIEWED，尚无完整 Eval v2 意图分数。[真实五步 Demo 与静态脱敏证据](docs/batch-demo.md)。
 
+新增[受控目标组合与离线评分](docs/composed-workflows.md)：同一完整目录支持一致性、权限、批处理及其组合，复用原执行引擎；独立开发协议保存 CSV、轮询和断言模板证据，可封印归档后重新评分。12 条新开发草案全部 UNREVIEWED；当前使用固定计划验收，真实模型规划能力尚未测量，正式 Eval v2 门禁不变。
+
 项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
 
 **RAG 决策：No-Go，默认保持 No-RAG。** [首次离线评估](docs/rag-necessity-20261013.md)包含 12 条开发问题、27 份文档；BM25 过滤后 Recall@3/@5 为 37.50%/63.89%，预算内 Top 5 证据召回为 52.78%。后续授权的[本地语义检索试验](docs/rag-semantic-trial-20261013.md)实际运行了固定 ONNX 模型：C 过滤后为 41.67%/55.56%，预算内 @5 为 51.39%，请求字节为 A 的 2.57 倍。标签未独立审核，语料有限，8 份文档截断且原生分词一致性未验证；没有真实模型规划或端到端 RAG 收益。参考层只在独立实验中显式开启，检索证据不授予执行权限，不接入默认运行时。[技术选型与功能冻结边界](docs/project-technical-summary.md#rag-技术选型记录no-go)。

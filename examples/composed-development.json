@@ -1,0 +1,18 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {"case_id": "P001", "user_task": "alice 创建课程“组合一致性”；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "组合一致性", "goals": ["consistency"]}, "rejection_code": null},
+    {"case_id": "P002", "user_task": "alice 创建课程“组合权限”；核对创建者读取一致；验证 bob 读取被拒绝。", "expected": {"creator": "alice", "course_name": "组合权限", "goals": ["consistency", "ownership"]}, "rejection_code": null},
+    {"case_id": "P003", "user_task": "alice 创建课程“组合批处理”；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "组合批处理", "goals": ["batch"]}, "rejection_code": null},
+    {"case_id": "P004", "user_task": "alice 创建课程“组合读写批处理”；核对创建者读取一致；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "组合读写批处理", "goals": ["consistency", "batch"]}, "rejection_code": null},
+    {"case_id": "P005", "user_task": "alice 创建课程“组合完整目标”；核对创建者读取一致；验证 bob 读取被拒绝；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "组合完整目标", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P006", "user_task": "bob 创建课程“角色互换”；验证 alice 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "bob", "course_name": "角色互换", "goals": ["consistency", "ownership"]}, "rejection_code": null},
+    {"case_id": "P007", "user_task": "alice 创建课程“目标换序”；验证批准两行 CSV 批处理成功及两条结果；验证 bob 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "目标换序", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P008", "user_task": "bob 创建课程“未批准角色”；验证批准两行 CSV 批处理成功及两条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_BATCH_ROLE_UNAPPROVED"},
+    {"case_id": "P009", "user_task": "alice 创建课程“额外删除”；核对创建者读取一致；删除课程。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P010", "user_task": "alice 创建课程“缺少前置目标”；验证 bob 读取被拒绝。", "expected": null, "rejection_code": "INTENT_COMPOSED_INCOMPLETE_OBJECTIVE"},
+    {"case_id": "P011", "user_task": "alice 创建课程“改变预期”；验证批准两行 CSV 批处理成功及三条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P012", "user_task": "alice 创建课程“重复目标”；核对创建者读取一致；核对创建者读取一致。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"}
+  ]
+}

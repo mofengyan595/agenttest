@@ -184,8 +184,9 @@ class OpenAICompatiblePlanner:
     """One bounded request, no retries, fallback format, tracing or raw response persistence."""
 
     def __init__(self, settings: ModelSettings, transport: httpx.AsyncBaseTransport | None = None,
-                 *, profile: Literal["mini", "courseinsight", "mini_batch"] = "mini"):
-        if profile not in {"mini", "courseinsight", "mini_batch"}:
+                 *, profile: Literal["mini", "courseinsight", "mini_batch", "mini_composed"]
+                 = "mini"):
+        if profile not in {"mini", "courseinsight", "mini_batch", "mini_composed"}:
             raise ValueError("Unknown planner profile")
         self._draft_type = PlannerDraft
         self._prompt = SYSTEM_PROMPT if profile == "mini" else COURSEINSIGHT_PROMPT
@@ -194,6 +195,11 @@ class OpenAICompatiblePlanner:
 
             self._draft_type = BatchPlannerDraft
             self._prompt = BATCH_PROMPT
+        elif profile == "mini_composed":
+            from agenttest.composed_plan import COMPOSED_PROMPT, ComposedPlannerDraft
+
+            self._draft_type = ComposedPlannerDraft
+            self._prompt = COMPOSED_PROMPT
         self._settings = settings.model_copy(deep=True)
         self._transport = transport
         self.stats = ModelCallStats()
@@ -240,12 +246,12 @@ class OpenAICompatiblePlanner:
         """Encode and budget-check the exact request without opening a connection."""
         settings = self._settings
         schema = self._draft_type.model_json_schema()
-        step_type = "BatchDraftStep" if self._draft_type is not PlannerDraft else "DraftStep"
+        step_type = schema["properties"]["steps"]["items"]["$ref"].rsplit("/", 1)[1]
         definitions = schema["$defs"][step_type]["properties"]
         definitions["operation_id"]["enum"] = [op["id"] for op in context["operations"]]
         definitions["policy_id"]["enum"] = [p["id"] for p in context["policies"]]
         definitions["role"] = ({"type": "string", "enum": context["roles"]}
-                               if step_type == "BatchDraftStep" else
+                               if self._draft_type is not PlannerDraft else
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         payload = {
