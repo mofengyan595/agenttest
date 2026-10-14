@@ -1,0 +1,58 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "owner 新建主题“迁移验收工单”、优先级 high 的工单，读取并核对内容。",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_sha256": "859bde613567cee3c84ec8daa893f1005b6209a10b2a059084a26393bdae6869",
+  "requirements": {
+    "steps": [
+      {
+        "key": "open",
+        "operation_id": "openTicket",
+        "role": "owner",
+        "policy_id": "ticket_open_v1",
+        "arguments": [
+          {
+            "location": "body",
+            "name": "subject",
+            "value": "迁移验收工单",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "priority",
+            "value": "high",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "ticket_consistency"
+        ]
+      },
+      {
+        "key": "read",
+        "operation_id": "readTicket",
+        "role": "owner",
+        "policy_id": "ticket_read_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "ticket_key",
+            "value": null,
+            "source": "open",
+            "selector": "$.payload.ticket_key"
+          }
+        ],
+        "goals": [
+          "ticket_consistency"
+        ]
+      }
+    ],
+    "before": [],
+    "required_goals": [
+      "ticket_consistency"
+    ]
+  }
+}

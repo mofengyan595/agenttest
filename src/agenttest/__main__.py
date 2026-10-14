@@ -63,6 +63,8 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--model-timeout", type=float, default=30.0)
     for name in ("contract", "target", "policies"):
         agent.add_argument(f"--{name}", type=Path, required=True)
+    agent.add_argument("--task-contract", type=Path,
+                       help="操作员提供的任务约束；启用通用规划并保留确定性意图校验")
     for command in (execute, workflow):
         for name in ("contract", "plan", "target", "policies"):
             command.add_argument(f"--{name}", type=Path, required=True)
@@ -122,13 +124,27 @@ def main(argv: list[str] | None = None) -> int:
             from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
             budget = WorkflowBudget()
+            validator = None
+            generic = args.command == "agent" and args.task_contract is not None
+            if args.command == "agent":
+                document = bounded_read(args.contract)
+                config = TargetConfig.model_validate_json(bounded_read(args.target))
+                registry = PolicyRegistry.from_json(bounded_read(args.policies))
+                if generic:
+                    from agenttest.task_contract import TaskContract, task_validator
+
+                    task = TaskContract.model_validate_json(bounded_read(args.task_contract))
+                    if task.user_task != args.user_task:
+                        raise ValueError("Task text differs from operator task contract")
+                    validator = task_validator(task, load_openapi(document), config, registry)
             if args.real:
                 settings = (ModelSettings.from_env_file(args.model_env) if args.model_env
                             else ModelSettings.from_environment())
                 settings = ModelSettings.model_validate({**settings.model_dump(),
                     "timeout": args.model_timeout, "max_output_tokens": args.max_output_tokens,
                     "max_total_tokens": args.max_total_tokens})
-                planner = OpenAICompatiblePlanner(settings)
+                planner = OpenAICompatiblePlanner(
+                    settings, profile="generic" if generic else "mini")
                 budget = WorkflowBudget(model_timeout=settings.timeout + 1,
                                         workflow_timeout=min(settings.timeout + 90, 300))
             else:
@@ -140,10 +156,8 @@ def main(argv: list[str] | None = None) -> int:
                                                      fault=args.fault, budget=budget))
             else:
                 result = asyncio.run(Workflow(
-                    bounded_read(args.contract),
-                    TargetConfig.model_validate_json(bounded_read(args.target)),
-                    PolicyRegistry.from_json(bounded_read(args.policies)), planner, store,
-                    budget=budget, user_task=args.user_task).run())
+                    document, config, registry, planner, store,
+                    budget=budget, user_task=args.user_task, intent_validator=validator).run())
         else:
             config = TargetConfig.model_validate_json(bounded_read(args.target))
             registry = PolicyRegistry.from_json(bounded_read(args.policies))

@@ -1,0 +1,12 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {"case_id": "P101", "user_task": "alice 创建课程“结构修复批次甲”；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "结构修复批次甲", "goals": ["batch"]}, "rejection_code": null},
+    {"case_id": "P102", "user_task": "alice 创建课程“结构修复读写乙”；验证批准两行 CSV 批处理成功及两条结果；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "结构修复读写乙", "goals": ["consistency", "batch"]}, "rejection_code": null},
+    {"case_id": "P103", "user_task": "alice 创建课程“结构修复联合丙”；验证 bob 读取被拒绝；验证批准两行 CSV 批处理成功及两条结果；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "结构修复联合丙", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P104", "user_task": "bob 创建课程“结构修复归属丁”；核对创建者读取一致；验证 alice 读取被拒绝。", "expected": {"creator": "bob", "course_name": "结构修复归属丁", "goals": ["consistency", "ownership"]}, "rejection_code": null},
+    {"case_id": "P105", "user_task": "bob 创建课程“结构修复边界戊”；核对创建者读取一致；验证批准两行 CSV 批处理成功及两条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_BATCH_ROLE_UNAPPROVED"},
+    {"case_id": "P106", "user_task": "alice 创建课程“结构修复边界己”；删除课程；核对创建者读取一致。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"}
+  ]
+}

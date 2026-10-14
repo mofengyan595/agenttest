@@ -1,0 +1,41 @@
+{
+  "base_url": "http://127.0.0.1:8099",
+  "environment": "isolated",
+  "authorized_ips": [],
+  "allow_mutations": true,
+  "allowed_operations": [
+    "openTicket",
+    "readTicket",
+    "closeTicket",
+    "listTickets"
+  ],
+  "roles": {
+    "owner": {
+      "username_env": null,
+      "password_env": null,
+      "bearer_env": "TICKET_OWNER_BEARER",
+      "login_operation": null,
+      "username_field": "username",
+      "password_field": "password",
+      "token_selector": "$.access_token"
+    },
+    "visitor": {
+      "username_env": null,
+      "password_env": null,
+      "bearer_env": "TICKET_VISITOR_BEARER",
+      "login_operation": null,
+      "username_field": "username",
+      "password_field": "password",
+      "token_selector": "$.access_token"
+    }
+  },
+  "business_scenario": "portable_tickets_v1",
+  "sensitive_fields": [],
+  "max_steps": 20,
+  "max_requests": 10,
+  "max_body_bytes": 100000,
+  "connect_timeout": 2.0,
+  "read_timeout": 5.0,
+  "run_timeout": 60.0,
+  "min_request_interval": 0.01
+}

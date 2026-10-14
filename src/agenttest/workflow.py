@@ -157,6 +157,17 @@ class Workflow:
                                     self._environ, registry=self._registry,
                                     investigation=self._investigation,
                                     capabilities=self._capabilities, analyzer=self._analyzer)
+                if (self._task_mode == "natural_language"
+                        and self._config.business_scenario == "mini_target_composed_v1"):
+                    from agenttest.composed_intent import interpret_composed_task
+
+                    report.user_task_sha256 = fingerprint(self._user_task)
+                    try:
+                        interpret_composed_task(self._user_task)
+                    except NeedsReview as exc:
+                        report.diagnostic = exc.diagnostic
+                        report.validation_issue = "TASK_PREFLIGHT_REJECTED"
+                        return reject(Outcome.NEEDS_REVIEW, "TASK_PREFLIGHT_REJECTED")
                 return {"ready": True}
             except ValidationFailure as exc:
                 report.diagnostic = exc.diagnostic
@@ -225,6 +236,9 @@ class Workflow:
                         raise NeedsReview("INTENT_VALIDATOR_REQUIRED")
                     # A validator checks a copy; it cannot repair the executable plan.
                     validator(self._user_task, scenario.model_copy(deep=True))
+                    if (self._config.business_scenario == "mini_target_nl_v1"
+                            and self._intent_validator is not None):
+                        self._intent_validator(self._user_task, scenario.model_copy(deep=True))
                     report.intent_verified = True
                 return {"ready": True}
             except NeedsReview as exc:

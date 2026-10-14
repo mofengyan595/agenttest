@@ -1,0 +1,61 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "alice 创建“迁移验收课程”，读取并核对名称和 ID。",
+  "contract_sha256": "afee72af762c8a2aac7eaa4ae26ccef91331ffdf1a1a22d0c245351bf3b84b72",
+  "target_config_sha256": "1f408747edae696f515c9c1dc688fc4b1643b7b6aeb9a06f4608356ccfbb7c49",
+  "policy_sha256": "e2fcbded21eb61baa88b9fa17ea9cfd80ccc6e987e3c6f642628afeaa87e33c2",
+  "requirements": {
+    "steps": [
+      {
+        "key": "auth",
+        "operation_id": "login",
+        "role": "alice",
+        "policy_id": "nl_login_v1",
+        "arguments": [],
+        "goals": [
+          "read_consistency"
+        ]
+      },
+      {
+        "key": "create",
+        "operation_id": "createCourse",
+        "role": "alice",
+        "policy_id": "nl_create_v1",
+        "arguments": [
+          {
+            "location": "body",
+            "name": "name",
+            "value": "迁移验收课程",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "read_consistency"
+        ]
+      },
+      {
+        "key": "read",
+        "operation_id": "getCourse",
+        "role": "alice",
+        "policy_id": "nl_read_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "courseId",
+            "value": null,
+            "source": "create",
+            "selector": "$.courseId"
+          }
+        ],
+        "goals": [
+          "read_consistency"
+        ]
+      }
+    ],
+    "before": [],
+    "required_goals": [
+      "read_consistency"
+    ]
+  }
+}

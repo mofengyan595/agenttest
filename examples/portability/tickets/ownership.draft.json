@@ -1,0 +1,57 @@
+{
+  "name": "explicit offline fixture ownership",
+  "steps": [
+    {
+      "id": "open",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "policy_id": "ticket_open_v1",
+      "arguments": [
+        {
+          "location": "body",
+          "name": "subject",
+          "value": "迁移验收工单",
+          "from_step": null,
+          "select": null
+        },
+        {
+          "location": "body",
+          "name": "priority",
+          "value": "high",
+          "from_step": null,
+          "select": null
+        }
+      ]
+    },
+    {
+      "id": "read",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_read_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "ticket_key",
+          "value": null,
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      ]
+    },
+    {
+      "id": "denied",
+      "operation_id": "readTicket",
+      "role": "visitor",
+      "policy_id": "ticket_denied_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "ticket_key",
+          "value": null,
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      ]
+    }
+  ]
+}

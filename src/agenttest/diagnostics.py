@@ -31,7 +31,7 @@ class ValidationFailure(ValueError):
 SAFE_FIELDS = frozenset({
     "name", "steps", "id", "operation_id", "role", "policy_id", "arguments", "location",
     "value", "from_step", "select", "body", "path_parameters", "query", "upload", "field",
-    "filename", "content", "poll", "read_retries",
+    "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id",
 })
 
 
@@ -39,7 +39,11 @@ def schema_diagnostic(exc: ValidationError, layer: Layer) -> Diagnostic:
     """Use Pydantic types/locations only, with a closed mapping and masked dictionary keys."""
     errors = exc.errors(include_input=False, include_context=False, include_url=False)
     types = {"extra_forbidden": "EXTRA_FIELD", "missing": "MISSING_FIELD",
-             "value_error": "VALIDATOR_REJECTED"}
+             "value_error": "VALIDATOR_REJECTED",
+             "composed_policy_mismatch": "COMPOSED_POLICY_MISMATCH",
+             "composed_role_unapproved": "COMPOSED_ROLE_UNAPPROVED",
+             "composed_csv_reference": "COMPOSED_CSV_REFERENCE",
+             "composed_poll_reference": "COMPOSED_POLL_REFERENCE"}
     first = errors[0]["type"] if errors else ""
     suffix = types.get(first, "TYPE_OR_CONSTRAINT")
     fields = []

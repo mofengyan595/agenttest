@@ -1,0 +1,64 @@
+{
+  "name": "explicit offline fixture ownership",
+  "steps": [
+    {
+      "id": "auth",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "nl_login_v1",
+      "arguments": []
+    },
+    {
+      "id": "create",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "policy_id": "nl_create_v1",
+      "arguments": [
+        {
+          "location": "body",
+          "name": "name",
+          "value": "迁移验收课程",
+          "from_step": null,
+          "select": null
+        }
+      ]
+    },
+    {
+      "id": "read",
+      "operation_id": "getCourse",
+      "role": "alice",
+      "policy_id": "nl_read_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "courseId",
+          "value": null,
+          "from_step": "create",
+          "select": "$.courseId"
+        }
+      ]
+    },
+    {
+      "id": "other_auth",
+      "operation_id": "login",
+      "role": "bob",
+      "policy_id": "nl_login_v1",
+      "arguments": []
+    },
+    {
+      "id": "denied",
+      "operation_id": "getCourse",
+      "role": "bob",
+      "policy_id": "nl_forbidden_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "courseId",
+          "value": null,
+          "from_step": "create",
+          "select": "$.courseId"
+        }
+      ]
+    }
+  ]
+}

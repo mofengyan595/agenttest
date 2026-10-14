@@ -1,0 +1,12 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {"case_id": "P305", "user_task": "bob 创建课程“参数前检越权甲”；验证批准两行 CSV 批处理成功及两条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_BATCH_ROLE_UNAPPROVED"},
+    {"case_id": "P306", "user_task": "alice 创建课程“参数前检删除乙”；删除课程；核对创建者读取一致。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P301", "user_task": "alice 创建课程“参数批次检查甲”；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "参数批次检查甲", "goals": ["batch"]}, "rejection_code": null},
+    {"case_id": "P302", "user_task": "alice 创建课程“参数读写检查乙”；核对创建者读取一致；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "参数读写检查乙", "goals": ["consistency", "batch"]}, "rejection_code": null},
+    {"case_id": "P303", "user_task": "alice 创建课程“参数联合检查丙”；验证批准两行 CSV 批处理成功及两条结果；验证 bob 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "参数联合检查丙", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P304", "user_task": "bob 创建课程“参数角色检查丁”；验证 alice 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "bob", "course_name": "参数角色检查丁", "goals": ["consistency", "ownership"]}, "rejection_code": null}
+  ]
+}

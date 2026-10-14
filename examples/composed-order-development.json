@@ -1,0 +1,16 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {"case_id": "P207", "user_task": "bob 创建课程“偏序前检越权甲”；验证批准两行 CSV 批处理成功及两条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_BATCH_ROLE_UNAPPROVED"},
+    {"case_id": "P208", "user_task": "alice 创建课程“偏序前检删除乙”；删除课程；核对创建者读取一致。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P209", "user_task": "alice 创建课程“偏序前检变更丙”；验证批准两行 CSV 批处理成功及三条结果。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P210", "user_task": "alice 创建课程“偏序前检重复丁”；核对创建者读取一致；核对创建者读取一致。", "expected": null, "rejection_code": "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"},
+    {"case_id": "P201", "user_task": "alice 创建课程“偏序联合验收甲”；验证批准两行 CSV 批处理成功及两条结果；验证 bob 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "偏序联合验收甲", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P202", "user_task": "alice 创建课程“偏序联合验收乙”；验证 bob 读取被拒绝；核对创建者读取一致；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "偏序联合验收乙", "goals": ["consistency", "ownership", "batch"]}, "rejection_code": null},
+    {"case_id": "P203", "user_task": "bob 创建课程“偏序角色验收丙”；验证 alice 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "bob", "course_name": "偏序角色验收丙", "goals": ["consistency", "ownership"]}, "rejection_code": null},
+    {"case_id": "P204", "user_task": "alice 创建课程“偏序读写验收丁”；核对创建者读取一致；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "偏序读写验收丁", "goals": ["consistency", "batch"]}, "rejection_code": null},
+    {"case_id": "P205", "user_task": "alice 创建课程“偏序批次验收戊”；验证批准两行 CSV 批处理成功及两条结果。", "expected": {"creator": "alice", "course_name": "偏序批次验收戊", "goals": ["batch"]}, "rejection_code": null},
+    {"case_id": "P206", "user_task": "alice 创建课程“偏序权限验收己”；验证 bob 读取被拒绝；核对创建者读取一致。", "expected": {"creator": "alice", "course_name": "偏序权限验收己", "goals": ["consistency", "ownership"]}, "rejection_code": null}
+  ]
+}

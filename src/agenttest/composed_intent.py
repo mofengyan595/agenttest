@@ -5,10 +5,11 @@ from collections import Counter
 from dataclasses import dataclass
 
 from agenttest.batch_plan import approved_fixture
-from agenttest.composed_plan import POLICIES
+from agenttest.composed_plan import BUSINESS_ORDER_PAIRS, POLICIES
 from agenttest.dsl import Scenario
 from agenttest.planner_input import validate_user_task
 from agenttest.policies import NeedsReview
+from agenttest.report import Outcome, RunReport, fingerprint
 
 CONSISTENCY = "核对创建者读取一致"
 BATCH = "验证批准两行 CSV 批处理成功及两条结果"
@@ -24,6 +25,29 @@ class ComposedIntent:
     consistency: bool
     other: str | None
     batch: bool
+
+
+def requires_composed_task_preflight(task: str) -> bool:
+    """Recognize a task refusal without labels or model output; unsafe input still raises."""
+    try:
+        interpret_composed_task(task)
+    except NeedsReview:
+        return True
+    return False
+
+
+def is_composed_task_preflight(report: RunReport) -> bool:
+    """Distinguish a complete trusted preflight refusal from planner or execution evidence."""
+    return (report.validation_issue == report.reason == "TASK_PREFLIGHT_REJECTED"
+            and report.outcome == Outcome.NEEDS_REVIEW and report.completed
+            and report.workflow_completed is True and report.task_mode == "natural_language"
+            and report.task_satisfied is False and report.user_task_sha256 is not None
+            and report.workflow_nodes == ["load_contract", "analyze_or_finish", "report"]
+            and report.planner_calls == report.tool_calls == 0 and report.model_call is None
+            and not report.steps and not report.plan_valid and not report.dsl_valid
+            and not report.policy_authorized and not report.intent_verified
+            and report.scenario_sha256 == fingerprint(None)
+            and report.diagnostic is not None and report.diagnostic.layer.value == "intent")
 
 
 def interpret_composed_task(task: str) -> ComposedIntent:
@@ -99,7 +123,6 @@ def validate_composed_intent(task: str, scenario: Scenario) -> None:
                 or (step is not create and step.body)
                 or step.upload != (approved_fixture().upload if upload else None)):
             raise NeedsReview("INTENT_COMPOSED_OPTION_MISMATCH")
-    for earlier, later in (("read", "denied"), ("poll", "results")):
-        if POLICIES[later] in grouped and (
-                positions[grouped[POLICIES[earlier]].id] >= positions[grouped[POLICIES[later]].id]):
+    for earlier, later in BUSINESS_ORDER_PAIRS:
+        if later in grouped and positions[grouped[earlier].id] >= positions[grouped[later].id]:
             raise NeedsReview("INTENT_COMPOSED_ORDER_MISMATCH")

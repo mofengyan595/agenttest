@@ -1,0 +1,153 @@
+[
+  {
+    "id": "nl_create_v1",
+    "operation_id": "createCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "business_scenario": "portable_courses_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.courseId",
+          "operator": "exists",
+          "expected": null
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "name",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "source_policy_id": null,
+        "source_selector": "$",
+        "role_relation": null,
+        "response_selector": "$.name",
+        "source_body_equalities": {}
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null
+  },
+  {
+    "id": "nl_forbidden_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "business_scenario": "portable_courses_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          403
+        ]
+      },
+      "fields": [],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "courseId",
+        "literal_schema": null,
+        "source_policy_id": "nl_create_v1",
+        "source_selector": "$.courseId",
+        "role_relation": "different",
+        "response_selector": null,
+        "source_body_equalities": {}
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null
+  },
+  {
+    "id": "nl_login_v1",
+    "operation_id": "login",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "business_scenario": "portable_courses_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.access_token",
+          "operator": "exists",
+          "expected": null
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [],
+    "closed_arguments": true,
+    "csv_fixture": null
+  },
+  {
+    "id": "nl_read_v1",
+    "operation_id": "getCourse",
+    "roles": [
+      "alice",
+      "bob"
+    ],
+    "business_scenario": "portable_courses_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/natural-language-policies.md",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "courseId",
+        "literal_schema": null,
+        "source_policy_id": "nl_create_v1",
+        "source_selector": "$.courseId",
+        "role_relation": "same",
+        "response_selector": "$.courseId",
+        "source_body_equalities": {
+          "$.name": "name"
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null
+  }
+]

@@ -16,7 +16,19 @@
 
 新增[自然语言异步批量测试闭环](docs/batch-natural-language.md)：受控中文需求 → 批准 CSV fixture → 资源绑定 → 有界等待 SUCCEEDED → 结果条数断言。已在 `0e684b2` 上完成一次真实 ecnu-plus 规划，进程内 mini target 五步 PASS；2,765 Token，同计划两项离线故障均被断言发现。数据为 DEVELOPMENT_ONLY / UNREVIEWED，尚无完整 Eval v2 意图分数。[真实五步 Demo 与静态脱敏证据](docs/batch-demo.md)。
 
-新增[受控目标组合与离线评分](docs/composed-workflows.md)：同一完整目录支持一致性、权限、批处理及其组合，复用原执行引擎；独立开发协议保存 CSV、轮询和断言模板证据，可封印归档后重新评分。12 条新开发草案全部 UNREVIEWED；当前使用固定计划验收，真实模型规划能力尚未测量，正式 Eval v2 门禁不变。
+新增[受控目标组合与离线评分](docs/composed-workflows.md)：同一完整目录支持一致性、权限、批处理及其组合，复用原执行引擎；独立开发协议保存 CSV、轮询和断言模板证据，可封印归档后重新评分。12 条开发草案全部 UNREVIEWED；[真实模型补验](docs/real-model-coverage-20261014.md)正常任务仅 2/7 完成，组合规划仍有缺口，正式 Eval v2 门禁不变。
+
+[组合任务规划评测](docs/composed-planning.md)提供独立的 Fake／Mock／受控真实调用入口、调用与 Token 预算、失败归档和审核模板。默认离线；该受控真实入口须新任务独立审核、干净代码和单独额度授权。本轮另行授权的开发诊断保持 UNREVIEWED，不满足独立评测资格。
+
+随后[组合约束修复](docs/composed-constraints-20261014.md)补充跨字段 Schema 与安全诊断，并澄清必要登录；相关离线回归 267 项通过。首题超时后，剩余五题在 60 秒等待配置下各真实调用一次：正常任务 2/3 完成，三目标排序仍失败；两条不支持需求由系统挡住，模型主动正确拒绝为 0/2。原始超时与旧 2/7 成绩保留，不能将当前结果描述为组合规划全部修复。
+
+新增[可信偏序与模型前任务检查](docs/composed-order-20261014.md)后，相关离线回归 328 项通过；十条新开发任务取得六次真实调用，正常任务 5/6 完成，两条三目标换序通过，四条不支持需求在模型前拦截。单批处理仍有 JSON body／multipart 参数冲突，失败记录保留；局部开发证据不代表任意项目可靠性。
+
+新增[跨项目可迁移性验收](docs/portability.md)：通用 JSON 规划提示、操作员 TaskContract 和独立工单目标，复用原 Workflow／Executor／Verifier。课程与工单的接口、响应及认证不同；同一通用提示的四条真实模型任务均通过，默认验收仍为 Fake／Mock。自建两域的小样本不代表陌生第三方项目可靠性。
+
+后续[组合参数约束](docs/composed-arguments-20261014.md)限制上传与其他步骤的批准参数槽位。四条新任务真实完成 3/4，三条批处理通过；角色互换因重复登录被原意图门禁拦截。旧失败保留，仍是未独立审核的开发证据。
+
+[陌生 Petclinic 验证准备](docs/third-party-preparation-20261014.md)固定上游版本并核对两条只读任务，静态检查通过；目标未启动，构建依赖与 H2 初始化等待明确许可，尚无陌生服务的实际运行成绩。
 
 项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
 
