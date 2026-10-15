@@ -1,0 +1,20 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "upstream_repository": "https://github.com/spring-petclinic/spring-petclinic-rest",
+  "upstream_commit": "afc8fc1d3b8ec8de69414482b3bd70a1da78cb95",
+  "contract_mode": "OPERATOR_CURATED_READONLY",
+  "raw_runtime_export": "REJECTED_NONSTANDARD_LICENSE_EXTENSIONS",
+  "plan_fixture_source": "OPERATOR_FIXED_PLAN_NOT_MODEL_OUTPUT",
+  "precondition": "fresh isolated H2, default seed, authentication disabled",
+  "tested_operations": [
+    "getPetType"
+  ],
+  "api_mutations": 0,
+  "real_model_cases": 2,
+  "real_model_calls": 2,
+  "real_model_reported_tokens": 1708,
+  "jar_sha256": "27780435e5d67e68b17dfd0e8b1c7e9a4c7787516ee8c3d1c682591867d0523c"
+}

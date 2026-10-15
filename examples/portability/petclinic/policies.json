@@ -1,0 +1,81 @@
+[
+  {
+    "id": "petclinic_present_draft_v1",
+    "operation_id": "getPetType",
+    "roles": [
+      null
+    ],
+    "business_scenario": "petclinic_readonly_draft_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "Operator-approved isolated Petclinic afc8fc1; reviewed source/seed; DEVELOPMENT_ONLY",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.id",
+          "expected": 1
+        },
+        {
+          "select": "$.name",
+          "expected": "cat"
+        }
+      ]
+    },
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "petTypeId",
+        "literal_schema": {
+          "type": "integer",
+          "enum": [
+            1
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "petclinic_missing_draft_v1",
+    "operation_id": "getPetType",
+    "roles": [
+      null
+    ],
+    "business_scenario": "petclinic_readonly_draft_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "Operator-approved isolated Petclinic afc8fc1; reviewed source/seed; DEVELOPMENT_ONLY",
+      "status": {
+        "codes": [
+          404
+        ]
+      },
+      "fields": []
+    },
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "petTypeId",
+        "literal_schema": {
+          "type": "integer",
+          "enum": [
+            2147483647
+          ]
+        }
+      }
+    ]
+  }
+]

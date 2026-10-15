@@ -1,0 +1,23 @@
+{
+  "name": "static draft missing",
+  "steps": [
+    {
+      "id": "read",
+      "operation_id": "getPetType",
+      "role": null,
+      "path_parameters": {
+        "petTypeId": {
+          "value": 2147483647,
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "petclinic_missing_draft_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

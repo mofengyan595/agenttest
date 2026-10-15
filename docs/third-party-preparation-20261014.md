@@ -1,5 +1,7 @@
 # 陌生第三方 REST 项目验证准备（2026-10-14）
 
+后续状态（2026-10-15）：操作员已明确批准隔离方案，[两条真实模型只读实测均通过](petclinic-readonly-20261015.md)，目标已关闭。下文保留准备时的未审核／未启动状态，完整实际结果和原始文档校验问题见实测记录。
+
 ## 目标与固定来源
 
 选定 [Spring Petclinic REST](https://github.com/spring-petclinic/spring-petclinic-rest)，上游提交固定为 `afc8fc1d3b8ec8de69414482b3bd70a1da78cb95`。这是独立开源宠物诊所服务，首轮只测两个 GET 场景，复用现有 generic 规划、TaskContract、Workflow、Executor 和 Verifier，不新增执行底座，也不修改上游业务代码。

@@ -28,7 +28,7 @@
 
 后续[组合参数约束](docs/composed-arguments-20261014.md)限制上传与其他步骤的批准参数槽位。四条新任务真实完成 3/4，三条批处理通过；角色互换因重复登录被原意图门禁拦截。旧失败保留，仍是未独立审核的开发证据。
 
-[陌生 Petclinic 验证准备](docs/third-party-preparation-20261014.md)固定上游版本并核对两条只读任务，静态检查通过；目标未启动，构建依赖与 H2 初始化等待明确许可，尚无陌生服务的实际运行成绩。
+[陌生 Petclinic 只读实测](docs/petclinic-readonly-20261015.md)已在授权的临时 H2 实例完成：两条任务各真实调用模型一次，均通过，合计 1,708 Token；同一 GET 接口覆盖正常读取与 404。使用人工限定契约，原导出文档的校验失败保留；第三方鉴权、写入和复杂链路尚未验证。[配置样例](examples/portability/petclinic/provenance.json)可复用，目标已关闭。
 
 项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
 

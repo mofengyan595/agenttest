@@ -1,0 +1,282 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Spring PetClinic",
+    "description": "Spring PetClinic Sample Application.",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "version": "1.0"
+  },
+  "paths": {
+    "/petclinic/api/pettypes": {
+      "get": {
+        "tags": [
+          "pettypes"
+        ],
+        "operationId": "listPetTypes",
+        "summary": "Lists pet types",
+        "description": "Returns an array of pet types.",
+        "responses": {
+          "200": {
+            "description": "Pet types found and returned.",
+            "headers": {
+              "ETag": {
+                "description": "An ID for this version of the response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PetType"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified.",
+            "headers": {
+              "ETag": {
+                "description": "An ID for this version of the response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/petclinic/api/pettypes/{petTypeId}": {
+      "get": {
+        "tags": [
+          "pettypes"
+        ],
+        "operationId": "getPetType",
+        "summary": "Get a pet type by ID",
+        "description": "Returns the pet type or a 404 error.",
+        "parameters": [
+          {
+            "name": "petTypeId",
+            "in": "path",
+            "description": "The ID of the pet type.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0,
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet type details found and returned.",
+            "headers": {
+              "ETag": {
+                "description": "An ID for this version of the response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PetType"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified.",
+            "headers": {
+              "ETag": {
+                "description": "An ID for this version of the response.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pet Type not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PetType": {
+        "title": "Pet type",
+        "description": "A pet type.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PetTypeFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "title": "ID",
+                "description": "The ID of the pet type.",
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "example": 1
+              }
+            },
+            "required": [
+              "id"
+            ]
+          }
+        ]
+      },
+      "PetTypeFields": {
+        "title": "PetType fields",
+        "description": "Editable fields of a pet type.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "description": "The name of the pet type.",
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "example": "cat"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ProblemDetail": {
+        "title": "Problem Detail",
+        "description": "The schema for all error responses.",
+        "type": "object",
+        "properties": {
+          "type": {
+            "title": "Type",
+            "description": "Full URL that originated the error response.",
+            "type": "string",
+            "format": "uri",
+            "example": "http://localhost:9966/petclinic/api/owner",
+            "readOnly": true
+          },
+          "title": {
+            "title": "Title",
+            "description": "The short error title.",
+            "type": "string",
+            "example": "NoResourceFoundException",
+            "readOnly": true
+          },
+          "status": {
+            "title": "Status",
+            "description": "HTTP status code",
+            "type": "integer",
+            "format": "int32",
+            "minimum": 400,
+            "maximum": 600,
+            "exclusiveMaximum": true,
+            "example": 500,
+            "readOnly": true
+          },
+          "detail": {
+            "title": "Detail",
+            "description": "The long error message.",
+            "type": "string",
+            "example": "No static resource api/owner.",
+            "readOnly": true
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "description": "The time the error occurred.",
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-11-23T13:59:21.3820407Z",
+            "readOnly": true
+          },
+          "schemaValidationErrors": {
+            "title": "Schema validation errors",
+            "description": "Validation errors against the OpenAPI schema.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationMessage"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "timestamp",
+          "schemaValidationErrors"
+        ]
+      },
+      "ValidationMessage": {
+        "title": "Validation message",
+        "description": "Messages describing a validation error.",
+        "type": "object",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "description": "The validation message.",
+            "type": "string",
+            "example": "[Path '/lastName'] Instance type (null) does not match any allowed primitive type (allowed: ['string'])",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": true
+      }
+    }
+  }
+}

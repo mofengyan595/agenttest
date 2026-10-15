@@ -1,0 +1,33 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "读取不存在的宠物类型 ID 2147483647，确认返回 404。",
+  "contract_sha256": "fc35d16e010ee02a33def4e8eda93f179a8867b13f29d1cdf0b135a85a1df145",
+  "target_config_sha256": "982e97d830616a3475575db7291a87ce18e43ff5e9314529fb94362619e4dc16",
+  "policy_sha256": "74f742c408b81f02d1ad4245e770f42c755033a6fd07cd623f87725c0366881b",
+  "requirements": {
+    "steps": [
+      {
+        "key": "read",
+        "operation_id": "getPetType",
+        "role": null,
+        "policy_id": "petclinic_missing_draft_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "petTypeId",
+            "value": 2147483647,
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "missing"
+        ]
+      }
+    ],
+    "before": [],
+    "required_goals": [
+      "missing"
+    ]
+  }
+}

@@ -57,6 +57,7 @@ class ForbiddenPlanner:
      "INTENT_COMPOSED_UNSUPPORTED_OBJECTIVE"),
 ])
 async def test_unsupported_task_is_rejected_with_zero_planning_budget(tmp_path, task, code):
+    pytest.importorskip("langgraph", reason="Preflight execution uses the optional agent graph")
     from agenttest.workflow import WorkflowBudget
 
     planner, store = ForbiddenPlanner(), ReportStore(tmp_path)
@@ -77,6 +78,7 @@ async def test_unsupported_task_is_rejected_with_zero_planning_budget(tmp_path, 
 
 @pytest.mark.asyncio
 async def test_normal_wrong_order_is_still_rejected_without_repair(tmp_path):
+    pytest.importorskip("langgraph", reason="Preflight execution uses the optional agent graph")
     from agenttest.workflow import FakeLLM
 
     task = ("alice 创建课程“新偏序边界戊”；验证 bob 读取被拒绝；"
@@ -96,6 +98,7 @@ async def test_normal_wrong_order_is_still_rejected_without_repair(tmp_path):
 
 @pytest.mark.asyncio
 async def test_fixed_operator_plan_does_not_require_controlled_task_grammar(tmp_path):
+    pytest.importorskip("langgraph", reason="Preflight execution uses the optional agent graph")
     import httpx
 
     from agenttest.workflow import FakeLLM, Workflow
