@@ -1,0 +1,27 @@
+{
+  "name": "operator fixed anonymous chain",
+  "steps": [
+    {
+      "id": "listing",
+      "operation_id": "listPetTypes",
+      "role": null,
+      "policy_id": "petclinic_list_chain_v1",
+      "arguments": []
+    },
+    {
+      "id": "detail",
+      "operation_id": "getPetType",
+      "role": null,
+      "policy_id": "petclinic_sixth_chain_v1",
+      "arguments": [
+        {
+          "location": "path_parameters",
+          "name": "petTypeId",
+          "value": null,
+          "from_step": "listing",
+          "select": "$[5].id"
+        }
+      ]
+    }
+  ]
+}

@@ -30,6 +30,8 @@
 
 [陌生 Petclinic 只读实测](docs/petclinic-readonly-20261015.md)已在授权的临时 H2 实例完成：两条任务各真实调用模型一次，均通过，合计 1,708 Token；同一 GET 接口覆盖正常读取与 404。使用人工限定契约，原导出文档的校验失败保留；第三方鉴权、写入和复杂链路尚未验证。[配置样例](examples/portability/petclinic/provenance.json)可复用，目标已关闭。
 
+后续[登录复用与第三方跨接口验收](docs/authentication-portability-20261015.md)明确每角色一次登录，并增加显式匿名资源依赖。四条新组合任务真实模型 4/4 通过；两条 Petclinic「列表 → 动态 ID → 详情」真实模型 2/2 通过，六次共 14,449 Token、零重试。旧失败保留，仍是开发小样本，第三方鉴权、写入及多轮稳定性未验证。
+
 项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
 
 **RAG 决策：No-Go，默认保持 No-RAG。** [首次离线评估](docs/rag-necessity-20261013.md)包含 12 条开发问题、27 份文档；BM25 过滤后 Recall@3/@5 为 37.50%/63.89%，预算内 Top 5 证据召回为 52.78%。后续授权的[本地语义检索试验](docs/rag-semantic-trial-20261013.md)实际运行了固定 ONNX 模型：C 过滤后为 41.67%/55.56%，预算内 @5 为 51.39%，请求字节为 A 的 2.57 倍。标签未独立审核，语料有限，8 份文档截断且原生分词一致性未验证；没有真实模型规划或端到端 RAG 收益。参考层只在独立实验中显式开启，检索证据不授予执行权限，不接入默认运行时。[技术选型与功能冻结边界](docs/project-technical-summary.md#rag-技术选型记录no-go)。

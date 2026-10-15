@@ -1,0 +1,107 @@
+[
+  {
+    "id": "petclinic_list_chain_v1",
+    "operation_id": "listPetTypes",
+    "roles": [
+      null
+    ],
+    "business_scenario": "petclinic_readonly_chain_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "Source-reviewed Petclinic afc8fc1 isolated H2 seed; DEVELOPMENT_ONLY; live opt-in separate",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$",
+          "operator": "count",
+          "expected": 6
+        }
+      ]
+    },
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    }
+  },
+  {
+    "id": "petclinic_first_chain_v1",
+    "operation_id": "getPetType",
+    "roles": [
+      null
+    ],
+    "business_scenario": "petclinic_readonly_chain_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "Source-reviewed Petclinic afc8fc1 isolated H2 seed; DEVELOPMENT_ONLY; live opt-in separate",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.name",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "petTypeId",
+        "source_policy_id": "petclinic_list_chain_v1",
+        "source_selector": "$[0].id",
+        "role_relation": "anonymous",
+        "response_selector": "$.id"
+      }
+    ]
+  },
+  {
+    "id": "petclinic_sixth_chain_v1",
+    "operation_id": "getPetType",
+    "roles": [
+      null
+    ],
+    "business_scenario": "petclinic_readonly_chain_v1",
+    "closed_arguments": true,
+    "assertions": {
+      "reviewed": true,
+      "source": "Source-reviewed Petclinic afc8fc1 isolated H2 seed; DEVELOPMENT_ONLY; live opt-in separate",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.name",
+          "operator": "exists"
+        }
+      ]
+    },
+    "required_bindings": {
+      "poll": false,
+      "read_retries": 0
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "petTypeId",
+        "source_policy_id": "petclinic_list_chain_v1",
+        "source_selector": "$[5].id",
+        "role_relation": "anonymous",
+        "response_selector": "$.id"
+      }
+    ]
+  }
+]

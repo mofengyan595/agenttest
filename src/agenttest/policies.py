@@ -21,13 +21,22 @@ class NeedsReview(ValidationFailure):
         super().__init__(layer, code)
 
 
+def dependency_roles_match(source: str | None, consumer: str | None, relation: str | None) -> bool:
+    """Anonymous flow is explicit; existing identity rules still require named roles."""
+    if relation == "anonymous":
+        return source is None and consumer is None
+    return (source is not None and consumer is not None
+            and (relation is None or relation == "same" and source == consumer
+                 or relation == "different" and source != consumer))
+
+
 class BindingRule(StrictModel):
     location: Literal["body", "path_parameters", "query"]
     name: str
     literal_schema: dict | None = None
     source_policy_id: str | None = None
     source_selector: str = "$"
-    role_relation: Literal["same", "different"] | None = None
+    role_relation: Literal["same", "different", "anonymous"] | None = None
     # Approved equality relations, never model-authored expected values.
     response_selector: str | None = None
     source_body_equalities: dict[str, str] = Field(default_factory=dict)
@@ -112,9 +121,7 @@ class PolicyRegistry:
                 source = (previous or {}).get(binding.from_step)
                 if (source is None or source.policy_id != rule.source_policy_id
                         or binding.select != rule.source_selector
-                        or source.role is None or step.role is None
-                        or (rule.role_relation == "same" and source.role != step.role)
-                        or (rule.role_relation == "different" and source.role == step.role)):
+                        or not dependency_roles_match(source.role, step.role, rule.role_relation)):
                     raise NeedsReview("POLICY_DEPENDENCY_MISMATCH")
                 for selector, field in rule.source_body_equalities.items():
                     original = source.body.get(field)

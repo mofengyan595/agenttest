@@ -1,0 +1,49 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "先查询宠物类型列表，再用列表第 1 项的 ID 查询详情，核对返回 ID 与所选项一致。",
+  "contract_sha256": "fc35d16e010ee02a33def4e8eda93f179a8867b13f29d1cdf0b135a85a1df145",
+  "target_config_sha256": "651f4a4145ef051ba07401a24e505b435d4a7cca3e6c87e041428c26ecac8bd9",
+  "policy_sha256": "52dddf54564c0bcb6c8a8c69f73b97f0f2c1d775b87fa1aefb004ffe770222bb",
+  "requirements": {
+    "steps": [
+      {
+        "key": "listing",
+        "operation_id": "listPetTypes",
+        "role": null,
+        "policy_id": "petclinic_list_chain_v1",
+        "arguments": [],
+        "goals": [
+          "list"
+        ]
+      },
+      {
+        "key": "detail",
+        "operation_id": "getPetType",
+        "role": null,
+        "policy_id": "petclinic_first_chain_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "petTypeId",
+            "value": null,
+            "source": "listing",
+            "selector": "$[0].id"
+          }
+        ],
+        "goals": [
+          "detail"
+        ]
+      }
+    ],
+    "before": [
+      [
+        "listing",
+        "detail"
+      ]
+    ],
+    "required_goals": [
+      "list",
+      "detail"
+    ]
+  }
+}

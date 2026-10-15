@@ -1,0 +1,20 @@
+{
+  "base_url": "http://127.0.0.1:18886",
+  "environment": "isolated",
+  "authorized_ips": [],
+  "allow_mutations": false,
+  "allowed_operations": [
+    "listPetTypes",
+    "getPetType"
+  ],
+  "roles": {},
+  "business_scenario": "petclinic_readonly_chain_v1",
+  "sensitive_fields": [],
+  "max_steps": 2,
+  "max_requests": 2,
+  "max_body_bytes": 100000,
+  "connect_timeout": 2.0,
+  "read_timeout": 5.0,
+  "run_timeout": 60.0,
+  "min_request_interval": 0.01
+}

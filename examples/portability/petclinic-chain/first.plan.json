@@ -1,0 +1,34 @@
+{
+  "name": "operator fixed anonymous chain",
+  "steps": [
+    {
+      "id": "listing",
+      "operation_id": "listPetTypes",
+      "role": null,
+      "path_parameters": {},
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "petclinic_list_chain_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "detail",
+      "operation_id": "getPetType",
+      "role": null,
+      "path_parameters": {
+        "petTypeId": {
+          "from_step": "listing",
+          "select": "$[0].id"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "petclinic_first_chain_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

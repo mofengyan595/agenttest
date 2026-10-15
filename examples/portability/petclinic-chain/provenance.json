@@ -1,0 +1,20 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "upstream_repository": "https://github.com/spring-petclinic/spring-petclinic-rest",
+  "upstream_commit": "afc8fc1d3b8ec8de69414482b3bd70a1da78cb95",
+  "contract_ref": "../petclinic/openapi.json",
+  "contract_mode": "OPERATOR_CURATED_READONLY",
+  "precondition": "fresh isolated H2, exactly six seed pet types, authentication disabled",
+  "ordering": "Select position in the actual returned list; no assumed ID or seed ordering",
+  "plan_fixture_source": "OPERATOR_FIXED_PLAN_NOT_MODEL_OUTPUT",
+  "api_mutations": 0,
+  "real_model_calls": 2,
+  "real_model_reported_tokens": 2049,
+  "fixed_plan_java_business_gets": 4,
+  "real_model_java_business_gets": 4,
+  "java_business_gets_total": 8,
+  "validation_status": "LIVE_READONLY_CHAIN_VERIFIED"
+}

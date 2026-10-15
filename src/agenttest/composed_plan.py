@@ -209,9 +209,22 @@ def composed_ordering_rules(context: dict) -> list[dict]:
             for before, after in sorted(pairs)]
 
 
+def composed_authentication_rules(context: dict) -> list[dict]:
+    """Expose the profile's existing single-login scope for every visible role."""
+    return [{"role": item["role"], "login_operation_id": item["login_operation_id"],
+             "max_occurrences": 1} for item in context["authentication"]]
+
+
 class ComposedPlannerDraft(PlannerDraft):
     name: str = Field(min_length=1, max_length=100, pattern=r"^[\w\u4e00-\u9fff -]+$")
     steps: list[ComposedDraftStep] = Field(max_length=8)
+
+    @model_validator(mode="after")
+    def single_login_per_role(self):
+        roles = [s.role for s in self.steps if s.operation_id == "login"]
+        if len(roles) != len(set(roles)):
+            raise PydanticCustomError("composed_authentication", "Repeated role login")
+        return self
 
     def scenario(self) -> Scenario:
         base = PlannerDraft(name=self.name, steps=[DraftStep.model_validate({
@@ -236,8 +249,9 @@ ordering_rules are mandatory edges between selected steps, not the task clause o
 When both policies in a rule are selected, place the before policy's step before the
 after policy's step. Build an order satisfying ALL these edges and authentication.
 Independent steps may interleave. A later task clause can require an earlier plan step.
-For each selected role, follow authentication: include its login BEFORE its first
-protected operation even when the task does not mention login. Login arguments are empty.
+For each selected role, follow authentication_rules: login exactly once BEFORE its first
+protected operation, even when the task does not mention login. Reuse that login for ALL
+of the role's protected steps; another role's login does not replace it. Arguments are empty.
 References must point to an earlier step and use the approved selector. Independent steps
 may be interleaved. For ownership, the creator's successful read precedes the denied read.
 Batch results follow the bounded status poll. CSV bytes and polling limits are operator-owned:

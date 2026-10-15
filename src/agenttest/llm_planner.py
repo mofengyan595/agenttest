@@ -278,11 +278,16 @@ class OpenAICompatiblePlanner:
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         if self._profile == "mini_composed":
-            from agenttest.composed_plan import composed_ordering_rules, constrain_composed_schema
+            from agenttest.composed_plan import (
+                composed_authentication_rules,
+                composed_ordering_rules,
+                constrain_composed_schema,
+            )
 
             try:
                 public["step_options"] = constrain_composed_schema(schema, step_type, context)
                 public["ordering_rules"] = composed_ordering_rules(context)
+                public["authentication_rules"] = composed_authentication_rules(context)
             except ValueError:
                 raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INPUT_REJECTED") from None
         payload = {

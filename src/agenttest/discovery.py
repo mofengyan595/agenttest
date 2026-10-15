@@ -17,7 +17,12 @@ from agenttest.discovery_models import (
 from agenttest.discovery_schema import describe, fields, variations, witness
 from agenttest.dsl import ArgumentBinding, Scenario, Step, validate_plan
 from agenttest.planner_input import PRIVATE_LITERAL
-from agenttest.policies import NeedsReview, PolicyRegistry, RegisteredPolicy
+from agenttest.policies import (
+    NeedsReview,
+    PolicyRegistry,
+    RegisteredPolicy,
+    dependency_roles_match,
+)
 from agenttest.report import fingerprint
 from agenttest.request_validation import validate_request, validate_value
 from agenttest.safety import TargetConfig
@@ -194,21 +199,15 @@ def discover(
                             raise NeedsReview("UNKNOWN_SOURCE_POLICY")
                         if source.operation_id not in included:
                             raise NeedsReview("DEPENDENCY_OPERATION_UNAVAILABLE")
-                        roles = sorted(
-                            [
-                                x
-                                for x in source.roles
-                                if x is not None and config and x in config.roles
-                            ]
-                        )
+                        if rule.role_relation == "anonymous" and None in source.roles:
+                            roles = [None]
+                        else:
+                            roles = sorted(x for x in source.roles
+                                           if x is not None and config and x in config.roles)
                         allowed = [
                             x
                             for x in roles
-                            if r is not None
-                            and (
-                                rule.role_relation is None
-                                or (x == r if rule.role_relation == "same" else x != r)
-                            )
+                            if dependency_roles_match(x, r, rule.role_relation)
                         ]
                         if not allowed:
                             raise NeedsReview("DEPENDENCY_ROLE_EVIDENCE_MISSING")

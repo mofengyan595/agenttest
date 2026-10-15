@@ -43,6 +43,7 @@ def schema_diagnostic(exc: ValidationError, layer: Layer) -> Diagnostic:
              "composed_policy_mismatch": "COMPOSED_POLICY_MISMATCH",
              "composed_role_unapproved": "COMPOSED_ROLE_UNAPPROVED",
              "composed_csv_reference": "COMPOSED_CSV_REFERENCE",
+             "composed_authentication": "COMPOSED_AUTHENTICATION",
              "composed_poll_reference": "COMPOSED_POLL_REFERENCE"}
     first = errors[0]["type"] if errors else ""
     suffix = types.get(first, "TYPE_OR_CONSTRAINT")

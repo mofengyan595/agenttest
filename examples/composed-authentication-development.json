@@ -1,0 +1,58 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {
+      "case_id": "P401",
+      "user_task": "bob 创建课程“鉴权复用核对甲”；验证 alice 读取被拒绝；核对创建者读取一致。",
+      "expected": {
+        "creator": "bob",
+        "course_name": "鉴权复用核对甲",
+        "goals": [
+          "consistency",
+          "ownership"
+        ]
+      },
+      "rejection_code": null
+    },
+    {
+      "case_id": "P402",
+      "user_task": "alice 创建课程“鉴权双角色核对乙”；核对创建者读取一致；验证 bob 读取被拒绝。",
+      "expected": {
+        "creator": "alice",
+        "course_name": "鉴权双角色核对乙",
+        "goals": [
+          "consistency",
+          "ownership"
+        ]
+      },
+      "rejection_code": null
+    },
+    {
+      "case_id": "P403",
+      "user_task": "alice 创建课程“鉴权联合核对丙”；验证批准两行 CSV 批处理成功及两条结果；核对创建者读取一致；验证 bob 读取被拒绝。",
+      "expected": {
+        "creator": "alice",
+        "course_name": "鉴权联合核对丙",
+        "goals": [
+          "consistency",
+          "ownership",
+          "batch"
+        ]
+      },
+      "rejection_code": null
+    },
+    {
+      "case_id": "P404",
+      "user_task": "bob 创建课程“鉴权单角色核对丁”；核对创建者读取一致。",
+      "expected": {
+        "creator": "bob",
+        "course_name": "鉴权单角色核对丁",
+        "goals": [
+          "consistency"
+        ]
+      },
+      "rejection_code": null
+    }
+  ]
+}
