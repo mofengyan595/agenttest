@@ -125,7 +125,8 @@ def test_renamed_used_case_or_format_only_change_is_not_independent():
 @pytest.mark.parametrize("filename", ["composed-constraints-development.json",
                                      "composed-order-development.json",
                                      "composed-arguments-development.json",
-                                     "composed-authentication-development.json"])
+                                     "composed-authentication-development.json",
+                                     "composed-stability-development.json"])
 def test_recent_development_tasks_cannot_be_enrolled_as_independent_holdout(filename):
     source = PlanningSuite.load(PROJECT_ROOT / "examples" / filename)
     used = next(c for c in source.cases if c.expected is not None)

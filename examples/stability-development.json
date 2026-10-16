@@ -1,0 +1,26 @@
+{
+  "schema_version": "agenttest.stability.development.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "rounds": 3,
+  "composition_case_id": "P501",
+  "ticket": {
+    "case_id": "G501",
+    "user_task": "owner 新建主题“三轮工单核对己”、优先级 high 的工单，关闭后再次读取确认状态 closed。",
+    "subject": "三轮工单核对己"
+  },
+  "petclinic": [
+    {
+      "case_id": "F201",
+      "user_task": "查询宠物类型列表，使用实际列表第 2 项的 ID 读取详情，确认详情 ID 与该项相同。",
+      "source_selector": "$[1].id"
+    },
+    {
+      "case_id": "F202",
+      "user_task": "查询宠物类型列表，使用实际列表第 4 项的 ID 读取详情，确认详情 ID 与该项相同。",
+      "source_selector": "$[3].id"
+    }
+  ]
+}

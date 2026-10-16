@@ -1,0 +1,16 @@
+{
+  "schema_version": "agenttest.composition.development.v1",
+  "label_provenance": "ai_generated_draft",
+  "cases": [
+    {
+      "case_id": "P501",
+      "user_task": "alice 创建课程“三轮联合核对戊”；验证 bob 读取被拒绝；验证批准两行 CSV 批处理成功及两条结果；核对创建者读取一致。",
+      "expected": {
+        "creator": "alice",
+        "course_name": "三轮联合核对戊",
+        "goals": ["consistency", "ownership", "batch"]
+      },
+      "rejection_code": null
+    }
+  ]
+}
