@@ -107,7 +107,7 @@ def validate_destination(output: Path) -> Path:
     path = output.absolute()
     if ".." in output.parts or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,60}", path.name):
         raise ValueError("REGRESSION_OUTPUT_INVALID")
-    with pinned_directory(path.parent, "", create=False):
+    with pinned_directory(path.parent, ".", create=False):
         if os.path.lexists(path):
             raise ValueError("REGRESSION_OUTPUT_EXISTS")
     return path
@@ -190,7 +190,7 @@ def export_regression(output: Path, runtime: RegressionRuntime, scenario: Scenar
         source_step_policy_sha256={s.step_id: s.policy_sha256 for s in source.steps},
         **identity, test_module=module,
         files={name: hashlib.sha256(data).hexdigest() for name, data in files.items()})
-    with pinned_directory(path.parent, "", create=False) as parent:
+    with pinned_directory(path.parent, ".", create=False) as parent:
         if os.name == "posix":
             os.mkdir(path.name, 0o700, dir_fd=parent.descriptor)
         else:
