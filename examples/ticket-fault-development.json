@@ -1,0 +1,26 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "G701", "template": "read", "subject": "资产交接核验", "priority": "low",
+      "user_task": "owner 新建主题“资产交接核验”、优先级 low 的工单，立即读取刚创建的工单，确认键、主题、优先级一致且状态为 open。",
+      "fault": "wrong_subject",
+      "failed_check": ["readTicket", "equals", "$.payload.subject"]
+    },
+    {
+      "case_id": "G702", "template": "ownership", "subject": "场地预约核验", "priority": "high",
+      "user_task": "owner 新建主题“场地预约核验”、优先级 high 的工单，本人读取核对信息后，再让 visitor 读取同一工单，确认被拒绝。",
+      "fault": "owner_leak",
+      "failed_check": ["readTicket", "http_status", null]
+    },
+    {
+      "case_id": "G703", "template": "close", "subject": "服务巡查闭环", "priority": "high",
+      "user_task": "owner 创建主题“服务巡查闭环”、优先级 high 的工单，关闭该工单后读取同一条记录，确认状态 closed 并核对原始信息。",
+      "fault": "close_ignored",
+      "failed_check": ["closeTicket", "equals", "$.payload.state"]
+    }
+  ]
+}
