@@ -128,8 +128,8 @@ Java 扩展确有额外语义：CSV 的 content/rating 和评分约束、重投�
 | --- | --- |
 | 已实现且可离线展示 | 安全契约解析、DSL、Registry、Vault、JSON/CSV、有界轮询、动态绑定、确定性断言、报告与故障注入；受控课程/归属/batch NL；Fake/Mock 工作流；MCP stdio；本地只读 Web |
 | 有真实小样本证据 | 两轮 mini 课程实验、Java admin 三步、开发 Candidate A/B、单条 mini batch smoke；通用两域四题与组合十二题补验，各自证据和分母独立 |
-| 有实现但范围有限 | Schema/JSONPath 子集；封闭中文意图；FakeAnalyzer 调查；来源固定的 Java 三步适配；Eval v2 正式门禁存在但 C 草案未独立审核 |
-| 未实现或未验收 | AgentTest 到 Java 的批处理闭环、任意业务需求的自动语义校验／复杂认证、CSV 导出内容校验、自动清理、写入恢复、自动 pytest 导出、独立大样本 benchmark、生产多租户/分布式运行；迁移已有自建两域及陌生 Petclinic 两题只读真实证据，第三方鉴权／写入／复杂链路可靠性仍未验证 |
+| 有实现但范围有限 | Schema/JSONPath 子集；封闭中文意图；FakeAnalyzer 调查；来源固定的 Java 三步适配；[固定 pytest 导出](regression-export.md)限完整验证的普通 JSON 计划，配置由操作员提供；Eval v2 正式门禁存在但 C 草案未独立审核 |
+| 未实现或未验收 | AgentTest 到 Java 的批处理闭环、任意业务需求的自动语义校验／复杂认证、CSV 导出内容校验、自动清理、写入恢复、独立大样本 benchmark、生产多租户/分布式运行；迁移已有自建两域及陌生 Petclinic 两题只读真实证据，第三方鉴权／写入／复杂链路可靠性仍未验证 |
 | 当前不做 | 生产 RAG、向量数据库、多 Agent、自动修复、Kubernetes、继续使用旧题调参；本地 Embedding／参考层仅为独立开发实验，Candidate 压缩保持私有研究证据 |
 
 源码检验与默认测试不需要 Key、Docker 或外网；可选 Agent/MCP 依赖由锁文件固定。业务基线 `0e684b2` 本地历史验收为 984 passed / 13 平台或权限 skip；该 SHA 及 RAG 归档 `e394dfb` 的 Python 四组与 Web 两组 CI 均全部通过。它们属于既有证据，不能冒充本次文档工作重新执行的测试。

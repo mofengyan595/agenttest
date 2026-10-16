@@ -1,0 +1,62 @@
+{
+  "name": "explicit offline fixture ownership",
+  "steps": [
+    {
+      "id": "open",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "subject": {
+          "value": "场地预约核验",
+          "from_step": null,
+          "select": "$"
+        },
+        "priority": {
+          "value": "high",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_open_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "read",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_read_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "denied",
+      "operation_id": "readTicket",
+      "role": "visitor",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_denied_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

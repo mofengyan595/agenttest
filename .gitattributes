@@ -1,0 +1,2 @@
+# Regression manifests hash file bytes on both Windows and Linux.
+examples/regressions/** text eol=lf

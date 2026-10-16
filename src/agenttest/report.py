@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 from agenttest.diagnostics import Diagnostic
 from agenttest.report_files import pinned_directory, writer_lock
@@ -55,8 +55,16 @@ class StepResult(BaseModel):
     outcome: Outcome
     reason: str
     policy_sha256: str
+    policy_template_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     checks: list[CheckResult] = Field(default_factory=list)
     attempts: list[AttemptEvidence] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def serialize_template_identity(self, handler):
+        data = handler(self)
+        if self.policy_template_sha256 is None:
+            data.pop("policy_template_sha256", None)
+        return data
 
 
 class InvestigationResult(StepResult):
@@ -110,6 +118,8 @@ class RunReport(BaseModel):
     reason: str = ""
     environment: str
     target_origin: str
+    target_config_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    policy_registry_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     workflow_nodes: list[str] = Field(default_factory=list)
     planner_calls: int = 0
     tool_calls: int = 0
@@ -131,6 +141,14 @@ class RunReport(BaseModel):
     investigations: list[InvestigationResult] = Field(default_factory=list)
     investigation_error: str | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
+
+    @model_serializer(mode="wrap")
+    def serialize_execution_identity(self, handler):
+        data = handler(self)
+        for name in ("target_config_sha256", "policy_registry_sha256"):
+            if getattr(self, name) is None:
+                data.pop(name, None)
+        return data
 
 
 def fingerprint(value: Any) -> str:

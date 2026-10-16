@@ -58,6 +58,10 @@ jobs:
           "${{ matrix.python }}" -m pip install --no-build-isolation --no-deps -e '${{ matrix.extras }}'
       - name: Offline tests
         run: '"${{ matrix.python }}" -m pytest -q'
+      - name: Exported fixed regressions without models
+        run: |
+          mkdir -p runs
+          "${{ matrix.python }}" -m pytest examples/regressions -q --basetemp=runs/pytest-regressions
       - name: Ruff
         run: '"${{ matrix.python }}" -m ruff check .'
       - name: Dependency consistency

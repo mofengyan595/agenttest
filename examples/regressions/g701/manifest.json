@@ -1,0 +1,24 @@
+{
+  "schema_version": "agenttest.regression.v1",
+  "source_run_id": "f86a2fb3d82248119c3bf8673a81a6c2",
+  "source_report_sha256": "bf684bbb9d4fd133f7bcd1e80d592d60198d8e5e69beada655f6be95d909a12a",
+  "scenario_sha256": "d42d9ad43beaa62b63bd92fc9a1f1124f5d4982fd1d9e218ba1f2906a7b85ee5",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_sha256": "bf34202246bd49793acc21ebacc0f2ab46aff82c3f42d040a5059ff3f496ddb9",
+  "task_contract_sha256": "05620ed29efa509e8363d018e2ec2fd6ad9fc708a6a3efb64e1c0fba758895fa",
+  "step_policy_sha256": {
+    "open": "2446b25a53e32e2535e5cbeef5e25c1b05faf883775851d55292bcdee810cbde",
+    "read": "938f9a61e59d9388b3fbf990228d9c80fa6ae86d2c60bf358ab094e4245218ff"
+  },
+  "source_step_policy_sha256": {
+    "open": "beb1037e7e632b2ba37a55c1a6f866ddfa9076ff86b95a38c70550aa0e661332",
+    "read": "f5c728a1f30cf7fe43b93adc8f14d2c0adf0e820ff323f99f64acf222f129503"
+  },
+  "test_module": "test_agenttest_42f7ccba31b348c5b95ccd84047ce130.py",
+  "files": {
+    "scenario.json": "92cdbf9152078ca243e01bb6799ab6632794b2c078ce90cd545faee437cd640b",
+    "test_agenttest_42f7ccba31b348c5b95ccd84047ce130.py": "a47b5a8e1b9c00a44cab072510a5b9f245a4736002fef4196c88fad4aca149ff",
+    "README.md": "16557510dd6f2d9ce8cc861f20c4ead3beee1682f6a50603841a63114a40c6a1"
+  }
+}

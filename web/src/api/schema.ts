@@ -152,6 +152,8 @@ export interface components {
       reason: string;
       /** Policy Sha256 */
       policy_sha256: string;
+      /** Policy Template Sha256 */
+      policy_template_sha256?: string | null;
       /** Checks */
       checks?: components["schemas"]["CheckResult"][];
       /** Attempts */
@@ -342,6 +344,10 @@ export interface components {
       environment: string;
       /** Target Origin */
       target_origin: string;
+      /** Target Config Sha256 */
+      target_config_sha256?: string | null;
+      /** Policy Registry Sha256 */
+      policy_registry_sha256?: string | null;
       /** Workflow Nodes */
       workflow_nodes?: string[];
       /**
@@ -433,6 +439,8 @@ export interface components {
       reason: string;
       /** Policy Sha256 */
       policy_sha256: string;
+      /** Policy Template Sha256 */
+      policy_template_sha256?: string | null;
       /** Checks */
       checks?: components["schemas"]["CheckResult"][];
       /** Attempts */

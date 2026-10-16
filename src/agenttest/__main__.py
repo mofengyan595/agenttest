@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import os
 from pathlib import Path
 
 from agenttest.contracts import MAX_DOCUMENT_BYTES, load_openapi
@@ -65,6 +66,12 @@ def main(argv: list[str] | None = None) -> int:
         agent.add_argument(f"--{name}", type=Path, required=True)
     agent.add_argument("--task-contract", type=Path,
                        help="操作员提供的任务约束；启用通用规划并保留确定性意图校验")
+    agent.add_argument("--export-regression", type=Path,
+                       help="通用任务完整通过后导出固定 pytest 包；保存明文合成测试参数")
+    export = subcommands.add_parser("export-pytest", help="从完整计划和已通过报告导出固定回归包")
+    for name in ("contract", "target", "policies", "task-contract", "plan", "output"):
+        export.add_argument(f"--{name}", type=Path, required=True)
+    export.add_argument("--source-run", required=True)
     for command in (execute, workflow):
         for name in ("contract", "plan", "target", "policies"):
             command.add_argument(f"--{name}", type=Path, required=True)
@@ -72,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("run_id")
     report.add_argument("--output", type=Path)
     for command in (demo, workflow_demo, investigation_demo, execute, workflow,
-                    agent, agent_demo, report):
+                    agent, agent_demo, report, export):
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     try:
@@ -99,6 +106,23 @@ def main(argv: list[str] | None = None) -> int:
                 "http_requests": 0, "model_calls": 0}, ensure_ascii=False))
             return 0
         store = ReportStore(args.runs_dir)
+        regression_result = None
+        regression_error = False
+        if args.command == "export-pytest":
+            from agenttest.regression import RegressionRuntime, export_regression
+            from agenttest.task_contract import TaskContract
+
+            runtime = RegressionRuntime(bounded_read(args.contract),
+                TargetConfig.model_validate_json(bounded_read(args.target)),
+                PolicyRegistry.from_json(bounded_read(args.policies)),
+                TaskContract.model_validate_json(bounded_read(args.task_contract)),
+                dict(os.environ), None, store)
+            manifest = export_regression(args.output, runtime,
+                Scenario.model_validate_json(bounded_read(args.plan)), store.read(args.source_run))
+            print(json.dumps({"exported": True, "source_run_id": manifest.source_run_id,
+                              "directory": str(args.output.absolute()), "model_calls": 0,
+                              "http_requests": 0}, ensure_ascii=False))
+            return 0
         if args.command == "showcase":
             from agenttest.showcase import showcase
 
@@ -125,7 +149,14 @@ def main(argv: list[str] | None = None) -> int:
 
             budget = WorkflowBudget()
             validator = None
+            capture = None
             generic = args.command == "agent" and args.task_contract is not None
+            if args.command == "agent" and args.export_regression:
+                from agenttest.regression import validate_destination
+
+                if not generic:
+                    raise ValueError("Regression export requires an operator task contract")
+                validate_destination(args.export_regression)
             if args.command == "agent":
                 document = bounded_read(args.contract)
                 config = TargetConfig.model_validate_json(bounded_read(args.target))
@@ -149,6 +180,11 @@ def main(argv: list[str] | None = None) -> int:
                                         workflow_timeout=min(settings.timeout + 90, 300))
             else:
                 planner = FakeLLM(bounded_read(args.fake_plan).decode("utf-8"))
+            if args.command == "agent" and args.export_regression:
+                from agenttest.regression import RegressionCapture
+
+                capture = RegressionCapture(planner)
+                planner = capture
             if args.command == "agent-demo":
                 from agenttest.natural_demo import run_natural_demo
 
@@ -158,6 +194,24 @@ def main(argv: list[str] | None = None) -> int:
                 result = asyncio.run(Workflow(
                     document, config, registry, planner, store,
                     budget=budget, user_task=args.user_task, intent_validator=validator).run())
+                if capture is not None:
+                    if result.outcome != Outcome.PASS:
+                        regression_result = {"exported": False, "reason": "SOURCE_NOT_PASSED"}
+                    else:
+                        from agenttest.regression import RegressionRuntime, export_regression
+
+                        try:
+                            runtime = RegressionRuntime(document, config, registry, task,
+                                                        dict(os.environ), None, store)
+                            export_regression(args.export_regression, runtime,
+                                              capture.scenario, result)
+                            regression_result = {"exported": True,
+                                "directory": str(args.export_regression.absolute())}
+                        except (ValueError, OSError, AttributeError):
+                            regression_result = {"exported": False,
+                                                 "reason": "REGRESSION_EXPORT_REJECTED"}
+                            regression_error = True
+                    capture.scenario = None
         else:
             config = TargetConfig.model_validate_json(bounded_read(args.target))
             registry = PolicyRegistry.from_json(bounded_read(args.policies))
@@ -181,7 +235,10 @@ def main(argv: list[str] | None = None) -> int:
             "steps": len(result.steps),
             "investigations": len(result.investigations),
             "report": str(store.root / result.run_id / "report.json"),
+            **({"regression": regression_result} if regression_result is not None else {}),
         }, ensure_ascii=False))
+        if regression_error:
+            return 2
         return 0 if result.outcome == Outcome.PASS else 1
     except ImportError:
         print(json.dumps({"outcome": "TOOL_ERROR", "reason": "AGENT_EXTRA_REQUIRED"}))

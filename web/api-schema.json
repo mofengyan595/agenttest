@@ -352,6 +352,18 @@
             "type": "string",
             "title": "Policy Sha256"
           },
+          "policy_template_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Template Sha256"
+          },
           "checks": {
             "items": {
               "$ref": "#/components/schemas/CheckResult"
@@ -814,6 +826,30 @@
             "type": "string",
             "title": "Target Origin"
           },
+          "target_config_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Config Sha256"
+          },
+          "policy_registry_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Registry Sha256"
+          },
           "workflow_nodes": {
             "items": {
               "type": "string"
@@ -1082,6 +1118,18 @@
           "policy_sha256": {
             "type": "string",
             "title": "Policy Sha256"
+          },
+          "policy_template_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Template Sha256"
           },
           "checks": {
             "items": {

@@ -1,0 +1,68 @@
+{
+  "name": "explicit offline fixture close",
+  "steps": [
+    {
+      "id": "open",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "subject": {
+          "value": "服务巡查闭环",
+          "from_step": null,
+          "select": "$"
+        },
+        "priority": {
+          "value": "high",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_open_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "close",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {
+        "state": {
+          "value": "closed",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_close_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "closed_read",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_closed_read_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

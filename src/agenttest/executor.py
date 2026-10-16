@@ -97,6 +97,8 @@ class Executor:
             raise ValueError("RUN_NOT_RESUMABLE")
         report.scenario_sha256 = fingerprint(scenario.model_dump())
         report.contract_sha256 = fingerprint(self.contract.model_dump())
+        report.target_config_sha256 = fingerprint(self.config.model_dump())
+        report.policy_registry_sha256 = self.registry.digest()
         self.store.save(report)
         try:
             operations, policies = self.validate(scenario, report=report)
@@ -135,6 +137,7 @@ class Executor:
                             method=operation.method, path_template=operation.path,
                             outcome=Outcome.TEST_INFRA_ERROR, reason="IN_PROGRESS",
                             policy_sha256=fingerprint(policies[step.id].model_dump()),
+                            policy_template_sha256=fingerprint(policies[step.id].model_dump()),
                         )
                         report.steps.append(result)
                         # Journal before sending a mutation. Reports cannot be resumed/replayed.

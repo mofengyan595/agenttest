@@ -1,0 +1,26 @@
+{
+  "schema_version": "agenttest.regression.v1",
+  "source_run_id": "a178366c29c44857b6c4b96fd4a802cd",
+  "source_report_sha256": "9c5a3fef05f5b730f5370bebfb8108933819e4fbe55d3031ef01c78a8338618b",
+  "scenario_sha256": "5bde336b606dfce5ac041eb4fc0a5b66ff2d15d7754ebb5c0cb4a6ffbfb6dd81",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_sha256": "bf34202246bd49793acc21ebacc0f2ab46aff82c3f42d040a5059ff3f496ddb9",
+  "task_contract_sha256": "7e070c9d86d98c2fe29d67e36787b6adf7bf6bbfead84e82b0acd9cd6791a88d",
+  "step_policy_sha256": {
+    "open": "2446b25a53e32e2535e5cbeef5e25c1b05faf883775851d55292bcdee810cbde",
+    "read": "c1c0575f5642f0bc89c54aa9cea9fea7ff3580217125e0a27dfbc8567175ae28",
+    "denied": "475d50d10b3f507e60c2880196c7f6bc772c994d88d17ca04623095e6acc44e9"
+  },
+  "source_step_policy_sha256": {
+    "open": "660cd1ed0b68206722a490dbd13e867f855af70d8753ecd0f4d25c2db0894317",
+    "read": "b5c874116fc1fcbf7cc3f1d13b19a3b3eed60f178723510eac105241228dc4e1",
+    "denied": "475d50d10b3f507e60c2880196c7f6bc772c994d88d17ca04623095e6acc44e9"
+  },
+  "test_module": "test_agenttest_3b35c5ffe2ee47d98418b7a230c3fd99.py",
+  "files": {
+    "scenario.json": "6d473c0a9c61bc3d9cfc0244f7f30d0ac8450c6992eb7ddc1ac3bbbdd45719da",
+    "test_agenttest_3b35c5ffe2ee47d98418b7a230c3fd99.py": "a47b5a8e1b9c00a44cab072510a5b9f245a4736002fef4196c88fad4aca149ff",
+    "README.md": "16557510dd6f2d9ce8cc861f20c4ead3beee1682f6a50603841a63114a40c6a1"
+  }
+}
