@@ -3,7 +3,7 @@
 import json
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.dsl import AssertionPolicy, CSVUpload, FieldAssertion, PollPolicy, Step
@@ -62,6 +62,15 @@ class RegisteredPolicy(StrictModel):
     binding_rules: list[BindingRule] = Field(default_factory=list)
     closed_arguments: bool = False
     csv_fixture: ApprovedCSVFixture | None = None
+    # Explicitly public, operator-authored catalog text; never an execution rule.
+    planning_purpose: str | None = Field(default=None, min_length=1, max_length=160)
+
+    @model_serializer(mode="wrap")
+    def serialize_public_purpose(self, handler):
+        data = handler(self)
+        if self.planning_purpose is None:
+            data.pop("planning_purpose", None)
+        return data
 
 
 class PolicyRegistry:
@@ -155,6 +164,7 @@ class PolicyRegistry:
                  "binding_rules": [r.model_dump() for r in item.binding_rules],
                  "closed_arguments": item.closed_arguments,
                  "poll_allowed": item.poll is not None,
+                 **({"purpose": item.planning_purpose} if item.planning_purpose else {}),
                  **({"csv_fixture": {"id": item.csv_fixture.id,
                                       "classification": item.csv_fixture.classification}}
                     if item.csv_fixture else {})}

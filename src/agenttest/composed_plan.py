@@ -212,7 +212,8 @@ def composed_ordering_rules(context: dict) -> list[dict]:
 def composed_authentication_rules(context: dict) -> list[dict]:
     """Expose the profile's existing single-login scope for every visible role."""
     return [{"role": item["role"], "login_operation_id": item["login_operation_id"],
-             "max_occurrences": 1} for item in context["authentication"]]
+             "max_occurrences": 1} for item in context["authentication"]
+            if item["login_operation_id"] is not None]
 
 
 class ComposedPlannerDraft(PlannerDraft):

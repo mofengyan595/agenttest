@@ -106,11 +106,15 @@ def planning_context(contract: ContractSummary, config: TargetConfig,
                "policies": visible_policies, "roles": roles,
                "authentication": [
                    {"role": role, "login_operation_id": config.roles[role].login_operation,
+                    **({"credential_mode": "preconfigured_bearer"}
+                       if config.roles[role].login_operation is None else {}),
                     "before_operation_ids": [op["id"] for op in operations
                         if op["security"] and {} not in op["security"]
                         and any(p["operation_id"] == op["id"] and role in p["roles"]
                                 for p in visible_policies)]}
-                   for role in roles if config.roles[role].login_operation in visible_ids],
+                   for role in roles if config.roles[role].login_operation in visible_ids
+                   or (config.roles[role].login_operation is None
+                       and config.roles[role].bearer_env)],
                "plan_schema": plan_schema}
     raw = json.dumps(context, ensure_ascii=False)
     if len(raw.encode()) > 100_000:

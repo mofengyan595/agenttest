@@ -1,0 +1,37 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "rounds": 2,
+  "purposes": {
+    "ticket_open_v1": "Create a ticket with the requested subject and priority; verify initial state open.",
+    "ticket_read_v1": "Read the created ticket as its owner; verify matching details and state open.",
+    "ticket_closed_read_v1": "Read the created ticket after closure; verify matching details and state closed.",
+    "ticket_close_v1": "Close the created ticket; verify state closed and matching details.",
+    "ticket_denied_v1": "Read another owner's ticket as visitor; verify access is denied with HTTP 403.",
+    "ticket_list_v1": "List the current role's tickets; verify the items collection exists."
+  },
+  "cases": [
+    {
+      "case_id": "G601", "project": "tickets", "template": "close",
+      "user_task": "owner 新建主题“设备盘点工单”、优先级 high 的工单，将它关闭，再读取同一工单核对状态 closed 和原始信息。",
+      "literal": "设备盘点工单", "priority": "high", "opaque_policies": false
+    },
+    {
+      "case_id": "G602", "project": "tickets", "template": "read",
+      "user_task": "owner 创建主题“资料归档核验”、优先级 low 的工单，读取自己刚建的工单，确认主题、优先级一致且状态仍是 open。",
+      "literal": "资料归档核验", "priority": "low", "opaque_policies": false
+    },
+    {
+      "case_id": "G603", "project": "tickets", "template": "close",
+      "user_task": "owner 创建主题“巡检复核事项”、优先级 low 的工单，关闭后查询同一条记录，确认原始信息一致、状态为 closed。",
+      "literal": "巡检复核事项", "priority": "low", "opaque_policies": true
+    },
+    {
+      "case_id": "G604", "project": "courses", "template": "ownership",
+      "user_task": "bob 创建“数据建模练习课”，本人读取并核对课程 ID 和名称，再确认 alice 读取同一课程被拒绝。",
+      "literal": "数据建模练习课", "priority": null, "opaque_policies": false
+    }
+  ]
+}
