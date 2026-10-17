@@ -1,0 +1,33 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "repository": "pocketbase/pocketbase",
+  "version": "v0.40.5",
+  "commit": "6f370ea741f33adf889eef02e3c1b884a47aa522",
+  "asset": "pocketbase_0.40.5_windows_amd64.zip",
+  "asset_sha256": "d0980d1f3a8097ff4c03a876e8c98f3008a83c0d42cc03b636bc92b2d4788d1c",
+  "contract_basis": "Developer-transcribed finite subset of official record/auth APIs and versioned migration; not an upstream OpenAPI export.",
+  "known_fixture_account_ids": {
+    "owner": "owneraccount001",
+    "other": "otheraccount001"
+  },
+  "sources": [
+    "https://pocketbase.io/docs/api-records/",
+    "https://pocketbase.io/docs/api-rules-and-filters/",
+    "https://pocketbase.io/docs/js-migrations/",
+    "https://github.com/pocketbase/pocketbase/blob/v0.40.5/apis/middlewares.go",
+    "https://github.com/pocketbase/pocketbase/blob/v0.40.5/apis/record_crud.go"
+  ],
+  "case_ids": [
+    "PB901",
+    "PB902",
+    "PB903",
+    "PB904",
+    "PB905",
+    "PB906"
+  ],
+  "rounds": 3,
+  "automatic_retries": 0
+}

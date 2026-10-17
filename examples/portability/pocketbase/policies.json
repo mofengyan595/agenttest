@@ -1,0 +1,450 @@
+[
+  {
+    "id": "pb_login_v1",
+    "operation_id": "pbLogin",
+    "roles": [
+      "owner",
+      "other"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Authenticate the selected role; credentials and token are executor-owned.",
+    "binding_rules": [],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.record.id",
+          "operator": "exists"
+        }
+      ]
+    }
+  },
+  {
+    "id": "pb_create_v1",
+    "operation_id": "pbCreateNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Create an owner note and check all supplied fields and generated id.",
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "title",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "response_selector": "$.title"
+      },
+      {
+        "location": "body",
+        "name": "state",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "done"
+          ]
+        },
+        "response_selector": "$.state"
+      },
+      {
+        "location": "body",
+        "name": "owner",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "owneraccount001"
+          ]
+        },
+        "response_selector": "$.owner"
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.id",
+          "operator": "exists"
+        }
+      ]
+    }
+  },
+  {
+    "id": "pb_read_created_v1",
+    "operation_id": "pbReadNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Read the same created note; check id, title, state and owner.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "same",
+        "response_selector": "$.id",
+        "source_body_equalities": {
+          "$.title": "title",
+          "$.state": "state",
+          "$.owner": "owner"
+        }
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_update_v1",
+    "operation_id": "pbUpdateNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Update the created note title and state; verify response identity and both fields.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "same",
+        "response_selector": "$.id",
+        "source_body_equalities": {}
+      },
+      {
+        "location": "body",
+        "name": "title",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "response_selector": "$.title"
+      },
+      {
+        "location": "body",
+        "name": "state",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "done"
+          ]
+        },
+        "response_selector": "$.state"
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_read_updated_v1",
+    "operation_id": "pbReadNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Read the updated note and verify the updated title and state persisted.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_update_v1",
+        "source_selector": "$.id",
+        "role_relation": "same",
+        "response_selector": "$.id",
+        "source_body_equalities": {
+          "$.title": "title",
+          "$.state": "state"
+        }
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.owner",
+          "expected": "owneraccount001"
+        }
+      ]
+    }
+  },
+  {
+    "id": "pb_other_read_v1",
+    "operation_id": "pbReadNote",
+    "roles": [
+      "other"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Other account cannot view an owner-created note; PocketBase returns 404.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "different",
+        "source_body_equalities": {}
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          404
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_other_update_v1",
+    "operation_id": "pbUpdateNote",
+    "roles": [
+      "other"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Other account cannot update an owner-created note; PocketBase returns 404.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "different",
+        "source_body_equalities": {}
+      },
+      {
+        "location": "body",
+        "name": "title",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      },
+      {
+        "location": "body",
+        "name": "state",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "done"
+          ]
+        }
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          404
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_delete_v1",
+    "operation_id": "pbDeleteNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Delete the owner-created note; successful deletion returns HTTP 204.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "same",
+        "source_body_equalities": {}
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          204
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_read_deleted_v1",
+    "operation_id": "pbReadNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "After deletion, read the same created id and confirm HTTP 404.",
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "recordId",
+        "source_policy_id": "pb_create_v1",
+        "source_selector": "$.id",
+        "role_relation": "same",
+        "source_body_equalities": {}
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          404
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_wrong_owner_create_v1",
+    "operation_id": "pbCreateNote",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "Owner cannot create a note assigned to the other known fixture account; expect 400.",
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "title",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      },
+      {
+        "location": "body",
+        "name": "state",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "done"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "owner",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "otheraccount001"
+          ]
+        }
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          400
+        ]
+      },
+      "fields": []
+    }
+  },
+  {
+    "id": "pb_no_wrong_owner_note_v1",
+    "operation_id": "pbListNotes",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "pocketbase_notes_development_v1",
+    "closed_arguments": true,
+    "planning_purpose": "After rejected wrong-owner creation, exact-title search must return no visible note.",
+    "binding_rules": [
+      {
+        "location": "query",
+        "name": "filter",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "title = '归属字段校验'"
+          ]
+        }
+      }
+    ],
+    "assertions": {
+      "reviewed": true,
+      "source": "Developer-authored development checks for PocketBase v0.40.5 APIs and the versioned isolated acceptance migration; execution approval is separate.",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.totalItems",
+          "expected": 0
+        },
+        {
+          "select": "$.items",
+          "operator": "count",
+          "expected": 0
+        }
+      ]
+    }
+  }
+]

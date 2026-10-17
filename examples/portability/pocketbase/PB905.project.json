@@ -1,0 +1,7 @@
+{
+  "schema_version": "agenttest.project.v1",
+  "contract": "openapi.json",
+  "target": "target.json",
+  "policies": "policies.json",
+  "task_contract": "PB905.task.json"
+}

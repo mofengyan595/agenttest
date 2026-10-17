@@ -1,0 +1,489 @@
+{
+  "PB901": {
+    "name": "developer-authored fixed baseline PB901",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "陌生项目初次接入",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "owneraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "read",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_read_created_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  },
+  "PB902": {
+    "name": "developer-authored fixed baseline PB902",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "修改前记录",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "owneraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "update",
+        "operation_id": "pbUpdateNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {
+          "title": {
+            "value": "修改后记录",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "done",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_update_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "read",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "update",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_read_updated_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  },
+  "PB903": {
+    "name": "developer-authored fixed baseline PB903",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "other_login",
+        "operation_id": "pbLogin",
+        "role": "other",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "仅创建者可读",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "owneraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "other_read",
+        "operation_id": "pbReadNote",
+        "role": "other",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_other_read_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "read",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_read_created_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  },
+  "PB904": {
+    "name": "developer-authored fixed baseline PB904",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "other_login",
+        "operation_id": "pbLogin",
+        "role": "other",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "权限保护原文",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "owneraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "other_update",
+        "operation_id": "pbUpdateNote",
+        "role": "other",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {
+          "title": {
+            "value": "越权改写",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "done",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_other_update_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "read",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_read_created_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  },
+  "PB905": {
+    "name": "developer-authored fixed baseline PB905",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "删除后不可读取",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "owneraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "delete",
+        "operation_id": "pbDeleteNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_delete_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "read_missing",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "path_parameters": {
+          "recordId": {
+            "from_step": "create",
+            "select": "$.id"
+          }
+        },
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_read_deleted_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  },
+  "PB906": {
+    "name": "developer-authored fixed baseline PB906",
+    "steps": [
+      {
+        "id": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_login_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "wrong_create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {},
+        "body": {
+          "title": {
+            "value": "归属字段校验",
+            "from_step": null,
+            "select": "$"
+          },
+          "state": {
+            "value": "draft",
+            "from_step": null,
+            "select": "$"
+          },
+          "owner": {
+            "value": "otheraccount001",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "upload": null,
+        "policy_id": "pb_wrong_owner_create_v1",
+        "poll": false,
+        "read_retries": 0
+      },
+      {
+        "id": "search",
+        "operation_id": "pbListNotes",
+        "role": "owner",
+        "path_parameters": {},
+        "query": {
+          "filter": {
+            "value": "title = '归属字段校验'",
+            "from_step": null,
+            "select": "$"
+          }
+        },
+        "body": {},
+        "upload": null,
+        "policy_id": "pb_no_wrong_owner_note_v1",
+        "poll": false,
+        "read_retries": 0
+      }
+    ]
+  }
+}

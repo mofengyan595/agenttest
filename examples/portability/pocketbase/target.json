@@ -1,0 +1,43 @@
+{
+  "base_url": "http://127.0.0.1:18095",
+  "environment": "isolated",
+  "authorized_ips": [],
+  "allow_mutations": true,
+  "allowed_operations": [
+    "pbLogin",
+    "pbCreateNote",
+    "pbReadNote",
+    "pbUpdateNote",
+    "pbDeleteNote",
+    "pbListNotes"
+  ],
+  "roles": {
+    "owner": {
+      "username_env": "PB_OWNER_EMAIL",
+      "password_env": "PB_OWNER_PASSWORD",
+      "bearer_env": null,
+      "login_operation": "pbLogin",
+      "username_field": "identity",
+      "password_field": "password",
+      "token_selector": "$.token"
+    },
+    "other": {
+      "username_env": "PB_OTHER_EMAIL",
+      "password_env": "PB_OTHER_PASSWORD",
+      "bearer_env": null,
+      "login_operation": "pbLogin",
+      "username_field": "identity",
+      "password_field": "password",
+      "token_selector": "$.token"
+    }
+  },
+  "business_scenario": "pocketbase_notes_development_v1",
+  "sensitive_fields": [],
+  "max_steps": 8,
+  "max_requests": 8,
+  "max_body_bytes": 100000,
+  "connect_timeout": 2.0,
+  "read_timeout": 5.0,
+  "run_timeout": 45.0,
+  "min_request_interval": 0.05
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "owner 登录后尝试创建标题“归属字段校验”、state 为 draft、owner 错填为已知其他账号 otheraccount001 的笔记，应返回 400；随后 owner 用精确过滤条件 title = '归属字段校验' 查询，确认可见结果数为 0。",
+  "contract_sha256": "bea73b0af2e05b2b25d6bc1a6008eac0039f0c733dcf44ba1068672f8883b0a8",
+  "target_config_sha256": "1f2019dc01fbc992d460a7dfc4a06bfd5d8f1ac327daaeef0fb2a3739258d679",
+  "policy_sha256": "da105aad4d5dbeff174de99f01b50d5f27a9aa02f2002bea78001ba0edc38d3c",
+  "requirements": {
+    "steps": [
+      {
+        "key": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "policy_id": "pb_login_v1",
+        "arguments": [],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "wrong_create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "policy_id": "pb_wrong_owner_create_v1",
+        "arguments": [
+          {
+            "location": "body",
+            "name": "title",
+            "value": "归属字段校验",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "state",
+            "value": "draft",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "owner",
+            "value": "otheraccount001",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "search",
+        "operation_id": "pbListNotes",
+        "role": "owner",
+        "policy_id": "pb_no_wrong_owner_note_v1",
+        "arguments": [
+          {
+            "location": "query",
+            "name": "filter",
+            "value": "title = '归属字段校验'",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "business_result"
+        ]
+      }
+    ],
+    "before": [
+      [
+        "wrong_create",
+        "search"
+      ]
+    ],
+    "required_goals": [
+      "business_result"
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "owner 和 other 分别登录。owner 创建标题“权限保护原文”、state 为 draft、owner 为 owneraccount001 的笔记；other 用创建返回的 id 尝试把标题改为“越权改写”、state 改为 done，应返回 404；最后 owner 回读同一笔记，确认原文和 draft 状态保持不变。",
+  "contract_sha256": "bea73b0af2e05b2b25d6bc1a6008eac0039f0c733dcf44ba1068672f8883b0a8",
+  "target_config_sha256": "1f2019dc01fbc992d460a7dfc4a06bfd5d8f1ac327daaeef0fb2a3739258d679",
+  "policy_sha256": "da105aad4d5dbeff174de99f01b50d5f27a9aa02f2002bea78001ba0edc38d3c",
+  "requirements": {
+    "steps": [
+      {
+        "key": "owner_login",
+        "operation_id": "pbLogin",
+        "role": "owner",
+        "policy_id": "pb_login_v1",
+        "arguments": [],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "other_login",
+        "operation_id": "pbLogin",
+        "role": "other",
+        "policy_id": "pb_login_v1",
+        "arguments": [],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "create",
+        "operation_id": "pbCreateNote",
+        "role": "owner",
+        "policy_id": "pb_create_v1",
+        "arguments": [
+          {
+            "location": "body",
+            "name": "title",
+            "value": "权限保护原文",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "state",
+            "value": "draft",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "owner",
+            "value": "owneraccount001",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "other_update",
+        "operation_id": "pbUpdateNote",
+        "role": "other",
+        "policy_id": "pb_other_update_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "recordId",
+            "value": null,
+            "source": "create",
+            "selector": "$.id"
+          },
+          {
+            "location": "body",
+            "name": "title",
+            "value": "越权改写",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "state",
+            "value": "done",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "business_result"
+        ]
+      },
+      {
+        "key": "read",
+        "operation_id": "pbReadNote",
+        "role": "owner",
+        "policy_id": "pb_read_created_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "recordId",
+            "value": null,
+            "source": "create",
+            "selector": "$.id"
+          }
+        ],
+        "goals": [
+          "business_result"
+        ]
+      }
+    ],
+    "before": [
+      [
+        "other_update",
+        "read"
+      ]
+    ],
+    "required_goals": [
+      "business_result"
+    ]
+  }
+}
