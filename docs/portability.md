@@ -17,6 +17,8 @@
 
 后三项均是可信配置，不能从模型输出加载。TaskContract 绑定契约、目标和策略摘要；任务文本或输入版本变化后不能继续使用。它复用既有 Rubric 和意图评分代码，检查模型计划是否多做、漏做、换角色或改参数，没有新增执行器。
 
+可用[项目配置入口与离线预检](project-inputs.md)集中引用这四份文件：`check-project --project <文件>` 只检查配置与所需凭据，`agent --project <文件>` 通过后复用原通用工作流；不自动生成断言或更新审核摘要。
+
 目标约束无需填写模型生成的步骤 ID 或唯一完整顺序；允许重命名步骤、交错无依赖操作。它仍需人工把业务需求转成明确约束，**尚不支持自动理解任意业务规则**。配置文件的可信来源和人工业务确认仍由操作员负责，字段本身不代表独立审核资格。
 
 现有 `agent` 命令新增 `--task-contract <文件>`：执行前核对输入摘要与任务原文，真实模型选择 `generic` 提示，Fake 样本也使用同一确定性目标检查。原 mini 场景的内置意图门禁继续执行，新增约束只能进一步限制它。示例见 [课程任务约束](../examples/portability/courses/ownership.task.json)和[工单任务约束](../examples/portability/tickets/close.task.json)。示例 `.draft.json` 是模型结构化回复夹具；`agent --fake-plan` 仍要求完整 Scenario JSON，两者不能混用。

@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     agent_demo = subcommands.add_parser("agent-demo", help="自然语言规划一次性 mini target")
     agent_demo.add_argument("--fault", choices=["none", "ownership", "terminal"], default="none")
     for command in (agent, agent_demo):
-        command.add_argument("--user-task", required=True)
+        command.add_argument("--user-task", required=command is agent_demo)
         model = command.add_mutually_exclusive_group(required=True)
         model.add_argument("--real", action="store_true")
         model.add_argument("--fake-plan", type=Path)
@@ -63,11 +63,16 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--max-total-tokens", type=int, default=12_000)
         command.add_argument("--model-timeout", type=float, default=30.0)
     for name in ("contract", "target", "policies"):
-        agent.add_argument(f"--{name}", type=Path, required=True)
+        agent.add_argument(f"--{name}", type=Path)
+    agent.add_argument("--project", type=Path,
+                       help="操作员项目配置；读取绑定任务并在模型调用前完成离线预检")
     agent.add_argument("--task-contract", type=Path,
                        help="操作员提供的任务约束；启用通用规划并保留确定性意图校验")
     agent.add_argument("--export-regression", type=Path,
                        help="通用任务完整通过后导出固定 pytest 包；保存明文合成测试参数")
+    project_check = subcommands.add_parser(
+        "check-project", help="离线检查接入配置；不调用目标或模型")
+    project_check.add_argument("--project", type=Path, required=True)
     export = subcommands.add_parser("export-pytest", help="从完整计划和已通过报告导出固定回归包")
     for name in ("contract", "target", "policies", "task-contract", "plan", "output"):
         export.add_argument(f"--{name}", type=Path, required=True)
@@ -83,6 +88,33 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     try:
+        project_inputs, project_environment = None, None
+        if args.command == "check-project" or (args.command == "agent" and args.project):
+            from agenttest.project import ProjectIssue, check_project
+
+            if args.command == "agent" and any((
+                args.contract, args.target, args.policies, args.task_contract,
+            )):
+                parser.error("--project cannot be combined with individual project input flags")
+            project_environment = dict(os.environ)
+            checked = check_project(args.project, project_environment)
+            if (args.command == "agent" and checked.ready and args.user_task is not None
+                    and args.user_task != checked.inputs.task.user_task):
+                checked.issues.append(ProjectIssue(component="task_contract",
+                    code="PROJECT_TASK_TEXT_MISMATCH", field="user_task"))
+            if args.command == "check-project":
+                print(json.dumps(checked.summary(), ensure_ascii=False, indent=2))
+                return 0 if checked.ready else 2
+            if not checked.ready:
+                print(json.dumps({"outcome": "TOOL_ERROR", "reason": "PROJECT_PREFLIGHT_FAILED",
+                                  "project_check": checked.summary()}, ensure_ascii=False))
+                return 2
+            project_inputs = checked.inputs
+            args.user_task = project_inputs.task.user_task
+        if args.command == "agent" and not args.project and not all((
+            args.contract, args.target, args.policies, args.user_task,
+        )):
+            parser.error("agent requires --project or --contract --target --policies --user-task")
         if args.command == "discover":
             from agenttest.discovery import discover, discovery_json
 
@@ -150,7 +182,8 @@ def main(argv: list[str] | None = None) -> int:
             budget = WorkflowBudget()
             validator = None
             capture = None
-            generic = args.command == "agent" and args.task_contract is not None
+            generic = args.command == "agent" and (
+                project_inputs is not None or args.task_contract is not None)
             if args.command == "agent" and args.export_regression:
                 from agenttest.regression import validate_destination
 
@@ -158,13 +191,19 @@ def main(argv: list[str] | None = None) -> int:
                     raise ValueError("Regression export requires an operator task contract")
                 validate_destination(args.export_regression)
             if args.command == "agent":
-                document = bounded_read(args.contract)
-                config = TargetConfig.model_validate_json(bounded_read(args.target))
-                registry = PolicyRegistry.from_json(bounded_read(args.policies))
+                if project_inputs is not None:
+                    document, config, registry, task = (
+                        project_inputs.document, project_inputs.target,
+                        project_inputs.registry, project_inputs.task)
+                else:
+                    document = bounded_read(args.contract)
+                    config = TargetConfig.model_validate_json(bounded_read(args.target))
+                    registry = PolicyRegistry.from_json(bounded_read(args.policies))
                 if generic:
                     from agenttest.task_contract import TaskContract, task_validator
 
-                    task = TaskContract.model_validate_json(bounded_read(args.task_contract))
+                    if project_inputs is None:
+                        task = TaskContract.model_validate_json(bounded_read(args.task_contract))
                     if task.user_task != args.user_task:
                         raise ValueError("Task text differs from operator task contract")
                     validator = task_validator(task, load_openapi(document), config, registry)
@@ -193,7 +232,9 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 result = asyncio.run(Workflow(
                     document, config, registry, planner, store,
-                    budget=budget, user_task=args.user_task, intent_validator=validator).run())
+                    budget=budget, user_task=args.user_task, intent_validator=validator,
+                    **({"environ": project_environment}
+                       if project_inputs is not None else {})).run())
                 if capture is not None:
                     if result.outcome != Outcome.PASS:
                         regression_result = {"exported": False, "reason": "SOURCE_NOT_PASSED"}
@@ -202,7 +243,8 @@ def main(argv: list[str] | None = None) -> int:
 
                         try:
                             runtime = RegressionRuntime(document, config, registry, task,
-                                                        dict(os.environ), None, store)
+                                project_environment if project_inputs is not None else
+                                dict(os.environ), None, store)
                             export_regression(args.export_regression, runtime,
                                               capture.scenario, result)
                             regression_result = {"exported": True,
