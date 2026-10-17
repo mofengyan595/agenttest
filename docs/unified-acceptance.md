@@ -10,9 +10,11 @@
 .\.venv\Scripts\python.exe scripts/check_delivery.py --output runs/delivery-new
 ```
 
-Linux 使用 `.venv/bin/python`，其余参数相同。输出必须是新的、Git 忽略的仓库 `runs/` 子目录；再次执行应换一个新目录。运行期间保持源码、样例和 Git 状态不变。每项子检查主等待上限 600 秒，超时尝试终止本轮启动的进程树并保留输出，无自动重试；失败继续记录其他独立检查，源码变化则停止后续执行并保留未执行位置。
+Linux 使用 `.venv/bin/python`，其余参数相同。输出必须是新的、Git 忽略的仓库 `runs/` 子目录；再次执行应换一个新目录。运行期间保持源码、样例和 Git 状态不变。每项主等待上限 600 秒，超时尝试回收本轮进程，无自动重试。普通失败继续其他独立项；源码变化或回收未确认则停止后续执行，保留全部未执行位置。
 
-退出码 0 且 `verified=true`、`verified_checks=scheduled_checks=9` 表示九项全部符合预期；退出码 1 表示验收未通过，2 表示入口或输出目录错误。缺少 Agent/MCP 依赖会保留失败，不会把不完整运行算作成功。
+退出码 0 且 `verified=true`、`verified_checks=scheduled_checks=9`、`cleanup_unconfirmed=false` 表示九项全部符合预期；退出码 1 表示验收未通过，2 表示入口或输出目录错误。缺少 Agent/MCP 依赖会保留失败，不会把不完整运行算作成功。
+
+`CHILD_CLEANUP_UNCONFIRMED` 表示回收结果不能确认，需先核查本次进程，再决定是否重新运行。POSIX 的进程组退出不能证明另建会话的后代全部退出，因此超时也按未确认处理；不把它当成业务缺陷。具体修复与限制见[收尾审查](final-review-20261017.md)。
 
 | 检查 | 本次执行内容 | 预期 |
 | --- | --- | --- |
@@ -27,7 +29,7 @@ Linux 使用 `.venv/bin/python`，其余参数相同。输出必须是新的、G
 
 ## 看什么结果
 
-先打开输出目录的 `summary.md` 看各项状态，再用 `results.json` 定位失败项。`freeze.json` 保存源码身份、固定命令及验收条件；`logs/<检查名>/` 保留子命令摘要、标准输出和错误输出。原报告和封印分别留在 `showcase/`、`portability/`、`json-literals/`、`fixed-regressions/`，没有复制进公开文档。
+先打开输出目录的 `summary.md` 看各项状态，再用 `results.json` 定位失败项。`freeze.json` 保存源码身份、固定命令及验收条件；`logs/<检查名>/` 保留子命令摘要、过程输出 `process-stdout/stderr.txt` 及本次读取快照 `stdout/stderr.txt`。回收未确认时，快照最多各 1 MB，原过程文件保留。原报告和封印分别留在 `showcase/`、`portability/`、`json-literals/`、`fixed-regressions/`，没有复制进公开文档。
 
 总入口只复用既有工具，不创建新执行器或评分系统。业务请求使用进程内 ASGITransport／MockTransport；MCP 使用真实 SDK stdio，但目标仍为一次性 mini 服务。真实模型调用、真实 Java 请求、真实数据库写入均为 0。归档核对只检查本次离线记录，不重新执行历史真实试验。
 
@@ -69,4 +71,4 @@ Linux 使用 `.venv/bin/python`，其余参数相同。输出必须是新的、G
 
 演示结束后进入最终审查与功能冻结，优先修复实际发现的缺陷；新第三方写入、正式独立评测或新的架构需求另立里程碑。
 
-本轮已实际完成最终总入口九项验收，源码在运行中保持不变；专项 12 passed，Ruff、依赖检查与文档本地链接检查通过。固定回归为正常 3 passed、故障 3 failed，两份封印分别冷核对 30／6 个位置。真实模型、Java 和数据库写入均为 0。私人运行证据在 `runs/unified-acceptance-20261017/acceptance-final/`，最终提交另接受 Windows／Linux 的 Python 与 Web CI。
+收尾修复后已实际完成九项验收，源码在运行中保持不变，`cleanup_unconfirmed=false`；交付专项 18 passed，扩大审查回归 174 passed／8 平台或权限跳过，Ruff、依赖和本地链接检查通过。固定回归正常 3 passed、故障 3 failed，两份封印分别冷核对 30／6 个位置。真实模型、Java 和数据库写入均为 0。最新私人证据在 `runs/final-review-20261017/acceptance-final/`，初版记录仍保留在 `runs/unified-acceptance-20261017/`；最终提交另接受 Windows／Linux 的 Python 与 Web CI。

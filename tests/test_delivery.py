@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from agenttest import delivery
+from agenttest.delivery import execute_child
 
 
 def child_summary(check):
@@ -25,7 +26,7 @@ def wrapper(tmp_path, monkeypatch):
     monkeypatch.setattr(delivery, "private_output", lambda *args: None)
     monkeypatch.setattr(delivery, "checkout_identity", lambda root: {"commit": "fixed"})
 
-    def run(arguments, environ):
+    def run(arguments, environ, directory):
         check = next(c for c in checks if c.arguments == arguments)
         seen.append(check.name)
         assert environ["PYTEST_ADDOPTS"] == ""
@@ -58,8 +59,8 @@ def test_failed_child_does_not_hide_other_positions(wrapper, monkeypatch, change
     output, _, seen = wrapper
     original = delivery.execute_child
 
-    def run(arguments, environ):
-        child = original(arguments, environ)
+    def run(arguments, environ, directory):
+        child = original(arguments, environ, directory)
         if seen[-1] == "showcase":
             if change == "nonzero_exit":
                 child.returncode = 1
@@ -125,8 +126,80 @@ def test_output_outside_private_runs_is_rejected_before_creation(tmp_path, monke
     assert not output.exists()
 
 
+@pytest.mark.parametrize("cleanup_fault", ["tree", "kill", "wait"])
+@pytest.mark.parametrize("unreadable_capture", [False, True])
+def test_unconfirmed_cleanup_stops_following_checks_and_retains_partial_output(
+    wrapper, monkeypatch, cleanup_fault, unreadable_capture,
+):
+    output, checks, seen = wrapper
+    fake = delivery.execute_child
+    started = []
+
+    class Child:
+        pid, returncode = 123, None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def wait(self, timeout):
+            if timeout == 600 or cleanup_fault == "wait":
+                raise subprocess.TimeoutExpired("fixed", timeout)
+            return self.returncode
+
+        def poll(self):
+            return self.returncode
+
+        def kill(self):
+            if cleanup_fault == "kill":
+                raise PermissionError()
+            self.returncode = -9
+
+    def launch(*args, **kwargs):
+        kwargs["stdout"].write(b"partial evidence")
+        return Child()
+
+    def run(arguments, environ, directory):
+        started.append(arguments)
+        return (execute_child(arguments, environ, directory) if arguments == checks[0].arguments
+                else fake(arguments, environ, directory))
+
+    monkeypatch.setattr(delivery, "execute_child", run)
+    monkeypatch.setattr(delivery.subprocess, "Popen", launch)
+    monkeypatch.setattr(delivery.subprocess, "run", lambda *a, **k: SimpleNamespace(
+        returncode=int(cleanup_fault == "tree")))
+
+    def signal_tree(*args):
+        if cleanup_fault == "tree":
+            raise PermissionError()
+
+    open_file = type(output).open
+    rejected = []
+
+    def capture(path, *args, **kwargs):
+        if (unreadable_capture and not rejected and path.name == "process-stdout.txt"
+                and args == ("rb",)):
+            rejected.append(path)
+            raise PermissionError()
+        return open_file(path, *args, **kwargs)
+
+    monkeypatch.setattr(delivery.os, "killpg", signal_tree, raising=False)
+    monkeypatch.setattr(type(output), "open", capture)
+    result = delivery.check_delivery(output)
+    assert started == [checks[0].arguments] and not seen
+    assert not result["verified"] and len(result["results"]) == 9
+    assert result["results"][0]["reason"] == "CHILD_CLEANUP_UNCONFIRMED"
+    assert result["cleanup_unconfirmed"] is True
+    assert all(row["status"] == "NOT_ATTEMPTED" for row in result["results"][1:])
+    assert (output / "logs/project-courses/stdout.txt").read_text() == (
+        "" if unreadable_capture else "partial evidence")
+    assert (output / "logs/project-courses/process-stdout.txt").read_bytes() == b"partial evidence"
+
+
 @pytest.mark.parametrize("platform", ["nt", "posix"])
-def test_timeout_stops_only_own_process_tree_and_preserves_output(monkeypatch, platform):
+def test_timeout_stops_only_own_process_tree_and_preserves_output(monkeypatch, tmp_path, platform):
     events = []
 
     class Child:
@@ -138,13 +211,13 @@ def test_timeout_stops_only_own_process_tree_and_preserves_output(monkeypatch, p
         def __exit__(self, *args):
             pass
 
-        def communicate(self, timeout):
+        def wait(self, timeout):
             self.attempts += 1
             if self.attempts == 1:
                 assert timeout == 600
                 raise subprocess.TimeoutExpired("fixed", timeout, output=b"partial")
             assert timeout == 15
-            return "retained stdout", "retained stderr"
+            return self.returncode
 
         def poll(self):
             return self.returncode
@@ -156,17 +229,25 @@ def test_timeout_stops_only_own_process_tree_and_preserves_output(monkeypatch, p
     def launch(command, **kwargs):
         assert command == [delivery.sys.executable, "fixed-script.py"]
         assert kwargs["start_new_session"] == (platform != "nt")
+        kwargs["stdout"].write(b"retained stdout")
+        kwargs["stderr"].write(b"retained stderr")
         return Child()
+
+    def stop_tree(command, **kwargs):
+        events.append(command)
+        return SimpleNamespace(returncode=0)
 
     with monkeypatch.context() as patch:
         patch.setattr(delivery.os, "name", platform)
         patch.setattr(delivery.subprocess, "Popen", launch)
-        patch.setattr(delivery.subprocess, "run", lambda command, **kwargs: events.append(command))
+        patch.setattr(delivery.subprocess, "run", stop_tree)
         patch.setattr(delivery.os, "killpg", lambda pid, sig: events.append((pid, sig)),
                       raising=False)
         patch.setattr(delivery.signal, "SIGKILL", 9, raising=False)
-        with pytest.raises(subprocess.TimeoutExpired) as caught:
-            delivery.execute_child(("fixed-script.py",), {})
+        error_type = (subprocess.TimeoutExpired if platform == "nt"
+                      else delivery.ChildCleanupUnconfirmed)
+        with pytest.raises(error_type) as caught:
+            delivery.execute_child(("fixed-script.py",), {}, tmp_path)
     assert caught.value.stdout == "retained stdout" and caught.value.stderr == "retained stderr"
     assert events == ([["taskkill", "/PID", "123", "/T", "/F"], "kill-root"]
                       if platform == "nt" else [(123, 9), "kill-root"])

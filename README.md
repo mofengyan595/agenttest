@@ -8,6 +8,8 @@
 
 [统一验收与五分钟演示](docs/unified-acceptance.md)：一条离线命令复现项目预检、原演示、课程／工单、复杂 JSON、固定 pytest 与归档复核，并集中说明支持范围、历史真实证据和未验证部分。
 
+[收尾审查与冻结范围](docs/final-review-20261017.md)：修复交付入口超时回收未确认后仍继续执行的问题，保留失败与未执行位置。后续优先维护可复现缺陷和依赖兼容，新功能另立里程碑。
+
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
