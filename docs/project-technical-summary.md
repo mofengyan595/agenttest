@@ -31,7 +31,7 @@ flowchart TD
 | --- | --- | --- |
 | [contracts.py](../src/agenttest/contracts.py)、[request_validation.py](../src/agenttest/request_validation.py) | OpenAPI 3.0/3.1 JSON/YAML 解析、局部引用展开、请求约束校验 | 拒绝远程引用；请求 Schema 是受支持子集，不完整模拟 Bean Validation |
 | [planner_input.py](../src/agenttest/planner_input.py) | 筛选可见 Operation/Role/Policy、参数约束、登录前置关系 | 去除文档自由文本、默认值、账号及目标地址；目录可见不等于授权 |
-| [llm_planner.py](../src/agenttest/llm_planner.py)、[batch_plan.py](../src/agenttest/batch_plan.py) | 兼容 Chat Completions、用量/预算核查、严格 PlannerDraft 转 DSL | 普通草稿只表达标量参数/引用；batch 专用草稿增加 fixture 与 poll 策略 ID |
+| [llm_planner.py](../src/agenttest/llm_planner.py)、[batch_plan.py](../src/agenttest/batch_plan.py) | 兼容 Chat Completions、用量/预算核查、严格 PlannerDraft 转 DSL | 通用草稿支持标量参数/引用及嵌套 JSON body，按接口/位置收紧参数名并本地重验；batch 专用草稿增加 fixture 与 poll 策略 ID |
 | [dsl.py](../src/agenttest/dsl.py)、[policies.py](../src/agenttest/policies.py) | 步骤类型、认证顺序、绑定规则、批准断言、可信 CSV 与 PollPolicy | 模型不能新增策略或凭据；只准引用已有策略 ID |
 | [intent.py](../src/agenttest/intent.py)、[batch_intent.py](../src/agenttest/batch_intent.py)、[courseinsight_nl.py](../src/agenttest/courseinsight_nl.py) | 检查任务名称、角色、目标、顺序、资源来源与完整路径 | 封闭语法与规则；不支持的说法保守待审，不用模型自评替代 |
 | [workflow.py](../src/agenttest/workflow.py) | LangGraph 节点、一次规划/执行、预算、错误分支、最终任务满足标志 | 没有自动修复或重新规划循环 |

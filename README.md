@@ -12,6 +12,8 @@
 
 新里程碑[陌生 PocketBase 认证与写入实测](docs/pocketbase-acceptance-20261017.md)：两个授权隔离实例的六条固定基线均完成，六条任务各三轮真实模型 **16/18 完成、68,800 Token**；两次跨账号读取任务因参数格式错误在请求前拒绝，失败保留。覆盖动态 ID、创建／修改回读、权限拒绝和删除后查询；[脱敏汇总](docs/demo-evidence/pocketbase-live-summary.json)与数据库只读核对分开记录，仍为未独立审核的小样本开发证据。
 
+[通用参数名约束](docs/argument-slots-20261017.md)按接口和位置限定模型参数，并在本地重验，合法的 body 字段仍支持。使用三条全新合成任务验收，旧 PocketBase 失败保留，真实与模拟证据分开记录。
+
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。

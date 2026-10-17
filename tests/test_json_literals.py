@@ -82,7 +82,8 @@ def test_existing_scalar_replies_and_non_generic_profiles_keep_their_contract():
     assert all(variants[1]["properties"][p]["type"] == "null"
                for p in ("from_step", "select"))
     assert "json_value" not in variants[1]["properties"]
-    assert schema["$defs"]["GenericDraftStep"]["properties"]["role"]["enum"] == [None]
+    role_ref = schema["$defs"]["GenericDraftStep"]["properties"]["role"]["$ref"]
+    assert schema["$defs"][role_ref.rsplit("/", 1)[1]]["enum"] == [None]
     original = json.loads(OpenAICompatiblePlanner(settings).prepare_request(context))
     original_schema = original["response_format"]["json_schema"]["schema"]
     assert "GenericDraftArgument" not in original_schema["$defs"]

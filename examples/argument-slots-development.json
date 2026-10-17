@@ -1,0 +1,35 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "GA1001",
+      "resource": "memos",
+      "create": "publishMemo",
+      "read": "inspectMemo",
+      "path_key": "memo_id",
+      "query": {"view": "full"},
+      "body": {"subject": "秋季评审", "attributes": {"body": "原样保留", "enabled": true}}
+    },
+    {
+      "case_id": "GA1002",
+      "resource": "envelopes",
+      "create": "sealEnvelope",
+      "read": "inspectEnvelope",
+      "path_key": "envelope_key",
+      "query": {"body": "expanded"},
+      "body": {"body": {"message": "允许合法 body 字段", "flags": [false, true]}, "batch": 7}
+    },
+    {
+      "case_id": "GA1003",
+      "resource": "parcels",
+      "create": "registerParcel",
+      "read": "inspectParcel",
+      "path_key": "parcel_id",
+      "query": {"warehouse": "east"},
+      "body": {"warehouse": "east", "pieces": [{"sku": "P-2", "mass": 0.375}, {"sku": "P-8", "mass": 1.25}]}
+    }
+  ]
+}

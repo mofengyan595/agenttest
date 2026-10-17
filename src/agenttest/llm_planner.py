@@ -362,6 +362,8 @@ class OpenAICompatiblePlanner:
                                if self._draft_type not in {PlannerDraft, GenericPlannerDraft} else
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
         if self._profile == "generic":
+            from agenttest.generic_arguments import constrain_generic_arguments, strip_schema_titles
+
             argument = schema["$defs"]["GenericDraftArgument"]
             argument["required"] = list(argument["properties"])
             scalar, container, reference = [copy.deepcopy(argument) for _ in range(3)]
@@ -376,7 +378,12 @@ class OpenAICompatiblePlanner:
             container["properties"]["location"] = {"type": "string", "enum": ["body"]}
             for key in ("from_step", "select"):
                 reference["properties"][key] = {"type": "string"}
+            # Operation/location slot branches supply these enums without duplication.
+            for variant in (scalar, reference):
+                variant["properties"]["location"] = {"type": "string"}
             schema["$defs"]["GenericDraftArgument"] = {"anyOf": [scalar, container, reference]}
+            constrain_generic_arguments(schema, step_type, context, argument)
+            strip_schema_titles(schema)
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         if self._profile == "mini_composed":
             from agenttest.composed_plan import (
@@ -391,10 +398,12 @@ class OpenAICompatiblePlanner:
                 public["authentication_rules"] = composed_authentication_rules(context)
             except ValueError:
                 raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INPUT_REJECTED") from None
+        separators = (",", ":") if self._profile == "generic" else None
         payload = {
             "model": settings.model, "store": False,
             "messages": [{"role": "system", "content": self._prompt},
-                         {"role": "user", "content": json.dumps(public, ensure_ascii=False)}],
+                         {"role": "user", "content": json.dumps(
+                             public, ensure_ascii=False, separators=separators)}],
             "max_completion_tokens": settings.max_output_tokens,
             "response_format": {"type": "json_schema", "json_schema": {
                 "name": "agenttest_plan", "strict": True, "schema": schema}},
@@ -407,7 +416,7 @@ class OpenAICompatiblePlanner:
             payload["response_format"]["json_schema"].pop("strict")
             payload["thinking"] = {"type": "disabled"}
             payload["temperature"] = 0
-        encoded = json.dumps(payload, ensure_ascii=False).encode()
+        encoded = json.dumps(payload, ensure_ascii=False, separators=separators).encode()
         if settings.api_key.get_secret_value() in encoded.decode():
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INPUT_REJECTED")
         # UTF-8 bytes plus envelope margin conservatively bound input tokens without a tokenizer.
@@ -472,5 +481,9 @@ class OpenAICompatiblePlanner:
             from agenttest.composed_plan import validate_composed_arguments
 
             validate_composed_arguments(draft, context)
+        if self._profile == "generic":
+            from agenttest.generic_arguments import validate_generic_arguments
+
+            validate_generic_arguments(draft, context)
         self.stats.reason = "MODEL_OUTPUT_RECEIVED"
         return draft.scenario().model_dump_json()
