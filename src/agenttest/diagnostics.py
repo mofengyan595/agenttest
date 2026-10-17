@@ -31,7 +31,7 @@ class ValidationFailure(ValueError):
 SAFE_FIELDS = frozenset({
     "name", "steps", "id", "operation_id", "role", "policy_id", "arguments", "location",
     "value", "from_step", "select", "body", "path_parameters", "query", "upload", "field",
-    "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id",
+    "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id", "json_value",
 })
 
 

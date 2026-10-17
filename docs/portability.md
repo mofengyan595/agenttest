@@ -70,7 +70,7 @@ Mock 的 Token 数仅为 SIMULATED，Fake 不冒充真实模型调用。本协�
 
 ## 能承诺到哪里
 
-- 可配置迁移范围：当前受支持的 OpenAPI JSON REST 子集、登录或预置 Bearer、批准的参数／响应引用、确定性状态／字段断言。通用 PlannerDraft 的字面量目前限字符串、整数、布尔和 null，嵌套对象／数组及浮点字面量尚未支持；底层 Executor 能处理的范围不等于此规划入口全部支持。
+- 可配置迁移范围：当前受支持的 OpenAPI JSON REST 子集、登录或预置 Bearer、批准的参数／响应引用、确定性状态／字段断言。[通用 JSON 字面量](json-literals-20261017.md)新增有限小数及 body 的嵌套对象／数组，继续受请求 Schema 和任务约束限制；path／query 保持标量，底层 Executor 的全部能力仍不等于此规划入口全部支持。
 - 未覆盖：陌生第三方项目的鉴权／写入／复杂链路、跨项目大样本及更广任务的多轮可靠性、第二域未知缺陷与自主诊断、复杂认证、OAuth 刷新／签名、GraphQL／gRPC、通用 CSV／异步规划、自动生成可信业务预期。
 - Schema 仍按既有严格子集处理；如 const、oneOf／anyOf、类型联合或未支持格式，需要审查，不能为迁移直接跳过校验。mini 批处理的独立批准路径仍保留。
 - TaskContract 复用的 Rubric 要求 Operation／Role／Policy 组合可唯一匹配，尚不支持同签名重复步骤；不能把复杂重复流程默认为已覆盖。

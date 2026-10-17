@@ -2,10 +2,11 @@
 
 import asyncio
 import json
+import math
 import os
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import urlsplit
 
 import httpx
@@ -115,6 +116,9 @@ class DraftArgument(StrictModel):
             raise ValueError("Reference requires null value and explicit selector")
         return self
 
+    def literal_value(self) -> Any:
+        return self.value
+
 
 class DraftStep(StrictModel):
     id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
@@ -138,11 +142,40 @@ class PlannerDraft(StrictModel):
                 values = getattr(step, arg.location)
                 if arg.name in values:
                     raise ValidationFailure(Layer.MODEL, "MODEL_DUPLICATE_ARGUMENT")
-                values[arg.name] = (ArgumentBinding(value=arg.value) if arg.from_step is None
+                values[arg.name] = (ArgumentBinding(value=arg.literal_value())
+                                    if arg.from_step is None
                                     else ArgumentBinding(from_step=arg.from_step,
                                                          select=arg.select))
             steps.append(step)
         return Scenario(name=self.name, steps=steps)
+
+
+class GenericDraftArgument(DraftArgument):
+    value: str | int | float | bool | None
+    # Optional only for archived scalar replies; outbound strict schemas require this key.
+    json_value: str | None = Field(default=None, max_length=20_000)
+
+    def literal_value(self) -> Any:
+        return bounded_json(self.json_value, 20_000) if self.json_value is not None else self.value
+
+    @model_validator(mode="after")
+    def bounded_container(self):
+        if type(self.value) is float and not math.isfinite(self.value):
+            raise ValueError("Finite JSON numbers only")
+        if self.json_value is not None:
+            if self.location != "body" or self.value is not None or self.from_step is not None:
+                raise ValueError("A body container has exactly one literal source")
+            if type(self.literal_value()) not in {dict, list}:
+                raise ValueError("JSON text is reserved for object and array body literals")
+        return self
+
+
+class GenericDraftStep(DraftStep):
+    arguments: list[GenericDraftArgument] = Field(max_length=30)
+
+
+class GenericPlannerDraft(PlannerDraft):
+    steps: list[GenericDraftStep] = Field(max_length=20)
 
 
 SYSTEM_PROMPT = """Plan API tests; return only the required JSON, never execute tools.
@@ -180,6 +213,9 @@ Copy literal task values exactly. Never guess resource IDs or response-envelope 
 Arguments contain location (body/path_parameters/query), name, value, from_step, select.
 Literal: value=<literal>, from_step=null, select=null.
 Reference: value=null, from_step=<earlier producer step ID>, select=<approved selector>.
+For object or array BODY literals set value=null and json_value to valid JSON text encoding
+that exact container. For scalar literals (including finite decimal numbers) and references,
+set json_value=null. Preserve nested types, optional fields, empty containers and explicit nulls.
 No credentials, headers, URLs, code, extra execution options or policy definitions in output.
 This profile supports ordinary JSON requests and scalar path/query arguments; it does not
 support upload, polling, retries or unlisted objectives. Return empty steps when no approved
@@ -215,6 +251,7 @@ class OpenAICompatiblePlanner:
         self._draft_type = PlannerDraft
         self._prompt = SYSTEM_PROMPT if profile == "mini" else COURSEINSIGHT_PROMPT
         if profile == "generic":
+            self._draft_type = GenericPlannerDraft
             self._prompt = GENERIC_PROMPT
         elif profile == "mini_batch":
             from agenttest.batch_plan import BATCH_PROMPT, BatchPlannerDraft
@@ -278,8 +315,12 @@ class OpenAICompatiblePlanner:
         definitions["operation_id"]["enum"] = [op["id"] for op in context["operations"]]
         definitions["policy_id"]["enum"] = [p["id"] for p in context["policies"]]
         definitions["role"] = ({"type": "string", "enum": context["roles"]}
-                               if self._draft_type is not PlannerDraft else
+                               if self._draft_type not in {PlannerDraft, GenericPlannerDraft} else
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
+        if self._profile == "generic":
+            argument = schema["$defs"]["GenericDraftArgument"]
+            argument["properties"]["json_value"].pop("default", None)
+            argument["required"] = list(argument["properties"])
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         if self._profile == "mini_composed":
             from agenttest.composed_plan import (

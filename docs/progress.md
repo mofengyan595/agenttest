@@ -1,5 +1,19 @@
 # 开发进度
 
+## 通用 JSON 字面量（2026-10-17，新里程碑）
+
+用户要求下一步，按上一阶段的准确里程碑新增 GenericPlannerDraft：有限小数直接为标量，对象／数组 body 使用有界 JSON 文本，转换为原 DSL 的普通数据。出站 Schema 保留封闭字段、required 与 null 约束，原 mini／Java／batch／composed 格式不变；未新增执行器、模型代码执行或自动修复。补齐嵌套 equals／in／enum 的递归精确类型比较，避免 true／1 等在容器中混淆，批准断言和历史数据不改。
+
+新增 J801–J803 合成草稿任务，原 Workflow／Executor／Verifier 在一次性 MockTransport 完成创建→动态 key→读取。预先规定正常生成、同计划正常对照及指定故障共九个位置，可封印后冷评分。首组字面量、适配器、请求与断言检查 **108 passed、1 deselected / 12.44s**；被排除的是需等待源码停止变动后执行的完整冻结归档用例。
+
+本轮最多三次 ecnu-plus／预留 72,288 Token，沿用同项目同模型常规预算授权，固定验收通过并冻结后再执行，每题一次、零重试；没有 Java、数据库或生产请求，没有新依赖。仍为 DEVELOPMENT_ONLY／UNREVIEWED，human_reviewed=0、formal_eval_v2_score=null。详见[本轮方案与边界](json-literals-20261017.md)。
+
+固定回复九个位置完整通过，正常生成／正常对照／配对检出各 3/3，6 PASS／3 ASSERTION_FAILED、18 次 Mock 业务请求；450 Token 为 SIMULATED，真实调用 0。冷核对九个位置通过。基础安装模拟 **36 passed、3 skipped / 6.09s**，仅跳过图执行。扩大首轮 **213 passed、1 skipped、1 failed / 98.44s**，新增测试把返回摘要当完整归档，修正为读取 results.json；不改业务预期、源码冻结或判定。
+
+修正后专项 **39 passed / 38.80s**；Ruff、pip check、差异及十四份发布文件的密钥扫描通过。旧工单九位置及稳定性十二位置冷核对通过，零新增请求。实现和出站内容固定后按上限执行真实验证，本机未重跑全量或 Web，准确 SHA CI 随最终交付核对。
+
+下一准确里程碑：汇总当前支持能力与已知限制，完成统一验收和可复现演示，正式独立评测仍保留独立审核要求。
+
 ## 项目接入配置与离线预检（2026-10-17，新里程碑）
 
 用户要求继续，按上一阶段的下一准确里程碑增加 operator-owned project.v1 配置，集中引用契约、目标、策略与 TaskContract。新增 `check-project` 只读本地文件与环境，在模型设置和可选工作流导入前报告缺失、版本、引用、认证与凭据问题；`agent --project` 通过后复用原 Workflow／Executor／Verifier 和配置快照。禁止越界路径与链接，不混用单项配置，不自动重绑摘要、改断言或授予写入许可。

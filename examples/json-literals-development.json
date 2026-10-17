@@ -1,0 +1,45 @@
+{
+  "schema_version": "agenttest.json-literals.development.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "J801",
+      "body": {
+        "label": "嵌套参数验收甲",
+        "config": {"enabled": true, "bounds": {"lower": 0.25, "upper": 7.5}, "tags": ["alpha"]},
+        "items": [],
+        "ratio": 0.125
+      },
+      "fault": "nested_type",
+      "failed_selector": "$.payload.config"
+    },
+    {
+      "case_id": "J802",
+      "body": {
+        "label": "对象数组验收乙",
+        "config": {"enabled": false, "note": null, "tags": []},
+        "items": [
+          {"sku": "sample-A", "qty": 2, "unit_cost": 3.75, "flags": {"gift": false, "labels": ["x", "y"]}},
+          {"sku": "sample-B", "qty": 1, "unit_cost": 0.5, "flags": {"gift": true, "labels": []}}
+        ],
+        "ratio": 1.75
+      },
+      "fault": "array_order",
+      "failed_selector": "$.payload.items"
+    },
+    {
+      "case_id": "J803",
+      "body": {
+        "label": "小数参数验收丙",
+        "config": {"enabled": false, "note": "保留“原样”", "bounds": {"lower": -2.5, "upper": 6.25}, "tags": []},
+        "items": [],
+        "ratio": -0.375
+      },
+      "fault": "decimal_value",
+      "failed_selector": "$.payload.ratio"
+    }
+  ]
+}

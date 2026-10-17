@@ -42,6 +42,8 @@
 
 新增[项目接入配置与离线预检](docs/project-inputs.md)：`agent --project` 集中引用四份操作员配置，`check-project` 在零模型／HTTP 调用下定位缺文件、版本冲突和凭据问题。课程、工单与 Petclinic 提供配置样例，原意图、策略和执行门禁继续生效。
 
+新增[通用 JSON 字面量](docs/json-literals-20261017.md)：通用入口支持有限小数、嵌套对象和数组 body，保留可选字段、空容器及显式 null；请求与响应比较递归区分布尔、整数等类型。新增三个合成开发任务及离线配对故障验收，仍由原策略和意图门禁决定是否执行。
+
 项目导读：[架构、权限边界与面试说明](docs/project-technical-summary.md) · [CourseInsight 接口差异、接入阻塞与下一步取舍](docs/engineering-review-20261013.md)。当前 mini 场景保持无 Candidate 增量的 A 默认；开发 A/B 两组均 2/2，B 增加用量但未观察到质量收益，压缩原型仅留作私有离线证据。
 
 **RAG 决策：No-Go，默认保持 No-RAG。** [首次离线评估](docs/rag-necessity-20261013.md)包含 12 条开发问题、27 份文档；BM25 过滤后 Recall@3/@5 为 37.50%/63.89%，预算内 Top 5 证据召回为 52.78%。后续授权的[本地语义检索试验](docs/rag-semantic-trial-20261013.md)实际运行了固定 ONNX 模型：C 过滤后为 41.67%/55.56%，预算内 @5 为 51.39%，请求字节为 A 的 2.57 倍。标签未独立审核，语料有限，8 份文档截断且原生分词一致性未验证；没有真实模型规划或端到端 RAG 收益。参考层只在独立实验中显式开启，检索证据不授予执行权限，不接入默认运行时。[技术选型与功能冻结边界](docs/project-technical-summary.md#rag-技术选型记录no-go)。

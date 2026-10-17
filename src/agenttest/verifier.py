@@ -4,6 +4,7 @@ from typing import Any
 
 from agenttest.credentials import sensitive_field
 from agenttest.dsl import AssertionPolicy
+from agenttest.json_values import json_equal
 from agenttest.report import CheckResult, Outcome, safe_value
 from agenttest.selectors import select
 
@@ -34,11 +35,9 @@ def verify(
             actual = len(actual) if isinstance(actual, (list, dict)) else None
             passed = actual is not None and actual == assertion.expected
         elif found and assertion.operator == "equals":
-            passed = type(actual) is type(assertion.expected) and actual == assertion.expected
+            passed = json_equal(actual, assertion.expected)
         elif found and assertion.operator == "in":
-            passed = any(
-                type(actual) is type(item) and actual == item for item in assertion.expected
-            )
+            passed = any(json_equal(actual, item) for item in assertion.expected)
         sensitive = sensitive_field(assertion.select, sensitive_fields)
         public_numeric = assertion.select in policy.public_evidence
         checks.append(CheckResult(

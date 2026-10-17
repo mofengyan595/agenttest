@@ -5,6 +5,7 @@ from typing import Any
 
 from agenttest.contracts import Operation
 from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.json_values import json_equal
 from agenttest.policies import NeedsReview
 
 ANNOTATIONS = {"title", "description", "default", "example", "examples", "deprecated",
@@ -73,7 +74,7 @@ def supported_schema(schema: Any, depth: int = 0) -> None:
 
 def validate_value(value: Any, schema: dict) -> None:
     supported_schema(schema)
-    if "enum" in schema and not any(type(value) is type(v) and value == v for v in schema["enum"]):
+    if "enum" in schema and not any(json_equal(value, v) for v in schema["enum"]):
         raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_ENUM", "Request value outside enum")
     if value is None and schema.get("nullable") is True:
         return
