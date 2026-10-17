@@ -1,6 +1,7 @@
 """Operator-configured OpenAI-compatible strict-output adapter, with no executor access."""
 
 import asyncio
+import copy
 import json
 import math
 import os
@@ -11,6 +12,7 @@ from urllib.parse import urlsplit
 
 import httpx
 from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
 from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import ArgumentBinding, Scenario, Step
@@ -150,23 +152,63 @@ class PlannerDraft(StrictModel):
         return Scenario(name=self.name, steps=steps)
 
 
+class LiteralObject(StrictModel):
+    object: list["LiteralMember"]
+
+
+class LiteralArray(StrictModel):
+    array: list["LiteralValue"]
+
+
+class LiteralMember(StrictModel):
+    key: str
+    value: "LiteralValue"
+
+
+LiteralValue = str | int | float | bool | None | LiteralObject | LiteralArray
+LiteralObject.model_rebuild()
+LiteralArray.model_rebuild()
+LiteralMember.model_rebuild()
+
+
+def literal_data(value: LiteralValue) -> Any:
+    """Decode closed structural nodes into ordinary JSON data, never instructions."""
+    if isinstance(value, LiteralObject):
+        result = {}
+        for member in value.object:
+            if member.key in result:
+                raise PydanticCustomError("generic_duplicate_member", "Duplicate object member")
+            result[member.key] = literal_data(member.value)
+        return result
+    if isinstance(value, LiteralArray):
+        return [literal_data(item) for item in value.array]
+    if type(value) is float and not math.isfinite(value):
+        raise PydanticCustomError("generic_nonfinite", "Finite JSON numbers only")
+    return value
+
+
 class GenericDraftArgument(DraftArgument):
-    value: str | int | float | bool | None
-    # Optional only for archived scalar replies; outbound strict schemas require this key.
-    json_value: str | None = Field(default=None, max_length=20_000)
+    value: LiteralValue
 
     def literal_value(self) -> Any:
-        return bounded_json(self.json_value, 20_000) if self.json_value is not None else self.value
+        return literal_data(self.value)
+
+    @model_validator(mode="after")
+    def exactly_one_source(self):
+        try:
+            return super().exactly_one_source()
+        except ValueError:
+            raise PydanticCustomError("generic_argument_source", "Conflicting argument sources")
 
     @model_validator(mode="after")
     def bounded_container(self):
-        if type(self.value) is float and not math.isfinite(self.value):
-            raise ValueError("Finite JSON numbers only")
-        if self.json_value is not None:
-            if self.location != "body" or self.value is not None or self.from_step is not None:
-                raise ValueError("A body container has exactly one literal source")
-            if type(self.literal_value()) not in {dict, list}:
-                raise ValueError("JSON text is reserved for object and array body literals")
+        if isinstance(self.value, (LiteralObject, LiteralArray)) and self.location != "body":
+            raise PydanticCustomError("generic_container_type", "Body containers only")
+        value = self.literal_value()
+        try:
+            bounded_json(json.dumps(value, ensure_ascii=False, allow_nan=False), 20_000)
+        except ValueError:
+            raise PydanticCustomError("generic_container_limit", "JSON literal limit") from None
         return self
 
 
@@ -213,9 +255,11 @@ Copy literal task values exactly. Never guess resource IDs or response-envelope 
 Arguments contain location (body/path_parameters/query), name, value, from_step, select.
 Literal: value=<literal>, from_step=null, select=null.
 Reference: value=null, from_step=<earlier producer step ID>, select=<approved selector>.
-For object or array BODY literals set value=null and json_value to valid JSON text encoding
-that exact container. For scalar literals (including finite decimal numbers) and references,
-set json_value=null. Preserve nested types, optional fields, empty containers and explicit nulls.
+Object BODY literals use value={"object":[{"key":<field name>,"value":<literal>},...]}.
+Array BODY literals use value={"array":[<literal>,...]}. Nest these structural nodes recursively;
+scalar leaves (including finite decimals and null) are ordinary JSON scalar values.
+Do not encode containers as strings. from_step and select stay null for every literal.
+Preserve nested types, optional fields, empty containers and explicit nulls; do not duplicate keys.
 No credentials, headers, URLs, code, extra execution options or policy definitions in output.
 This profile supports ordinary JSON requests and scalar path/query arguments; it does not
 support upload, polling, retries or unlisted objectives. Return empty steps when no approved
@@ -319,8 +363,20 @@ class OpenAICompatiblePlanner:
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
         if self._profile == "generic":
             argument = schema["$defs"]["GenericDraftArgument"]
-            argument["properties"]["json_value"].pop("default", None)
             argument["required"] = list(argument["properties"])
+            scalar, container, reference = [copy.deepcopy(argument) for _ in range(3)]
+            for variant, nulls in ((scalar, ("from_step", "select")),
+                                   (container, ("from_step", "select")),
+                                   (reference, ("value",))):
+                for key in nulls:
+                    variant["properties"][key] = {"type": "null"}
+            alternatives = argument["properties"]["value"]["anyOf"]
+            scalar["properties"]["value"] = {"anyOf": [a for a in alternatives if "$ref" not in a]}
+            container["properties"]["value"] = {"anyOf": [a for a in alternatives if "$ref" in a]}
+            container["properties"]["location"] = {"type": "string", "enum": ["body"]}
+            for key in ("from_step", "select"):
+                reference["properties"][key] = {"type": "string"}
+            schema["$defs"]["GenericDraftArgument"] = {"anyOf": [scalar, container, reference]}
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         if self._profile == "mini_composed":
             from agenttest.composed_plan import (

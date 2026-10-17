@@ -1,0 +1,34 @@
+{
+  "schema_version": "agenttest.json-literals.development.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "J804",
+      "body": {
+        "label": "来源约束验收丁",
+        "config": {"enabled": true, "note": "独立新任务", "bounds": {"lower": 0.625, "upper": 4.875}, "tags": ["delta", "echo"]},
+        "items": [],
+        "ratio": 0.875
+      },
+      "fault": "nested_type",
+      "failed_selector": "$.payload.config"
+    },
+    {
+      "case_id": "J805",
+      "body": {
+        "label": "来源约束验收戊",
+        "config": {"enabled": false, "note": null, "tags": []},
+        "items": [
+          {"sku": "sample-C", "qty": 3, "unit_cost": 2.125, "flags": {"gift": true, "labels": ["fresh"]}},
+          {"sku": "sample-D", "qty": 2, "unit_cost": 0.625, "flags": {"gift": false, "labels": []}}
+        ],
+        "ratio": -0.625
+      },
+      "fault": "array_order",
+      "failed_selector": "$.payload.items"
+    }
+  ]
+}

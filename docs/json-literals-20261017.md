@@ -4,11 +4,11 @@
 
 ## 表达与边界
 
-通用草稿增加 json_value：对象／数组 body 字面量用 JSON 文本传递，value、from_step、select 均为 null；简单值和引用的 json_value 为 null。有限小数直接放 value。转换器只解析 JSON 数据，不执行代码、不插值引用，也不从容器加载目标、凭据或策略。
+当前通用草稿的 value 可包含封闭的结构化节点：对象为 `{"object":[{"key":"enabled","value":true}]}`，数组为 `{"array":[1,0.125,null]}`，可递归嵌套；标量仍为普通 JSON 值。转换器将节点还原为普通请求数据，不执行代码、不插值引用，也不从容器加载目标、凭据或策略。原五个参数字段保留，没有 json_value 或 JSON 文本二次编码。
 
-采用文本载体是为了保留严格输出的封闭对象字段，同时支持业务对象的可选字段、空容器及显式 null；这些语义不能通过自动补 null 或删字段替代。[当前官方 OpenAI 文档](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat)要求结构化输出对象关闭额外属性，并将所有字段设为 required。该约束不能证明学校兼容接口完全一致，学校接口仍须真实实测。
+结构化节点保留严格输出的封闭字段，同时支持业务对象的可选字段、空容器及显式 null；这些语义不能通过自动补 null 或删字段替代。参数 Schema 使用三个互斥来源分支：标量、body 容器、前序步骤引用。[当前官方 OpenAI 文档](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat)要求对象关闭额外属性、所有字段 required，并支持受限 anyOf／递归结构；学校兼容接口仍须真实实测。
 
-出站 Schema 中 json_value 必填且可为 null；旧标量回复在本地读取时允许省略该键。容器只允许 body 字段，path／query 继续只接受标量。每段 JSON 文本最多 20,000 UTF-8 字节，拒绝重复键、非有限数字及超过原有深度／节点限制的数据；外层回复的字节、Token 和步骤预算继续生效。任意对象、数组及小数是否允许，仍由批准的请求 Schema 和任务约束决定。
+容器只允许 body 字段，path／query 继续只接受标量。每个还原后的字面量最多 20,000 UTF-8 字节，拒绝重复对象成员、非有限数字及超过原有深度／节点限制的数据；外层回复的字节、Token 和步骤预算继续生效。嵌套节点增加结构深度，不能将底层最大深度当作任意业务嵌套深度的承诺。任意对象、数组及小数是否允许，仍由批准的请求 Schema 和任务约束决定。
 
 本轮不扩大既有 OpenAPI 子集：根请求体仍为对象，不支持开放属性、oneOf／anyOf、format: float／double 或在容器内部插入动态步骤引用。这些输入继续 NEEDS_REVIEW，不绕过校验。
 
@@ -42,3 +42,19 @@
 固定验收实际完成九个位置：正常生成 3/3、新正常对照 3/3、配对故障检出 3/3，6 PASS／3 ASSERTION_FAILED；共 18 次 Mock 业务请求，3 次模型传输为模拟、450 Token 为 SIMULATED，真实模型调用为 0。冷核对九个位置通过。基础安装模拟 36 passed、3 skipped / 6.09s，仅跳过图执行；扩大首轮 213 passed、1 skipped、1 failed / 98.44s，失败为新增测试将返回摘要误当完整归档读取，改为读取 results.json 后复验，业务预期和判定未改。
 
 修正后专项 **39 passed / 38.80s**，包括完整归档、复杂数据的固定 pytest 导出和重新执行。Ruff、pip check、差异及发布密钥扫描通过，无新增依赖。旧工单九位置和稳定性十二位置冷核对通过，零新请求；旧失败和原始成绩保留。
+
+## 首次真实验证及格式修正
+
+实现 5f3e411 的第一版使用 JSON 文本载体。J801／J802／J803 各真实生成一次，全部 HTTP 200、usage 已知、零重试，但均在容器参数被 MODEL_SCHEMA_VALIDATOR_REJECTED 拒绝，**0/3 完成、零业务请求**；用量分别为 2,276／2,299／2,060，合计 **6,635 Token**。六个配对位置均 NOT_ATTEMPTED，没有把安全拦截算作故障检出。原九个位置封印并冷核对通过。
+
+当时诊断只能定位 arguments，不保留具体校验分支，不能唯一推断模型回复的具体错误。静态检查确认来源互斥条件未进入出站 Schema，JSON 文本内部语义也不受结构化输出约束。修正为上述结构化节点和显式来源分支，并增加重复成员、非有限数、来源冲突和字面量上限的独立诊断；原三题不重试、不改原期待或成绩。
+
+准备脚本曾将业务 Schema 的 labels 属性误当评分标签，在请求前中止、调用为 0；仅修正私人开发准备脚本的上下文分类，正式独立评测规则保持原样。模型只接收可信构造的公共上下文，正常／故障上下文和出站字节必须一致。
+
+补充验收使用独立新文件中的 [J804／J805](../examples/json-literals-repair-development.json)，字段值、主题和数组数据均为新样本，仍为同一任务族。先完成新的两题固定生成／对照／故障六位置，再冻结实现与请求；最多 **2 次 ecnu-plus、48,192 Token**，各一次、不重试，前后两批合计最多五次／120,480 Token。首批 0/3 继续单独保留，不与补充批次合并成改善率。
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_json_literals.py --repair --output runs/json-literals-repair-new
+```
+
+结构化节点版离线补充六位置通过：正常生成／正常对照／指定故障各 2/2，4 PASS／2 ASSERTION_FAILED，12 次 Mock 业务请求；300 Token 为 SIMULATED。完整相关回归 **171 passed / 69.56s**，基础安装 **35 passed、3 skipped / 7.80s**；仅图集成需要 agent 可选依赖。两批既有归档均重新冷核对通过，零新模型请求。

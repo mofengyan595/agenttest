@@ -10,7 +10,7 @@ from agenttest.contracts import load_openapi
 from agenttest.diagnostics import ValidationFailure
 from agenttest.dsl import AssertionPolicy
 from agenttest.executor import Executor
-from agenttest.json_literal_check import CASE_IDS, case_inputs
+from agenttest.json_literal_check import CASE_IDS, REPAIR_CASE_IDS, case_inputs, draft_value
 from agenttest.json_values import json_equal
 from agenttest.llm_planner import (
     DraftArgument,
@@ -27,29 +27,27 @@ from agenttest.verifier import verify
 
 def argument(**changes):
     return {"location": "body", "name": "config", "value": None,
-            "from_step": None, "select": None, "json_value": None, **changes}
+            "from_step": None, "select": None, **changes}
 
 
 @pytest.mark.parametrize("value", [None, False, True, 0, 7, 0.125, -0.375, "原文",
                                    {}, [], {"nested": [False, 1, 1.5, None]},
                                    [{"note": "保留\"原样\"", "empty": []}]])
 def test_scalar_and_container_types_survive_conversion_exactly(value):
-    data = argument(value=None if type(value) in {dict, list} else value,
-        json_value=json.dumps(value, ensure_ascii=False) if type(value) in {dict, list} else None)
+    data = argument(value=draft_value(value))
     parsed = GenericDraftArgument.model_validate(data)
     assert json_equal(parsed.literal_value(), value)
     assert fingerprint(parsed.literal_value()) == fingerprint(value)
 
 
 @pytest.mark.parametrize("changes", [
-    {"json_value": "{bad"}, {"json_value": '{"x":1,"x":2}'},
-    {"json_value": '{"x":NaN}'}, {"json_value": '[1e309]'},
-    {"json_value": "null"}, {"json_value": "1.25"}, {"json_value": '"text"'},
-    {"json_value": "{}", "value": "second source"},
-    {"json_value": "{}", "from_step": "created", "select": "$.payload"},
-    {"json_value": "{}", "location": "query"},
-    {"json_value": "[" * 42 + "0" + "]" * 42},
-    {"json_value": '["' + "x" * 20_000 + '"]'},
+    {"value": {"unwrapped": True}}, {"value": []},
+    {"value": {"object": [], "array": []}},
+    {"value": {"object": [{"key": "x", "value": 1}, {"key": "x", "value": 2}]}},
+    {"value": {"array": [math.nan]}},
+    {"value": {"object": []}, "from_step": "created", "select": "$.payload"},
+    {"value": {"object": []}, "location": "query"},
+    {"value": {"array": ["x" * 20_000]}},
     {"value": math.nan}, {"value": math.inf},
 ])
 def test_invalid_ambiguous_nonfinite_or_unbounded_json_is_rejected(changes):
@@ -59,7 +57,6 @@ def test_invalid_ambiguous_nonfinite_or_unbounded_json_is_rejected(changes):
 
 def test_existing_scalar_replies_and_non_generic_profiles_keep_their_contract():
     legacy = argument(value="original")
-    legacy.pop("json_value")
     assert GenericDraftArgument.model_validate(legacy).literal_value() == "original"
     with pytest.raises(ValueError):
         DraftArgument.model_validate({**legacy, "value": 0.125})
@@ -69,15 +66,44 @@ def test_existing_scalar_replies_and_non_generic_profiles_keep_their_contract():
     generic = json.loads(OpenAICompatiblePlanner(
         settings, profile="generic").prepare_request(context))
     schema = generic["response_format"]["json_schema"]["schema"]
-    for definition in schema["$defs"].values():
-        assert definition["additionalProperties"] is False
-        assert set(definition["required"]) == set(definition["properties"])
-    prop = schema["$defs"]["GenericDraftArgument"]["properties"]["json_value"]
-    assert "default" not in prop and prop["anyOf"][0]["type"] == "string"
+    pending = [schema]
+    while pending:
+        definition = pending.pop()
+        if isinstance(definition, dict):
+            if definition.get("type") == "object":
+                assert definition["additionalProperties"] is False
+                assert set(definition["required"]) == set(definition["properties"])
+            pending.extend(definition.values())
+        elif isinstance(definition, list):
+            pending.extend(definition)
+    variants = schema["$defs"]["GenericDraftArgument"]["anyOf"]
+    prop = variants[1]["properties"]["value"]
+    assert all("$ref" in alternative for alternative in prop["anyOf"])
+    assert all(variants[1]["properties"][p]["type"] == "null"
+               for p in ("from_step", "select"))
+    assert "json_value" not in variants[1]["properties"]
     assert schema["$defs"]["GenericDraftStep"]["properties"]["role"]["enum"] == [None]
     original = json.loads(OpenAICompatiblePlanner(settings).prepare_request(context))
     original_schema = original["response_format"]["json_schema"]["schema"]
     assert "GenericDraftArgument" not in original_schema["$defs"]
+
+
+def test_outbound_schema_rejects_conflicting_sources_before_provider_generation():
+    from jsonschema import Draft202012Validator
+
+    doc, target, registry, _, _, task, draft, _ = case_inputs("J801")
+    planner = OpenAICompatiblePlanner(ModelSettings(model="offline",
+        base_url="https://offline.invalid/v1", api_key="synthetic-credential"), profile="generic")
+    payload = json.loads(planner.prepare_request(planning_context(
+        load_openapi(doc), target, registry, task.user_task, {})))
+    validator = Draft202012Validator(payload["response_format"]["json_schema"]["schema"])
+    valid = json.loads(draft.model_dump_json())
+    assert validator.is_valid(valid)
+    for field, value in (("from_step", "previous"), ("select", "$.payload"),
+                         ("location", "query")):
+        changed = json.loads(json.dumps(valid))
+        changed["steps"][0]["arguments"][1][field] = value
+        assert not validator.is_valid(changed)
 
 
 @pytest.mark.parametrize("actual,expected", [
@@ -100,7 +126,7 @@ def test_nested_enum_cannot_confuse_boolean_and_number():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("case_id", CASE_IDS)
+@pytest.mark.parametrize("case_id", (*CASE_IDS, *REPAIR_CASE_IDS))
 async def test_fixed_requests_and_faults_use_the_existing_executor(case_id, tmp_path):
     for broken in (False, True):
         doc, target, registry, env, transport, task, draft, item = case_inputs(case_id, broken)
@@ -140,7 +166,8 @@ async def test_generic_adapter_rejects_invalid_container_reply_without_raw_conte
 
     doc, target, registry, _, _, task, draft, _ = case_inputs("J801")
     data = json.loads(draft.model_dump_json())
-    data["steps"][0]["arguments"][1]["json_value"] = '{"private-fragment":NaN}'
+    data["steps"][0]["arguments"][1]["value"] = {"object": [
+        {"key": "private-fragment", "value": 1}, {"key": "private-fragment", "value": 2}]}
     response = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(data)}}],
                 "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}}
     planner = OpenAICompatiblePlanner(ModelSettings(model="offline",
@@ -150,6 +177,7 @@ async def test_generic_adapter_rejects_invalid_container_reply_without_raw_conte
         await planner.generate(planning_context(load_openapi(doc), target, registry,
                                                 task.user_task, {}))
     assert error.value.reason == "MODEL_INVALID_RESPONSE" and planner.stats.calls == 1
+    assert planner.stats.diagnostic.code == "MODEL_SCHEMA_GENERIC_DUPLICATE_MEMBER"
     assert "private-fragment" not in planner.stats.model_dump_json()
 
 

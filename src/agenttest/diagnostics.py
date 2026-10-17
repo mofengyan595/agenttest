@@ -31,7 +31,7 @@ class ValidationFailure(ValueError):
 SAFE_FIELDS = frozenset({
     "name", "steps", "id", "operation_id", "role", "policy_id", "arguments", "location",
     "value", "from_step", "select", "body", "path_parameters", "query", "upload", "field",
-    "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id", "json_value",
+    "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id",
 })
 
 
@@ -45,6 +45,11 @@ def schema_diagnostic(exc: ValidationError, layer: Layer) -> Diagnostic:
              "composed_csv_reference": "COMPOSED_CSV_REFERENCE",
              "composed_authentication": "COMPOSED_AUTHENTICATION",
              "composed_poll_reference": "COMPOSED_POLL_REFERENCE"}
+    types.update({"generic_argument_source": "GENERIC_ARGUMENT_SOURCE",
+                  "generic_container_type": "GENERIC_CONTAINER_TYPE",
+                  "generic_nonfinite": "GENERIC_NONFINITE",
+                  "generic_duplicate_member": "GENERIC_DUPLICATE_MEMBER",
+                  "generic_container_limit": "GENERIC_CONTAINER_LIMIT"})
     first = errors[0]["type"] if errors else ""
     suffix = types.get(first, "TYPE_OR_CONSTRAINT")
     fields = []

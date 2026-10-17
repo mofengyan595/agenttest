@@ -13,12 +13,16 @@ def main(argv=None):
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--output", type=Path)
     modes.add_argument("--verify", type=Path)
+    parser.add_argument("--repair", action="store_true", help="使用两条新的来源约束开发任务")
     args = parser.parse_args(argv)
+    if args.verify and args.repair:
+        parser.error("--verify reads its frozen task scope; --repair is for new offline runs")
     try:
         result = verify_literals(args.verify) if args.verify else asyncio.run(
-            check_literals(args.output))
+            check_literals(args.output, args.repair))
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 0 if result.get("archive_verified", result.get("paired_detections") == 3) else 1
+        return 0 if result.get("archive_verified", result.get("paired_detections") ==
+                               result.get("scheduled_tasks")) else 1
     except (ValueError, OSError, KeyError):
         print(json.dumps({"reason": "INVALID_JSON_LITERAL_INPUT_OR_ARCHIVE"}))
         return 2

@@ -26,6 +26,7 @@ from agenttest.ticket_fault_check import PHASES, report_row, unattempted
 
 DATA = PROJECT_ROOT / "examples/json-literals-development.json"
 CASE_IDS = ("J801", "J802", "J803")
+REPAIR_CASE_IDS = ("J804", "J805")
 
 
 def closed(properties: dict, required: list[str] | None = None) -> dict:
@@ -45,12 +46,23 @@ BODY = closed({"label": TEXT, "config": closed({"enabled": {"type": "boolean"},
     "ratio": {"type": "number", "minimum": -1, "maximum": 3}})
 
 
+def draft_value(value):
+    if isinstance(value, dict):
+        return {"object": [{"key": k, "value": draft_value(v)} for k, v in value.items()]}
+    if isinstance(value, list):
+        return {"array": [draft_value(v) for v in value]}
+    return value
+
+
 def case_inputs(case_id: str, broken: bool = False):
     """Only this operator-owned factory can select a fault or create a mock transport."""
-    data = read_json(DATA)
+    repairing = case_id in REPAIR_CASE_IDS
+    data = read_json(PROJECT_ROOT / "examples/json-literals-repair-development.json"
+                     if repairing else DATA)
     if (data["classification"] != "DEVELOPMENT_ONLY" or data["review_status"] != "UNREVIEWED"
             or data["human_reviewed"] != 0 or data["formal_eval_v2_score"] is not None
-            or tuple(c["case_id"] for c in data["cases"]) != CASE_IDS):
+            or tuple(c["case_id"] for c in data["cases"])
+            != (REPAIR_CASE_IDS if repairing else CASE_IDS)):
         raise ValueError("Invalid JSON literal development scope")
     item = next((c for c in data["cases"] if c["case_id"] == case_id), None)
     if item is None:
@@ -99,12 +111,10 @@ def case_inputs(case_id: str, broken: bool = False):
     draft = GenericPlannerDraft.model_validate({"name": "fixed JSON literal fixture", "steps": [
         {"id": "create", "operation_id": "createDraft", "role": None,
          "policy_id": "draft_create_v1", "arguments": [
-             {**a, "value": None if isinstance(a["value"], (dict, list)) else a["value"],
-              "json_value": json.dumps(a["value"], ensure_ascii=False)
-              if isinstance(a["value"], (dict, list)) else None, "from_step": None, "select": None}
+             {**a, "value": draft_value(a["value"]), "from_step": None, "select": None}
              for a in arguments]}, {"id": "read", "operation_id": "readDraft", "role": None,
             "policy_id": "draft_read_v1", "arguments": [{"location": "path_parameters",
-                "name": "draft_key", "value": None, "json_value": None, "from_step": "create",
+                "name": "draft_key", "value": None, "from_step": "create",
                 "select": "$.payload.key"}]}]})
     records = {}
 
@@ -179,9 +189,10 @@ async def run_case(snapshot, delegate, store, guard):
     return rows
 
 
-def summarize(source, rows):
-    if (source not in {"mock_transport", "real"} or [(r["case_id"], r["phase"]) for r in rows]
-            != [(key, phase) for key in CASE_IDS for phase in PHASES]):
+def summarize(source, rows, case_ids=CASE_IDS):
+    if (case_ids not in {CASE_IDS, REPAIR_CASE_IDS} or source not in {"mock_transport", "real"}
+            or [(r["case_id"], r["phase"]) for r in rows]
+            != [(key, phase) for key in case_ids for phase in PHASES]):
         raise ValueError("Incomplete JSON literal denominator")
     if any(type(r["model_calls"]) is not int or r["model_calls"] not in {0, 1}
            or r["phase"] != "generation" and r["model_calls"]
@@ -190,7 +201,7 @@ def summarize(source, rows):
     generations, controls, faults = [[r for r in rows if r["phase"] == phase] for phase in PHASES]
     calls = [r for r in generations if r["model_calls"]]
     return {"source": source, "classification": "DEVELOPMENT_ONLY", "review_status": "UNREVIEWED",
-        "human_reviewed": 0, "formal_eval_v2_score": None, "scheduled_tasks": 3,
+        "human_reviewed": 0, "formal_eval_v2_score": None, "scheduled_tasks": len(case_ids),
         "generation_successes": sum(r["verified"] for r in generations),
         "controls_passed": sum(r["verified"] for r in controls),
         "paired_detections": sum(c["verified"] and f["verified"] for c, f in zip(controls, faults)),
@@ -210,7 +221,7 @@ def summarize(source, rows):
 
 
 def finish_archive(output, frozen, rows):
-    result = summarize(frozen["source"], rows)
+    result = summarize(frozen["source"], rows, tuple(frozen.get("case_ids", CASE_IDS)))
     save_evaluation(result, output / "results.json")
     summary = {k: v for k, v in result.items() if k != "results"}
     (output / "summary.md").write_text("# JSON literal development check\n\n" + json.dumps(
@@ -224,7 +235,8 @@ def verify_literals(directory):
     if read_json(directory / "archive.json")["files"] != inventory(directory):
         raise ValueError("JSON literal archive changed")
     frozen, result = read_json(directory / "freeze.json"), read_json(directory / "results.json")
-    if summarize(frozen["source"], result["results"]) != result:
+    if summarize(frozen["source"], result["results"],
+                 tuple(frozen.get("case_ids", CASE_IDS))) != result:
         raise ValueError("JSON literal summary mismatch")
     anchors, used = {}, set()
     for row in result["results"]:
@@ -245,11 +257,12 @@ def verify_literals(directory):
     return {"archive_verified": True, "rescored_runs": len(result["results"]), "new_model_calls": 0}
 
 
-async def check_literals(output: Path):
+async def check_literals(output: Path, repair: bool = False):
     private_output(PROJECT_ROOT, output)
     output.mkdir(parents=True, exist_ok=False)
+    case_ids = REPAIR_CASE_IDS if repair else CASE_IDS
     frozen = {"source": "mock_transport", "git": checkout_identity(PROJECT_ROOT),
-              "cases": {key: case_snapshot(key) for key in CASE_IDS}}
+              "case_ids": list(case_ids), "cases": {key: case_snapshot(key) for key in case_ids}}
     save_evaluation(frozen, output / "freeze.json")
 
     def guard():
@@ -257,7 +270,7 @@ async def check_literals(output: Path):
             raise ValueError("Source changed during JSON literal checks")
 
     rows, store = [], ReportStore(output / "reports")
-    for key in CASE_IDS:
+    for key in case_ids:
         draft = case_inputs(key)[6]
 
         def response(request, content=draft.model_dump_json()):
