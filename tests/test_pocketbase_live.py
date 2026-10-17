@@ -6,7 +6,16 @@ from unittest.mock import Mock
 import pytest
 
 from agenttest.pocketbase_acceptance import schedule, summarize
-from agenttest.pocketbase_live import executable_bytes, execute, stop, unattempted
+from agenttest.pocketbase_live import (
+    attempted_prefix,
+    executable_bytes,
+    execute,
+    execution_must_stop,
+    stop,
+    unattempted,
+    validation_rejection,
+)
+from agenttest.report import Outcome
 
 
 @pytest.mark.asyncio
@@ -39,6 +48,32 @@ def test_unconfirmed_process_exit_is_not_reported_as_cleaned_up():
     process.wait.side_effect = subprocess.TimeoutExpired("owned process", 5)
     assert not stop(process)
     assert stop(None)
+
+
+def test_plan_rejection_does_not_abort_independent_scheduled_model_trials():
+    report = SimpleNamespace(outcome=Outcome.TOOL_ERROR, reason="PLAN_REJECTED", dsl_valid=False,
+                             steps=[], tool_calls=0)
+    assert validation_rejection(report)
+    assert not execution_must_stop(report)
+    report.steps = ["a request was attempted"]
+    assert execution_must_stop(report)
+    report.outcome = Outcome.TEST_INFRA_ERROR
+    assert execution_must_stop(report)
+
+
+def test_carrying_a_prefix_never_retries_or_relabels_unknown_or_attempted_positions():
+    rows = [unattempted(slot, "STOPPED") for slot in schedule()[6:]]
+    for i in range(3):
+        rows[i].update(run_id=str(i), outcome="TOOL_ERROR" if i == 2 else "PASS",
+                       model_calls=1, total_tokens=100)
+    assert attempted_prefix(rows) == 3
+    rows[4].update(run_id="after-gap", model_calls=1, total_tokens=100)
+    with pytest.raises(ValueError, match="noncontiguous"):
+        attempted_prefix(rows)
+    rows[4] = unattempted(schedule()[10], "STOPPED")
+    rows[3]["outcome"] = "ATTEMPT_OUTCOME_UNKNOWN"
+    with pytest.raises(ValueError, match="outcome is unknown"):
+        attempted_prefix(rows)
 
 
 def test_interrupted_trial_keeps_unknown_calls_usage_and_requests_in_denominator():

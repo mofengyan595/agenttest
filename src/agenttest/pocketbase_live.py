@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import os
+import shutil
 import socket
 import subprocess
 import time
@@ -28,8 +29,9 @@ from agenttest.pocketbase_acceptance import (
     run_trial,
     schedule,
     snapshot,
+    verify,
 )
-from agenttest.report import ReportStore
+from agenttest.report import Outcome, ReportStore
 
 EXE_SHA256 = "a6d3fb3555b64655e22c797aab7f7c396e9a2c48d7de89135d868b1758734860"
 MAX_CALLS = 18
@@ -94,7 +96,35 @@ def stop(process):
         return False
 
 
-async def execute(output: Path, archive: Path, model_env: Path, *, isolated_approved=False):
+def validation_rejection(report):
+    """A rejected model plan with no execution is not a broken target/runtime."""
+    return (report.outcome == Outcome.TOOL_ERROR and report.reason == "PLAN_REJECTED"
+            and not report.dsl_valid and not report.steps and report.tool_calls == 0)
+
+
+def execution_must_stop(report):
+    return (report.outcome in {Outcome.TEST_INFRA_ERROR, Outcome.TOOL_ERROR}
+            and not validation_rejection(report))
+
+
+def attempted_prefix(rows):
+    """Only a known, contiguous prefix may be carried; unknown outcomes are never replayed."""
+    count = 0
+    for index, row in enumerate(rows):
+        if row["run_id"] is None:
+            if row["outcome"] != "NOT_ATTEMPTED" or row["model_calls"] != 0:
+                raise ValueError("Prior attempt outcome is unknown")
+        elif count != index or row["model_calls"] != 1 or row["total_tokens"] is None:
+            raise ValueError("Prior trials are incomplete, noncontiguous or usage is unknown")
+        else:
+            count += 1
+    if not 0 < count < MAX_CALLS:
+        raise ValueError("No remaining scheduled PocketBase positions")
+    return count
+
+
+async def execute(output: Path, archive: Path, model_env: Path, *, isolated_approved=False,
+                  prior_archive: Path | None = None):
     """Six fixed baselines gate 18 paid calls; no retry, assertion repair, or target options."""
     if isolated_approved is not True:
         raise ValueError("Explicit isolated PocketBase write approval is required")
@@ -120,12 +150,48 @@ async def execute(output: Path, archive: Path, model_env: Path, *, isolated_appr
         "git": identity, "model": public_model_config(settings),
         "max_calls": MAX_CALLS, "reserved_tokens": MAX_CALLS * RESERVATION,
         "upstream": read_json(DIRECTORY / "provenance.json")}
+    prior_count, prior_http, prior_rows = 0, 0, None
+    if prior_archive is not None:
+        private_output(PROJECT_ROOT, prior_archive)
+        if not verify(prior_archive).get("native_exit_confirmed"):
+            raise ValueError("Prior owned process exit was not confirmed")
+        previous = read_json(prior_archive / "freeze.json")
+        prior_rows = read_json(prior_archive / "results.json")["results"]
+        prior_count = attempted_prefix(prior_rows[6:])
+        prior_state = read_json(prior_archive / "runtime.json")
+        last = ReportStore(prior_archive / "reports").read(prior_rows[5 + prior_count]["run_id"])
+        if (previous["source"] != "real" or previous["cases"] != frozen["cases"]
+                or previous["model"] != frozen["model"] or previous.get("prior_archive_sha256")
+                or previous["upstream"] != frozen["upstream"]
+                or prior_state["slots_reserved"] != prior_count or not validation_rejection(last)):
+            raise ValueError("Only unused positions after a known plan rejection are allowed")
+        prior_http = sum(row["grade"]["requests"] for row in prior_rows)
+        parent = output / "prior"
+        parent.mkdir()
+        manifest = read_json(prior_archive / "archive.json")
+        for name in [*manifest["files"], "archive.json"]:
+            destination = parent / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(prior_archive / name, destination)
+        frozen["prior_archive_sha256"] = hashlib.sha256(
+            (parent / "archive.json").read_bytes()).hexdigest()
+        frozen["inherited_planning_positions"] = prior_count
     save_evaluation(frozen, output / "freeze.json")
     rows = [unattempted(slot, "NOT_STARTED") for slot in schedule()]
+    if prior_rows is not None:
+        for i in range(6, 6 + prior_count):
+            rows[i] = prior_rows[i]
+            report_path = output / "reports" / rows[i]["run_id"] / "report.json"
+            report_path.parent.mkdir(parents=True)
+            shutil.copyfile(output / "prior/reports" / rows[i]["run_id"] / "report.json",
+                            report_path)
     state = {"origin": ORIGIN, "pid": None, "native_exit_confirmed": None,
-        "health_http_requests": 0, "slots_reserved": 0, "tokens_reserved": 0,
+        "health_http_requests": 0, "slots_reserved": prior_count,
+        "tokens_reserved": prior_count * RESERVATION,
         "native_executable_sha256": EXE_SHA256, "database_retained": True,
-        "stop_reason": None, "configured_api_logs_disabled": True, "inflight": None}
+        "stop_reason": None, "configured_api_logs_disabled": True, "inflight": None,
+        "inherited_model_slots": prior_count, "prior_business_http_requests": prior_http,
+        "business_http_budget": 192}
     store, process, checkpoint_index = ReportStore(output / "reports"), None, 0
 
     def guard():
@@ -169,9 +235,16 @@ async def execute(output: Path, archive: Path, model_env: Path, *, isolated_appr
         checkpoint()
         await wait_ready(process, state)
         for index, slot in enumerate(schedule()):
+            if 6 <= index < 6 + prior_count:
+                continue  # Preserve the original reports, including the failed plan; no invocation.
             guard()
+            data, fixed = inputs(slot["case_id"], environ)
+            observed = prior_http + sum(r["grade"]["requests"] for n, r in enumerate(rows)
+                if r["run_id"] is not None and not 6 <= n < 6 + prior_count)
+            if observed + len(data.task.requirements.steps) > state["business_http_budget"]:
+                state["stop_reason"] = "BUSINESS_HTTP_BUDGET_EXHAUSTED"
+                break
             if slot["phase"] == "baseline":
-                _, fixed = inputs(slot["case_id"], environ)
                 delegate = FakeLLM(fixed.model_dump_json())
             else:
                 if not all(r["grade"]["verified"] for r in rows[:6]):
@@ -195,7 +268,7 @@ async def execute(output: Path, archive: Path, model_env: Path, *, isolated_appr
             if row["model_calls"] and row["total_tokens"] is None:
                 state["stop_reason"] = "MODEL_USAGE_UNKNOWN"
                 break
-            if row["outcome"] in {"TEST_INFRA_ERROR", "TOOL_ERROR"}:
+            if execution_must_stop(store.read(row["run_id"])):
                 state["stop_reason"] = "EXECUTION_INFRASTRUCTURE_FAILURE"
                 break
         guard()
@@ -216,4 +289,6 @@ async def execute(output: Path, archive: Path, model_env: Path, *, isolated_appr
         environ.clear()
         result = finish(output, frozen, rows)
     return {**result, "native_exit_confirmed": state["native_exit_confirmed"],
-            "stop_reason": state["stop_reason"]}
+            "stop_reason": state["stop_reason"], "inherited_model_calls": prior_count,
+            "new_model_calls": None if result["real_model_calls"] is None else
+                               result["real_model_calls"] - prior_count}

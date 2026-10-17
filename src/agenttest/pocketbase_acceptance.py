@@ -1,5 +1,6 @@
 """New PocketBase development tasks; offline checks never prove third-party behavior."""
 
+import hashlib
 import json
 import math
 import secrets
@@ -261,6 +262,27 @@ def verify(directory):
                 or not 0 <= runtime["slots_reserved"] <= 18
                 or runtime.get("tokens_reserved") != runtime["slots_reserved"] * 24_096):
             raise ValueError("PocketBase native provenance or budget changed")
+    if frozen.get("prior_archive_sha256"):
+        parent = directory / "prior"
+        original_freeze = read_json(parent / "freeze.json")
+        inherited = frozen.get("inherited_planning_positions")
+        if (original_freeze.get("prior_archive_sha256")
+                or hashlib.sha256((parent / "archive.json").read_bytes()).hexdigest()
+                != frozen["prior_archive_sha256"]
+                or original_freeze["cases"] != frozen["cases"]
+                or original_freeze["model"] != frozen["model"]
+                or type(inherited) is not int or not 0 < inherited < 18 or runtime is None
+                or runtime.get("inherited_model_slots") != inherited):
+            raise ValueError("PocketBase prior archive identity changed")
+        if not verify(parent).get("native_exit_confirmed"):
+            raise ValueError("PocketBase prior process exit was not confirmed")
+        old_rows = read_json(parent / "results.json")["results"]
+        if result["results"][6:6 + inherited] != old_rows[6:6 + inherited]:
+            raise ValueError("PocketBase inherited positions were changed")
+        for row in old_rows[6:6 + inherited]:
+            name = Path("reports") / row["run_id"] / "report.json"
+            if (directory / name).read_bytes() != (parent / name).read_bytes():
+                raise ValueError("PocketBase inherited report changed")
     seen = set()
     for row in result["results"]:
         if read_json(directory / position_name(row)) != row:

@@ -10,7 +10,9 @@
 
 扩大回归 **102 passed、1 skipped、1 deselected／29.46s**，跳过项为 POSIX 链接语义；排除的完整用例由前一轮及最终 CLI 覆盖。最终离线入口 **6／6 固定基线、18／18 模拟规划位置完成**，96 次合成业务请求，24 位置冷核对通过；2,700 Token 为 SIMULATED，真实模型／第三方 HTTP／数据库写入均为 0。Ruff 全仓、pip check、两份文档本地链接及 25 份新增发布文件模型密钥扫描通过。本机未重跑全仓／Web；真实第三方结果仍待隔离写入授权后验证。
 
-方案、准确范围和复现入口见 [PocketBase 验收](pocketbase-acceptance-20261017.md)。本轮仍 DEVELOPMENT_ONLY／UNREVIEWED，human_reviewed=0、formal_eval_v2_score=null。下一准确里程碑：批准后完成新的隔离真实基线与三轮模型验收，报告真实结果及接入成本。
+68e2cac 已推送。首次真实固定基线 **6/6 完成**；随后三次真实模型调用中 PB901／PB902 完成，PB903 因 body.body 错误在 OpenAPI 校验拒绝，业务请求为 0。总用量 **11,478 Token** 已知，余下 15 位置未尝试，原失败和全 24 位置已封印冷核对，原生进程已退出。验收器误将执行前计划拒绝归为基础设施故障而提前停止，修正只影响驱动的停止条件，专项 **10 passed／2.37s**、扩大 **73 passed／1 skipped／1 deselected，17.70s**，原执行器分类、任务、提示和预期不改；原归档与未变的规划输入摘要已重新核对。
+
+按同一批准范围，在新实例先做六条固定基线，再仅执行原排期剩余十五位置；前三次报告原样继承，合计模型上限仍 18 次，业务 HTTP 上限 192。原归档嵌入并核对，不恢复或重放旧写请求；不会把原失败替换成成功。方案、来源和准确范围见 [PocketBase 验收](pocketbase-acceptance-20261017.md)。本轮仍 DEVELOPMENT_ONLY／UNREVIEWED，human_reviewed=0、formal_eval_v2_score=null。下一准确里程碑：完成尚未尝试的排期，保留失败并交付真实结果与接入成本。
 
 ## 最终审查与功能冻结（2026-10-17，新里程碑）
 
