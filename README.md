@@ -10,6 +10,8 @@
 
 [收尾审查与冻结范围](docs/final-review-20261017.md)：修复交付入口超时回收未确认后仍继续执行的问题，保留失败与未执行位置。后续优先维护可复现缺陷和依赖兼容，新功能另立里程碑。
 
+新里程碑[陌生 PocketBase 认证与写入实测](docs/pocketbase-acceptance-20261017.md)：两个授权隔离实例的六条固定基线均完成，六条任务各三轮真实模型 **16/18 完成、68,800 Token**；两次跨账号读取任务因参数格式错误在请求前拒绝，失败保留。覆盖动态 ID、创建／修改回读、权限拒绝和删除后查询；[脱敏汇总](docs/demo-evidence/pocketbase-live-summary.json)与数据库只读核对分开记录，仍为未独立审核的小样本开发证据。
+
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
@@ -32,7 +34,7 @@
 
 后续[组合参数约束](docs/composed-arguments-20261014.md)限制上传与其他步骤的批准参数槽位。四条新任务真实完成 3/4，三条批处理通过；角色互换因重复登录被原意图门禁拦截。旧失败保留，仍是未独立审核的开发证据。
 
-[陌生 Petclinic 只读实测](docs/petclinic-readonly-20261015.md)已在授权的临时 H2 实例完成：两条任务各真实调用模型一次，均通过，合计 1,708 Token；同一 GET 接口覆盖正常读取与 404。使用人工限定契约，原导出文档的校验失败保留；第三方鉴权、写入和复杂链路尚未验证。[配置样例](examples/portability/petclinic/provenance.json)可复用，目标已关闭。
+[陌生 Petclinic 只读实测](docs/petclinic-readonly-20261015.md)已在授权的临时 H2 实例完成：两条任务各真实调用模型一次，均通过，合计 1,708 Token；同一 GET 接口覆盖正常读取与 404。使用人工限定契约，原导出文档的校验失败保留；该次试验未覆盖第三方鉴权、写入和复杂链路。[配置样例](examples/portability/petclinic/provenance.json)可复用，目标已关闭。
 
 后续[登录复用与第三方跨接口验收](docs/authentication-portability-20261015.md)明确每角色一次登录，并增加显式匿名资源依赖。四条新组合任务真实模型 4/4 通过；两条 Petclinic「列表 → 动态 ID → 详情」真实模型 2/2 通过，六次共 14,449 Token、零重试。旧失败保留，该批为单轮开发证据，第三方鉴权与写入未验证。
 

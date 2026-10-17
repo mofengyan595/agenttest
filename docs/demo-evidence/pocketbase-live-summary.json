@@ -1,0 +1,146 @@
+{
+  "schema_version": "agenttest.pocketbase.development-summary.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "upstream": {
+    "repository": "pocketbase/pocketbase",
+    "version": "v0.40.5",
+    "commit": "6f370ea741f33adf889eef02e3c1b884a47aa522"
+  },
+  "generation_driver_commits": [
+    "68e2cac8e6712e2e934c33f48664b0e53d947181",
+    "06a0164dadaf4c3b51ac5b58600bb0f2dcca7dcb"
+  ],
+  "planning_inputs_unchanged": true,
+  "fixed_baseline_tasks": 6,
+  "fresh_environments": 2,
+  "baseline_successes_per_environment": [
+    6,
+    6
+  ],
+  "scheduled_model_trials": 18,
+  "model_calls": 18,
+  "successful_trials": 16,
+  "not_attempted": 0,
+  "retry_count": 0,
+  "input_tokens": 59895,
+  "output_tokens": 8905,
+  "total_tokens": 68800,
+  "unknown_usage_calls": 0,
+  "model_http_200": 18,
+  "proof_layers": {
+    "dsl_valid": 16,
+    "policy_authorized": 16,
+    "intent_verified": 16,
+    "task_satisfied": 16,
+    "workflow_completed": 18
+  },
+  "per_case": [
+    {
+      "case_id": "PB901",
+      "scheduled": 3,
+      "successes": 3
+    },
+    {
+      "case_id": "PB902",
+      "scheduled": 3,
+      "successes": 3
+    },
+    {
+      "case_id": "PB903",
+      "scheduled": 3,
+      "successes": 1
+    },
+    {
+      "case_id": "PB904",
+      "scheduled": 3,
+      "successes": 3
+    },
+    {
+      "case_id": "PB905",
+      "scheduled": 3,
+      "successes": 3
+    },
+    {
+      "case_id": "PB906",
+      "scheduled": 3,
+      "successes": 3
+    }
+  ],
+  "failures": [
+    {
+      "case_id": "PB903",
+      "round": 1,
+      "outcome": "TOOL_ERROR",
+      "diagnostic_code": "OPENAPI_UNKNOWN_BODY_FIELD",
+      "business_http_requests": 0
+    },
+    {
+      "case_id": "PB903",
+      "round": 3,
+      "outcome": "TOOL_ERROR",
+      "diagnostic_code": "OPENAPI_UNKNOWN_BODY_FIELD",
+      "business_http_requests": 0
+    }
+  ],
+  "business_http_requests": 110,
+  "fixed_baseline_http_requests": 48,
+  "model_workflow_http_requests": 62,
+  "health_http_requests": 3,
+  "workflow_elapsed_ms": {
+    "min": 8157.0,
+    "median": 13937.5,
+    "max": 21265.0
+  },
+  "native_exit_confirmed": [
+    true,
+    true
+  ],
+  "read_only_database_audit": [
+    {
+      "run": "pocketbase-live-20261017",
+      "account_count": 2,
+      "note_count": 6,
+      "foreign_owner_notes": 0,
+      "forbidden_rewrite_notes": 0,
+      "deleted_title_notes": 0,
+      "wrong_owner_title_notes": 0,
+      "states": {
+        "done": 2,
+        "draft": 4
+      },
+      "database_and_wal_bytes_unchanged": true
+    },
+    {
+      "run": "pocketbase-live-remaining-20261017",
+      "account_count": 2,
+      "note_count": 12,
+      "foreign_owner_notes": 0,
+      "forbidden_rewrite_notes": 0,
+      "deleted_title_notes": 0,
+      "wrong_owner_title_notes": 0,
+      "states": {
+        "done": 3,
+        "draft": 9
+      },
+      "database_and_wal_bytes_unchanged": true
+    }
+  ],
+  "target_port_free": true,
+  "onboarding": {
+    "operator_authored_input_and_fixture_files": 18,
+    "input_and_fixture_lines": 1950,
+    "openapi_operations": 6,
+    "policy_definitions": 11,
+    "task_contracts": 6,
+    "project_entry_files": 6,
+    "new_python_dependencies": 0,
+    "human_elapsed_minutes": null
+  },
+  "private_archive_sha256": [
+    "53b35ee09e69f540691accb889f0ca93a9ce4a30da29e9d7ae410ad2ccd5d6cf",
+    "282929d19181c62beef95e05bca764ed6e4b79d76379ac58f6f96daf7d3ab027"
+  ]
+}
