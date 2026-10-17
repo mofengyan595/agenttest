@@ -6,6 +6,8 @@
 
 用户用中文描述测试目标，模型输出不可信 DSL；通过契约、策略、资源依赖和意图检查后，已有 Executor 执行 HTTP，生成脱敏报告。支持失败后的单次只读调查和 MCP stdio 工具封装。默认演示和测试无需 API Key、Docker 或外网。
 
+[统一验收与五分钟演示](docs/unified-acceptance.md)：一条离线命令复现项目预检、原演示、课程／工单、复杂 JSON、固定 pytest 与归档复核，并集中说明支持范围、历史真实证据和未验证部分。
+
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
@@ -101,6 +103,8 @@ Linux：`bash scripts/setup_env.sh --agent`，将后续命令的 `.\.venv\Script
 ```
 
 完整演示的成功表示**正常场景通过、故障被正确检出**，不是把故障报告改为 PASS。输出 run_id、报告位置、请求数和一次创建检查；MCP 子进程的报告也保留在演示目录。仅基础依赖时选 `normal` 或 `fault`。
+
+需要统一验收时，运行 `.\.venv\Scripts\python.exe scripts/check_delivery.py --output runs/delivery-new`，它已包含完整演示；每次使用新的输出目录，详见[检查内容与结果说明](docs/unified-acceptance.md)。
 
 | 命令参数 | 演示内容 | 预期原业务结果 |
 | --- | --- | --- |
@@ -238,7 +242,7 @@ B02 的 `DSL_AUTHENTICATION_ORDER` 零请求；B03/B04 的 `INTENT_UNSUPPORTED_O
 - TargetConfig、Policy Registry、Vault、只读能力和预算均来自操作员；模型不能自报 reviewed/source 获得授权。策略必须匹配操作、角色、业务场景和资源来源。
 - 固定 IP / localhost、白名单和隔离写入；不使用契约 servers 选目标，所有重定向阻断，关闭环境代理；不执行模型生成的 Python/Shell。
 - 请求 Schema 校验字段、严格基本类型、required、enum、对象/数组、长度及数值边界；不支持的组合、正则和未知 format 明确待审，**不是完整 JSON Schema / Bean Validation 实现**。Java 输入额外采用 UTF-16 长度和非空安全子集。
-- 普通 PlannerDraft 表达标量 JSON 参数和资源引用；独立 batch profile 已支持批准 fixture/poll 策略 ID，并有一次真实 mini Smoke 证据。模型不控制上传内容或轮询参数；Java batch 与通用 CSV 规划未支持。中文意图识别是封闭语法和规则，不是通用语义推理。
+- 基础 PlannerDraft 使用标量参数和资源引用，通用 GenericPlannerDraft 另支持有限小数、封闭对象／数组 body；独立 batch profile 支持批准 fixture/poll 策略 ID，并有一次真实 mini Smoke 证据。模型不控制上传内容或轮询参数；Java batch 与通用 CSV 规划未支持。中文意图识别是封闭语法和规则，不是通用语义推理。
 - Vault 只对批准登录操作读取凭据；JWT 与步骤状态仅在 run 内存中存在，结束销毁。认证响应不可当业务参数引用，不支持跨 run、恢复请求或自动修复。
 - 报告记录 run/step/attempt ID、契约/计划/策略摘要、状态/字节数/摘要/延迟、固定诊断及预算；不保存原始模型、HTTP 正文或敏感认证。数值密码、验证码、身份字段、自定义敏感字段及已知秘密也脱敏。
 
@@ -284,4 +288,4 @@ Windows/Linux × base/agent 四组 Actions 保留；pytest、Ruff、pip check、
 
 RAG 归档提交 `e394dfb` 的 [Python 四组 CI](https://github.com/mofengyan595/agenttest/actions/runs/38367571712)与 [Web 双平台 CI](https://github.com/mofengyan595/agenttest/actions/runs/38367571716)也全部成功；这些是该 SHA 的验收，不替代后续提交的检查。本地演示与受控研究范围具备功能冻结条件，Java 最新版本适配、正式独立评测和生产能力仍未验收，见[冻结判断](docs/project-technical-summary.md#功能冻结判断)。
 
-当前交付是本地研究/工程演示项目，适合如实写入实习简历。未实现生产审批、多租户、真实 LLM 失败调查、跨服务回滚或自动生成 Python 回归脚本；运行时保持 No-RAG，无多 Agent、Kubernetes 或新数据库。已有轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。公开仓库只保留审核后的脱敏展示副本与明确标注的开发实验，原始运行记录、私有任务、候选压缩原型和凭据继续留在忽略目录。
+当前交付是本地研究/工程演示项目，适合如实写入实习简历。已支持固定可信模板导出普通 JSON 的 pytest 回归；未实现生产审批、多租户、真实 LLM 失败调查或跨服务回滚。运行时保持 No-RAG，无多 Agent、Kubernetes 或新数据库。已有轻量本地 Web Console；文件权限和人工审阅仍是配置的信任根，真实 Java 只验证一个受控场景。公开仓库只保留审核后的脱敏展示副本与明确标注的开发实验，原始运行记录、私有任务、候选压缩原型和凭据继续留在忽略目录。
