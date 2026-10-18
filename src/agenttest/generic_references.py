@@ -29,6 +29,17 @@ def reference_schema(context: dict) -> dict | None:
     return {"type": "string", "maxLength": 200, "pattern": "^" + SELECTOR.pattern + "$"}
 
 
+def root_response_bindings(context: dict) -> list[dict]:
+    """Explain declared whole-response bindings; never infer one from response examples."""
+    policies = {p["id"]: p for p in context["policies"]}
+    return [{"consumer_policy_id": policy["id"], "location": rule["location"],
+             "name": rule["name"], "source_policy_id": source["id"],
+             "source_operation_id": source["operation_id"], "select": "$"}
+            for policy in policies.values() for rule in policy.get("binding_rules", [])
+            if rule.get("literal_schema") is None and rule.get("source_selector") == "$"
+            and (source := policies.get(rule.get("source_policy_id"))) is not None]
+
+
 def validate_generic_references(draft: "GenericPlannerDraft", context: dict) -> None:
     """Check each declared binding against an earlier producer; never repair a reference."""
     policies = {p["id"]: p for p in context["policies"]}

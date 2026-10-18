@@ -29,13 +29,15 @@ from agenttest.task_contract import TaskContract, task_validator
 CASE_IDS = ("GA1001", "GA1002", "GA1003")
 REFERENCE_IDS = ("GR1101", "GR1102", "GR1103")
 DIAGNOSTIC_IDS = ("GD1201", "GD1202", "GD1203")
+ROOT_IDS = ("GW1301", "GW1302", "GW1303")
 DATA = PROJECT_ROOT / "examples/argument-slots-development.json"
 REFERENCE_DATA = PROJECT_ROOT / "examples/reference-selectors-development.json"
 DIAGNOSTIC_DATA = PROJECT_ROOT / "examples/reference-diagnostics-development.json"
+ROOT_DATA = PROJECT_ROOT / "examples/root-response-development.json"
 
 
 def schedule(case_ids):
-    if tuple(case_ids) not in {CASE_IDS, REFERENCE_IDS, DIAGNOSTIC_IDS}:
+    if tuple(case_ids) not in {CASE_IDS, REFERENCE_IDS, DIAGNOSTIC_IDS, ROOT_IDS}:
         raise ValueError("Unknown development task set")
     return [(key, 0) for key in case_ids] + [
         (key, round_) for round_ in (1, 2, 3) for key in case_ids]
@@ -62,6 +64,10 @@ def reference_inputs(case_id):
 
 def diagnostic_inputs(case_id):
     return load_inputs(DIAGNOSTIC_DATA, DIAGNOSTIC_IDS, case_id)
+
+
+def root_inputs(case_id):
+    return load_inputs(ROOT_DATA, ROOT_IDS, case_id)
 
 
 def load_inputs(path, case_ids, case_id):
@@ -243,10 +249,10 @@ def missing_row(key, round_, reason):
 
 
 async def check_slots(output: Path, settings: ModelSettings | None = None, *, references=False,
-                      diagnostics=False):
+                      diagnostics=False, root_responses=False):
     from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
-    if references and diagnostics:
+    if sum((references, diagnostics, root_responses)) > 1:
         raise ValueError("Choose one fresh development set")
     if settings and (settings.model != "ecnu-plus" or settings.max_input_tokens > 20_000
                      or settings.max_output_tokens > 4096 or settings.max_total_tokens > 25_000):
@@ -259,12 +265,14 @@ async def check_slots(output: Path, settings: ModelSettings | None = None, *, re
     case_ids, factory = (REFERENCE_IDS, reference_inputs) if references else (CASE_IDS, case_inputs)
     if diagnostics:
         case_ids, factory = DIAGNOSTIC_IDS, diagnostic_inputs
+    if root_responses:
+        case_ids, factory = ROOT_IDS, root_inputs
     positions = schedule(case_ids)
     frozen = {"source": source, "git": checkout_identity(PROJECT_ROOT), "tasks": {}, "requests": {},
               "schedule": positions, "max_calls": 9,
               "reserved_token_ceiling": 9 * (
                   selected.max_input_tokens + selected.max_output_tokens)}
-    if references or diagnostics:
+    if references or diagnostics or root_responses:
         frozen["case_ids"] = list(case_ids)
     for key in case_ids:
         *_, task, draft, transport, context = factory(key)

@@ -1,0 +1,29 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "GW1301", "resource": "allocations",
+      "create": "openAllocation", "read": "inspectAllocation", "path_key": "allocation_key",
+      "query": {"view": "full"},
+      "body": {"description": "整体分配引用", "level": 4},
+      "reference_selector": "$", "reference_response": "$RESOURCE"
+    },
+    {
+      "case_id": "GW1302", "resource": "receipts",
+      "create": "openReceipt", "read": "inspectReceipt", "path_key": "receipt_key",
+      "query": {"locale": "east"},
+      "body": {"description": "整体回执引用", "enabled": false},
+      "reference_selector": "$", "reference_response": "$RESOURCE"
+    },
+    {
+      "case_id": "GW1303", "resource": "appointments",
+      "create": "openAppointment", "read": "inspectAppointment", "path_key": "appointment_key",
+      "query": {"detail": "brief"},
+      "body": {"description": "整体预约引用", "options": {"confirmed": true, "rank": 2}},
+      "reference_selector": "$", "reference_response": "$RESOURCE"
+    }
+  ]
+}

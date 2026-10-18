@@ -399,6 +399,16 @@ class OpenAICompatiblePlanner:
             strip_schema_titles(schema)
             short_container_refs(schema)
         public = {key: value for key, value in context.items() if key != "plan_schema"}
+        prompt = self._prompt
+        if self._profile == "generic":
+            from agenttest.generic_references import root_response_bindings
+
+            roots = root_response_bindings(context)
+            if roots:
+                public["root_response_bindings"] = roots
+                prompt += ('\nThe selector "$" means the entire response, including a scalar ID. '
+                           'For root_response_bindings copy select="$" exactly; '
+                           'never append a property name.')
         if self._profile == "mini_composed":
             from agenttest.composed_plan import (
                 composed_authentication_rules,
@@ -415,7 +425,7 @@ class OpenAICompatiblePlanner:
         separators = (",", ":") if self._profile == "generic" else None
         payload = {
             "model": settings.model, "store": False,
-            "messages": [{"role": "system", "content": self._prompt},
+            "messages": [{"role": "system", "content": prompt},
                          {"role": "user", "content": json.dumps(
                              public, ensure_ascii=False, separators=separators)}],
             "max_completion_tokens": settings.max_output_tokens,

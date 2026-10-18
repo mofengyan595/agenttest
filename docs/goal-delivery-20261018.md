@@ -56,3 +56,25 @@ selector、来源 ID 或原始模型文本。保留原 MODEL／POLICY 分类和�
 ```
 
 下一项：完成诊断回归、全新样例和归档验证，固定阶段 1 结果后进入反馈闭环。
+
+### 已确认的根响应分支与修正
+
+`3f2c110` 的 GD 九次真实调用全部已知用量，共 **12,679 Token**；三基线通过，
+生成 **6/9**：嵌套／数组各 3/3、根响应 0/3。三次拒绝均为原
+NEEDS_REVIEW／POLICY_DEPENDENCY_MISMATCH，新增诊断均
+SELECTOR_POLICY、step_index=1、argument_index=0，零业务请求。
+来源策略及接口已通过本地检查，因此能确认 selector 与批准的 `$` 不符；
+没有保存错误 selector 原文，不能推断具体字符串。十二位置冷核对通过，CLI 原退出码 1 保留。
+公开[脱敏统计](demo-evidence/reference-diagnostics-live-summary.json)。
+
+出站 Schema 已把合法 selector 限制为 `$`，本地及固定基线证明整个响应可执行；
+根据新证据仅补通用语义说明及从批准绑定派生的 root_response_bindings，
+明确 `$` 是完整响应而非字段前缀。所有授权、意图和断言门禁继续重验。
+首轮 **85 passed、1 failed、4 deselected** 暴露全局文字使旧 PocketBase 输入超预算；
+改为仅存在根绑定时附加说明，不增加预算，不改无根绑定的原提示。
+修正后相关 **37 passed、3 deselected／44.00s**，含三条全新 GW1301–GW1303 的
+三基线／九模拟位置及十二位置冷核对，PocketBase 默认预算检查通过，Ruff 全仓通过。
+
+第二批真实排期同样九次／216,864 Token、串行、60s、零重试，三条任务均为不同资源的
+根响应绑定；本 Goal 最多累计 18 次调用，旧 GD/GR 任务不补跑、不换成绩。
+后续真实调用继续依据已核实额度与每次 usage 执行停止规则。
