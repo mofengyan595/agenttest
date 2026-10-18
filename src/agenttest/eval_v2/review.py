@@ -73,6 +73,14 @@ def require_review(suite):
             raw = stream.read(1_000_001)
         legacy = bounded_json(raw.decode("utf-8"), 1_000_000)
         used.update(task_identity(c["user_task"]) for c in legacy["cases"])
+    exclusions = bounded_json(
+        (examples / "eval-v2/goal-used-task-identities.json").read_text(encoding="utf-8"),
+        100_000)
+    if (exclusions.get("schema_version") != "agenttest.development-exclusions.v1" or
+            not exclusions.get("tasks") or any(
+                len(item.get("task_identity", "")) != 64 for item in exclusions["tasks"])):
+        raise ValueError("Invalid development task exclusion registry")
+    used.update(item["task_identity"] for item in exclusions["tasks"])
     identities = [task_identity(c.task) for c in suite.cases]
     if len(set(identities)) != len(identities) or used.intersection(identities):
         raise ValueError("Development/holdout task overlap, independent of case ID")

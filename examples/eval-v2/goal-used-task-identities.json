@@ -1,0 +1,150 @@
+{
+  "schema_version": "agenttest.development-exclusions.v1",
+  "purpose": "Used development tasks cannot become independent holdout tasks",
+  "tasks": [
+    {
+      "case_id": "PV1601",
+      "task_identity": "0ab226f19741e84ddd5b6abb2e77c012ac8be8dced38f4c7324bc2efc35cf8aa"
+    },
+    {
+      "case_id": "PV1602",
+      "task_identity": "a2f4e0ff8ec18bdbde5277f97b9aa76f558b0088b0a5cf08143a0bbd47e0498b"
+    },
+    {
+      "case_id": "PV1603",
+      "task_identity": "7db1ead8d70a751a889247bc7b8cd67f1339cb541cf775f1cf89b868ae0994b7"
+    },
+    {
+      "case_id": "PV1604",
+      "task_identity": "c945ab91305ce20349b5ae90b5d7a2b94f1c1a2c261eda5c0b9cbdbc4757e4f9"
+    },
+    {
+      "case_id": "PV1605",
+      "task_identity": "c9f1602c9cfa504024d5b3b7b7dd509d47e3f85f6b30a43a109baae46653491f"
+    },
+    {
+      "case_id": "PV1606",
+      "task_identity": "55192d5c676e3dab438c8ecf3eea29159fa2afd4db29fa66aa6a454d69d96b24"
+    },
+    {
+      "case_id": "PV1607",
+      "task_identity": "004a422e67d2f280070b4d3dc95d72c2d83883d5f22b048cd9ba28ec197729f2"
+    },
+    {
+      "case_id": "PV1608",
+      "task_identity": "f0a737f9b667e982bad11fc6798392b7728d931f7c3859a83f27be5cef99d3fb"
+    },
+    {
+      "case_id": "PV1609",
+      "task_identity": "b264aeb210fa8b3020dad91e2761e6312464ac203e2121f15c6c9d8dc0c25b6c"
+    },
+    {
+      "case_id": "PV1610",
+      "task_identity": "3e1c70fc46358aa92db95fdd0171c7b99efad9a0e08a16db811b4b628641c7ee"
+    },
+    {
+      "case_id": "PV1611",
+      "task_identity": "c304c30557c090b36a77ab451b49c9b65dbc830dcb83d8f1555bf43b564f0405"
+    },
+    {
+      "case_id": "PV1612",
+      "task_identity": "24ce5e5ab3da7342cdfc17aecc2c2b062176dae67a6a7cbbbe00bef7253c2891"
+    },
+    {
+      "case_id": "PV1613",
+      "task_identity": "66864019897a30db90e5404ebc5ad423b3beff5bf11bb188526b4c2d025e25d2"
+    },
+    {
+      "case_id": "PV1614",
+      "task_identity": "3fdeb516c4d7fe4d2f8e02bffc31801c1617e3b8faa1c0d5af1d0fd71bb4a37b"
+    },
+    {
+      "case_id": "PV1615",
+      "task_identity": "17b0646df6a0da87286d2f236484c88695f08582b54ac83408c73c0937181aad"
+    },
+    {
+      "case_id": "PV1616",
+      "task_identity": "4e049413cdc2a4c886fbaa226ff304a65ae5f386e3f926025758360e975e3092"
+    },
+    {
+      "case_id": "PV1617",
+      "task_identity": "ff466cb8535b498592673a8910639d8c0cc035b6228f3c168ad1b8d14bfa1435"
+    },
+    {
+      "case_id": "PV1618",
+      "task_identity": "eba08eb14a2b33f93fa67390e53789196343dc385c6734dcb921ab2c3133864d"
+    },
+    {
+      "case_id": "PV1619",
+      "task_identity": "b8f9203adf40a820675f4e268794d19c03a7a77ec7b81125073c40f66f53781a"
+    },
+    {
+      "case_id": "PV1620",
+      "task_identity": "607cd0b612194abcf75bbb0bd18ca7f3c9fa918d965d5fe0b60f31c2239cc41c"
+    },
+    {
+      "case_id": "PV1621",
+      "task_identity": "22774cf7c4f21fb77c5db2f093ed0cf17c575dffcda1b1f2184cbbac793d61f9"
+    },
+    {
+      "case_id": "PV1622",
+      "task_identity": "1a47ec939b1fa7d1cdf83b636f6ad45e6bbf771bf796197b51ed1f94a3a7bc3b"
+    },
+    {
+      "case_id": "PV1623",
+      "task_identity": "b121fa7665cbde23cd1f07f56102460b5bd83b43680ce36928679790d8952c3d"
+    },
+    {
+      "case_id": "PV1624",
+      "task_identity": "7b5044bfa7138a32421716104dfb1cd200a92286d3d88256d2a383905ee9b36b"
+    },
+    {
+      "case_id": "FC1401",
+      "task_identity": "f541348003edacb6e7a81dfa7b0700bb4d15d41d608d851eb0ea8da319e775a6"
+    },
+    {
+      "case_id": "FC1402",
+      "task_identity": "37cb970ae9a8b8e2c5e1f1cb6c460419974340bcdb7a23394c0078100c35c0b6"
+    },
+    {
+      "case_id": "FC1403",
+      "task_identity": "344ed2d01afd163629ba11128fcdd4826287749f990865aacb26d6551d7fd212"
+    },
+    {
+      "case_id": "FE1501",
+      "task_identity": "28c2872af454fab5ab2d643c29b12282046b63037bd3161988b48f48386325d7"
+    },
+    {
+      "case_id": "FE1502",
+      "task_identity": "e2fcccf62493816686cb40f11e0346033cd71416130869e7317199bf595a6416"
+    },
+    {
+      "case_id": "FE1503",
+      "task_identity": "7783d5f730910bba05af2c76af467752d3b49acadf3f00a4e33c9fea03c9e8b8"
+    },
+    {
+      "case_id": "GD1201",
+      "task_identity": "5674f5e4ff942a45cba74b81d67972d7ec9d421115be07a4d72c6a5089f50f9f"
+    },
+    {
+      "case_id": "GD1202",
+      "task_identity": "8d54cafcf7fc95cf8267a192a2b2826b4450c597d61c3bf03a557450eacf6adc"
+    },
+    {
+      "case_id": "GD1203",
+      "task_identity": "77025dccde7b2c9c62e4fe9369bd93209d646aab05e308048d170f6377cfba12"
+    },
+    {
+      "case_id": "GW1301",
+      "task_identity": "2fa616893d0299c42af25c89fe9da3d39aed015479ea6b1efbfc1b445db07776"
+    },
+    {
+      "case_id": "GW1302",
+      "task_identity": "55b1c3d62952162708ee3102c238d3636b34c6c6af6e0b5b6bd811eb34da9844"
+    },
+    {
+      "case_id": "GW1303",
+      "task_identity": "59d9b10ec659f354fc2a34c5e3c3b65a6fac116609a96d4215babe0cb4d7a244"
+    }
+  ]
+}
