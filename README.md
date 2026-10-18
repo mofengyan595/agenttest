@@ -10,7 +10,8 @@
 
 [有界只读反馈](docs/bounded-feedback.md)：显式能力文件启用 LangGraph 调查或结束循环，
 每 run 最多两次只读调查、四次模型（含规划和结论）；原业务判定与证据结论分别保留。
-本地三任务 Fake／Mock 验收及冷重评分通过，真实模型补验按固定排期进行。
+本地 Fake／Mock 验收通过；全新三题真实模型业务故障检出 3/3、调查结论 2/3，
+10 次请求／8,647 Token，漏诊和先前规划拒绝保留。[真实结果](docs/demo-evidence/feedback-typed-live-summary.json)。
 
 用户用中文描述测试目标，模型输出不可信 DSL；通过契约、策略、资源依赖和意图检查后，已有 Executor 执行 HTTP，生成脱敏报告。支持显式启用的有界只读反馈调查及旧单轮模式、MCP stdio 工具封装。默认演示和测试无需 API Key、Docker 或外网。
 
