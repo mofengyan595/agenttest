@@ -1,5 +1,7 @@
 # AgentTest：项目能力与工程决策
 
+2026-10-18 增量：[完整运行/架构导航](goal-delivery-guide.md)、[真实开发评估与成本](goal-value-report.md)、[简历/面试](goal-resume-interview.md)。下文历史案例保留原日期；Workflow 与调查能力已更新为显式有界反馈。
+
 核查日期：2026-10-13；收尾基线 `e394dfb`，业务功能沿用 `0e684b2`。本页面向 GitHub 读者和技术面试官，描述已经存在的代码与证据。详细接入判断见[工程审查报告](engineering-review-20261013.md)，真实异步样例见[批处理 Demo](batch-demo.md)，RAG 决策依据见[离线评估](rag-necessity-20261013.md)。
 
 ## 项目解决什么问题
@@ -35,12 +37,12 @@ flowchart TD
 | [generic_references.py](../src/agenttest/generic_references.py) | 从可见策略收集引用候选，并核对每个参数的先前来源策略与字段 | 开放槽位只限制支持的语法；角色、授权、断言和任务满足仍由原引擎判定 |
 | [dsl.py](../src/agenttest/dsl.py)、[policies.py](../src/agenttest/policies.py) | 步骤类型、认证顺序、绑定规则、批准断言、可信 CSV 与 PollPolicy | 模型不能新增策略或凭据；只准引用已有策略 ID |
 | [intent.py](../src/agenttest/intent.py)、[batch_intent.py](../src/agenttest/batch_intent.py)、[courseinsight_nl.py](../src/agenttest/courseinsight_nl.py) | 检查任务名称、角色、目标、顺序、资源来源与完整路径 | 封闭语法与规则；不支持的说法保守待审，不用模型自评替代 |
-| [workflow.py](../src/agenttest/workflow.py) | LangGraph 节点、一次规划/执行、预算、错误分支、最终任务满足标志 | 没有自动修复或重新规划循环 |
+| [workflow.py](../src/agenttest/workflow.py) | LangGraph 原规划/执行、显式反馈子图、预算与最终任务满足标志 | 反馈至多两次只读调查/四次模型，不重规划或重放业务写入 |
 | [executor.py](../src/agenttest/executor.py)、[credentials.py](../src/agenttest/credentials.py) | Vault 登录、multipart、前序成功响应绑定、有界轮询、发送前审计 | 不执行模型代码；写入不自动重试，不恢复未知结果的请求 |
 | [verifier.py](../src/agenttest/verifier.py)、[report.py](../src/agenttest/report.py) | 状态/字段/条数断言、报告快照、摘要、脱敏与分类 | 无可信预期则待审；断言失败不能直接等同已确认服务 Bug |
 | [safety.py](../src/agenttest/safety.py)、[local_access.py](../src/agenttest/local_access.py)、[report_files.py](../src/agenttest/report_files.py) | 固定目标、隔离写入、回环 API、路径/链接防护、报告写入边界 | Target 仅 IP/localhost 或明确批准的隔离私网 IP；阻断重定向和环境代理 |
 | [discovery.py](../src/agenttest/discovery.py)、[eval_v2/](../src/agenttest/eval_v2/) | 离线候选发现；独立意图评分、分母、故障配对、审核与归档审计 | 候选不执行；正式评测仍须独立审核，batch 暂无完整评分表达 |
-| [investigation.py](../src/agenttest/investigation.py)、[mcp_service.py](../src/agenttest/mcp_service.py) | 单次批准只读调查；五项固定场景 MCP stdio 工具 | 调查当前为 FakeAnalyzer；MCP 不开放任意 DSL、URL 或 Java 写入 |
+| [investigation.py](../src/agenttest/investigation.py)、[mcp_service.py](../src/agenttest/mcp_service.py) | 旧单轮兼容及有界反馈；五项固定场景 MCP stdio 工具 | 复用批准能力和原会话；MCP 不开放任意 DSL、URL 或 Java 写入 |
 | [main.py](../src/agenttest/main.py)、[web/](../web/) | 契约导入、报告查询、React/TypeScript 本地只读控制台 | 没有浏览器业务执行、多租户审批或生产部署认证 |
 
 ## 一次自然语言任务的完整调用关系

@@ -86,7 +86,13 @@ async def check_onboarding(output: Path) -> dict:
             "initial_pending_review_slots": [slot.field for slot in project_draft.missing],
             "followup_configuration_ready": followup.ready,
             "followup_manual_requirement_groups": [slot.field for slot in pending.missing],
-            "hash_fields_without_task_draft": 3, "hash_fields_to_copy_with_task_draft": 0,
+            "blank_task_manual_hash_fields": 3,
+            "template_copy_manual_hash_fields": sum(getattr(old_task, field) !=
+                getattr(new_task, field) for field in (
+                    "contract_sha256", "target_config_sha256", "policy_sha256")),
+            "draft_manual_hash_fields": 0,
+            "draft_auto_hash_fields": sum(getattr(pending, field) == getattr(new_task, field)
+                for field in ("contract_sha256", "target_config_sha256", "policy_sha256")),
             "core_input_files": len(files), "reused_core_input_files": sum(
                 before[name] == after[name] for name in files),
             "changed_task_json_leaves": changed_leaves(old_task.model_dump(mode="json"), data),

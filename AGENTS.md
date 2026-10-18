@@ -17,6 +17,12 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-10-18 Goal feature scope is now frozen for final acceptance and CI.
+The 24-task three-round development schedule is complete; preserve its two scheduler
+freezes, all failures and the separate explicit-finish audit. Do not add paid trials,
+tune used tasks, or expand features without a new milestone. Formal independent
+human evaluation remains pending; deliver the unreviewed enrollment materials.
+
 The operator's 2026-10-18 Goal authorizes five incremental milestones: reference
 diagnostics, bounded read-only feedback decisions, reusable onboarding/observability,
 fresh paired development evaluation, and demonstration/interview delivery. Implement

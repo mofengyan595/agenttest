@@ -301,7 +301,10 @@ export function ReportView({
               <dd>{run.selected_policy_ids?.join(" · ") || "未记录"}</dd>
             </dl>
           </Panel>
-          <Panel title="模型与性能" subtitle="仅展示报告记录的 ModelCallStats">
+          <Panel
+            title="初始规划模型"
+            subtitle="ModelCallStats · 反馈调用统计见调查区"
+          >
             {run.model_call ? (
               <>
                 <dl className="stacked">

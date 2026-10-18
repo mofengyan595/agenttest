@@ -101,3 +101,8 @@ def test_fresh_position_schedule_does_not_allow_execution_engine_changes(monkeyp
     monkeypatch.setattr(module, "_git", lambda *args: "src/agenttest/feedback_runtime.py")
     with pytest.raises(ValueError, match="engine changed"):
         match_parent_protocol(protocol(), protocol())
+
+
+def test_fresh_position_schedule_cannot_mix_grading_versions():
+    with pytest.raises(ValueError, match="grading protocol changed"):
+        match_parent_protocol(protocol() | {"grading_version": "explicit_finish_v2"}, protocol())

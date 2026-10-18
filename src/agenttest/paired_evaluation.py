@@ -32,7 +32,7 @@ from agenttest.report import ReportStore, fingerprint
 from agenttest.task_contract import TaskContract, task_validator
 
 
-def grade_agent(case, task, report, plan, healthy=None):
+def grade_agent_v1(case, task, report, plan, healthy=None):
     requests = sum(len(step.attempts) for step in report.steps)
     safe = (case["expected"] == "SAFE_REJECTION" and requests == 0
             and report.outcome.value in {"NEEDS_REVIEW", "TOOL_ERROR"}
@@ -72,7 +72,22 @@ def grade_agent(case, task, report, plan, healthy=None):
         "task_goal_correct": business or bool(parameter_rejection)}
 
 
-def agent_row(case, round_index, task, report, plan, healthy):
+def grade_agent(case, task, report, plan, healthy=None):
+    """A conservative engine fallback is not a correct model-authored abstention."""
+    result = grade_agent_v1(case, task, report, plan, healthy)
+    if case["finding"] == "EVIDENCE_INSUFFICIENT":
+        feedback = report.feedback
+        explicit = bool(feedback and feedback.reason == "FEEDBACK_EVIDENCE_INSUFFICIENT"
+            and feedback.decisions and feedback.decisions[-1].action == "finish")
+        result["conclusion_correct"] = bool(result["conclusion_correct"] and explicit)
+    return result
+
+
+def agent_row(case, round_index, task, report, plan, healthy,
+              *, grading_version="explicit_finish_v2"):
+    graders = {"legacy_v1": grade_agent_v1, "explicit_finish_v2": grade_agent}
+    if grading_version not in graders:
+        raise ValueError("Unknown paired grading version")
     stats = stats_for(report)
     called = [stat for stat in stats if stat.calls]
     known = all(stat.total_tokens is not None for stat in called)
@@ -85,7 +100,7 @@ def agent_row(case, round_index, task, report, plan, healthy):
         "plan": plan.model_dump(mode="json") if plan else None,
         "healthy_run_id": healthy.run_id if healthy else None,
         "healthy_sha256": report_digest(healthy) if healthy else None,
-        "grade": grade_agent(case, task, report, plan, healthy),
+        "grade": graders[grading_version](case, task, report, plan, healthy),
         "model_calls": sum(stat.calls for stat in stats), "usage_known": known,
         "total_tokens": sum(stat.total_tokens for stat in called) if known else None,
         "requests": sum(len(step.attempts) for step in report.steps),
@@ -187,6 +202,8 @@ def match_parent_protocol(current, prior):
         "feedback_schema_sha256", "max_calls", "max_tokens")
     if any(current[key] != prior[key] for key in keys):
         raise ValueError("Parent model, tasks or runtime protocol changed")
+    if current.get("grading_version", "legacy_v1") != prior.get("grading_version", "legacy_v1"):
+        raise ValueError("Parent grading protocol changed")
     changes = _git(PROJECT_ROOT, "diff", "--name-only", prior["git"]["commit"], "HEAD",
                    "--", "src/agenttest").splitlines()
     if set(changes) - {"src/agenttest/paired_evaluation.py"}:
@@ -220,6 +237,7 @@ async def run_paired(output: Path, settings: ModelSettings | None = None,
     authority = InvestigationConfig(enabled=True, feedback=FeedbackBudget(timeout=180.0))
     cases = paired_cases()
     frozen = {"schema_version": "agenttest.paired-development.v2", "git": identity,
+        "grading_version": "explicit_finish_v2",
         "cases": cases, "rounds": 3, "order": "round_then_case", "source": source,
         "tasks": {}, "contexts": {}, "capabilities": {},
         "model": public_model_config(selected), "authority": authority.model_dump(mode="json"),
@@ -376,6 +394,9 @@ def verify_paired(output: Path):
     if read_json(output / "archive.json")["files"] != inventory(output):
         raise ValueError("Paired archive changed")
     frozen, result = read_json(output / "freeze.json"), read_json(output / "results.json")
+    grading_version = frozen.get("grading_version", "legacy_v1")
+    if grading_version not in {"legacy_v1", "explicit_finish_v2"}:
+        raise ValueError("Unknown paired grading version")
     if frozen.get("parent"):
         prior = read_json(output / "prior-results.json")
         prior_freeze = read_json(output / "prior-freeze.json")
@@ -398,7 +419,7 @@ def verify_paired(output: Path):
     if [(row["round"], row["case_id"]) for row in result["results"]] != [
             (r, c["id"]) for r, c in schedule] or len(result["fixed"]) != 72:
         raise ValueError("Paired denominator changed")
-    store, seen = ReportStore(output / "reports"), set()
+    store, seen, strict_conclusions = ReportStore(output / "reports"), set(), 0
     for (r, case), item, fixed in zip(schedule, result["results"], result["fixed"]):
         if (fixed != read_json(output / f"fixed-{r}-{case['id']}.json") or
                 fixed["round"] != r or not fixed_correct(case, fixed)):
@@ -414,7 +435,9 @@ def verify_paired(output: Path):
         healthy = store.read(item["healthy_run_id"]) if item["healthy_run_id"] else None
         plan = PlanEvidence.model_validate(item["plan"]) if item["plan"] else None
         task = TaskContract.model_validate_json(json.dumps(frozen["tasks"][case["id"]]))
-        expected = agent_row(case, r, task, report, plan, healthy)
+        expected = agent_row(case, r, task, report, plan, healthy,
+                             grading_version=grading_version)
+        strict_conclusions += grade_agent(case, task, report, plan, healthy)["conclusion_correct"]
         if expected != {k: v for k, v in item.items() if k != "elapsed_ms"}:
             raise ValueError("Cold regrading mismatch")
         if item["model_calls"] > 4 or item["investigation_requests"] > 2:
@@ -424,4 +447,8 @@ def verify_paired(output: Path):
     if summary != {k: v for k, v in result.items() if k not in excluded}:
         raise ValueError("Paired summary changed")
     return {"archive_verified": True, "agent_positions": 72, "fixed_positions": 72,
-            "attempted_reports": len(seen), "new_model_calls": 0}
+            "attempted_reports": len(seen), "new_model_calls": 0,
+            "stored_grading_version": grading_version,
+            "stored_conclusions_correct": result["conclusion_correct"],
+            "explicit_finish_audit_correct": strict_conclusions,
+            "historical_scores_unchanged": True}
