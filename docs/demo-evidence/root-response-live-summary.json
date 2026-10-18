@@ -1,0 +1,31 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "code_commit": "4f73061c7ae929210b980a119cc03a76b98be698",
+  "model": "ecnu-plus",
+  "business_transport": "mock_transport",
+  "scheduled_controls": 3,
+  "controls_passed": 3,
+  "independent_tasks": 3,
+  "rounds": 3,
+  "scheduled_trials": 9,
+  "real_model_calls": 9,
+  "generation_successes": 9,
+  "not_attempted": 0,
+  "automatic_retries": 0,
+  "usage_status": "OBSERVED",
+  "total_tokens": 13020,
+  "mock_business_requests": 24,
+  "real_business_requests": 0,
+  "database_writes": 0,
+  "per_case": {"GW1301": 3, "GW1302": 3, "GW1303": 3},
+  "cold_verification": {"archive_verified": true, "rescored_runs": 12, "new_model_calls": 0},
+  "private_archive": "runs/goal-stage1-roots-live",
+  "limitations": [
+    "Fresh synthetic string-root tasks only; developer evidence, not independent human review",
+    "Repeated rounds are not additional independent tasks",
+    "Previous GD/GR root failures remain unchanged; no pooled improvement percentage"
+  ]
+}

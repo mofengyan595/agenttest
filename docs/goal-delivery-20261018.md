@@ -31,7 +31,7 @@ credits 与 Token 分开，输入缓存和峰谷时段影响计费；余额需�
 不是程序实时余额接口；后续以供应商失败／usage 和本地硬预算执行停止。
 不将 credits 与 Token 合并统计，不把价格估算当实际扣费。
 
-## 阶段 1：进行中
+## 阶段 1：已完成，后续提交 CI 持续核对
 
 新增引用诊断只包含封闭分支码和从零开始的步骤／参数位置，不保存被拒绝计划、
 selector、来源 ID 或原始模型文本。保留原 MODEL／POLICY 分类和异常码。
@@ -78,3 +78,15 @@ SELECTOR_POLICY、step_index=1、argument_index=0，零业务请求。
 第二批真实排期同样九次／216,864 Token、串行、60s、零重试，三条任务均为不同资源的
 根响应绑定；本 Goal 最多累计 18 次调用，旧 GD/GR 任务不补跑、不换成绩。
 后续真实调用继续依据已核实额度与每次 usage 执行停止规则。
+
+`4f73061` 的新 GW 三基线及九次真实生成全部完成，三个任务各 **3/3**，
+**13,020 Token** 全部已知，24 次 Mock 请求，十二位置冷核对通过；零重试、零未尝试。
+公开[脱敏统计](demo-evidence/root-response-live-summary.json)。这是三条合成字符串根响应的
+开发证据，不与旧题合并计算改善率或宣称任意接口可靠。
+本 Goal 累计 **18 次真实模型、25,699 Token**；真实业务 HTTP／数据库写入均为 0。
+
+`3f2c110` 的 [Python CI](https://github.com/mofengyan595/agenttest/actions/runs/39093548900)
+四组及 [Web CI](https://github.com/mofengyan595/agenttest/actions/runs/39093548888) 两组均 success。
+`4f73061` 的 Python 39093890363／Web 39093890359 仍在运行，不能提前记为通过。
+下一准确里程碑：复用原只读 capability 和活跃 Executor 会话，实现有界 LangGraph
+决策循环及独立的证据结论，保留原业务判定。
