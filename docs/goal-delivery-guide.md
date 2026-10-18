@@ -49,15 +49,15 @@ flowchart TD
 
 | 时间槽 | 操作与应展示的证据 |
 | --- | --- |
-| 0:00–1:00 | `python -m agenttest showcase --case normal --runs-dir runs/demo-normal-new`：完整任务 PASS、实际请求及断言；用相同入口 `--case fault`：指定断言失败，不能把演示 verified 当业务 PASS |
-| 1:00–2:30 | `python scripts/check_feedback.py --typed-inputs --output runs/demo-feedback-new`：固定/Mock 三题，展开报告中的调查选择、GET、证据引用和独立结论。Mock 只验证机制；另展示真实 FE 三题统计 3/3 业务、2/3 结论及保留的漏诊 |
-| 2:30–3:15 | 展示 `python scripts/check_portability.py --source both --output runs/demo-portability-new` 的执行前拒绝，原始报告零业务请求；不能把计划合法等同任务满足 |
-| 3:15–4:15 | `python -m pytest examples/regressions -q --basetemp runs/demo-pytest-new`：三份已批准固定回归，无模型；`scripts/check_regression_exports.py --output runs/demo-regression-new` 额外核对正常三通过/故障三失败 |
+| 0:00–1:00 | `.\.venv\Scripts\python.exe -m agenttest showcase --case normal --runs-dir runs/demo-normal-new`：完整任务 PASS、实际请求及断言；用相同入口 `--case fault`：指定断言失败，不能把演示 verified 当业务 PASS |
+| 1:00–2:30 | `.\.venv\Scripts\python.exe scripts/check_feedback.py --typed-inputs --output runs/demo-feedback-new`：固定/Mock 三题，展开报告中的调查选择、GET、证据引用和独立结论。Mock 只验证机制；另展示真实 FE 三题统计 3/3 业务、2/3 结论及保留的漏诊 |
+| 2:30–3:15 | 展示 `.\.venv\Scripts\python.exe scripts/check_portability.py --source both --output runs/demo-portability-new` 的执行前拒绝，原始报告零业务请求；不能把计划合法等同任务满足 |
+| 3:15–4:15 | `.\.venv\Scripts\python.exe -m pytest examples/regressions -q --basetemp runs/demo-pytest-new`：三份已批准固定回归，无模型；`.\.venv\Scripts\python.exe scripts/check_regression_exports.py --output runs/demo-regression-new` 额外核对正常三通过/故障三失败 |
 | 4:15–5:00 | 在已有只读 Console 打开对应 Run ID，分别查看原断言、调查依据、模型用量；说明草案无权执行、正式独立评测尚未完成 |
 
 本机真实模型报告保存在 `runs/goal-feedback-typed-live/reports` 与 `runs/goal-paired-live/reports`，可用本地 API 指向目录进行只读展示。新克隆没有私有报告，使用上述离线报告及提交的脱敏统计。不要将 Mock 响应讲成真实模型结果，也不要为演示补跑已用题提高成绩。
 
-启动控制台：先设置 `AGENTTEST_RUNS_DIR` 指向选定 reports 目录，以 `python -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers` 启动只读 API；另一终端在 web 运行 npm run dev，浏览 127.0.0.1:5173。安装、生产认证和远程开放不属于演示流程。
+启动控制台：先设置 `AGENTTEST_RUNS_DIR` 指向选定 reports 目录，以 `.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers` 启动只读 API；另一终端在 web 运行 npm run dev，浏览 127.0.0.1:5173。安装、生产认证和远程开放不属于演示流程。
 
 ## 支持与限制
 
