@@ -213,6 +213,27 @@ export function ReportView({
             title="失败后的只读调查"
             subtitle="调查不会修改原始业务测试结果"
           >
+            {run.feedback && (
+              <div className="investigation">
+                <Badge>{run.feedback.state}</Badge>
+                <h3>{run.feedback.finding}</h3>
+                <p>{run.feedback.basis}</p>
+                <p className="caption">
+                  证据引用：{run.feedback.evidence_refs?.join(" · ") || "无"}
+                </p>
+                <p className="caption">
+                  调查请求 {run.feedback.requests_used} / 2 · 反馈模型调用{" "}
+                  {run.feedback.model_calls_used} / 3
+                </p>
+                {run.feedback.decisions?.map((decision) => (
+                  <p className="caption" key={decision.index}>
+                    决策 {decision.index + 1} · {decision.action} ·{" "}
+                    {decision.reason} ·{" "}
+                    {metric(decision.model_call?.total_tokens)} tokens
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="section-line">
               <Badge>
                 {run.investigations
@@ -262,6 +283,16 @@ export function ReportView({
               <dd>{run.diagnostic?.code || "未记录"}</dd>
               <dt>诊断层</dt>
               <dd>{run.diagnostic?.layer || "未记录"}</dd>
+              {run.diagnostic?.reference && (
+                <>
+                  <dt>引用诊断分支</dt>
+                  <dd>
+                    {run.diagnostic.reference.branch} · step{" "}
+                    {run.diagnostic.reference.step_index} · argument{" "}
+                    {run.diagnostic.reference.argument_index}
+                  </dd>
+                </>
+              )}
               <dt>分析码</dt>
               <dd>{run.analysis_code || "未记录"}</dd>
               <dt>校验问题</dt>

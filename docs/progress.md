@@ -1338,3 +1338,10 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 实际 CLI run 经真实 loopback 读取 JSON 契约、人工计划与授权配置：8 步 / 9 请求 PASS。
 - 新增 4 个引用边界测试后：**78 passed, 1 warning**；Ruff 通过；pip check 无损坏依赖。
 - 正常 CLI demo 退出码 0，两个故障 CLI demo 退出码 1，分别停止在第 5 / 7 步。
+
+
+## Goal 阶段 3：待审配置与本地追踪
+
+详见 [配置及追踪](onboarding-observability.md)。两域配置计数、Fake/ASGI 执行及封印冷核对通过；草案没有执行权限。新增 Python 11 passed，Ruff 全仓通过。三份真实 FE 追踪合计 10 次、8,647 Token，五阶段齐全，无外部上传。前端仅沿用已有详情展示反馈结果与决策、引用诊断，不新增执行入口。首轮类型检查发现两个可缺省数组，已使用可缺省访问修正。一次误用不存在的 test_cli.py 导致未收集测试，另行按实际文件重验。下一准确任务：固定全新 24 题和三轮开发对照协议，独立人审仍未完成。
+
+阶段 3 最终验证：项目及反馈 CLI 31 passed、1 skipped（Windows 链接权限）；前端 27 tests、typecheck、build 及 2 Playwright E2E 通过，桌面与窄屏截图检查通过。首次沙箱 Vitest 临时缓存 ENOENT 未收集两个套件，正常本地环境重验通过。`9b80775` 对应 Python 四组合、Web 两组合均 success。

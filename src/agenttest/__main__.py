@@ -26,6 +26,17 @@ def bounded_read(path: Path, limit: int = MAX_DOCUMENT_BYTES) -> bytes:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="AgentTest 确定性 API 测试")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    project_draft = subcommands.add_parser("prepare-project", help="从契约生成待审接入草案，不授权")
+    project_draft.add_argument("--contract", type=Path, required=True)
+    project_draft.add_argument("--output", type=Path, required=True)
+    task_draft = subcommands.add_parser("prepare-task", help="复用已检查项目，生成待审任务草案")
+    task_draft.add_argument("--project", type=Path, required=True)
+    task_draft.add_argument("--user-task", required=True)
+    task_draft.add_argument("--output", type=Path, required=True)
+    trace = subcommands.add_parser("export-trace", help="导出本地脱敏追踪，不上传外部平台")
+    trace.add_argument("--run-id", required=True)
+    trace.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    trace.add_argument("--output", type=Path, required=True)
     discovery = subcommands.add_parser("discover", help="离线发现 OpenAPI 测试候选；不执行测试")
     discovery.add_argument("--contract", type=Path, required=True)
     discovery.add_argument("--policies", type=Path, required=True,
@@ -90,6 +101,18 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     try:
+        if args.command in {"prepare-project", "prepare-task"}:
+            from agenttest.onboarding import prepare_project, prepare_task, write_draft
+
+            draft = (prepare_project(load_openapi(bounded_read(args.contract)))
+                     if args.command == "prepare-project" else
+                     prepare_task(args.project, args.user_task, dict(os.environ)))
+            write_draft(draft, args.output)
+            print(json.dumps({"schema_version": draft.schema_version,
+                "review_status": draft.review_status, "execution_authorized": False,
+                "missing_review_slots": len(draft.missing), "http_requests": 0, "model_calls": 0,
+                "output": str(args.output.absolute())}, ensure_ascii=False))
+            return 0
         project_inputs, project_environment = None, None
         if args.command == "check-project" or (args.command == "agent" and args.project):
             from agenttest.project import ProjectIssue, check_project
@@ -140,6 +163,14 @@ def main(argv: list[str] | None = None) -> int:
                 "http_requests": 0, "model_calls": 0}, ensure_ascii=False))
             return 0
         store = ReportStore(args.runs_dir)
+        if args.command == "export-trace":
+            from agenttest.local_trace import export_trace
+
+            trace = export_trace(store.read(args.run_id), args.output)
+            print(json.dumps({"schema_version": trace.schema_version, "spans": len(trace.spans),
+                "external_upload": False, "usage_status": trace.usage_status,
+                "output": str(args.output.absolute())}, ensure_ascii=False))
+            return 0
         regression_result = None
         regression_error = False
         if args.command == "export-pytest":

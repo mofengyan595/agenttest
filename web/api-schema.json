@@ -95,7 +95,10 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": ["asc", "desc"],
+              "enum": [
+                "asc",
+                "desc"
+              ],
               "type": "string",
               "default": "desc",
               "title": "Order"
@@ -222,7 +225,10 @@
           }
         },
         "type": "object",
-        "required": ["attempt", "elapsed_ms"],
+        "required": [
+          "attempt",
+          "elapsed_ms"
+        ],
         "title": "AttemptEvidence"
       },
       "CheckResult": {
@@ -254,7 +260,10 @@
           }
         },
         "type": "object",
-        "required": ["kind", "passed"],
+        "required": [
+          "kind",
+          "passed"
+        ],
         "title": "CheckResult"
       },
       "ContractSummary": {
@@ -280,7 +289,9 @@
           }
         },
         "type": "object",
-        "required": ["version"],
+        "required": [
+          "version"
+        ],
         "title": "ContractSummary"
       },
       "Diagnostic": {
@@ -300,11 +311,153 @@
             "type": "array",
             "maxItems": 8,
             "title": "Fields"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferenceDiagnostic"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": ["layer", "code"],
+        "required": [
+          "layer",
+          "code"
+        ],
         "title": "Diagnostic"
+      },
+      "FeedbackDecisionEvidence": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Index"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "investigate",
+              "finish",
+              "rejected"
+            ],
+            "title": "Action",
+            "default": "pending"
+          },
+          "reason": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,95}$",
+            "title": "Reason",
+            "default": "FEEDBACK_PENDING"
+          },
+          "model_call": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelCallStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "index"
+        ],
+        "title": "FeedbackDecisionEvidence"
+      },
+      "FeedbackResult": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SUPPORTED",
+              "NEEDS_REVIEW",
+              "BUDGET_EXHAUSTED",
+              "TOOL_ERROR",
+              "TEST_INFRA_ERROR",
+              "TIMEOUT",
+              "CANCELLED"
+            ],
+            "title": "State",
+            "default": "PENDING"
+          },
+          "reason": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,95}$",
+            "title": "Reason",
+            "default": "FEEDBACK_PENDING"
+          },
+          "finding": {
+            "type": "string",
+            "enum": [
+              "ACCESS_BOUNDARY_VIOLATION",
+              "PERSISTENT_READBACK_MISMATCH",
+              "EVIDENCE_INSUFFICIENT"
+            ],
+            "title": "Finding",
+            "default": "EVIDENCE_INSUFFICIENT"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "证据不足，需人工复核。",
+              "受限角色读取成功，同资源的所有者读取通过。",
+              "同角色对同一资源的复核重复出现字段断言失败。"
+            ],
+            "title": "Basis",
+            "default": "证据不足，需人工复核。"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Evidence Refs"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackDecisionEvidence"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Decisions"
+          },
+          "requests_used": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Requests Used",
+            "default": 0
+          },
+          "model_calls_used": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Model Calls Used",
+            "default": 0
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "title": "Elapsed Ms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "FeedbackResult"
       },
       "HTTPValidationError": {
         "properties": {
@@ -685,7 +838,10 @@
           }
         },
         "type": "object",
-        "required": ["method", "path"],
+        "required": [
+          "method",
+          "path"
+        ],
         "title": "Operation"
       },
       "Outcome": {
@@ -740,8 +896,53 @@
           }
         },
         "type": "object",
-        "required": ["step_id", "operation_id", "role", "policy_id"],
+        "required": [
+          "step_id",
+          "operation_id",
+          "role",
+          "policy_id"
+        ],
         "title": "PlanStepEvidence"
+      },
+      "ReferenceDiagnostic": {
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "SELECTOR_SYNTAX",
+              "SOURCE_NOT_PREVIOUS",
+              "SOURCE_UNKNOWN",
+              "SOURCE_POLICY",
+              "SOURCE_OPERATION",
+              "SELECTOR_POLICY",
+              "CONSUMER_POLICY",
+              "CONSUMER_OPERATION",
+              "ARGUMENT_SLOT",
+              "LITERAL_SLOT"
+            ],
+            "title": "Branch"
+          },
+          "step_index": {
+            "type": "integer",
+            "maximum": 19.0,
+            "minimum": 0.0,
+            "title": "Step Index"
+          },
+          "argument_index": {
+            "type": "integer",
+            "maximum": 29.0,
+            "minimum": 0.0,
+            "title": "Argument Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "branch",
+          "step_index",
+          "argument_index"
+        ],
+        "title": "ReferenceDiagnostic",
+        "description": "Closed branch and numeric locations only; no model-provided identifiers or values."
       },
       "RunPage": {
         "properties": {
@@ -770,7 +971,13 @@
           }
         },
         "type": "object",
-        "required": ["items", "total", "offset", "limit", "skipped"],
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit",
+          "skipped"
+        ],
         "title": "RunPage"
       },
       "RunReport": {
@@ -969,7 +1176,10 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": ["natural_language", "operator_plan"]
+                "enum": [
+                  "natural_language",
+                  "operator_plan"
+                ]
               },
               {
                 "type": "null"
@@ -1005,6 +1215,16 @@
               }
             ],
             "title": "Investigation Error"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "cleanup": {
             "type": "string",
@@ -1191,7 +1411,11 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       }
     }

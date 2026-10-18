@@ -152,3 +152,10 @@ OPENAPI_VALUE_TYPE 在请求前 TOOL_ERROR／PLAN_REJECTED，后两位置按驱�
 Goal 累计 **29 次真实模型、35,887 Token** 已知；FC 失败、GD 失败与 FE 漏诊分别记录，
 不合并成功率。阶段 2 验证了反馈决策和安全退出，未宣称模型能可靠定位所有原因。
 下一准确里程碑：生成待审接入／任务配置草案，完成本地脱敏追踪与两域配置成本核对。
+
+
+## Goal 阶段 3：待审配置与本地追踪
+
+详见 [配置及追踪](onboarding-observability.md)。两域配置计数、Fake/ASGI 执行及封印冷核对通过；草案没有执行权限。新增 Python 11 passed，Ruff 全仓通过。三份真实 FE 追踪合计 10 次、8,647 Token，五阶段齐全，无外部上传。前端仅沿用已有详情展示反馈结果与决策、引用诊断，不新增执行入口。首轮类型检查发现两个可缺省数组，已使用可缺省访问修正。一次误用不存在的 test_cli.py 导致未收集测试，另行按实际文件重验。下一准确任务：固定全新 24 题和三轮开发对照协议，独立人审仍未完成。
+
+阶段 3 最终验证：项目及反馈 CLI 31 passed、1 skipped（Windows 链接权限）；前端 27 tests、typecheck、build 及 2 Playwright E2E 通过，桌面与窄屏截图检查通过。首次沙箱 Vitest 临时缓存 ENOENT 未收集两个套件，正常本地环境重验通过。`9b80775` 对应 Python 四组合、Web 两组合均 success。

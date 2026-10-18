@@ -129,6 +129,88 @@ export interface components {
       code: string;
       /** Fields */
       fields?: string[];
+      reference?: components["schemas"]["ReferenceDiagnostic"] | null;
+    };
+    /** FeedbackDecisionEvidence */
+    FeedbackDecisionEvidence: {
+      /** Index */
+      index: number;
+      /**
+       * Action
+       * @default pending
+       * @enum {string}
+       */
+      action?: "pending" | "investigate" | "finish" | "rejected";
+      /**
+       * Reason
+       * @default FEEDBACK_PENDING
+       */
+      reason?: string;
+      model_call?: components["schemas"]["ModelCallStats"] | null;
+      /**
+       * Elapsed Ms
+       * @default 0
+       */
+      elapsed_ms?: number;
+    };
+    /** FeedbackResult */
+    FeedbackResult: {
+      /**
+       * State
+       * @default PENDING
+       * @enum {string}
+       */
+      state?:
+        | "PENDING"
+        | "SUPPORTED"
+        | "NEEDS_REVIEW"
+        | "BUDGET_EXHAUSTED"
+        | "TOOL_ERROR"
+        | "TEST_INFRA_ERROR"
+        | "TIMEOUT"
+        | "CANCELLED";
+      /**
+       * Reason
+       * @default FEEDBACK_PENDING
+       */
+      reason?: string;
+      /**
+       * Finding
+       * @default EVIDENCE_INSUFFICIENT
+       * @enum {string}
+       */
+      finding?:
+        | "ACCESS_BOUNDARY_VIOLATION"
+        | "PERSISTENT_READBACK_MISMATCH"
+        | "EVIDENCE_INSUFFICIENT";
+      /**
+       * Basis
+       * @default 证据不足，需人工复核。
+       * @enum {string}
+       */
+      basis?:
+        | "证据不足，需人工复核。"
+        | "受限角色读取成功，同资源的所有者读取通过。"
+        | "同角色对同一资源的复核重复出现字段断言失败。";
+      /** Evidence Refs */
+      evidence_refs?: string[];
+      /** Decisions */
+      decisions?: components["schemas"]["FeedbackDecisionEvidence"][];
+      /**
+       * Requests Used
+       * @default 0
+       */
+      requests_used?: number;
+      /**
+       * Model Calls Used
+       * @default 0
+       */
+      model_calls_used?: number;
+      /**
+       * Elapsed Ms
+       * @default 0
+       */
+      elapsed_ms?: number;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -298,6 +380,31 @@ export interface components {
         [key: string]: string;
       };
     };
+    /**
+     * ReferenceDiagnostic
+     * @description Closed branch and numeric locations only; no model-provided identifiers or values.
+     */
+    ReferenceDiagnostic: {
+      /**
+       * Branch
+       * @enum {string}
+       */
+      branch:
+        | "SELECTOR_SYNTAX"
+        | "SOURCE_NOT_PREVIOUS"
+        | "SOURCE_UNKNOWN"
+        | "SOURCE_POLICY"
+        | "SOURCE_OPERATION"
+        | "SELECTOR_POLICY"
+        | "CONSUMER_POLICY"
+        | "CONSUMER_OPERATION"
+        | "ARGUMENT_SLOT"
+        | "LITERAL_SLOT";
+      /** Step Index */
+      step_index: number;
+      /** Argument Index */
+      argument_index: number;
+    };
     /** RunPage */
     RunPage: {
       /** Items */
@@ -402,6 +509,7 @@ export interface components {
       investigations?: components["schemas"]["InvestigationResult"][];
       /** Investigation Error */
       investigation_error?: string | null;
+      feedback?: components["schemas"]["FeedbackResult"] | null;
       /**
        * Cleanup
        * @default In-memory demo state discarded; external target cleanup is operator-owned

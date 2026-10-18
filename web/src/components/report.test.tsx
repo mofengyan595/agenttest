@@ -165,3 +165,33 @@ test("approved HTTP status arrays remain readable", () => {
   );
   expect(screen.getByText("200, 201")).toBeInTheDocument();
 });
+
+test("supported investigation keeps original failure and exposes evidence references", () => {
+  render(
+    <MemoryRouter>
+      <ReportView
+        refresh={() => {}}
+        run={runFixture({
+          outcome: "ASSERTION_FAILED",
+          task_satisfied: false,
+          feedback: {
+            state: "SUPPORTED",
+            finding: "PERSISTENT_READBACK_MISMATCH",
+            basis: "同角色对同一资源的复核重复出现字段断言失败。",
+            evidence_refs: ["original", "inspection_1"],
+            requests_used: 1,
+            model_calls_used: 2,
+            decisions: [
+              { index: 0, action: "investigate", reason: "FEEDBACK_PENDING" },
+            ],
+          },
+        })}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText("SUPPORTED")).toBeInTheDocument();
+  expect(
+    screen.getByText(/证据引用：original · inspection_1/),
+  ).toBeInTheDocument();
+  expect(screen.getByText("ASSERTION_FAILED · 断言失败")).toBeInTheDocument();
+});

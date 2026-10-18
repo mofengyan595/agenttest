@@ -1,0 +1,68 @@
+{
+  "schema_version": "agenttest.onboarding-measurement.v1",
+  "classification": "STATIC_COUNTS_AND_FAKE_EXECUTION_ONLY",
+  "human_reviewed": 0,
+  "human_timing_seconds": null,
+  "time_saved_seconds": null,
+  "real_model_calls": 0,
+  "real_business_requests": 0,
+  "database_writes": 0,
+  "review_simulation": "DEVELOPER_FIXTURE_ONLY",
+  "domains": [
+    {
+      "domain": "courses",
+      "contract_operations": 6,
+      "initial_configuration_ready": true,
+      "initial_pending_review_slots": [
+        "target_authorization",
+        "roles",
+        "business_expectations",
+        "resource_relationships",
+        "requirements"
+      ],
+      "followup_configuration_ready": true,
+      "followup_manual_requirement_groups": [
+        "requirements.steps",
+        "requirements.before",
+        "requirements.required_goals"
+      ],
+      "hash_fields_without_task_draft": 3,
+      "hash_fields_to_copy_with_task_draft": 0,
+      "core_input_files": 4,
+      "reused_core_input_files": 3,
+      "changed_task_json_leaves": 2,
+      "draft_executable": false,
+      "task_draft_rejected_by_check_project": true,
+      "followup_fake_outcome": "PASS",
+      "asgi_requests": 3
+    },
+    {
+      "domain": "tickets",
+      "contract_operations": 4,
+      "initial_configuration_ready": true,
+      "initial_pending_review_slots": [
+        "target_authorization",
+        "roles",
+        "business_expectations",
+        "resource_relationships",
+        "requirements"
+      ],
+      "followup_configuration_ready": true,
+      "followup_manual_requirement_groups": [
+        "requirements.steps",
+        "requirements.before",
+        "requirements.required_goals"
+      ],
+      "hash_fields_without_task_draft": 3,
+      "hash_fields_to_copy_with_task_draft": 0,
+      "core_input_files": 4,
+      "reused_core_input_files": 3,
+      "changed_task_json_leaves": 2,
+      "draft_executable": false,
+      "task_draft_rejected_by_check_project": true,
+      "followup_fake_outcome": "PASS",
+      "asgi_requests": 2
+    }
+  ],
+  "verified": true
+}
