@@ -1,0 +1,60 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "source": "real",
+  "business_transport": "mock_transport",
+  "scheduled_controls": 3,
+  "scheduled_trials": 9,
+  "controls_passed": 3,
+  "generation_successes": 7,
+  "per_case": {
+    "GR1101": 3,
+    "GR1102": 3,
+    "GR1103": 1
+  },
+  "model_calls": 9,
+  "real_model_calls": 9,
+  "not_attempted": 0,
+  "usage_status": "OBSERVED",
+  "total_tokens": 12614,
+  "mock_business_requests": 20,
+  "source_commit": "ddd660d38104972c9449fb8cc6cbf85cc0834dd8",
+  "input_tokens": 9501,
+  "output_tokens": 3113,
+  "model_http_200": 9,
+  "model_dsl_valid": 7,
+  "model_policy_authorized": 7,
+  "model_intent_verified": 7,
+  "model_task_satisfied": 7,
+  "model_workflow_completed": 9,
+  "real_business_requests": 0,
+  "real_database_writes": 0,
+  "retries": 0,
+  "archive_sha256": "be3a1fac9fa5e60c6b70f0fc9dd2e8c145a174ff8b826a0c9e969870149e65f4",
+  "failures": [
+    {
+      "case_id": "GR1103",
+      "round": 1,
+      "outcome": "NEEDS_REVIEW",
+      "requests": 0,
+      "diagnostic": {
+        "layer": "dependency",
+        "code": "POLICY_DEPENDENCY_MISMATCH",
+        "fields": []
+      }
+    },
+    {
+      "case_id": "GR1103",
+      "round": 3,
+      "outcome": "NEEDS_REVIEW",
+      "requests": 0,
+      "diagnostic": {
+        "layer": "dependency",
+        "code": "POLICY_DEPENDENCY_MISMATCH",
+        "fields": []
+      }
+    }
+  ]
+}
