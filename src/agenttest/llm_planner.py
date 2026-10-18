@@ -252,6 +252,7 @@ the executor supplies that role's credentials. Never add a read to simulate auth
 Respect required_bindings, literal schemas, source policies, selectors and role relations.
 Use unique step IDs and reference only earlier producer steps; reuse a resource when needed.
 Copy literal task values exactly. Never guess resource IDs or response-envelope selectors.
+Bind each field's value directly; add no wrapper.
 Arguments contain location (body/path_parameters/query), name, value, from_step, select.
 Literal: value=<literal>, from_step=null, select=null.
 Reference: value=null, from_step=<earlier producer step ID>, select=<approved selector>.

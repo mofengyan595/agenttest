@@ -55,7 +55,8 @@ def validator(public=None):
     ("envelope", "body", "body", True), ("unknown", "body", "subject", False),
 ])
 def test_outbound_slots_preserve_operation_and_location(operation, location, name, valid):
-    assert validator().is_valid(draft(operation, location, name)) is valid
+    value = {"object": []} if operation == "envelope" else "literal"
+    assert validator().is_valid(draft(operation, location, name, value)) is valid
 
 
 def test_nested_members_remain_data_and_existing_source_rules_still_apply():

@@ -35,6 +35,9 @@ CASES = [
      "title": "反馈闭环课程回读", "owner": "alice", "finding": "PERSISTENT_READBACK_MISMATCH",
      "failed_check": ["getCourse", "equals", "$.name"]},
 ]
+TYPED_CASES = [{**case, "id": f"FE150{index}", "title": title}
+    for index, (case, title) in enumerate(zip(CASES, (
+        "字段类型课程隔离", "字段类型工单隔离", "字段类型课程回读")), 1)]
 
 
 def inputs(case):
@@ -135,7 +138,8 @@ def summary(rows, source):
                              for item in rows)}
 
 
-async def check_feedback(output: Path, settings: ModelSettings | None = None):
+async def check_feedback(output: Path, settings: ModelSettings | None = None,
+                         *, typed_inputs=False):
     from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
     private_output(PROJECT_ROOT, output)
@@ -148,17 +152,18 @@ async def check_feedback(output: Path, settings: ModelSettings | None = None):
         raise ValueError("Use the existing operator-selected provider only")
     selected = ModelSettings.model_validate({**selected.model_dump(), "timeout": 60.0})
     authority = InvestigationConfig(enabled=True, feedback=FeedbackBudget(timeout=180.0))
+    cases = TYPED_CASES if typed_inputs else CASES
     identity = checkout_identity(PROJECT_ROOT)
     if settings and identity["worktree_status"]:
         raise ValueError("Live feedback requires a clean committed checkout")
-    frozen = {"git": identity, "source": source, "cases": CASES,
+    frozen = {"git": identity, "source": source, "cases": cases,
         "tasks": {}, "contexts": {}, "authority": authority.model_dump(mode="json"),
         "capabilities": {}, "model": public_model_config(selected),
         "feedback_prompt_sha256": fingerprint(FEEDBACK_PROMPT),
         "feedback_schema_sha256": fingerprint(FeedbackAction.model_json_schema()),
         "max_calls": 12, "max_tokens": 12 * (
             selected.max_input_tokens + selected.max_output_tokens)}
-    for case in CASES:
+    for case in cases:
         _, document, target, registry, _, task, _, capabilities = inputs(case)
         frozen["tasks"][case["id"]] = task.model_dump(mode="json")
         frozen["contexts"][case["id"]] = planning_context(
@@ -172,7 +177,7 @@ async def check_feedback(output: Path, settings: ModelSettings | None = None):
 
     rows, stop = [], None
     for phase in ("control", "model"):
-        for case in CASES:
+        for case in cases:
             if phase == "model" and stop:
                 rows.append({"case_id": case["id"], "phase": phase, "run_id": None,
                              "not_attempted_reason": stop})
@@ -237,8 +242,10 @@ def verify_feedback(output: Path):
     if read_json(output / "archive.json")["files"] != inventory(output):
         raise ValueError("Feedback archive changed")
     frozen, result = read_json(output / "freeze.json"), read_json(output / "results.json")
+    case_ids = tuple(case["id"] for case in frozen["cases"])
+    known_ids = {tuple(case["id"] for case in items) for items in (CASES, TYPED_CASES)}
     if (frozen["source"] not in {"real", "mock_transport"} or frozen["max_calls"] != 12
-            or [case["id"] for case in frozen["cases"]] != [case["id"] for case in CASES]):
+            or case_ids not in known_ids):
         raise ValueError("Feedback protocol changed")
     expected = [(phase, case["id"]) for phase in ("control", "model") for case in frozen["cases"]]
     rows = result["results"]
@@ -263,4 +270,5 @@ def verify_feedback(output: Path):
             raise ValueError("Feedback run exceeded budget")
     if {**summary(rows, frozen["source"]), "results": rows} != result:
         raise ValueError("Feedback summary mismatch")
-    return {"archive_verified": True, "rescored_runs": len(rows), "new_model_calls": 0}
+    return {"archive_verified": True, "rescored_runs": len(rows),
+            "verified_reports": len(seen), "new_model_calls": 0}

@@ -118,3 +118,25 @@ CLI／首轮取消／旧调查关联 **33 passed／40.42s**；Ruff 全仓与 pip
 离线 CLI `runs/goal-feedback-offline-final` 三固定及三模拟均通过，业务与调查结论各 3/3、
 九次 Mock 模型、1,350 SIMULATED Token、28 次 ASGI 请求，六位置冷核对通过。
 随后固定提交再进行已排定三任务真实验证；尚无本阶段真实模型／业务 HTTP／数据库写入。
+
+`7e3c044` 首次真实排期仅尝试 FC1401 一次，**1,541 Token** 已知，初始计划因
+OPENAPI_VALUE_TYPE 在请求前 TOOL_ERROR／PLAN_REJECTED，后两位置按驱动停止规则未尝试。
+三控制通过，业务与调查模型成绩均 **0/3**；没有任何真实反馈模型决策。
+六位置冷核对通过（四份报告、两位置未执行），公开[原失败统计](demo-evidence/feedback-initial-live-summary.json)。
+计划的 body.name 哈希与“以 name 为键的对象包装请求字符串”的候选精确一致，证明是
+标量字段被容器包装；没有猜测或保存模型原文。原 Schema 只限制槽位名称，仍允许此类型。
+
+修正仅从 OpenAPI 已确认的字段 type 收紧出站字面量种类，按操作／位置／名称／类型共享
+定义；未知或多种类型不虚构约束，引用仍以 null value 通过原来源检查。执行器和批准断言不改。
+首轮旧槽位测试用字符串代替声明的对象（1 failed／35 passed），改为合法对象夹具，
+保留原期望与业务断言。类型／引用／PocketBase 预算关联 **43 passed、4 deselected**。
+下一组 FE1501–FE1503 使用新任务、新归档，最多十二次／289,152 Token；不重跑 FC。
+
+补充一条通用的直接字段值说明，禁止擅加外层包装；未改变合法 body 字段名或容器语义。
+六条旧 PocketBase 的新出站请求逐个准备，修改前最紧输入上界为 19,917／20,000；
+新文字仍在原预算中，不提高限额。FE 新三基线、三模拟位置的业务与结论各 **3/3**，
+9 次 Mock 模型、1,350 SIMULATED Token、28 次 ASGI 请求，六位置封印冷核对通过。
+
+最终类型／模型／调查关联 **86 passed、4 deselected／31.36s**，JUnit 已保存至
+`runs/goal-feedback-types-final.xml`；Ruff 全仓通过，新六位置再次冷核对通过。
+准备阶段没有追加真实调用，随后在干净新提交上执行 FE 排期。

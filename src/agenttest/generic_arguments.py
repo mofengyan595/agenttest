@@ -26,6 +26,27 @@ def argument_slots(context: dict) -> dict[str, tuple[tuple[str, str], ...]]:
     return result
 
 
+def slot_types(context: dict) -> dict[str, dict[tuple[str, str], str | None]]:
+    """Restrict literal kinds only when all declared schemas agree; refs still use null."""
+    result = {}
+    for operation in context["operations"]:
+        candidates: dict[tuple[str, str], set[str | None]] = {}
+        for parameter in operation["parameters"]:
+            location = {"path": "path_parameters", "query": "query"}.get(parameter["in"])
+            if location:
+                kind = parameter.get("schema", {}).get("type")
+                candidates[(location, parameter["name"])] = {
+                    kind if isinstance(kind, str) else None}
+        for schema in (operation["request_body"] or {}).get("content", {}).values():
+            for name, field in schema.get("properties", {}).items():
+                kind = field.get("type")
+                candidates.setdefault(("body", name), set()).add(
+                    kind if isinstance(kind, str) else None)
+        result[operation["id"]] = {key: next(iter(kinds)) if len(kinds) == 1 else None
+                                    for key, kinds in candidates.items()}
+    return result
+
+
 def constrain_generic_arguments(schema: dict, step_type: str, context: dict,
                                 argument: dict) -> None:
     """Intersect the existing source schema with operation-specific named slots.
@@ -34,9 +55,11 @@ def constrain_generic_arguments(schema: dict, step_type: str, context: dict,
     sets share one branch, without discarding candidates to fit a token budget.
     Nested LiteralMember keys remain data, rather than top-level argument names.
     """
-    groups: dict[tuple[tuple[str, str], ...], list[str]] = {}
+    types = slot_types(context)
+    groups: dict[tuple[tuple[str, str, str | None], ...], list[str]] = {}
     for operation, slots in argument_slots(context).items():
-        groups.setdefault(slots, []).append(operation)
+        signature = tuple((loc, name, types[operation].get((loc, name))) for loc, name in slots)
+        groups.setdefault(signature, []).append(operation)
     step = schema["$defs"][step_type]
     if not groups:
         # Explicit abstention remains possible even with an empty visible catalog.
@@ -55,7 +78,7 @@ def constrain_generic_arguments(schema: dict, step_type: str, context: dict,
         name = "V" if index == 0 else "S"
         schema["$defs"].setdefault(name, shared_argument["properties"][field])
         shared_argument["properties"][field] = {"$ref": "#/$defs/" + name}
-    branches, slot_definitions = [], {}
+    branches, slot_definitions, value_definitions = [], {}, {}
     for slots, operations in groups.items():
         branch = deepcopy(shared_step)
         properties = branch["properties"]
@@ -67,17 +90,31 @@ def constrain_generic_arguments(schema: dict, step_type: str, context: dict,
         else:
             choices = []
             for location in ("body", "path_parameters", "query"):
-                names = [name for loc, name in slots if loc == location]
-                if not names:
-                    continue
-                choice = deepcopy(shared_argument)
-                choice["properties"]["location"] = {"type": "string", "enum": [location]}
-                choice["properties"]["name"] = {"type": "string", "enum": names}
-                key = (location, tuple(names))
-                if key not in slot_definitions:
-                    slot_definitions[key] = f"N{len(slot_definitions)}"
-                    schema["$defs"][slot_definitions[key]] = choice
-                choices.append({"$ref": "#/$defs/" + slot_definitions[key]})
+                by_type: dict[str | None, list[str]] = {}
+                for loc, name, kind in slots:
+                    if loc == location:
+                        by_type.setdefault(kind, []).append(name)
+                for kind, names in by_type.items():
+                    choice = deepcopy(shared_argument)
+                    choice["properties"]["location"] = {"type": "string", "enum": [location]}
+                    choice["properties"]["name"] = {"type": "string", "enum": names}
+                    supported = {"string", "integer", "number", "boolean", "null",
+                                 "object", "array"}
+                    if kind in supported:
+                        if kind not in value_definitions:
+                            definition = f"T{len(value_definitions)}"
+                            value_definitions[kind] = definition
+                            literal = ({"$ref": "#/$defs/Literal" + kind.title()}
+                                       if kind in {"object", "array"} else {"type": kind})
+                            schema["$defs"][definition] = ({"type": "null"} if kind == "null"
+                                else {"anyOf": [literal, {"type": "null"}]})
+                        choice["properties"]["value"] = {
+                            "$ref": "#/$defs/" + value_definitions[kind]}
+                    key = (location, tuple(names), kind)
+                    if key not in slot_definitions:
+                        slot_definitions[key] = f"N{len(slot_definitions)}"
+                        schema["$defs"][slot_definitions[key]] = choice
+                    choices.append({"$ref": "#/$defs/" + slot_definitions[key]})
             arguments["items"] = choices[0] if len(choices) == 1 else {"anyOf": choices}
         properties["arguments"] = arguments
         branches.append(branch)
