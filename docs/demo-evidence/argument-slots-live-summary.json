@@ -1,0 +1,80 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "source_commit": "25370a3b659e1f2c539b30fbdd02048245a2e342",
+  "closure_date": "2026-10-18",
+  "status": "INTERRUPTED_USAGE_UNKNOWN",
+  "business_transport": "mock_transport",
+  "scheduled_controls": 3,
+  "controls_passed": 3,
+  "scheduled_model_trials": 9,
+  "completed_model_results": 7,
+  "successful_model_trials": 6,
+  "failed_model_trials": 1,
+  "interrupted_trials": 1,
+  "not_attempted_trials": 1,
+  "per_case": {
+    "GA1001": {
+      "successes": 3,
+      "completed": 3,
+      "interrupted": 0,
+      "not_attempted": 0
+    },
+    "GA1002": {
+      "successes": 1,
+      "completed": 2,
+      "interrupted": 1,
+      "not_attempted": 0
+    },
+    "GA1003": {
+      "successes": 2,
+      "completed": 2,
+      "interrupted": 0,
+      "not_attempted": 1
+    }
+  },
+  "known_model_calls": 7,
+  "unknown_call_status_trials": 1,
+  "model_calls": null,
+  "known_input_tokens": 7765,
+  "known_output_tokens": 2838,
+  "known_total_tokens": 10603,
+  "total_tokens": null,
+  "usage_status": "UNKNOWN",
+  "known_model_http_statuses": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "max_model_calls": 9,
+  "reserved_token_ceiling": 216864,
+  "unknown_position_not_refunded": true,
+  "new_model_calls_during_closure": 0,
+  "mock_business_requests": 18,
+  "real_business_requests": 0,
+  "real_database_writes": 0,
+  "completed_checkpoints_regraded": 10,
+  "full_run_verified": false,
+  "failures": [
+    {
+      "case_id": "GA1002",
+      "round": 1,
+      "outcome": "TOOL_ERROR",
+      "requests": 0,
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_SCHEMA_VALIDATOR_REJECTED",
+        "fields": [
+          "select"
+        ]
+      }
+    }
+  ],
+  "closure_archive_sha256": "268077a24acf37b5842e7a1ba577f2d2ab1ae51f64cda37e206c7ad0a15abd41"
+}
