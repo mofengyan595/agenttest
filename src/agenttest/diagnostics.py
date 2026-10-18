@@ -1,8 +1,9 @@
 """Closed diagnostic vocabulary. Never serialize exception text, context or inputs."""
 
 from enum import Enum
+from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_serializer
 
 
 class Layer(str, Enum):
@@ -15,11 +16,29 @@ class Layer(str, Enum):
     INTENT = "intent"
 
 
+class ReferenceDiagnostic(BaseModel):
+    """Closed branch and numeric locations only; no model-provided identifiers or values."""
+
+    branch: Literal["SELECTOR_SYNTAX", "SOURCE_NOT_PREVIOUS", "SOURCE_UNKNOWN",
+                    "SOURCE_POLICY", "SOURCE_OPERATION", "SELECTOR_POLICY",
+                    "CONSUMER_POLICY", "CONSUMER_OPERATION", "ARGUMENT_SLOT", "LITERAL_SLOT"]
+    step_index: int = Field(ge=0, le=19)
+    argument_index: int = Field(ge=0, le=29)
+
+
 class Diagnostic(BaseModel):
     layer: Layer
     code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,95}$")
     # Paths contain only schema-owned field names and array indices; unknown names are masked.
     fields: list[str] = Field(default_factory=list, max_length=8)
+    reference: ReferenceDiagnostic | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_reference(self, handler):
+        data = handler(self)
+        if self.reference is None:
+            data.pop("reference", None)
+        return data
 
 
 class ValidationFailure(ValueError):

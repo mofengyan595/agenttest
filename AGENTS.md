@@ -17,6 +17,16 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The operator's 2026-10-18 Goal authorizes five incremental milestones: reference
+diagnostics, bounded read-only feedback decisions, reusable onboarding/observability,
+fresh paired development evaluation, and demonstration/interview delivery. Implement
+these sequentially using existing trusted components; the freeze below applies only
+to unrelated expansion. Goal-scoped verified commits/pushes and configured model
+calls are authorized. Total real-model ceiling: 300 requests / 1,000,000 tokens,
+no implicit retries; unknown usage stops subsequent paid calls. Formal independent
+evaluation still requires genuine independent human review. No new real Java or
+PocketBase writes, CourseInsight changes, RAG, multi-agent, repair or write recovery.
+
 Stages 1–4A/4B and scoped Stage 5 delivery are implemented. Preserve raw two-round
 2A records, real Java 3A/4A evidence, Stage 3B MCP evidence and independent B01–B04
 failures. Maintain the unified offline showcase and Windows/Linux × base/agent CI.

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.diagnostics import Layer, ReferenceDiagnostic, ValidationFailure
 from agenttest.policies import NeedsReview
 from agenttest.selectors import SELECTOR, validate_selector
 
@@ -33,38 +33,47 @@ def validate_generic_references(draft: "GenericPlannerDraft", context: dict) -> 
     """Check each declared binding against an earlier producer; never repair a reference."""
     policies = {p["id"]: p for p in context["policies"]}
     previous = {}
-    for step in draft.steps:
-        for argument in step.arguments:
+    step_ids = {step.id for step in draft.steps}
+    for step_index, step in enumerate(draft.steps):
+        for argument_index, argument in enumerate(step.arguments):
             if argument.from_step is None:
                 continue
+
+            def reject(code, branch, *, model=False):
+                failure = (ValidationFailure(Layer.MODEL, code) if model else NeedsReview(code))
+                failure.diagnostic.reference = ReferenceDiagnostic(
+                    branch=branch, step_index=step_index, argument_index=argument_index)
+                raise failure
+
             try:
                 validate_selector(argument.select)
             except (TypeError, ValueError):
-                raise ValidationFailure(Layer.MODEL, "MODEL_SCHEMA_GENERIC_REFERENCE") from None
+                reject("MODEL_SCHEMA_GENERIC_REFERENCE", "SELECTOR_SYNTAX", model=True)
             producer = previous.get(argument.from_step)
             policy = policies.get(step.policy_id)
             if producer is None:
-                raise ValidationFailure(Layer.MODEL, "MODEL_SCHEMA_GENERIC_REFERENCE")
+                reject("MODEL_SCHEMA_GENERIC_REFERENCE", "SOURCE_NOT_PREVIOUS"
+                       if argument.from_step in step_ids else "SOURCE_UNKNOWN", model=True)
             if policy is None:
-                raise NeedsReview("POLICY_NOT_APPROVED")
+                reject("POLICY_NOT_APPROVED", "CONSUMER_POLICY")
             if policy.get("operation_id", step.operation_id) != step.operation_id:
-                raise NeedsReview("POLICY_SCOPE_MISMATCH")
+                reject("POLICY_SCOPE_MISMATCH", "CONSUMER_OPERATION")
             else:
                 rules = [r for r in policy.get("binding_rules", [])
                          if (r["location"], r["name"]) == (argument.location, argument.name)]
                 if not rules:
                     if policy.get("closed_arguments", False):
-                        raise NeedsReview("POLICY_ARGUMENT_MISMATCH")
+                        reject("POLICY_ARGUMENT_MISMATCH", "ARGUMENT_SLOT")
                 else:
                     rule = rules[0]
                     source_policy = policies.get(rule.get("source_policy_id"))
                     if rule.get("literal_schema") is not None:
-                        raise NeedsReview("POLICY_LITERAL_REQUIRED")
+                        reject("POLICY_LITERAL_REQUIRED", "LITERAL_SLOT")
                     elif rule.get("source_policy_id") is not None:
-                        valid = bool(source_policy
-                            and producer.policy_id == rule["source_policy_id"]
-                            and producer.operation_id == source_policy["operation_id"]
-                            and argument.select == rule["source_selector"])
-                        if not valid:
-                            raise NeedsReview("POLICY_DEPENDENCY_MISMATCH")
+                        if not source_policy or producer.policy_id != rule["source_policy_id"]:
+                            reject("POLICY_DEPENDENCY_MISMATCH", "SOURCE_POLICY")
+                        if producer.operation_id != source_policy["operation_id"]:
+                            reject("POLICY_DEPENDENCY_MISMATCH", "SOURCE_OPERATION")
+                        if argument.select != rule["source_selector"]:
+                            reject("POLICY_DEPENDENCY_MISMATCH", "SELECTOR_POLICY")
         previous[step.id] = step

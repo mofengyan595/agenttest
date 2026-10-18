@@ -1,0 +1,32 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "GD1201", "resource": "dispatches",
+      "create": "registerDispatch", "read": "inspectDispatch", "path_key": "dispatch_key",
+      "query": {"view": "audit"},
+      "body": {"description": "新建配送核对", "options": {"fragile": false, "level": 3}},
+      "reference_selector": "$.allocation.reference.key",
+      "reference_response": {"allocation": {"reference": {"key": "$RESOURCE"}}}
+    },
+    {
+      "case_id": "GD1202", "resource": "schedules",
+      "create": "registerSchedule", "read": "inspectSchedule", "path_key": "schedule_key",
+      "query": {"scope": "detail"},
+      "body": {"description": "新建排期核对", "durations": [1.25, 3.75]},
+      "reference_selector": "$.allocations[1].key",
+      "reference_response": {"allocations": [{"key": "$DECOY"}, {"key": "$RESOURCE"}]}
+    },
+    {
+      "case_id": "GD1203", "resource": "coupons",
+      "create": "registerCoupon", "read": "inspectCoupon", "path_key": "coupon_key",
+      "query": {"zone": "west"},
+      "body": {"description": "新建优惠核对", "available": true},
+      "reference_selector": "$",
+      "reference_response": "$RESOURCE"
+    }
+  ]
+}

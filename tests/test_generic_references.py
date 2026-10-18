@@ -68,6 +68,11 @@ def test_local_reference_gate_checks_slot_and_producer_without_repair(mutation):
         "literal_slot_reference": "POLICY_LITERAL_REQUIRED",
         "wrong_policy_slot": "POLICY_SCOPE_MISMATCH"}[mutation]
     assert parsed.model_dump(mode="json") == before
+    assert caught.value.diagnostic.reference.branch == {
+        "selector": "SELECTOR_POLICY", "forward": "SOURCE_NOT_PREVIOUS",
+        "producer_policy": "SOURCE_POLICY", "operation": "SOURCE_OPERATION",
+        "literal_slot_reference": "LITERAL_SLOT",
+        "wrong_policy_slot": "CONSUMER_OPERATION"}[mutation]
 
 
 def test_policy_specific_selector_cannot_borrow_another_visible_approved_selector():
@@ -136,6 +141,10 @@ async def test_provider_ignoring_schema_is_rejected_before_business_without_raw_
         intent_validator=task_validator(task, load_openapi(document), target, registry)).run()
     assert report.outcome.value == outcome and not calls
     assert report.diagnostic.code == diagnostic
+    assert report.diagnostic.reference.branch == (
+        "SELECTOR_SYNTAX" if outcome == "TOOL_ERROR" else "SELECTOR_POLICY")
+    assert report.diagnostic.reference.step_index == 1
+    assert report.diagnostic.reference.argument_index == 0
     assert "private-fragment" not in model.stats.model_dump_json()
 
 
