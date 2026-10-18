@@ -94,15 +94,43 @@ B用了更多Token、更多调查，弃权还更差。C的36/36只支持这个�
 
 ## 自然语言确认
 
-EE01–EE06的固定计划、健康配对与Mock验收已通过，Mock6/6；真实排期另行执行，每题一次，
-最多24次模型、同一冻结候选，不以固定计划替换失败规划。此处完成后单独补入结果，
-不与反馈子系统的36分母合并，也不通过新题调参。
+EE01–EE06的固定计划、健康配对与Mock验收通过，Mock6/6；在805dbe3上真实每题一次，
+六位置全部执行，完整[脱敏端到端结果](demo-evidence/evidence-e2e-results.json)与原封印
+`runs/evidence-e2e-real`保留。没有以固定计划替换失败规划，没有补跑。
+
+| 任务 | 实际结果 | 严格完成 |
+| --- | --- | ---: |
+| EE01健康双角色双资源课程 | INTENT_TASK_CONTRACT_PLAN_MISMATCH，请求前拒绝 | 0/1 |
+| EE02健康关闭后工单归属 | INTENT_TASK_CONTRACT_PLAN_MISMATCH，请求前拒绝 | 0/1 |
+| EE03课程访问泄露 | 原故障检出、有有效所有者证据，但最后引用受限角色的失败调查 | 0/1 |
+| EE04关闭后工单主题错误 | 原故障检出，症状结论与引用受支持 | 1/1 |
+| EE05课程GET不可用 | 原故障检出，不当持续回读断言被拒绝 | 0/1 |
+| EE06工单瞬时异常 | 原故障检出，不当持续回读断言被拒绝 | 0/1 |
+
+严格端到端完成 **1/6**，原业务指定检查判定正确4/6，健康业务完成0/2；
+两条健康计划在请求前拒绝，不能因安全门禁生效就算任务成功。
+四条故障任务保持ASSERTION_FAILED；只有EE04形成支持结论，两条证据不足的主动正确弃权0/2。
+冷检查确认EE01未满足前置资源早于主资源的顺序；EE02关闭后仍选择ticket_read_v1，
+没有选择已要求的ticket_closed_read_v1。这是初始规划失败，不能归为反馈结论能力的损失。
+
+EE03记录 `reports/76cb902efae740469466106e583ae8e0/report.json` 中，最后proposal结论为
+ACCESS_BOUNDARY_VIOLATION，引用的investigation_71da5f7a475348f09a245cfda0ac1c30是bob的失败调查；
+实际alice所有者PASS证据是investigation_f41c5c7fbcd54e77b55757a7d96bb6dd。
+这是可以确认的“结论选对但引用选错”，不再靠NEEDS_REVIEW默认值猜测。引擎未采信该提案。
+
+本排期15次真实模型、输入14,859/输出3,580/总18,439 Token全部已知，
+5次调查、15次原业务ASGI请求，各run工作流累计163.762秒。每run实际仍不超过四模型/两GET。
+与子系统分母分别报告，不合并算成功率。这也说明固定计划反馈实验不能代表自然语言规划可靠。
+
+本轮真实开发、验证、端到端合计 **219次模型/171,524 Token**，均有已知用量，
+不包含旧Goal、Mock或Codex会话自身用量。没有追加付费位置；credits与人工时间仍未知。
 
 ## 冷复核与边界
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/evaluate_evidence.py --verify runs/evidence-development-real
 .\.venv\Scripts\python.exe scripts/evaluate_evidence.py --verify runs/evidence-validation-real
+.\.venv\Scripts\python.exe scripts/evaluate_evidence.py --verify runs/evidence-e2e-real
 .\.venv\Scripts\python.exe scripts/audit_evidence_attribution.py --archive runs/evidence-validation-real --output runs/<new-attribution>.json
 .\.venv\Scripts\python.exe scripts/export_evidence_results.py --archive runs/evidence-validation-real --output runs/<new-public-results>.json
 ```
@@ -111,3 +139,11 @@ EE01–EE06的固定计划、健康配对与Mock验收已通过，Mock6/6；真�
 本轮真实第三方业务HTTP、Java/PocketBase/生产访问和数据库写入均0；没有RAG、多Agent、
 自动修复、写入重放或恢复。正式独立人审仍待真实外部输入，人工效率未测量。
 原有安全门禁继续执行；不因本报告结论而自动更改业务流程或开放更多模型权限。
+
+## 最终判断与冻结
+
+模型比原版本更会利用本轮可支持的证据：24/24对10/24；但正确弃权退步、端到端仅1/6。
+相对零模型固定调查没有证明额外价值，C在该公开规则范围内36/36且无模型成本。
+自然语言计划完整性、证据不足时的克制、相关工具选择和正确引用仍不可靠。
+实现与实验交付完成，正向质量目标未达成。范围冻结；进一步改进需新里程碑和新任务，
+不在已用EV/EE任务上继续调参。真实独立人审、人工节时与通用根因定位仍未验证。

@@ -4,9 +4,15 @@
 
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
-[交付导航与五分钟演示](docs/goal-delivery-guide.md) · [价值与成本报告](docs/goal-value-report.md) · [简历和面试材料](docs/goal-resume-interview.md)。
+[证据可靠性与模型价值](docs/evidence-value-report.md) · [交付导航与五分钟演示](docs/goal-delivery-guide.md) · [简历和面试材料](docs/goal-resume-interview.md)。
 
-2026-10-18 Goal 已实现引用诊断、有界反馈、待审配置和本地追踪；24 条开发任务各三轮全部执行。
+2026-10-18 新增量完成：固定计划三组各三轮，严格结论旧模型19/36、候选29/36、零模型规则36/36。
+候选支持类结论24/24，但证据不足的正确弃权5/12低于旧模型9/12；单独自然语言端到端仅1/6。
+因此未达到完整可靠性目标，未证明相对确定性调查的额外价值；失败、成本与冷复核均保留。
+[固定协议](docs/evidence-comparison-protocol.md) / [108位置完整结果](docs/demo-evidence/evidence-validation-results.json) / [6题端到端](docs/demo-evidence/evidence-e2e-results.json)。
+本轮219次模型、171,524 Token全已知，无真实第三方业务访问或数据库写入，独立人审与人工效率仍未验证。
+
+上一轮2026-10-18 Goal 已实现引用诊断、有界反馈、待审配置和本地追踪；24 条开发任务各三轮全部执行。
 配对故障检出 24/24，健康业务通过 27/30，严格模型结论审计 11/24；124 次模型、145,284 Token。
 固定 pytest 本轮更稳定，未证明人工节时；正式独立人审尚未完成。[完整统计](docs/demo-evidence/paired-live-summary.json)保留失败、两段排期及原 12/24 评分。
 
