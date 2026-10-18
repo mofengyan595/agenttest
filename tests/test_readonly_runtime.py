@@ -1,5 +1,6 @@
 import asyncio
 import json
+from uuid import UUID
 
 import httpx
 import pytest
@@ -101,7 +102,8 @@ async def test_pass_and_default_disabled_send_no_investigation(tmp_path, fault, 
 
 
 @pytest.mark.asyncio
-async def test_ownership_investigation_reuses_auth_and_independent_budget(tmp_path):
+async def test_ownership_investigation_reuses_auth_and_independent_budget(tmp_path, monkeypatch):
+    monkeypatch.setattr("agenttest.readonly_runtime.uuid4", lambda: UUID("a" * 32))
     executor, calls, analyzer = setup(tmp_path, max_requests=5)
     report = await executor.run(scenario(True))
     assert_original_preserved(executor, report, calls)
@@ -120,6 +122,23 @@ async def test_ownership_investigation_reuses_auth_and_independent_budget(tmp_pa
     raw = json.dumps(analyzer.contexts)
     for omitted in ("791", "线性代数", "session-private", "password", "base_url", "127.0.0.1"):
         assert omitted not in raw
+
+
+@pytest.mark.asyncio
+async def test_random_handle_containing_resource_digits_is_still_only_an_opaque_reference(
+    tmp_path, monkeypatch,
+):
+    handle = "e19527d359e5407c9e3d17862617913a"
+    assert "791" in handle
+    monkeypatch.setattr("agenttest.readonly_runtime.uuid4", lambda: UUID(handle))
+    executor, calls, analyzer = setup(tmp_path, max_requests=5)
+    report = await executor.run(scenario(True))
+    assert_original_preserved(executor, report, calls)
+    assert report.investigations[0].outcome == Outcome.PASS and len(calls) == 6
+    assert analyzer.contexts == [{"failure": {"outcome": "ASSERTION_FAILED", "status_code": 200,
+        "failed_checks": ["http_status"]}, "choices": [
+            {"capability_id": "course_owner_read", "role": "alice", "resource_ref": handle},
+            {"capability_id": "course_other_read", "role": "bob", "resource_ref": handle}]}]
 
 
 @pytest.mark.asyncio
