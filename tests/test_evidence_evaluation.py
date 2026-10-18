@@ -52,3 +52,37 @@ def test_task_semantics_include_real_phase_and_dependency_changes():
     assert any(any(s.operation_id == "closeTicket" for s in p.steps) and
                any(s.policy_id == "ticket_closed_read_v1" for s in p.steps) for p in plans)
     assert any(p.steps[0].operation_id == "listTickets" for p in plans)
+
+
+def test_mock_fixture_requires_http_checks_before_corroborating_fields():
+    from agenttest.evidence_evaluation import mock_decision
+
+    check = {"kind": "equals", "selector": "$.name", "passed": False}
+    failure = dict(ref="original", operation_id="read", role="owner", checks=[check,
+        dict(kind="http_status", selector=None, passed=False, expected=[200], actual=503)])
+    read = dict(failure, ref="read1", outcome="ASSERTION_FAILED")
+    action = mock_decision(dict(failure=failure, evidence=[read], choices=[], finish_required=True))
+    assert action["finding"] == "EVIDENCE_INSUFFICIENT"
+
+
+def test_scoring_identity_separates_mock_fixture_from_rules():
+    from agenttest.evidence_evaluation import scoring_rules_identity
+
+    source = ("def score_feedback(): return False\n"
+              "def evaluation_row(): return 1\n"
+              "def summary(): return 2\n"
+              "def mock_decision(): return 3\n")
+    assert scoring_rules_identity(source) == scoring_rules_identity(source.replace(
+        "return 3", "return 4"))
+    assert scoring_rules_identity(source) != scoring_rules_identity(source.replace(
+        "return False", "return True"))
+
+
+def test_git_source_decodes_utf8_independently_of_console(monkeypatch):
+    from types import SimpleNamespace
+
+    from agenttest import evidence_evaluation
+
+    monkeypatch.setattr(evidence_evaluation.subprocess, "run", lambda *a, **kw:
+        SimpleNamespace(stdout="中文源码".encode("utf-8")))
+    assert evidence_evaluation.git_source("sha", "source.py") == "中文源码"

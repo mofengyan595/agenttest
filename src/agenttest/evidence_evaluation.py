@@ -1,6 +1,8 @@
 """Frozen A/B/C feedback comparison and cold scoring, on disposable ASGI targets only."""
 
+import ast
 import json
+import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +31,34 @@ from agenttest.report import Outcome, ReportStore, fingerprint
 from agenttest.task_contract import task_validator
 
 GRADING_VERSION = "evidence_strict_v1"
+RUNTIME_FILES = ["feedback.py", "feedback_runtime.py", "readonly_runtime.py", "executor.py",
+                 "verifier.py", "policies.py", "workflow.py", "evidence_context.py",
+                 "evidence_control.py", "evidence_tasks.py"]
+
+
+def scoring_rules_identity(source):
+    """Freeze scoring rules independently of the runner's Mock completion fixture."""
+    names = {"score_feedback", "evaluation_row", "summary"}
+    nodes = [ast.dump(node, include_attributes=False) for node in ast.parse(source).body
+             if isinstance(node, ast.FunctionDef) and node.name in names]
+    if len(nodes) != len(names):
+        raise ValueError("Incomplete scoring source")
+    return fingerprint([GRADING_VERSION, nodes])
+
+
+def runtime_identity(commit=None):
+    def content(name):
+        path = "src/agenttest/" + name
+        if commit:
+            return git_source(commit, path).strip()
+        return (PROJECT_ROOT / path).read_text(encoding="utf-8").strip()
+    return {name: fingerprint(content(name)) for name in RUNTIME_FILES}
+
+
+def git_source(commit, path):
+    """Git stores UTF-8 source; never decode it using the Windows console code page."""
+    return subprocess.run(["git", "show", commit + ":" + path], cwd=PROJECT_ROOT,
+        capture_output=True, check=True, timeout=10).stdout.decode("utf-8")
 
 
 def mock_decision(context):
@@ -46,9 +76,12 @@ def mock_decision(context):
                     if c["kind"] != "http_status" and not c["passed"]}
         repeated = {(c["kind"], c["selector"]) for c in read["checks"]
                     if c["kind"] != "http_status" and not c["passed"]}
+        http_passed = all(any(c["kind"] == "http_status" and c["passed"]
+            for c in item["checks"]) and all(c["passed"] for c in item["checks"]
+                if c["kind"] == "http_status") for item in (failed, read))
         finding = ("ACCESS_BOUNDARY_VIOLATION" if access and read["outcome"] == "PASS"
             and read["role"] != failed["role"] else "PERSISTENT_READBACK_MISMATCH"
-            if original & repeated and read["role"] == failed["role"] else None)
+            if original & repeated and http_passed and read["role"] == failed["role"] else None)
         if finding:
             return dict(action="finish", selection=None, finding=finding,
                         evidence_refs=["original", read["ref"]])
@@ -251,6 +284,9 @@ async def run_evidence(output: Path, split: str, settings=None, *, mock_acceptan
         max_run_model_calls=4, grading_version=GRADING_VERSION, retries=0,
         source="real" if settings else "mock_transport")
     frozen["scorer_sha256"] = fingerprint(Path(__file__).read_bytes().hex())
+    frozen["scoring_rules_sha256"] = scoring_rules_identity(
+        Path(__file__).read_text(encoding="utf-8"))
+    frozen["runtime_sources"] = runtime_identity()
     frozen["feedback_action_schema_sha256"] = fingerprint(FeedbackAction.model_json_schema())
     frozen["candidate_schema_source_sha256"] = fingerprint(
         (PROJECT_ROOT / "src/agenttest/evidence_context.py").read_bytes().hex())
@@ -263,9 +299,19 @@ async def run_evidence(output: Path, split: str, settings=None, *, mock_acceptan
             read_json(mock_acceptance / "archive.json"))
         if prior_phase:
             previous_freeze = read_json(prior_phase / "freeze.json")
-            for key in ("prompts", "scorer_sha256", "candidate_schema_source_sha256", "model"):
+            for key in ("prompts", "candidate_schema_source_sha256", "model"):
                 if previous_freeze[key] != frozen[key]:
                     raise ValueError("Candidate/model changed after prior real phase")
+            previous_rules = previous_freeze.get("scoring_rules_sha256")
+            if previous_rules is None:
+                old_source = git_source(previous_freeze["git"]["commit"],
+                                        "src/agenttest/evidence_evaluation.py")
+                previous_rules = scoring_rules_identity(old_source)
+            previous_runtime = previous_freeze.get("runtime_sources") or runtime_identity(
+                previous_freeze["git"]["commit"])
+            if (previous_rules != frozen["scoring_rules_sha256"] or
+                    previous_runtime != frozen["runtime_sources"]):
+                raise ValueError("Scoring rules or candidate engine changed after real phase")
             frozen["prior_phase_seal_sha256"] = fingerprint(
                 read_json(prior_phase / "archive.json"))
     output.mkdir(parents=True, exist_ok=False)
