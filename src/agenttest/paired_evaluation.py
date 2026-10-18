@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -19,7 +20,7 @@ from agenttest.eval_v2.freeze import checkout_identity
 from agenttest.eval_v2.models import PlanEvidence
 from agenttest.eval_v2.scoring import capture_plan
 from agenttest.evaluation import save_evaluation
-from agenttest.evaluation_freeze import public_model_config
+from agenttest.evaluation_freeze import _git, public_model_config
 from agenttest.feedback import FEEDBACK_PROMPT, FeedbackAction, FeedbackModel
 from agenttest.feedback_check import stats_for
 from agenttest.investigation import FeedbackBudget, InvestigationConfig
@@ -143,10 +144,68 @@ def fixed_correct(case, row):
     return bool(row["checks"] and all(check[3] is True for check in row["checks"]))
 
 
-async def run_paired(output: Path, settings: ModelSettings | None = None):
+def known_schema_failure(report):
+    stats = stats_for(report)
+    called = [stat for stat in stats if stat.calls]
+    return bool(called and all(stat.http_status == 200 and stat.total_tokens is not None
+                               for stat in called) and report.feedback and
+        report.feedback.state == "TOOL_ERROR" and report.feedback.reason == "FEEDBACK_MODEL_ERROR"
+        and called[-1].diagnostic and called[-1].diagnostic.code.startswith("MODEL_SCHEMA_"))
+
+
+def stop_paid_schedule(report):
+    stats = [stat for stat in stats_for(report) if stat.calls]
+    if (any(stat.total_tokens is None or stat.http_status != 200 for stat in stats)
+            or report.outcome.value == "TEST_INFRA_ERROR"):
+        return True
+    return bool(report.feedback and report.feedback.state in {
+        "TOOL_ERROR", "TEST_INFRA_ERROR", "TIMEOUT", "CANCELLED"}
+        and not known_schema_failure(report))
+
+
+def unattempted_parent(parent: Path):
+    """Only an immutable known-usage format failure can release never-attempted positions."""
+    verify_paired(parent)
+    result = read_json(parent / "results.json")
+    attempted = [row for row in result["results"] if row.get("run_id")]
+    if not attempted or len(attempted) == 72:
+        raise ValueError("No known failed parent with unattempted positions")
+    store = ReportStore(parent / "reports")
+    for row in attempted:
+        report = store.read(row["run_id"])
+        if (not row["usage_known"] or any(stat.calls and (stat.total_tokens is None or
+                stat.http_status != 200) for stat in stats_for(report))):
+            raise ValueError("Unknown or transport usage cannot release paid positions")
+    if not known_schema_failure(store.read(attempted[-1]["run_id"])):
+        raise ValueError("Only a known model schema failure permits a new schedule")
+    return result
+
+
+def match_parent_protocol(current, prior):
+    keys = ("cases", "rounds", "order", "source", "tasks", "contexts", "capabilities", "model",
+        "authority", "planner_prompt_sha256", "planning_requests", "feedback_prompt_sha256",
+        "feedback_schema_sha256", "max_calls", "max_tokens")
+    if any(current[key] != prior[key] for key in keys):
+        raise ValueError("Parent model, tasks or runtime protocol changed")
+    changes = _git(PROJECT_ROOT, "diff", "--name-only", prior["git"]["commit"], "HEAD",
+                   "--", "src/agenttest").splitlines()
+    if set(changes) - {"src/agenttest/paired_evaluation.py"}:
+        raise ValueError("Parent execution engine changed")
+
+
+async def run_paired(output: Path, settings: ModelSettings | None = None,
+                     *, unattempted_from: Path | None = None):
     from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
     private_output(PROJECT_ROOT, output)
+    prior_result = prior_freeze = None
+    if unattempted_from:
+        private_output(PROJECT_ROOT, unattempted_from)
+        if (output.resolve().is_relative_to(unattempted_from.resolve()) or
+                unattempted_from.resolve().is_relative_to(output.resolve())):
+            raise ValueError("New schedule must be separate from the parent archive")
+        prior_result = unattempted_parent(unattempted_from)
+        prior_freeze = read_json(unattempted_from / "freeze.json")
     output.mkdir(parents=True, exist_ok=False)
     identity = checkout_identity(PROJECT_ROOT)
     if settings and identity["worktree_status"]:
@@ -160,7 +219,7 @@ async def run_paired(output: Path, settings: ModelSettings | None = None):
     source = "real" if settings else "mock_transport"
     authority = InvestigationConfig(enabled=True, feedback=FeedbackBudget(timeout=180.0))
     cases = paired_cases()
-    frozen = {"schema_version": "agenttest.paired-development.v1", "git": identity,
+    frozen = {"schema_version": "agenttest.paired-development.v2", "git": identity,
         "cases": cases, "rounds": 3, "order": "round_then_case", "source": source,
         "tasks": {}, "contexts": {}, "capabilities": {},
         "model": public_model_config(selected), "authority": authority.model_dump(mode="json"),
@@ -170,7 +229,8 @@ async def run_paired(output: Path, settings: ModelSettings | None = None):
         "max_calls": 288,
         "max_tokens": 288 * (selected.max_input_tokens + selected.max_output_tokens),
         "no_implicit_retries": True, "stop_on_unknown_usage": True,
-        "known_preflight_rejections_continue": True, "human_reviewed": 0}
+        "known_preflight_rejections_continue": True, "human_reviewed": 0,
+        "known_model_schema_failure": "STOP_RUN_CONTINUE_NEXT_UNUSED_POSITION"}
     for case in cases:
         _, doc, target, policies, _, task, _, capabilities = paired_inputs(case)
         frozen["tasks"][case["id"]] = task.model_dump(mode="json")
@@ -181,6 +241,28 @@ async def run_paired(output: Path, settings: ModelSettings | None = None):
         request = OpenAICompatiblePlanner(selected, profile="generic").prepare_request(
             frozen["contexts"][case["id"]])
         frozen["planning_requests"][case["id"]] = fingerprint(request.hex())
+    prior_rows = {}
+    if prior_result:
+        match_parent_protocol(frozen, prior_freeze)
+        prior_rows = {(row["round"], row["case_id"]): row for row in prior_result["results"]
+                      if row["run_id"]}
+        frozen["parent"] = {"commit": prior_freeze["git"]["commit"],
+            "seal_sha256": fingerprint((unattempted_from / "archive.json").read_bytes().hex()),
+            "freeze_sha256": fingerprint(prior_freeze), "results_sha256": fingerprint(prior_result),
+            "inherited_positions": len(prior_rows), "new_positions": 72-len(prior_rows),
+            "new_max_calls": 4 * (72-len(prior_rows)),
+            "new_max_tokens": 4 * (72-len(prior_rows)) * (
+                selected.max_input_tokens + selected.max_output_tokens),
+            "reason": "KNOWN_SCHEMA_FAILURE_NO_RETRY_OF_ATTEMPTED_POSITION"}
+        for name in ("archive.json", "freeze.json", "results.json"):
+            shutil.copyfile(unattempted_from / name, output / ("prior-" + name))
+        ids = {row[key] for row in prior_rows.values() for key in ("run_id", "healthy_run_id")
+               if row[key]}
+        for run_id in ids:
+            destination = output / "reports" / run_id
+            destination.mkdir(parents=True)
+            shutil.copyfile(unattempted_from / "reports" / run_id / "report.json",
+                            destination / "report.json")
     save_evaluation(frozen, output / "freeze.json")
 
     def guard():
@@ -189,21 +271,34 @@ async def run_paired(output: Path, settings: ModelSettings | None = None):
 
     started = time.perf_counter()
     env = {**os.environ, "AGENTTEST_PAIRED_OUTPUT": str(output.absolute())}
-    with (output / "fixed-pytest.log").open("w", encoding="utf-8") as log:
-        completed = subprocess.run([sys.executable, "-m", "pytest",
-            "scripts/paired_fixed_pytest.py", "-q", "--tb=no", "--basetemp",
-            str(output / "pytest-temp"), "--junitxml", str(output / "fixed-junit.xml")],
-            cwd=PROJECT_ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600,
-            check=False)
+    if prior_result:
+        names = ["fixed-pytest.log", "fixed-junit.xml"] + [
+            f"fixed-{r}-{case['id']}.json" for r in range(1, 4) for case in cases]
+        for name in names:
+            shutil.copyfile(unattempted_from / name, output / name)
+        fixed_exit = 1
+    else:
+        with (output / "fixed-pytest.log").open("w", encoding="utf-8") as log:
+            completed = subprocess.run([sys.executable, "-m", "pytest",
+                "scripts/paired_fixed_pytest.py", "-q", "--tb=no", "--basetemp",
+                str(output / "pytest-temp"), "--junitxml", str(output / "fixed-junit.xml")],
+                cwd=PROJECT_ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=600,
+                check=False)
+        fixed_exit = completed.returncode
     fixed = [read_json(output / f"fixed-{r}-{case['id']}.json")
              for r in range(1, 4) for case in cases]
-    if (completed.returncode != 1 or not all(fixed_correct(case, row)
+    if (fixed_exit != 1 or not all(fixed_correct(case, row)
             for (_, case), row in zip([(r, c) for r in range(1, 4) for c in cases], fixed))):
         raise ValueError("Fixed pytest baseline did not preserve expected failures")
     rows, stop = [], None
     for round_index in range(1, 4):
         for case in cases:
             guard()
+            inherited = prior_rows.get((round_index, case["id"]))
+            if inherited:
+                rows.append(inherited)
+                save_evaluation(inherited, output / f"agent-{round_index}-{case['id']}.json")
+                continue
             if stop:
                 rows.append({"case_id": case["id"], "round": round_index,
                              "run_id": None, "not_attempted_reason": stop})
@@ -258,18 +353,16 @@ async def run_paired(output: Path, settings: ModelSettings | None = None):
             save_evaluation(item, output / f"agent-{round_index}-{case['id']}.json")
             print(json.dumps({"position": len(rows), "case_id": case["id"],
                 "outcome": item["outcome"], "tokens": item["total_tokens"]}), flush=True)
-            stats = stats_for(report)
-            if (not item["usage_known"] or report.outcome.value == "TEST_INFRA_ERROR" or
-                any(stat.calls and stat.http_status != 200 for stat in stats) or
-                report.feedback and report.feedback.state in {"TOOL_ERROR", "TEST_INFRA_ERROR",
-                                                              "TIMEOUT", "CANCELLED"}):
+            if stop_paid_schedule(report):
                 stop = "UNKNOWN_USAGE_OR_TRANSPORT_INFRA_STOP"
             planner.output = None
     guard()
     artifacts = {name: fingerprint((output / name).read_bytes().hex())
                  for name in ("fixed-pytest.log", "fixed-junit.xml")}
+    elapsed = round((time.perf_counter()-started)*1000, 3)
     result = {**summarize(rows, fixed, source), "baseline_artifacts": artifacts, "elapsed_ms":
-        round((time.perf_counter()-started)*1000, 3), "results": rows, "fixed": fixed}
+        elapsed + (prior_result["elapsed_ms"] if prior_result else 0),
+        "results": rows, "fixed": fixed}
     save_evaluation(result, output / "results.json")
     (output / "summary.md").write_text("# 配对开发评估\n\n" + json.dumps(
         {k: v for k, v in result.items() if k not in {"results", "fixed"}},
@@ -283,6 +376,19 @@ def verify_paired(output: Path):
     if read_json(output / "archive.json")["files"] != inventory(output):
         raise ValueError("Paired archive changed")
     frozen, result = read_json(output / "freeze.json"), read_json(output / "results.json")
+    if frozen.get("parent"):
+        prior = read_json(output / "prior-results.json")
+        prior_freeze = read_json(output / "prior-freeze.json")
+        metadata = frozen["parent"]
+        if (fingerprint(prior) != metadata["results_sha256"] or
+            fingerprint(prior_freeze) != metadata["freeze_sha256"] or
+            fingerprint((output / "prior-archive.json").read_bytes().hex()) !=
+                metadata["seal_sha256"] or prior["fixed"] != result["fixed"]):
+            raise ValueError("Parent snapshots changed")
+        inherited = [row for row in prior["results"] if row["run_id"]]
+        if (len(inherited) != metadata["inherited_positions"] or any(
+                result["results"][prior["results"].index(row)] != row for row in inherited)):
+            raise ValueError("An attempted parent position was replaced")
     if result["baseline_artifacts"] != {name: fingerprint((output / name).read_bytes().hex())
             for name in ("fixed-pytest.log", "fixed-junit.xml")}:
         raise ValueError("Baseline log or JUnit changed")
