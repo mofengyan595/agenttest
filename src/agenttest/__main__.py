@@ -254,7 +254,8 @@ def main(argv: list[str] | None = None) -> int:
                 planner = FakeLLM(bounded_read(args.fake_plan).decode("utf-8"))
             feedback_options = {}
             if args.feedback_capabilities is not None:
-                from agenttest.feedback import FakeFeedback, FeedbackModel
+                from agenttest.evidence_context import EvidenceFeedbackModel
+                from agenttest.feedback import FakeFeedback
                 from agenttest.investigation import (
                     FeedbackBudget,
                     InvestigationConfig,
@@ -267,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
                     "investigation": InvestigationConfig(enabled=True, feedback=FeedbackBudget(
                         timeout=min(3 * args.model_timeout + 15, 180))),
                     "capabilities": capabilities,
-                    "analyzer": FeedbackModel(settings) if args.real else FakeFeedback(),
+                    "analyzer": EvidenceFeedbackModel(settings) if args.real else FakeFeedback(),
                 }
                 budget = budget.model_copy(update={
                     "workflow_timeout": min(4 * args.model_timeout + 30, 300)})

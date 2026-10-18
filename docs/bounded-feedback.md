@@ -30,7 +30,9 @@ flowchart LR
 报告保留 `feedback` 的决策序号、固定错误码、用量、耗时和结论引用，以及原
 `investigations` 的独立请求证据。模型请求前记账，HTTP 前记录 attempt；外部 tracing 关闭。
 上下文只含批准工具、HTTP 状态与检查类型／通过状态，没有响应字段值、凭据和内部目标。
-模型原始输出不落盘；不支持的模型结论不抄入报告。
+模型原始输出不落盘；不支持的模型结论不能升级为报告的可信 finding。
+证据可靠性候选可在独立 proposal 诊断中保留枚举结论、已知引用及选择是否获批，
+未知文本和未知证据ID不保存；public_context仅含发送前通过凭据检查的公开观测与批准关系。
 
 ## 能支持的结论
 
@@ -71,3 +73,11 @@ flowchart LR
 实现前核对了 [LangGraph Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)
 及[供应商接口](https://developer.ecnu.edu.cn/vitepress/llm/api/completions.html)，沿用锁定依赖。
 实际验证与准确版本见[Goal 检查点](goal-delivery-20261018.md)。
+
+## 证据可靠性候选
+
+新[三组协议](evidence-comparison-protocol.md)保留原FeedbackModel作为A。
+CLI真实反馈使用EvidenceFeedbackModel：从批准绑定及实际检查导出资源/操作/角色关系，
+明确工具对应操作、HTTP与字段检查用途；出站Schema枚举完整三元组和动作形状，支持结论
+必须同时引用original及一个已存在调查。没有向模型提供缺陷标签、评分结果或正确结论。
+最后仍经过原supported_finding，不修改原业务判定。零模型C复用同一个反馈执行入口。

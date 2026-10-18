@@ -103,6 +103,16 @@ class FeedbackDecisionEvidence(BaseModel):
     reason: str = Field(default="FEEDBACK_PENDING", pattern=r"^[A-Z][A-Z0-9_]{0,95}$")
     model_call: ModelCallStats | None = None
     elapsed_ms: float = 0
+    public_context: dict | None = None
+    proposal: dict | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_feedback_diagnostics(self, handler):
+        data = handler(self)
+        for name in ("public_context", "proposal"):
+            if getattr(self, name) is None:
+                data.pop(name, None)
+        return data
 
 
 class FeedbackResult(BaseModel):

@@ -130,9 +130,18 @@ async def run_feedback(executor: "Executor", client: httpx.AsyncClient, report: 
             "evidence": [evidence_summary(r.step_id, r, r.role) for r in completed],
             "remaining": {"model_calls": budget.max_model_calls - calls,
                           "requests": max(0, requests["max_requests"] - requests["requests"])}}
+        enhanced = getattr(executor.analyzer, "evidence_relations", False)
+        if enhanced:
+            from agenttest.evidence_context import relations
+
+            context = relations(context, parent, failed, completed, approved, source_roles)
         if vault.contains_secret(context):
             return stop("FEEDBACK_CONTEXT_REJECTED")
         decision = FeedbackDecisionEvidence(index=calls)
+        if enhanced:
+            import copy
+
+            decision.public_context = copy.deepcopy(context)
         trace.decisions.append(decision)
         calls += 1
         trace.model_calls_used = calls
@@ -147,6 +156,10 @@ async def run_feedback(executor: "Executor", client: httpx.AsyncClient, report: 
             if vault.contains_secret(raw):
                 return stop("FEEDBACK_ACTION_REJECTED")
             action = FeedbackAction.model_validate(bounded_json(raw, 8192))
+            if enhanced:
+                from agenttest.evidence_context import proposal_summary
+
+                decision.proposal = proposal_summary(action.model_dump(), context)
             decision.action, decision.reason = action.action, "FEEDBACK_ACTION_RECEIVED"
             return {"route": "validate"}
         except PlannerFailure:
@@ -157,6 +170,8 @@ async def run_feedback(executor: "Executor", client: httpx.AsyncClient, report: 
             return stop("FEEDBACK_ACTION_REJECTED")
         finally:
             raw = None
+            if enhanced and decision.proposal is None:
+                decision.proposal = getattr(executor.analyzer, "last_proposal", None)
             decision.elapsed_ms = round((time.perf_counter() - call_started) * 1000, 3)
             stats = getattr(executor.analyzer, "stats", None)
             if isinstance(stats, ModelCallStats):
