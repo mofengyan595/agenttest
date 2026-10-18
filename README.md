@@ -14,6 +14,8 @@
 
 [通用参数名约束](docs/argument-slots-20261017.md)按接口和位置限定模型参数，并在本地重验，合法的 body 字段仍支持。三条新合成任务已留下七份完整真实模型记录，六份任务完成、一份引用校验拒绝；另有一个中断位置和一个未启动位置，已知 10,603 Token、总用量未知。[脱敏统计](docs/demo-evidence/argument-slots-live-summary.json)保留完整分母，旧 PocketBase 失败不改。
 
+后续[引用字段约束](docs/reference-selectors-20261018.md)从批准策略限制可选响应字段，并核对先前来源步骤；三条全新任务覆盖嵌套、数组索引和整个响应。原授权与断言门禁不变，旧失败和未知用量继续保留。
+
 **新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。

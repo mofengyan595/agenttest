@@ -1,0 +1,32 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "cases": [
+    {
+      "case_id": "GR1101", "resource": "reservations",
+      "create": "prepareReservation", "read": "inspectReservation", "path_key": "reservation_key",
+      "query": {"lane": "review"},
+      "body": {"topic": "引用核对", "context": {"priority": 2, "active": true}},
+      "reference_selector": "$.receipt.locator.value",
+      "reference_response": {"receipt": {"locator": {"value": "$RESOURCE"}}}
+    },
+    {
+      "case_id": "GR1102", "resource": "packages",
+      "create": "allocatePackage", "read": "inspectPackage", "path_key": "package_id",
+      "query": {"include": "brief"},
+      "body": {"label": "索引一", "weights": [0.25, 1.5]},
+      "reference_selector": "$.entries[1].resource",
+      "reference_response": {"entries": [{"resource": "$DECOY"}, {"resource": "$RESOURCE"}]}
+    },
+    {
+      "case_id": "GR1103", "resource": "vouchers",
+      "create": "issueVoucher", "read": "inspectVoucher", "path_key": "voucher_id",
+      "query": {"region": "north"},
+      "body": {"note": "根引用", "enabled": false},
+      "reference_selector": "$",
+      "reference_response": "$RESOURCE"
+    }
+  ]
+}

@@ -109,3 +109,23 @@ def strip_schema_titles(schema: dict) -> None:
         strip_schema_titles(child)
     if "items" in schema:
         strip_schema_titles(schema["items"])
+
+
+def short_container_refs(schema: dict) -> None:
+    """Shorten wire-only definition identifiers, preserving every referenced constraint."""
+    aliases = {"#/$defs/" + name: "#/$defs/C" + str(index)
+               for index, name in enumerate(("LiteralArray", "LiteralMember", "LiteralObject"))}
+    for original, alias in aliases.items():
+        schema["$defs"][alias.rsplit("/", 1)[1]] = schema["$defs"].pop(original.rsplit("/", 1)[1])
+
+    def replace(value):
+        if isinstance(value, dict):
+            if value.get("$ref") in aliases:
+                value["$ref"] = aliases[value["$ref"]]
+            for child in value.values():
+                replace(child)
+        elif isinstance(value, list):
+            for child in value:
+                replace(child)
+
+    replace(schema)

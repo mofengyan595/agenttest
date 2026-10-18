@@ -27,9 +27,19 @@ from agenttest.safety import TargetConfig
 from agenttest.task_contract import TaskContract, task_validator
 
 CASE_IDS = ("GA1001", "GA1002", "GA1003")
-SCHEDULE = [(key, 0) for key in CASE_IDS] + [
-    (key, round_) for round_ in (1, 2, 3) for key in CASE_IDS]
+REFERENCE_IDS = ("GR1101", "GR1102", "GR1103")
 DATA = PROJECT_ROOT / "examples/argument-slots-development.json"
+REFERENCE_DATA = PROJECT_ROOT / "examples/reference-selectors-development.json"
+
+
+def schedule(case_ids):
+    if tuple(case_ids) not in {CASE_IDS, REFERENCE_IDS}:
+        raise ValueError("Unknown development task set")
+    return [(key, 0) for key in case_ids] + [
+        (key, round_) for round_ in (1, 2, 3) for key in case_ids]
+
+
+SCHEDULE = schedule(CASE_IDS)
 
 
 def value_schema(value):
@@ -41,15 +51,25 @@ def value_schema(value):
 
 
 def case_inputs(case_id):
-    data = read_json(DATA)
+    return load_inputs(DATA, CASE_IDS, case_id)
+
+
+def reference_inputs(case_id):
+    return load_inputs(REFERENCE_DATA, REFERENCE_IDS, case_id)
+
+
+def load_inputs(path, case_ids, case_id):
+    data = read_json(path)
     if (data["classification"] != "DEVELOPMENT_ONLY" or data["review_status"] != "UNREVIEWED"
             or data["human_reviewed"] != 0 or data["formal_eval_v2_score"] is not None
-            or tuple(c["case_id"] for c in data["cases"]) != CASE_IDS):
+            or tuple(c["case_id"] for c in data["cases"]) != case_ids):
         raise ValueError("Invalid slot development tasks")
     item = next((case for case in data["cases"] if case["case_id"] == case_id), None)
     if item is None:
         raise ValueError("Unknown slot development task")
     create, read, path_key = item["create"], item["read"], item["path_key"]
+    selector = item.get("reference_selector", "$.key")
+    custom_response = "reference_response" in item
     path, text = "/v1/" + item["resource"], {"type": "string", "maxLength": 100}
     body_schema = value_schema(item["body"])
     document = json.dumps({"openapi": "3.0.3", "info": {"title": "Slot task", "version": "1"},
@@ -67,9 +87,9 @@ def case_inputs(case_id):
         "business_scenario": target.business_scenario, "closed_arguments": True,
         "planning_purpose": "Create one resource preserving each supplied top-level body field.",
         "assertions": {"reviewed": True, "source": "synthetic slot development fixture",
-            "status": {"codes": [201]}, "fields": [{"select": "$.key", "operator": "exists"}]},
+            "status": {"codes": [201]}, "fields": [{"select": selector, "operator": "exists"}]},
         "binding_rules": [{"location": "body", "name": name, "literal_schema": schema,
-                           "response_selector": "$." + name}
+                           "response_selector": None if custom_response else "$." + name}
                           for name, schema in body_schema["properties"].items()]},
         {"id": read + "_v1", "operation_id": read, "roles": [None],
         "business_scenario": target.business_scenario, "closed_arguments": True,
@@ -77,19 +97,20 @@ def case_inputs(case_id):
         "assertions": {"reviewed": True, "source": "synthetic slot development fixture",
                        "status": {"codes": [200]}},
         "binding_rules": [{"location": "path_parameters", "name": path_key,
-            "source_policy_id": create + "_v1", "source_selector": "$.key",
+            "source_policy_id": create + "_v1", "source_selector": selector,
             "role_relation": "anonymous", "response_selector": "$.key",
             "source_body_equalities": {"$." + name: name for name in item["body"]}},
             *[{"location": "query", "name": name, "literal_schema": text,
                "response_selector": "$.query." + name} for name in item["query"]]]}]
     registry = PolicyRegistry.from_json(json.dumps(policies))
     task_text = ("创建一条资源，请求体严格为 " + json.dumps(item["body"], ensure_ascii=False)
-        + "；使用创建响应的 key 作为路径参数读取同一条，查询参数严格为 "
+        + "；使用创建响应的 " + (selector if custom_response else "key")
+        + " 作为路径参数读取同一条，查询参数严格为 "
         + json.dumps(item["query"], ensure_ascii=False) + "，核对所有原始字段和查询参数。")
     arguments = [[{"location": "body", "name": name, "value": value}
                   for name, value in item["body"].items()],
                  [{"location": "path_parameters", "name": path_key, "source": "created",
-                   "selector": "$.key"}, *[{"location": "query", "name": name, "value": value}
+                   "selector": selector}, *[{"location": "query", "name": name, "value": value}
                                            for name, value in item["query"].items()]]]
     steps = [{"key": key, "operation_id": operation, "role": None, "policy_id": operation + "_v1",
               "arguments": args, "goals": ["preserved"]}
@@ -108,11 +129,20 @@ def case_inputs(case_id):
              for arg in step["arguments"]]} for step in steps]})
     records = {}
 
+    def envelope(value, key):
+        if isinstance(value, dict):
+            return {name: envelope(child, key) for name, child in value.items()}
+        if isinstance(value, list):
+            return [envelope(child, key) for child in value]
+        return {"$RESOURCE": key, "$DECOY": "decoy-" + key}.get(value, value)
+
     def response(request):
         if request.method == "POST" and request.url.path == path:
             key = "slot-" + secrets.token_hex(6)
             records[key] = json.loads(request.content)
-            return httpx.Response(201, json={"key": key, **records[key]})
+            payload = (envelope(item["reference_response"], key) if custom_response
+                       else {"key": key, **records[key]})
+            return httpx.Response(201, json=payload)
         key = request.url.path.removeprefix(path + "/")
         if request.method == "GET" and key in records:
             return httpx.Response(200, json={"key": key, **copy.deepcopy(records[key]),
@@ -138,9 +168,9 @@ def row_from_report(case_id, round_, task, report, plan):
         "total_tokens": report.model_call.total_tokens if report.model_call else None}
 
 
-def summarize(source, rows):
+def summarize(source, rows, case_ids=CASE_IDS):
     if (source not in {"mock_transport", "real"}
-            or [(r["case_id"], r["round"]) for r in rows] != SCHEDULE):
+            or [(r["case_id"], r["round"]) for r in rows] != schedule(case_ids)):
         raise ValueError("Incomplete slot task denominator")
     if any(type(r["model_calls"]) is not int or r["model_calls"] not in {0, 1}
            or not r["round"] and r["model_calls"] for r in rows):
@@ -153,7 +183,7 @@ def summarize(source, rows):
         "controls_passed": sum(r["verified"] for r in rows if not r["round"]),
         "generation_successes": sum(r["verified"] for r in model),
         "per_case": {key: sum(r["verified"] for r in model if r["case_id"] == key)
-                     for key in CASE_IDS},
+                     for key in case_ids},
         "model_calls": sum(r["model_calls"] for r in model),
         "real_model_calls": sum(r["model_calls"] for r in model) if source == "real" else 0,
         "not_attempted": sum(r["run_id"] is None for r in rows),
@@ -168,12 +198,14 @@ def verify_slots(directory):
     if read_json(directory / "archive.json")["files"] != inventory(directory):
         raise ValueError("Slot archive changed")
     frozen, result = read_json(directory / "freeze.json"), read_json(directory / "results.json")
-    if frozen["schedule"] != [list(position) for position in SCHEDULE] or frozen["max_calls"] != 9:
+    case_ids = tuple(frozen.get("case_ids", CASE_IDS))
+    if (frozen["schedule"] != [list(position) for position in schedule(case_ids)]
+            or frozen["max_calls"] != 9):
         raise ValueError("Changed slot schedule")
-    for key in CASE_IDS:
+    for key in case_ids:
         if fingerprint(read_json(directory / (key + "-request.json"))) != frozen["requests"][key]:
             raise ValueError("Changed frozen request")
-    if summarize(frozen["source"], result["results"]) != result:
+    if summarize(frozen["source"], result["results"], case_ids) != result:
         raise ValueError("Slot summary mismatch")
     used = set()
     for row in result["results"]:
@@ -204,7 +236,7 @@ def missing_row(key, round_, reason):
             "requests": 0, "model_calls": 0, "total_tokens": None}
 
 
-async def check_slots(output: Path, settings: ModelSettings | None = None):
+async def check_slots(output: Path, settings: ModelSettings | None = None, *, references=False):
     from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
     if settings and (settings.model != "ecnu-plus" or settings.max_input_tokens > 20_000
@@ -215,12 +247,16 @@ async def check_slots(output: Path, settings: ModelSettings | None = None):
     source = "real" if settings else "mock_transport"
     selected = settings or ModelSettings(model="offline-slots", base_url="https://offline.invalid/v1",
                                          api_key="synthetic-slot-credential")
+    case_ids, factory = (REFERENCE_IDS, reference_inputs) if references else (CASE_IDS, case_inputs)
+    positions = schedule(case_ids)
     frozen = {"source": source, "git": checkout_identity(PROJECT_ROOT), "tasks": {}, "requests": {},
-              "schedule": SCHEDULE, "max_calls": 9,
+              "schedule": positions, "max_calls": 9,
               "reserved_token_ceiling": 9 * (
                   selected.max_input_tokens + selected.max_output_tokens)}
-    for key in CASE_IDS:
-        *_, task, draft, transport, context = case_inputs(key)
+    if references:
+        frozen["case_ids"] = list(case_ids)
+    for key in case_ids:
+        *_, task, draft, transport, context = factory(key)
         payload = OpenAICompatiblePlanner(selected, profile="generic").prepare_request(context)
         frozen["tasks"][key] = task.model_dump(mode="json")
         frozen["requests"][key] = fingerprint(json.loads(payload))
@@ -232,12 +268,12 @@ async def check_slots(output: Path, settings: ModelSettings | None = None):
             raise ValueError("Source changed during slot check")
 
     rows, stop, store = [], None, ReportStore(output / "reports")
-    for key, round_ in SCHEDULE:
+    for key, round_ in positions:
         if round_ and stop:
             rows.append(missing_row(key, round_, stop))
             continue
         guard()
-        document, target, registry, task, draft, transport, context = case_inputs(key)
+        document, target, registry, task, draft, transport, context = factory(key)
         if not round_:
             delegate = FakeLLM(draft.scenario().model_dump_json())
         else:
@@ -263,7 +299,7 @@ async def check_slots(output: Path, settings: ModelSettings | None = None):
         if round_ and (report.outcome == Outcome.TEST_INFRA_ERROR or row["total_tokens"] is None):
             stop = "MODEL_INFRASTRUCTURE_OR_UNKNOWN_USAGE"
     guard()
-    result = summarize(source, rows)
+    result = summarize(source, rows, case_ids)
     save_evaluation(result, output / "results.json")
     summary = {k: v for k, v in result.items() if k != "results"}
     (output / "summary.md").write_text("# 参数名约束开发验收\n\n" + json.dumps(

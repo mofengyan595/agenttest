@@ -362,7 +362,12 @@ class OpenAICompatiblePlanner:
                                if self._draft_type not in {PlannerDraft, GenericPlannerDraft} else
                                {"type": ["string", "null"], "enum": [*context["roles"], None]})
         if self._profile == "generic":
-            from agenttest.generic_arguments import constrain_generic_arguments, strip_schema_titles
+            from agenttest.generic_arguments import (
+                constrain_generic_arguments,
+                short_container_refs,
+                strip_schema_titles,
+            )
+            from agenttest.generic_references import reference_schema
 
             argument = schema["$defs"]["GenericDraftArgument"]
             argument["required"] = list(argument["properties"])
@@ -378,12 +383,21 @@ class OpenAICompatiblePlanner:
             container["properties"]["location"] = {"type": "string", "enum": ["body"]}
             for key in ("from_step", "select"):
                 reference["properties"][key] = {"type": "string"}
+            try:
+                selectors = reference_schema(context)
+            except (ValueError, KeyError, TypeError):
+                raise PlannerFailure(Outcome.NEEDS_REVIEW,
+                                     "MODEL_REFERENCE_INPUT_UNSUPPORTED") from None
+            if selectors is not None:
+                reference["properties"]["select"] = selectors
             # Operation/location slot branches supply these enums without duplication.
             for variant in (scalar, reference):
                 variant["properties"]["location"] = {"type": "string"}
-            schema["$defs"]["GenericDraftArgument"] = {"anyOf": [scalar, container, reference]}
+            schema["$defs"]["GenericDraftArgument"] = {"anyOf": [scalar, container] +
+                ([reference] if selectors is not None else [])}
             constrain_generic_arguments(schema, step_type, context, argument)
             strip_schema_titles(schema)
+            short_container_refs(schema)
         public = {key: value for key, value in context.items() if key != "plan_schema"}
         if self._profile == "mini_composed":
             from agenttest.composed_plan import (
@@ -483,7 +497,14 @@ class OpenAICompatiblePlanner:
             validate_composed_arguments(draft, context)
         if self._profile == "generic":
             from agenttest.generic_arguments import validate_generic_arguments
+            from agenttest.generic_references import validate_generic_references
+            from agenttest.policies import NeedsReview
 
             validate_generic_arguments(draft, context)
+            try:
+                validate_generic_references(draft, context)
+            except NeedsReview as exc:
+                raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_REFERENCE_NEEDS_REVIEW",
+                                     exc.diagnostic) from None
         self.stats.reason = "MODEL_OUTPUT_RECEIVED"
         return draft.scenario().model_dump_json()
