@@ -62,6 +62,8 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--max-output-tokens", type=int, default=2048)
         command.add_argument("--max-total-tokens", type=int, default=12_000)
         command.add_argument("--model-timeout", type=float, default=30.0)
+        command.add_argument("--feedback-capabilities", type=Path,
+                             help="操作员批准的只读能力文件；启用最多两次调查和三次反馈决策")
     for name in ("contract", "target", "policies"):
         agent.add_argument(f"--{name}", type=Path)
     agent.add_argument("--project", type=Path,
@@ -219,6 +221,25 @@ def main(argv: list[str] | None = None) -> int:
                                         workflow_timeout=min(settings.timeout + 90, 300))
             else:
                 planner = FakeLLM(bounded_read(args.fake_plan).decode("utf-8"))
+            feedback_options = {}
+            if args.feedback_capabilities is not None:
+                from agenttest.feedback import FakeFeedback, FeedbackModel
+                from agenttest.investigation import (
+                    FeedbackBudget,
+                    InvestigationConfig,
+                    ReadOnlyCapabilityRegistry,
+                )
+
+                capabilities = ReadOnlyCapabilityRegistry.from_json(
+                    bounded_read(args.feedback_capabilities))
+                feedback_options = {
+                    "investigation": InvestigationConfig(enabled=True, feedback=FeedbackBudget(
+                        timeout=min(3 * args.model_timeout + 15, 180))),
+                    "capabilities": capabilities,
+                    "analyzer": FeedbackModel(settings) if args.real else FakeFeedback(),
+                }
+                budget = budget.model_copy(update={
+                    "workflow_timeout": min(4 * args.model_timeout + 30, 300)})
             if args.command == "agent" and args.export_regression:
                 from agenttest.regression import RegressionCapture
 
@@ -228,13 +249,13 @@ def main(argv: list[str] | None = None) -> int:
                 from agenttest.natural_demo import run_natural_demo
 
                 result = asyncio.run(run_natural_demo(args.user_task, planner, store,
-                                                     fault=args.fault, budget=budget))
+                    fault=args.fault, budget=budget, **feedback_options))
             else:
                 result = asyncio.run(Workflow(
                     document, config, registry, planner, store,
                     budget=budget, user_task=args.user_task, intent_validator=validator,
                     **({"environ": project_environment}
-                       if project_inputs is not None else {})).run())
+                       if project_inputs is not None else {}), **feedback_options).run())
                 if capture is not None:
                     if result.outcome != Outcome.PASS:
                         regression_result = {"exported": False, "reason": "SOURCE_NOT_PASSED"}
@@ -277,6 +298,8 @@ def main(argv: list[str] | None = None) -> int:
             "steps": len(result.steps),
             "investigations": len(result.investigations),
             "report": str(store.root / result.run_id / "report.json"),
+            **({"feedback_state": result.feedback.state, "feedback_basis": result.feedback.basis}
+               if result.feedback is not None else {}),
             **({"regression": regression_result} if regression_result is not None else {}),
         }, ensure_ascii=False))
         if regression_error:

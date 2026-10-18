@@ -120,7 +120,7 @@ class Workflow:
             self._store.save(report)
 
         def reject(outcome: Outcome, reason: str) -> dict:
-            if report.investigations:
+            if report.investigations or report.feedback is not None:
                 # Post-execution tool/report failures cannot rewrite the original business result.
                 report.investigation_error = reason
             else:
@@ -336,7 +336,7 @@ class Workflow:
                 try:
                     self._store.save(report)
                 except OSError:
-                    if not report.investigations:
+                    if not report.investigations and report.feedback is None:
                         if not cancelled:
                             raise
                     else:

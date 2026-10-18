@@ -352,7 +352,6 @@ class OpenAICompatiblePlanner:
 
     def prepare_request(self, context: dict) -> bytes:
         """Encode and budget-check the exact request without opening a connection."""
-        settings = self._settings
         schema = self._draft_type.model_json_schema()
         step_type = schema["properties"]["steps"]["items"]["$ref"].rsplit("/", 1)[1]
         definitions = schema["$defs"][step_type]["properties"]
@@ -422,6 +421,12 @@ class OpenAICompatiblePlanner:
                 public["authentication_rules"] = composed_authentication_rules(context)
             except ValueError:
                 raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INPUT_REJECTED") from None
+        return self._encode_request(schema, public, prompt)
+
+    def _encode_request(self, schema: dict, public: dict, prompt: str,
+                        name: str = "agenttest_plan") -> bytes:
+        """Share the bounded transport envelope with read-only decision adapters."""
+        settings = self._settings
         separators = (",", ":") if self._profile == "generic" else None
         payload = {
             "model": settings.model, "store": False,
@@ -430,7 +435,7 @@ class OpenAICompatiblePlanner:
                              public, ensure_ascii=False, separators=separators)}],
             "max_completion_tokens": settings.max_output_tokens,
             "response_format": {"type": "json_schema", "json_schema": {
-                "name": "agenttest_plan", "strict": True, "schema": schema}},
+                "name": name, "strict": True, "schema": schema}},
         }
         if settings.protocol == "chatecnu":
             # School documentation specifies max_tokens and constraint decoding via json_schema.
@@ -498,7 +503,13 @@ class OpenAICompatiblePlanner:
         self.stats.output_sha256 = fingerprint(content)
         if settings.api_key.get_secret_value() in content:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_SECRET_OUTPUT")
-        draft = self._draft_type.model_validate(bounded_json(content, settings.max_response_bytes))
+        result = self._decode_output(content, context)
+        self.stats.reason = "MODEL_OUTPUT_RECEIVED"
+        return result
+
+    def _decode_output(self, content: str, context: dict) -> str:
+        draft = self._draft_type.model_validate(bounded_json(
+            content, self._settings.max_response_bytes))
         if not draft.steps:
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_NO_APPROVED_PLAN")
         if self._profile == "mini_composed":
@@ -516,5 +527,4 @@ class OpenAICompatiblePlanner:
             except NeedsReview as exc:
                 raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_REFERENCE_NEEDS_REVIEW",
                                      exc.diagnostic) from None
-        self.stats.reason = "MODEL_OUTPUT_RECEIVED"
         return draft.scenario().model_dump_json()

@@ -97,6 +97,29 @@ class ModelCallStats(BaseModel):
     reason: str | None = None
 
 
+class FeedbackDecisionEvidence(BaseModel):
+    index: int = Field(ge=0, le=2)
+    action: Literal["pending", "investigate", "finish", "rejected"] = "pending"
+    reason: str = Field(default="FEEDBACK_PENDING", pattern=r"^[A-Z][A-Z0-9_]{0,95}$")
+    model_call: ModelCallStats | None = None
+    elapsed_ms: float = 0
+
+
+class FeedbackResult(BaseModel):
+    state: Literal["PENDING", "SUPPORTED", "NEEDS_REVIEW", "BUDGET_EXHAUSTED",
+                   "TOOL_ERROR", "TEST_INFRA_ERROR", "TIMEOUT", "CANCELLED"] = "PENDING"
+    reason: str = Field(default="FEEDBACK_PENDING", pattern=r"^[A-Z][A-Z0-9_]{0,95}$")
+    finding: Literal["ACCESS_BOUNDARY_VIOLATION", "PERSISTENT_READBACK_MISMATCH",
+                     "EVIDENCE_INSUFFICIENT"] = "EVIDENCE_INSUFFICIENT"
+    basis: Literal["证据不足，需人工复核。", "受限角色读取成功，同资源的所有者读取通过。",
+                   "同角色对同一资源的复核重复出现字段断言失败。"] = "证据不足，需人工复核。"
+    evidence_refs: list[str] = Field(default_factory=list, max_length=3)
+    decisions: list[FeedbackDecisionEvidence] = Field(default_factory=list, max_length=3)
+    requests_used: int = Field(default=0, ge=0, le=2)
+    model_calls_used: int = Field(default=0, ge=0, le=3)
+    elapsed_ms: float = 0
+
+
 class PlanStepEvidence(BaseModel):
     step_id: str
     operation_id: str
@@ -140,6 +163,7 @@ class RunReport(BaseModel):
     task_satisfied: bool | None = None
     investigations: list[InvestigationResult] = Field(default_factory=list)
     investigation_error: str | None = None
+    feedback: FeedbackResult | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
     @model_serializer(mode="wrap")
@@ -148,6 +172,8 @@ class RunReport(BaseModel):
         for name in ("target_config_sha256", "policy_registry_sha256"):
             if getattr(self, name) is None:
                 data.pop(name, None)
+        if self.feedback is None:
+            data.pop("feedback", None)
         return data
 
 

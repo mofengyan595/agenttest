@@ -58,11 +58,15 @@ async def test_preflight_rejection_and_abstention_skip_investigation(tmp_path, k
 
 
 @pytest.mark.asyncio
-async def test_workflow_timeout_during_analysis_preserves_business_failure(tmp_path):
+async def test_workflow_timeout_during_analysis_preserves_business_failure(tmp_path, monkeypatch):
+    from timeout_control import controlled_workflow_timeout
+
+    expire = controlled_workflow_timeout(monkeypatch, 2.0)
+
     class SlowAnalyzer(FakeAnalyzer):
         async def generate(self, context):
-            await asyncio.sleep(10)
-            return await super().generate(context)
+            expire()
+            await asyncio.Event().wait()
 
     plan, config, capabilities = investigation_inputs()
     report = await run_natural_demo(DEMO_TASK, FakeLLM(plan.model_dump_json()),

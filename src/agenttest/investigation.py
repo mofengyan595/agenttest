@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from agenttest.safety import StrictModel
 
@@ -54,9 +54,25 @@ class ReadOnlyCapabilityRegistry:
         return ReadOnlyCapabilityRegistry(self.entries())
 
 
+class FeedbackBudget(StrictModel):
+    """Three decisions plus the original single planning call fit the four-call run cap."""
+
+    max_requests: int = Field(default=2, ge=0, le=2)
+    max_model_calls: int = Field(default=3, ge=0, le=3)
+    timeout: float = Field(default=90.0, gt=0, le=180)
+
+
 class InvestigationConfig(StrictModel):
     enabled: bool = False
     budget: InvestigationBudget = Field(default_factory=InvestigationBudget)
+    feedback: FeedbackBudget | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_feedback(self, handler):
+        data = handler(self)
+        if self.feedback is None:
+            data.pop("feedback", None)
+        return data
 
 
 class AnalyzerSelection(StrictModel):

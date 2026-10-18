@@ -40,7 +40,8 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
             executor.config.model_dump(), executor.contract.model_dump(),
             executor.registry.digest(), [c.model_dump() for c in executor.capabilities.entries()],
             executor.investigation.model_dump(), executor.environ, scenario.model_dump(),
-            report.model_dump(exclude={"investigations", "investigation_error", "revision"}),
+            report.model_dump(exclude={
+                "investigations", "investigation_error", "feedback", "revision"}),
         ])
 
     frozen = digest()
@@ -95,6 +96,27 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
                     approved[(capability.id, role, handle)] = (step, operation, policy, source.id)
                 except ValueError:
                     continue
+    if authority.feedback is not None:
+        from agenttest.feedback_runtime import run_feedback
+
+        try:
+            await run_feedback(executor, client, report, state, vault, choices, approved,
+                               failed, parent, {key: step.role for key, step in previous.items()},
+                               digest, frozen, last_request)
+        finally:
+            for name in type(report).model_fields:
+                if name not in {"investigations", "investigation_error", "feedback", "revision"}:
+                    setattr(report, name, getattr(original, name))
+            executor.config, executor.contract, executor.registry = config, contract, registry
+            executor.capabilities = capabilities
+            executor.investigation, executor.environ = authority, environment
+            handles.clear()
+            approved.clear()
+            try:
+                executor.store.save(report)
+            except OSError:
+                report.investigation_error = "INVESTIGATION_REPORT_ERROR"
+        return
     if not choices:
         return
 

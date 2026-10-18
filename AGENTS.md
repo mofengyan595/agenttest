@@ -22,7 +22,8 @@ diagnostics, bounded read-only feedback decisions, reusable onboarding/observabi
 fresh paired development evaluation, and demonstration/interview delivery. Implement
 these sequentially using existing trusted components; the freeze below applies only
 to unrelated expansion. Goal-scoped verified commits/pushes and configured model
-calls are authorized. Total real-model ceiling: 300 requests / 1,000,000 tokens,
+calls are authorized. The operator removed the Goal-wide model request/token
+ceiling on 2026-10-18; keep frozen per-stage schedules and per-run safety budgets,
 no implicit retries; unknown usage stops subsequent paid calls. Formal independent
 evaluation still requires genuine independent human review. No new real Java or
 PocketBase writes, CourseInsight changes, RAG, multi-agent, repair or write recovery.

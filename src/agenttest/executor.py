@@ -186,7 +186,7 @@ class Executor:
                     await investigate(self, client, scenario, report, state, vault, authenticated,
                                       last_request=budget["last_request"])
         except asyncio.CancelledError:
-            if report.investigations:
+            if report.investigations or report.feedback is not None:
                 report.investigation_error = "RUN_CANCELLED"
             elif not report.completed:
                 if report.steps:
@@ -204,12 +204,15 @@ class Executor:
                 pass
             raise
         except TimeoutError:
-            if report.steps:
-                report.steps[-1].outcome = Outcome.TEST_INFRA_ERROR
-                report.steps[-1].reason = "RUN_TIMEOUT"
-            report.outcome, report.reason = Outcome.TEST_INFRA_ERROR, "RUN_TIMEOUT"
+            if report.feedback is not None:
+                report.investigation_error = "RUN_TIMEOUT"
+            else:
+                if report.steps:
+                    report.steps[-1].outcome = Outcome.TEST_INFRA_ERROR
+                    report.steps[-1].reason = "RUN_TIMEOUT"
+                report.outcome, report.reason = Outcome.TEST_INFRA_ERROR, "RUN_TIMEOUT"
         except Exception:
-            if report.investigations:
+            if report.investigations or report.feedback is not None:
                 report.investigation_error = "INVESTIGATION_REPORT_ERROR"
             else:
                 report.outcome, report.reason = Outcome.TOOL_ERROR, "TRANSPORT_SETUP_ERROR"
@@ -223,7 +226,7 @@ class Executor:
         try:
             self.store.save(report)
         except OSError:
-            if not report.investigations:
+            if not report.investigations and report.feedback is None:
                 raise
             report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         return report
@@ -342,7 +345,9 @@ class Executor:
                 raise ExecutionLimit("REQUEST_BODY_LIMIT")
             budget["requests"] += 1
             if isinstance(result, InvestigationResult):
-                result.requests_used = budget["requests"]
+                result.requests_used = len(result.attempts) + 1
+                if report.feedback is not None:
+                    report.feedback.requests_used = budget["requests"]
             budget["last_request"] = time.monotonic()
             evidence = AttemptEvidence(attempt=len(result.attempts) + 1, elapsed_ms=0.0)
             if isinstance(result, InvestigationResult):
