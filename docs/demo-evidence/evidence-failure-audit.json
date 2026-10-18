@@ -1,0 +1,3378 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "source_archive": "runs\\goal-paired-remaining",
+  "verification": {
+    "archive_verified": true,
+    "agent_positions": 72,
+    "fixed_positions": 72,
+    "attempted_reports": 72,
+    "new_model_calls": 0,
+    "stored_grading_version": "legacy_v1",
+    "stored_conclusions_correct": 12,
+    "explicit_finish_audit_correct": 11,
+    "historical_scores_unchanged": true
+  },
+  "fault_positions": 24,
+  "strict_correct": 11,
+  "labels_overlap": true,
+  "counts": {
+    "SUPPORTED_CORRECT_CONCLUSION": 9,
+    "IRRELEVANT_ROLE_OR_OPERATION_SELECTION": 5,
+    "NO_SUPPORTING_EVIDENCE_ACQUIRED": 1,
+    "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE": 9,
+    "CORRECT_ACTIVE_ABSTENTION": 2,
+    "EVIDENCE_PRESENT_CONCLUSION_FAILURE_UNKNOWN_OUTPUT": 2,
+    "ACTION_STRUCTURE_OR_TERMINATION_FAILURE": 1,
+    "INSUFFICIENT_ENGINE_REJECTION_NOT_ACTIVE_ABSTENTION": 1
+  },
+  "correct_choice_bad_citation": "UNKNOWN: rejected proposals were not retained",
+  "new_model_calls": 0,
+  "results": [
+    {
+      "case_id": "PV1613",
+      "round": 1,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION",
+        "IRRELEVANT_ROLE_OR_OPERATION_SELECTION"
+      ],
+      "record": "reports/ab663765c5e24a1a89497989fee4455c/report.json",
+      "run_id": "ab663765c5e24a1a89497989fee4455c",
+      "report_sha256": "0a28903330b375dba36e63f925811c47cd47241c6d5015cd63921346661fb8e5",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_fd7a279dbb9b44f197a766fb3fcdad3e"
+      ],
+      "related_reads": [
+        "investigation_fd7a279dbb9b44f197a766fb3fcdad3e"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2438.0,
+            "request_bytes": 3182,
+            "request_sha256": "5fd45007afac555180b4a984596f40e21889462c7a9b61c7973948f214f02b71",
+            "response_bytes": 672,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 437,
+            "output_tokens": 88,
+            "total_tokens": 525,
+            "output_sha256": "3e140f8777441638775d54ce620d42fad3b60e2439cad6a2ffde41aaaef96928",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2442.574
+        },
+        {
+          "index": 1,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2063.0,
+            "request_bytes": 3328,
+            "request_sha256": "55dfcc4f61ffc7854b2b90e34ed71f8b7cc78be9b0cd256f0e2796ab2414679b",
+            "response_bytes": 656,
+            "input_token_upper_bound": 3840,
+            "input_tokens": 470,
+            "output_tokens": 75,
+            "total_tokens": 545,
+            "output_sha256": "11d6b616026fe98e202548d1a8902a1b0926609529ed8ead55a03dc5f330df9f",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2068.88
+        },
+        {
+          "index": 2,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2438.0,
+            "request_bytes": 3473,
+            "request_sha256": "ba5b714deeab1eddc1b730932d80b57898dad98c0e05445d31e4a702e332d68a",
+            "response_bytes": 728,
+            "input_token_upper_bound": 3985,
+            "input_tokens": 525,
+            "output_tokens": 119,
+            "total_tokens": 644,
+            "output_sha256": "d16b9491b6f81f675182c2e95a18791903d871af0fc4d123dd9b8dc5a8ceea38",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2434.24
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_f327b4b819f44c98b9f572e1940db2f9",
+          "operation": "getCourse",
+          "role": "bob",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_fd7a279dbb9b44f197a766fb3fcdad3e",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1615",
+      "round": 1,
+      "labels": [
+        "NO_SUPPORTING_EVIDENCE_ACQUIRED",
+        "IRRELEVANT_ROLE_OR_OPERATION_SELECTION"
+      ],
+      "record": "reports/d07a9684fc4d4d3199c562eaf0027c6f/report.json",
+      "run_id": "d07a9684fc4d4d3199c562eaf0027c6f",
+      "report_sha256": "272503d19478d7755da9d477ff6741957a208236b5971fdc6b35e4ed534cc9a6",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [],
+      "related_reads": [],
+      "feedback_reason": "FEEDBACK_UNSUPPORTED_FINDING",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2875.0,
+            "request_bytes": 3182,
+            "request_sha256": "03db6b3b7fd6ccded7e86ce2fb8204ed95c2210ba4b19d5961240c0542008bb6",
+            "response_bytes": 711,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 443,
+            "output_tokens": 99,
+            "total_tokens": 542,
+            "output_sha256": "875dc0e57addae56224da4d0add1c25d65879bfd583e15a4bfa9e01ec43fb9bc",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2869.941
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3047.0,
+            "request_bytes": 3328,
+            "request_sha256": "05001e9be743c79f13ab388c4cae5480c10ec345bc6aad9d8bceb74dbccbab73",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3840,
+            "input_tokens": 471,
+            "output_tokens": 84,
+            "total_tokens": 555,
+            "output_sha256": "f084e371fa1970179412894211e48673cf91e5c4035a688bad0723f2ebb6d49a",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3047.76
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_f584ffd04b6f428194fc6755845b160a",
+          "operation": "getCourse",
+          "role": "bob",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1616",
+      "round": 1,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/e2f2314b1c924c9e93285ee9946a8d80/report.json",
+      "run_id": "e2f2314b1c924c9e93285ee9946a8d80",
+      "report_sha256": "43ec18e321f9c39b4ecd8ab4b99e1337d41ad793155f83560da1bf3cd3e58245",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_ddaf1098064e43f8a6134854373c57ca"
+      ],
+      "related_reads": [
+        "investigation_ddaf1098064e43f8a6134854373c57ca"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3515.0,
+            "request_bytes": 3042,
+            "request_sha256": "d2c3048ecd421803dd0dc2fe2eddbf6e717a4f21299cf157ed1afaae469704a1",
+            "response_bytes": 677,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 392,
+            "output_tokens": 77,
+            "total_tokens": 469,
+            "output_sha256": "6638f62f74a4a8639e38423f7a324b739f640a1dfa43f7c4fb1d36020e83bbe4",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3508.261
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 6750.0,
+            "request_bytes": 3345,
+            "request_sha256": "c5a04017fac2bac15259aea00a205acbb45e279425f0e2c5d21ecd20e91f3b1b",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 477,
+            "output_tokens": 84,
+            "total_tokens": 561,
+            "output_sha256": "69d9c8e8ecc5d642c9bb3f4c6aa3eb5eb34349f29ae1225e78e860b5ceabe296",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 6753.486
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_ddaf1098064e43f8a6134854373c57ca",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1618",
+      "round": 1,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/26a8bf97e2be421cae8b91a43d7a957d/report.json",
+      "run_id": "26a8bf97e2be421cae8b91a43d7a957d",
+      "report_sha256": "5679791c1ce750bb68edd61d9227e331bf0d25f363c4ac6403c2d711ac2e171d",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_81d3f193a1084accb54a406688d090de"
+      ],
+      "related_reads": [
+        "investigation_81d3f193a1084accb54a406688d090de"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5156.0,
+            "request_bytes": 3042,
+            "request_sha256": "4283d5087b44dc4946f0bc2229d5c99eeaf572908db86030becdc5651614c9bd",
+            "response_bytes": 712,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 390,
+            "output_tokens": 95,
+            "total_tokens": 485,
+            "output_sha256": "7cd5ffbc7f9e85de46dcd13ce3a5a83d5421b7d9c6ea47c1266d12b00647ecdd",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 5154.952
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4469.0,
+            "request_bytes": 3345,
+            "request_sha256": "080782527c99f7c0888bad9ff395ef4b414f49078c0da44f6cf9fc686f1e14fc",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 478,
+            "output_tokens": 85,
+            "total_tokens": 563,
+            "output_sha256": "5b5c317225ca07fb37ffcd31ff207814842a9866487c135901cbb2ae2aaa6312",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4469.601
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_81d3f193a1084accb54a406688d090de",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1619",
+      "round": 1,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/fc3544b7a14b41c1b8876a752beeda3f/report.json",
+      "run_id": "fc3544b7a14b41c1b8876a752beeda3f",
+      "report_sha256": "f9bdfbae5efca1e547a812201ea393d1ff7b2a9a4c43c7ef5f277ccb43f2dc2c",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_bd6b7d071dbe468ba60cd06bba832442"
+      ],
+      "related_reads": [
+        "investigation_bd6b7d071dbe468ba60cd06bba832442"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3922.0,
+            "request_bytes": 3159,
+            "request_sha256": "7365be96c3dff874025a0552b3cb086903d2682f8a32c2fd888cebb4e0650e84",
+            "response_bytes": 661,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 418,
+            "output_tokens": 65,
+            "total_tokens": 483,
+            "output_sha256": "06b5a3a503899735d946c51209bc861b6c39fba4f31713a33c5e7486b80a0e24",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3924.201
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3109.0,
+            "request_bytes": 3316,
+            "request_sha256": "5ab3bd22d09d3fc2de5ee8e31f1ac7b087beda70343f583d2729e18197622b3d",
+            "response_bytes": 628,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 473,
+            "output_tokens": 54,
+            "total_tokens": 527,
+            "output_sha256": "e102166e4923a70550e9fc3d090f033457b78d9f680fddc5e21ae3d8486f373c",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3104.165
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_bd6b7d071dbe468ba60cd06bba832442",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1620",
+      "round": 1,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/f9b276cb1c74489db422743241d43de3/report.json",
+      "run_id": "f9b276cb1c74489db422743241d43de3",
+      "report_sha256": "d41c69b3ab6590b1df8c1284cdb21d41d145683319dda201c2b1e3e237915f00",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_b7f661d67821457a98501cb29d6ece58"
+      ],
+      "related_reads": [
+        "investigation_b7f661d67821457a98501cb29d6ece58"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4329.0,
+            "request_bytes": 3159,
+            "request_sha256": "f61f491718328d58d2d0560f6b13a01bd82d7f3ef03b3d2b916d98c5bfd6031d",
+            "response_bytes": 708,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 418,
+            "output_tokens": 96,
+            "total_tokens": 514,
+            "output_sha256": "d86b4c10275d221b249abb89eeb3292dd799bca3187749119e284c12b5b81b5c",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4331.457
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3656.0,
+            "request_bytes": 3316,
+            "request_sha256": "160fccbb2c5a802cedc01230f09eea65b95c0de4edf5607ddca55ec4bde72cee",
+            "response_bytes": 647,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 476,
+            "output_tokens": 78,
+            "total_tokens": 554,
+            "output_sha256": "1c6586394fecfe060454a738ff2a9a0177785a10baf06d978ecc3bb3921729a9",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3649.393
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_b7f661d67821457a98501cb29d6ece58",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1622",
+      "round": 1,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/96a088334dda43ee830242fae8273c80/report.json",
+      "run_id": "96a088334dda43ee830242fae8273c80",
+      "report_sha256": "a19c74bdc7e6e406a3f37ed9855d2ef17bec3f3cc6c47eeedd128af03ac955ff",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_ec12efb9f0b74dda9de24d1f8cac3834"
+      ],
+      "related_reads": [
+        "investigation_ec12efb9f0b74dda9de24d1f8cac3834"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4234.0,
+            "request_bytes": 3334,
+            "request_sha256": "c674cb448766f64b608530e447aaf4cd43235300e7951e35756919523ce3ddca",
+            "response_bytes": 677,
+            "input_token_upper_bound": 3846,
+            "input_tokens": 442,
+            "output_tokens": 70,
+            "total_tokens": 512,
+            "output_sha256": "b62922e8f093934f6c3e82b297c62771d68c0427929b6fefe8a011c610c2a4fc",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4229.41
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4125.0,
+            "request_bytes": 3650,
+            "request_sha256": "c44b2fb36abae25bc95a97341bf7e60e0353fa0619d7be291365bd94c08668b6",
+            "response_bytes": 647,
+            "input_token_upper_bound": 4162,
+            "input_tokens": 532,
+            "output_tokens": 74,
+            "total_tokens": 606,
+            "output_sha256": "ff485201956a4ee41a51e9a00311db00841e5d35d4b1cc4bc92766d067b58bc1",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4125.98
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_ec12efb9f0b74dda9de24d1f8cac3834",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1623",
+      "round": 1,
+      "labels": [
+        "CORRECT_ACTIVE_ABSTENTION"
+      ],
+      "record": "reports/ce1fac57c5474886909feac1e611c704/report.json",
+      "run_id": "ce1fac57c5474886909feac1e611c704",
+      "report_sha256": "f8823a3c58c1601e566cafdf81376ff9e74680139a53ff874fcc993c920d2814",
+      "expected_symptom": "EVIDENCE_INSUFFICIENT",
+      "effective_evidence": [],
+      "related_reads": [
+        "investigation_82cdceebe1174c9ea92d2eb01feb7952"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5296.0,
+            "request_bytes": 3407,
+            "request_sha256": "07714db507f0d763c0451ff3eadf59aa9aec05194394f3fa588491aa37ea9f80",
+            "response_bytes": 665,
+            "input_token_upper_bound": 3919,
+            "input_tokens": 461,
+            "output_tokens": 64,
+            "total_tokens": 525,
+            "output_sha256": "93a4c76b10889aee0c6645374dc23184101dca5249540aef7100fd443b4e4e08",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 5304.562
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4250.0,
+            "request_bytes": 3710,
+            "request_sha256": "a3e4f85b8c4d4dc5d5df9db0114e90c36451fb6d1eecf5e2cf951db3ab83da67",
+            "response_bytes": 628,
+            "input_token_upper_bound": 4222,
+            "input_tokens": 544,
+            "output_tokens": 53,
+            "total_tokens": 597,
+            "output_sha256": "492a3a437f5de5a5b942a57ac70d3ba12d922d3007f8737670f49bc12505e5c9",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4241.611
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "closeTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_82cdceebe1174c9ea92d2eb01feb7952",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1613",
+      "round": 2,
+      "labels": [
+        "EVIDENCE_PRESENT_CONCLUSION_FAILURE_UNKNOWN_OUTPUT",
+        "ACTION_STRUCTURE_OR_TERMINATION_FAILURE"
+      ],
+      "record": "reports/cf71630fdaab477ab735ac90b29a471c/report.json",
+      "run_id": "cf71630fdaab477ab735ac90b29a471c",
+      "report_sha256": "e252feb74ad3a1962fb608ba775f4f22e5d3e0d9ed4fd3e42bff60ba54090f29",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_ed7550c934bc425695d75b449e0b3db2"
+      ],
+      "related_reads": [
+        "investigation_ed7550c934bc425695d75b449e0b3db2"
+      ],
+      "feedback_reason": "FEEDBACK_MODEL_ERROR",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2938.0,
+            "request_bytes": 3182,
+            "request_sha256": "40637dd161722e273db2db1f12159b86888aac5eb29cec638c23efc07c3880ee",
+            "response_bytes": 691,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 439,
+            "output_tokens": 96,
+            "total_tokens": 535,
+            "output_sha256": "976044cc2aaca963f09c4bc9d411c15e96c9a7f79982573a92908fc3dc2736ac",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2936.192
+        },
+        {
+          "index": 1,
+          "action": "rejected",
+          "reason": "FEEDBACK_MODEL_ERROR",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "MODEL_SCHEMA_VALIDATOR_REJECTED",
+              "fields": [
+                ""
+              ]
+            },
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4063.0,
+            "request_bytes": 3451,
+            "request_sha256": "a0f9961b2c26824128fc39d5d8c2859693762d0830eb93330b846a09db1be426",
+            "response_bytes": 791,
+            "input_token_upper_bound": 3963,
+            "input_tokens": 495,
+            "output_tokens": 140,
+            "total_tokens": 635,
+            "output_sha256": "f84d8fcdd07bc86e92cf75348a85b1bcf14eeb3c312bc200db72d5e1e64c16b1",
+            "reason": "MODEL_INVALID_RESPONSE"
+          },
+          "elapsed_ms": 4069.35
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_ed7550c934bc425695d75b449e0b3db2",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1615",
+      "round": 2,
+      "labels": [
+        "EVIDENCE_PRESENT_CONCLUSION_FAILURE_UNKNOWN_OUTPUT",
+        "IRRELEVANT_ROLE_OR_OPERATION_SELECTION"
+      ],
+      "record": "reports/0f70e3c626154bbf86e7603f63653484/report.json",
+      "run_id": "0f70e3c626154bbf86e7603f63653484",
+      "report_sha256": "05de466daaf983df7f2a54616eb5af3f07148fb1399dc5acf25176a90c446ccc",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_db6af65fd1494d709fde67e8950e38a4"
+      ],
+      "related_reads": [
+        "investigation_db6af65fd1494d709fde67e8950e38a4"
+      ],
+      "feedback_reason": "FEEDBACK_UNSUPPORTED_FINDING",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3672.0,
+            "request_bytes": 3182,
+            "request_sha256": "29d2f038ca688cb4653cf3c50e6e35bf849b7d6315f6b3d074fcb03eb614593d",
+            "response_bytes": 694,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 437,
+            "output_tokens": 96,
+            "total_tokens": 533,
+            "output_sha256": "558817169274fa730ba26cb4fddff61d14630cead6fc2e9007481ab9684bdd57",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3670.669
+        },
+        {
+          "index": 1,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3125.0,
+            "request_bytes": 3328,
+            "request_sha256": "92dd73eda76700b0b4119ad123dd2cb169ff4df60a2d16e33d22f192ad9db4ed",
+            "response_bytes": 691,
+            "input_token_upper_bound": 3840,
+            "input_tokens": 469,
+            "output_tokens": 95,
+            "total_tokens": 564,
+            "output_sha256": "2885d549d05a92fa6540b36fcf76b088c6f183743f9df00117373fdfd1ad58f6",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3132.515
+        },
+        {
+          "index": 2,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5547.0,
+            "request_bytes": 3473,
+            "request_sha256": "02858bdcebeb1c1868df989fde8366557ce09982bd7edf2ae88005262991dd54",
+            "response_bytes": 709,
+            "input_token_upper_bound": 3985,
+            "input_tokens": 525,
+            "output_tokens": 114,
+            "total_tokens": 639,
+            "output_sha256": "df8ef459b1a46241e7ed5c9cde3cb715c8c429453e918d7083924e9b036fca24",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 5553.738
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_50d575fadcf143f99773f6c26c41926f",
+          "operation": "getCourse",
+          "role": "bob",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_db6af65fd1494d709fde67e8950e38a4",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1616",
+      "round": 2,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/4163ad7c5de440b78ff4f150b254b718/report.json",
+      "run_id": "4163ad7c5de440b78ff4f150b254b718",
+      "report_sha256": "83ad2a9bcdbdb5ecaaa6f8d338331746adfd630ef6f5bb173e270e2a8a32b7ae",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_d0c49f2f70fd4d6cbebc34d6e3f2792a"
+      ],
+      "related_reads": [
+        "investigation_d0c49f2f70fd4d6cbebc34d6e3f2792a"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 1735.0,
+            "request_bytes": 3042,
+            "request_sha256": "b652df55f29a80045eb48f52352f78a7766f30a05067b2f18d15c013542069e1",
+            "response_bytes": 665,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 390,
+            "output_tokens": 64,
+            "total_tokens": 454,
+            "output_sha256": "2cb30a23d62c1429768b9aea456afc444e5ebc13dd77af00438e160c6e7d5a80",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 1740.486
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2703.0,
+            "request_bytes": 3345,
+            "request_sha256": "76b8f7cb072092257e52295b13febcce17b01914c0a579c175c688bbf55e0aed",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 477,
+            "output_tokens": 84,
+            "total_tokens": 561,
+            "output_sha256": "5a9ddd6e579cff0389b7f180a8cbdbca03c49a4e657c30890512c86783d78959",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2701.177
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_d0c49f2f70fd4d6cbebc34d6e3f2792a",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1618",
+      "round": 2,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/e5911b639f40468f8ebe0c6401005ad9/report.json",
+      "run_id": "e5911b639f40468f8ebe0c6401005ad9",
+      "report_sha256": "520b97d63a765f30258af4bc03dd5dfe929c6e573e4838fab9c0fc3341350219",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_1064188c42ab42d9b2c350a61b037fb9"
+      ],
+      "related_reads": [
+        "investigation_1064188c42ab42d9b2c350a61b037fb9"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2859.0,
+            "request_bytes": 3042,
+            "request_sha256": "f8e748c246bced7a3c43ca12c8637c599f2f11ce9b27153dda6462370ddbd3d3",
+            "response_bytes": 719,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 390,
+            "output_tokens": 101,
+            "total_tokens": 491,
+            "output_sha256": "ba3371616f8bba21a77586f3cf2e9649461f9931e61ca67d11c19934ddfbee35",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2860.05
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2813.0,
+            "request_bytes": 3345,
+            "request_sha256": "84f6376dd1c5a807f65f3b3aa76e2aaa1fc94453787de4dd68b9ef180046357b",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 479,
+            "output_tokens": 86,
+            "total_tokens": 565,
+            "output_sha256": "c4de2fa64ad2cd410beb74758dc45774253ab454a8628e79b12f10b9df091887",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2814.088
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_1064188c42ab42d9b2c350a61b037fb9",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1619",
+      "round": 2,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/315ea35480a840c7a4b424711bb2c65b/report.json",
+      "run_id": "315ea35480a840c7a4b424711bb2c65b",
+      "report_sha256": "5cab441e9f1a176036075fc89f9307651c931b7c46d78907bcee559c41cca352",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_d2addacfdc4f4c5b9dbf3223adfc3975"
+      ],
+      "related_reads": [
+        "investigation_d2addacfdc4f4c5b9dbf3223adfc3975"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3297.0,
+            "request_bytes": 3159,
+            "request_sha256": "313a1eccc196b912222ce2f96ed257f2608aa719356b2883daedc9205a39d199",
+            "response_bytes": 665,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 417,
+            "output_tokens": 68,
+            "total_tokens": 485,
+            "output_sha256": "37b1e4ecfa1c8f5764dd99334bbf0183e72601b396751eb732dba0781541ef5c",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3294.573
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4547.0,
+            "request_bytes": 3316,
+            "request_sha256": "180d0a53442d745c1db76111cd5f6b131853f4aeea64f0b38aee2a9480f4d94d",
+            "response_bytes": 666,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 471,
+            "output_tokens": 78,
+            "total_tokens": 549,
+            "output_sha256": "0722b83382d6a3cc8f43df2bef60bf2ce82721e0d0bbe5d220a573fdf9e6de60",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4540.058
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_d2addacfdc4f4c5b9dbf3223adfc3975",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1620",
+      "round": 2,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/bcea43d57bd94f3eb646db6bcfc664ff/report.json",
+      "run_id": "bcea43d57bd94f3eb646db6bcfc664ff",
+      "report_sha256": "6531934bcabeeed6ea5789aee0e621e28e82a526c7017286ec32ed1f0fa9b231",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_184bfba5cf89498bb67168254941fcdb"
+      ],
+      "related_reads": [
+        "investigation_184bfba5cf89498bb67168254941fcdb"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2391.0,
+            "request_bytes": 3159,
+            "request_sha256": "3c3fd280d61192e892463db73976cc6b7e3aa8176cb88a2de139e52366de0f95",
+            "response_bytes": 686,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 415,
+            "output_tokens": 85,
+            "total_tokens": 500,
+            "output_sha256": "9684b689bad53bc7c5f8f61a6709cecc5b8466b39425222b6f91e029a0ff0707",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2390.589
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2765.0,
+            "request_bytes": 3316,
+            "request_sha256": "f95a71b2d18deaeac05183dd90c743d5100dce2194e8391add7bfc8f9a36fba7",
+            "response_bytes": 636,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 474,
+            "output_tokens": 62,
+            "total_tokens": 536,
+            "output_sha256": "089e48aac5d47e1f6cdb56476a054a13d1235ae21ee5523b6fbd6a23e0210b11",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2780.881
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_184bfba5cf89498bb67168254941fcdb",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1622",
+      "round": 2,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/6d2fa1c151e6427296d1818fd7c98f41/report.json",
+      "run_id": "6d2fa1c151e6427296d1818fd7c98f41",
+      "report_sha256": "e9210d08ff90b86b6a7350b111b1e25d5451286c8dbd757016fb965b6355b9ae",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_1076478538b742f3972fb562b60f5032"
+      ],
+      "related_reads": [
+        "investigation_1076478538b742f3972fb562b60f5032"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4437.0,
+            "request_bytes": 3334,
+            "request_sha256": "187ac8b76ee44c8fd827f9075d0a6b87edfded8a969bef5f0523646ac78b90b6",
+            "response_bytes": 712,
+            "input_token_upper_bound": 3846,
+            "input_tokens": 448,
+            "output_tokens": 96,
+            "total_tokens": 544,
+            "output_sha256": "3054fcb9109f91ddd2a4bddc0dd06a74742f37c0f763859fe954c9cb8126164c",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4440.652
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3938.0,
+            "request_bytes": 3650,
+            "request_sha256": "ded970bef7308b9421eafc47cb37e3383aab082d80a6f911aac125a551d60d07",
+            "response_bytes": 666,
+            "input_token_upper_bound": 4162,
+            "input_tokens": 539,
+            "output_tokens": 86,
+            "total_tokens": 625,
+            "output_sha256": "f4a79b1e878bb7c5ccb18770d39be5bb295bcaa4ef021247e001c771ee27725f",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3932.493
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_1076478538b742f3972fb562b60f5032",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1623",
+      "round": 2,
+      "labels": [
+        "INSUFFICIENT_ENGINE_REJECTION_NOT_ACTIVE_ABSTENTION"
+      ],
+      "record": "reports/c88f59dda1f84c62add6a9023f628388/report.json",
+      "run_id": "c88f59dda1f84c62add6a9023f628388",
+      "report_sha256": "dcb5b0b188a37e65ace9e56cc1b2d8de9dd974a1af50898dc4d058366017b6cf",
+      "expected_symptom": "EVIDENCE_INSUFFICIENT",
+      "effective_evidence": [],
+      "related_reads": [
+        "investigation_7a615151ed974e5d89c198698ca06cc5"
+      ],
+      "feedback_reason": "FEEDBACK_UNSUPPORTED_FINDING",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2172.0,
+            "request_bytes": 3407,
+            "request_sha256": "0ce5e6c0f742e1bd341b9b317014de879073f029f19f7b21ccc29012c042cd99",
+            "response_bytes": 712,
+            "input_token_upper_bound": 3919,
+            "input_tokens": 462,
+            "output_tokens": 96,
+            "total_tokens": 558,
+            "output_sha256": "5052151498841a03154abf7e5e061abf54189d7f574e918d09cc77e6a8557423",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2181.088
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3360.0,
+            "request_bytes": 3710,
+            "request_sha256": "90ce755d0c3b26c07000e209aee7a2fe66e477f4e5f94482897d805789d619ac",
+            "response_bytes": 673,
+            "input_token_upper_bound": 4222,
+            "input_tokens": 549,
+            "output_tokens": 85,
+            "total_tokens": 634,
+            "output_sha256": "a5974481a1995e317dcc60b4e27e1e5e60fc2357f9ca570422386044d69f56dd",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3353.439
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "closeTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_7a615151ed974e5d89c198698ca06cc5",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1613",
+      "round": 3,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION",
+        "IRRELEVANT_ROLE_OR_OPERATION_SELECTION"
+      ],
+      "record": "reports/b55339adeed54ffbbabc2d38b526132f/report.json",
+      "run_id": "b55339adeed54ffbbabc2d38b526132f",
+      "report_sha256": "708ce13fb3bc8ffe3033d9ca469701ee33a97a73a8c89992e59da906bf055bbd",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_4ee066f2dd7244c79ad3bf19cd894b46"
+      ],
+      "related_reads": [
+        "investigation_4ee066f2dd7244c79ad3bf19cd894b46"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 5313.0,
+            "request_bytes": 3182,
+            "request_sha256": "d8f3aaa33089c0e3282c3a566e33131909fe3f05f0fefff674354e2ce1f6dc11",
+            "response_bytes": 691,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 433,
+            "output_tokens": 93,
+            "total_tokens": 526,
+            "output_sha256": "a2a3597dc0f98bb7635ac02a2379a7c6e98d6109d15861f3037d1863f5c74e8e",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 5314.218
+        },
+        {
+          "index": 1,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3437.0,
+            "request_bytes": 3451,
+            "request_sha256": "2fd7680859d1f122123f86de63c26f0a3d9a483b9c625c7bead9a56d984a0e05",
+            "response_bytes": 711,
+            "input_token_upper_bound": 3963,
+            "input_tokens": 491,
+            "output_tokens": 94,
+            "total_tokens": 585,
+            "output_sha256": "e54a23d9506612979fd8b042930f7ac6f99822accbdd22d08ea4867872047120",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3449.859
+        },
+        {
+          "index": 2,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3594.0,
+            "request_bytes": 3473,
+            "request_sha256": "de3ccd2921d752322ef64ff2441cab3dbddaafec69f5af58231a97f743237f84",
+            "response_bytes": 683,
+            "input_token_upper_bound": 3985,
+            "input_tokens": 523,
+            "output_tokens": 88,
+            "total_tokens": 611,
+            "output_sha256": "c77e072b0aefd081412be3bacf0c5d42de0080902d65654dc939b878fa9f96d5",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3591.02
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_4ee066f2dd7244c79ad3bf19cd894b46",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_7dc7da48b01448b196deeef1b0c2637f",
+          "operation": "getCourse",
+          "role": "bob",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1615",
+      "round": 3,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION",
+        "IRRELEVANT_ROLE_OR_OPERATION_SELECTION"
+      ],
+      "record": "reports/383aa54a2a1644fe9461d94af152a450/report.json",
+      "run_id": "383aa54a2a1644fe9461d94af152a450",
+      "report_sha256": "b9a53846b6533fde3bff6a3bd1f5a452ab8e8d97cea257250bb6ddd7cdb2d084",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_98bf0bcd44464a86a16bc1e0baf6cb16"
+      ],
+      "related_reads": [
+        "investigation_98bf0bcd44464a86a16bc1e0baf6cb16"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2546.0,
+            "request_bytes": 3182,
+            "request_sha256": "0bacd61610e3e181ba0572ffec5f58fc9c85fb35e3186bff298783d094bc8d45",
+            "response_bytes": 673,
+            "input_token_upper_bound": 3694,
+            "input_tokens": 429,
+            "output_tokens": 71,
+            "total_tokens": 500,
+            "output_sha256": "5c66701adb427121d9d2a299b0c427124e3d9b8e962f268c8ed6cd8a2d7711ad",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2561.248
+        },
+        {
+          "index": 1,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3547.0,
+            "request_bytes": 3451,
+            "request_sha256": "9b5ddc81dc6325f154f2e794ca7a804ba5f85ee7e6f17b37b1fa47e68c4c0372",
+            "response_bytes": 711,
+            "input_token_upper_bound": 3963,
+            "input_tokens": 488,
+            "output_tokens": 92,
+            "total_tokens": 580,
+            "output_sha256": "207c40130beb0b469591701feb41991650d359fc1a24a0c1c0d8f1bf2172585f",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3544.859
+        },
+        {
+          "index": 2,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3906.0,
+            "request_bytes": 3473,
+            "request_sha256": "224b998f3197d4a0459710c55036a64ebac373fd31666103edd366d8590f56c0",
+            "response_bytes": 728,
+            "input_token_upper_bound": 3985,
+            "input_tokens": 524,
+            "output_tokens": 118,
+            "total_tokens": 642,
+            "output_sha256": "674a3a491717fb17753e41290fee81f0da5dd8c0edf2599bb9b8c296d982592f",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3905.362
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_98bf0bcd44464a86a16bc1e0baf6cb16",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_02b0b003980540a6bd79700329b3feaa",
+          "operation": "getCourse",
+          "role": "bob",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1616",
+      "round": 3,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/f5164122834a43f5b4370a9fa83c692c/report.json",
+      "run_id": "f5164122834a43f5b4370a9fa83c692c",
+      "report_sha256": "0f495e503a4ac9c6c5d913d7de06751a22c2742a18eec0f2b29d59316a1a1dab",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_01064239de824d6ca7c8acdfff047533"
+      ],
+      "related_reads": [
+        "investigation_01064239de824d6ca7c8acdfff047533"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2266.0,
+            "request_bytes": 3042,
+            "request_sha256": "168dee4a4918853af48b4e81d400ff88bf4af0ffcbcca0ad8bdfcfdcd24dcd8d",
+            "response_bytes": 665,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 393,
+            "output_tokens": 67,
+            "total_tokens": 460,
+            "output_sha256": "c58fa31c1cf15df2a6ae800c4cfeee6e1c3f85015246f2029a322eab2a02bc20",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2264.22
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2296.0,
+            "request_bytes": 3345,
+            "request_sha256": "55f8653188222004400a55a2fb83e1f36db1a8885b5717823420b6c236578fd0",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 475,
+            "output_tokens": 82,
+            "total_tokens": 557,
+            "output_sha256": "41e68edcd8c56785eefbbe7a593867497cf06117444d6504b7e40c33d3ecae93",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2288.598
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_01064239de824d6ca7c8acdfff047533",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1618",
+      "round": 3,
+      "labels": [
+        "SUPPORTED_CORRECT_CONCLUSION"
+      ],
+      "record": "reports/f34be541e489495da29093de3aa6bab6/report.json",
+      "run_id": "f34be541e489495da29093de3aa6bab6",
+      "report_sha256": "9b61a99f176f83c2b2ee5d47d0aef3093cc17a2ffa5853c6c4db5adae8286034",
+      "expected_symptom": "ACCESS_BOUNDARY_VIOLATION",
+      "effective_evidence": [
+        "investigation_0e1c8fda119a4fb0b638d03ec2d02b3d"
+      ],
+      "related_reads": [
+        "investigation_0e1c8fda119a4fb0b638d03ec2d02b3d"
+      ],
+      "feedback_reason": "FEEDBACK_FINDING_SUPPORTED",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 4313.0,
+            "request_bytes": 3042,
+            "request_sha256": "617f91baea669f815fff43f951af2828ff81eae9f2df144a237b0353b9995449",
+            "response_bytes": 712,
+            "input_token_upper_bound": 3554,
+            "input_tokens": 390,
+            "output_tokens": 95,
+            "total_tokens": 485,
+            "output_sha256": "bdaa0167f0fcc33b1ca011245b29c52e6a2dd486515d48fe0f619eea4175a336",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 4316.022
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3063.0,
+            "request_bytes": 3345,
+            "request_sha256": "d0a5fb6587b86c0d6a8dff303b60188244c37ee2b53ca748c0c0961aa2326142",
+            "response_bytes": 670,
+            "input_token_upper_bound": 3857,
+            "input_tokens": 478,
+            "output_tokens": 85,
+            "total_tokens": 563,
+            "output_sha256": "1dc7e69874f2a382cb41f3d6d33fadf319db6bd134922404b8f5c3acb94f4760",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3049.022
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": false,
+              "expected": [
+                403
+              ],
+              "actual": 200
+            }
+          ]
+        },
+        {
+          "ref": "investigation_0e1c8fda119a4fb0b638d03ec2d02b3d",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1619",
+      "round": 3,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/30fc6132155c462a8c7e564f986aa0dc/report.json",
+      "run_id": "30fc6132155c462a8c7e564f986aa0dc",
+      "report_sha256": "cd08eac9bd7d74b7d9afb889b456cc765e1c1482f913b9eb40788fc4236af965",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_97f888a61c70486285c919cf87c85b22"
+      ],
+      "related_reads": [
+        "investigation_97f888a61c70486285c919cf87c85b22"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2500.0,
+            "request_bytes": 3159,
+            "request_sha256": "c1ef2f19f3058d5d32da2f0b45ba363476e8ba96a77ab7db63760a5454180d93",
+            "response_bytes": 661,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 420,
+            "output_tokens": 67,
+            "total_tokens": 487,
+            "output_sha256": "ba9e7fa328d66f6c3fedd328768893c5eb127735d6ed32371f919b3bd907356f",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2492.197
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3750.0,
+            "request_bytes": 3316,
+            "request_sha256": "8889353081dc7db22347df1e5f6aa23b9f779d32fe1ed71cc06c638c68f2cbef",
+            "response_bytes": 615,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 479,
+            "output_tokens": 58,
+            "total_tokens": 537,
+            "output_sha256": "621591fcde4abd42abd25b22f19f8629fea3e238d7a54d09276a013db6f8e814",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3745.968
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_97f888a61c70486285c919cf87c85b22",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1620",
+      "round": 3,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/f8ae04a159524a81ac83fcda7be20db2/report.json",
+      "run_id": "f8ae04a159524a81ac83fcda7be20db2",
+      "report_sha256": "8b0e99cccb4f61c238163d0a02f6fcec87393ac4af6c4ec3afeaa230896f6bd0",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_3dde8a53ddb64420a60321222ed7af58"
+      ],
+      "related_reads": [
+        "investigation_3dde8a53ddb64420a60321222ed7af58"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3031.0,
+            "request_bytes": 3159,
+            "request_sha256": "bd6a6a86dc63e506f0594f03253cd6a0765bb2614419d63ee351415710e276fa",
+            "response_bytes": 673,
+            "input_token_upper_bound": 3671,
+            "input_tokens": 415,
+            "output_tokens": 73,
+            "total_tokens": 488,
+            "output_sha256": "bc4c1e9006166b0dd5189871d73ba4d34311f83dc4ea6eeada3c85461afd5614",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3023.256
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3344.0,
+            "request_bytes": 3316,
+            "request_sha256": "f1672bfa6a19bf990009d93da42acf770135ebfbf7796b98695997d2ba1d7694",
+            "response_bytes": 587,
+            "input_token_upper_bound": 3828,
+            "input_tokens": 474,
+            "output_tokens": 40,
+            "total_tokens": 514,
+            "output_sha256": "4ce94b89926a0279a03d69bc6a7ac7432e682a44cc9dc967892d420acb7e329d",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3335.793
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "getCourse",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_3dde8a53ddb64420a60321222ed7af58",
+          "operation": "getCourse",
+          "role": "alice",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.name",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.courseId",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1622",
+      "round": 3,
+      "labels": [
+        "WRONG_ABSTENTION_WITH_SUFFICIENT_EVIDENCE"
+      ],
+      "record": "reports/78a0428a41b74942ba36e391eb650872/report.json",
+      "run_id": "78a0428a41b74942ba36e391eb650872",
+      "report_sha256": "b6922064b3206a15b08b8c1d72c0530ca6cb6de6959ad27a425dea23738040f6",
+      "expected_symptom": "PERSISTENT_READBACK_MISMATCH",
+      "effective_evidence": [
+        "investigation_05231b0095a642989926455b58164743"
+      ],
+      "related_reads": [
+        "investigation_05231b0095a642989926455b58164743"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": false,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3125.0,
+            "request_bytes": 3334,
+            "request_sha256": "05b5e6efdd7c09819b955154a93740653541cd3a7594379260f40c4fceb62053",
+            "response_bytes": 665,
+            "input_token_upper_bound": 3846,
+            "input_tokens": 446,
+            "output_tokens": 63,
+            "total_tokens": 509,
+            "output_sha256": "da4e5b542d79f29cbd939251f27ba9ec644ef7d89e07c1ebfabf9814019d9f9a",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3126.179
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 2125.0,
+            "request_bytes": 3650,
+            "request_sha256": "d84cfe10fba607ffd78881e95dd1fce2724dc49b0601a111ceab65a891fb2ffe",
+            "response_bytes": 587,
+            "input_token_upper_bound": 4162,
+            "input_tokens": 540,
+            "output_tokens": 40,
+            "total_tokens": 580,
+            "output_sha256": "4ce94b89926a0279a03d69bc6a7ac7432e682a44cc9dc967892d420acb7e329d",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 2124.193
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "readTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_05231b0095a642989926455b58164743",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    },
+    {
+      "case_id": "PV1623",
+      "round": 3,
+      "labels": [
+        "CORRECT_ACTIVE_ABSTENTION"
+      ],
+      "record": "reports/2ce6415bd2c041cc958f91d7485b81f6/report.json",
+      "run_id": "2ce6415bd2c041cc958f91d7485b81f6",
+      "report_sha256": "09b34613089663d98f7a48a7ef88095f860671b751856560edeea52ec864d036",
+      "expected_symptom": "EVIDENCE_INSUFFICIENT",
+      "effective_evidence": [],
+      "related_reads": [
+        "investigation_afbfc62c28084905990dcc5e3b43b414"
+      ],
+      "feedback_reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+      "strict_correct": true,
+      "decisions": [
+        {
+          "index": 0,
+          "action": "investigate",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3000.0,
+            "request_bytes": 3407,
+            "request_sha256": "6fbd89bb4cd5ab5d344899366a82a4ecaeed956da384c72812b035ed5a393ca7",
+            "response_bytes": 672,
+            "input_token_upper_bound": 3919,
+            "input_tokens": 460,
+            "output_tokens": 70,
+            "total_tokens": 530,
+            "output_sha256": "f9e7b2e5a5672740e25a1843aaf07db32ea7d3f8d12e29587566f8d508d9af07",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3015.193
+        },
+        {
+          "index": 1,
+          "action": "finish",
+          "reason": "FEEDBACK_ACTION_RECEIVED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-plus",
+            "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+            "http_status": 200,
+            "elapsed_ms": 3969.0,
+            "request_bytes": 3710,
+            "request_sha256": "d015f18a6ef518370b97c066c21234e531da954429f85fd0e5e6fefa30f01bdf",
+            "response_bytes": 666,
+            "input_token_upper_bound": 4222,
+            "input_tokens": 547,
+            "output_tokens": 82,
+            "total_tokens": 629,
+            "output_sha256": "215902210fe621136cc5f0ca6c68a6742b3b3588385617e9dd788b126c74ab32",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "elapsed_ms": 3984.232
+        }
+      ],
+      "observations": [
+        {
+          "ref": "original",
+          "operation": "closeTicket",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": false,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        },
+        {
+          "ref": "investigation_afbfc62c28084905990dcc5e3b43b414",
+          "operation": "readTicket",
+          "role": "owner",
+          "checks": [
+            {
+              "kind": "http_status",
+              "selector": null,
+              "passed": true,
+              "expected": [
+                200
+              ],
+              "actual": 200
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.state",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.subject",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.priority",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            },
+            {
+              "kind": "equals",
+              "selector": "$.payload.ticket_key",
+              "passed": true,
+              "expected": "[REDACTED]",
+              "actual": "[REDACTED]"
+            }
+          ]
+        }
+      ],
+      "discarded_output": "UNKNOWN: proposed finding and rejected refs were not saved"
+    }
+  ]
+}
