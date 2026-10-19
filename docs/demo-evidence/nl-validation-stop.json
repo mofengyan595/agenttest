@@ -1,0 +1,832 @@
+{
+  "schema_version": "agenttest.nl-validation-stop.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "comparison_complete": false,
+  "stop_reason": "MODEL_TIMEOUT_USAGE_UNKNOWN",
+  "source_archive": "runs/nlr-validation-real",
+  "source_archive_sha256": "8a3c93de7740026bc483574389ccd97840ce1e471e68edfba373574fb812e9aa",
+  "source_commit": "bc1b10da40561eb186acbd0944cad212ffbe9246",
+  "grading_version": "nl_product_v1_model_proposals_v1",
+  "quality_improvement": null,
+  "summary": {
+    "classification": "DEVELOPMENT_ONLY",
+    "review_status": "UNREVIEWED",
+    "human_reviewed": 0,
+    "formal_eval_v2_score": null,
+    "grading_version": "nl_product_v1_model_proposals_v1",
+    "source": "real",
+    "scheduled": 72,
+    "attempted": 1,
+    "groups": {
+      "baseline/all": {
+        "denominator": 36,
+        "attempted": 1,
+        "reports": 1,
+        "unknown_usage_positions": 0,
+        "metrics": {
+          "dsl_valid": 0,
+          "policy_authorized": 0,
+          "intent_verified": 0,
+          "intent_matches": 0,
+          "correct_strategy": 0,
+          "normal_complete": 0,
+          "designated_assertion_detected": 0,
+          "rule_supported": 0,
+          "rule_evidence_complete": 0,
+          "insufficient_product_exit": 0,
+          "product_complete": 0,
+          "model_conclusion_correct": 0,
+          "model_supported_proposal": 0,
+          "model_active_abstention": 0,
+          "model_inappropriate_assertion": 0,
+          "model_read_selections": 0,
+          "model_relevant_selections": 0,
+          "model_choices_comparable_to_rule": 0,
+          "model_choices_same_as_rule": 0,
+          "safety_preserved": 1,
+          "usage_known": 0
+        },
+        "model_calls": 1,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 66610.245
+      },
+      "baseline/healthy": {
+        "denominator": 18,
+        "attempted": 1,
+        "reports": 1,
+        "unknown_usage_positions": 0,
+        "metrics": {
+          "dsl_valid": 0,
+          "policy_authorized": 0,
+          "intent_verified": 0,
+          "intent_matches": 0,
+          "correct_strategy": 0,
+          "normal_complete": 0,
+          "designated_assertion_detected": 0,
+          "rule_supported": 0,
+          "rule_evidence_complete": 0,
+          "insufficient_product_exit": 0,
+          "product_complete": 0,
+          "model_conclusion_correct": 0,
+          "model_supported_proposal": 0,
+          "model_active_abstention": 0,
+          "model_inappropriate_assertion": 0,
+          "model_read_selections": 0,
+          "model_relevant_selections": 0,
+          "model_choices_comparable_to_rule": 0,
+          "model_choices_same_as_rule": 0,
+          "safety_preserved": 1,
+          "usage_known": 0
+        },
+        "model_calls": 1,
+        "input_tokens": null,
+        "output_tokens": null,
+        "total_tokens": null,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 66610.245
+      },
+      "baseline/access": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "baseline/readback": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "baseline/insufficient": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "candidate/all": {
+        "denominator": 36,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "candidate/healthy": {
+        "denominator": 18,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "candidate/access": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "candidate/readback": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      },
+      "candidate/insufficient": {
+        "denominator": 6,
+        "attempted": 0,
+        "reports": 0,
+        "unknown_usage_positions": 0,
+        "metrics": {},
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "business_requests": 0,
+        "investigation_requests": 0,
+        "position_elapsed_ms": 0
+      }
+    },
+    "real_business_http": 0,
+    "database_writes": 0,
+    "human_time_saved": null,
+    "generalization": null,
+    "schedule_elapsed_ms": 67533.604
+  },
+  "results": [
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": "7e3026c09205418ea9bd553339cf85fd",
+      "report_sha256": "3e71b00906d4e44c2cd7a1e5bd769a56efe63a8fec046d5eed7d33111a1a5202",
+      "scenario": null,
+      "outcome": "TEST_INFRA_ERROR",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_TIMEOUT",
+        "fields": []
+      },
+      "grade": {
+        "dsl_valid": false,
+        "policy_authorized": false,
+        "intent_verified": false,
+        "intent_matches": false,
+        "correct_strategy": false,
+        "normal_complete": false,
+        "designated_assertion_detected": false,
+        "rule_supported": false,
+        "rule_evidence_complete": false,
+        "insufficient_product_exit": false,
+        "product_complete": false,
+        "model_conclusion_correct": false,
+        "model_supported_proposal": false,
+        "model_active_abstention": false,
+        "model_inappropriate_assertion": false,
+        "model_read_selections": 0,
+        "model_relevant_selections": 0,
+        "model_choices_comparable_to_rule": 0,
+        "model_choices_same_as_rule": 0,
+        "safety_preserved": true,
+        "usage_known": false
+      },
+      "model_calls": 1,
+      "usage_known": false,
+      "input_tokens": null,
+      "output_tokens": null,
+      "total_tokens": null,
+      "business_requests": 0,
+      "investigation_requests": 0,
+      "workflow_elapsed_ms": 60615.015,
+      "position_elapsed_ms": 66610.245,
+      "stop_paid": true
+    },
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 1,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 1,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 2,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 2,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV01",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV02",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV03",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV04",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV05",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV06",
+      "category": "healthy",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV07",
+      "category": "access",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV08",
+      "category": "readback",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV09",
+      "category": "access",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV10",
+      "category": "readback",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV11",
+      "category": "insufficient",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 3,
+      "arm": "candidate",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    },
+    {
+      "case_id": "NV12",
+      "category": "insufficient",
+      "round": 3,
+      "arm": "baseline",
+      "run_id": null,
+      "not_attempted_reason": "UNKNOWN_USAGE_OR_EXTERNAL_FAILURE_STOP"
+    }
+  ],
+  "recovery_required": "Provider usage reconciliation and explicit protocol decision before any further paid calls; never replace or rerun first failed position"
+}

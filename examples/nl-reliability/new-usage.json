@@ -1,0 +1,11 @@
+{
+  "id": "NU01",
+  "project": "tickets",
+  "category": "healthy",
+  "fault": "none",
+  "finding": null,
+  "names": ["竹湾交接"],
+  "priority": "high",
+  "sequence": ["open", "list_visitor", "read_open", "close", "read_closed"],
+  "user_task": "owner创建主题“竹湾交接”、优先级high的工单。随后visitor仅列出自己的可见工单。接着owner读取刚创建的工单，核对open状态、主题、优先级和标识，然后将其关闭为closed，最后owner再次读取并核对closed状态及原内容。两次单条读取和关闭都必须引用创建响应中的同一工单标识。"
+}

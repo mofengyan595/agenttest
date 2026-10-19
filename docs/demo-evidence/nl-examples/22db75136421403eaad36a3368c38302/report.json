@@ -1,0 +1,849 @@
+{
+  "run_id": "22db75136421403eaad36a3368c38302",
+  "revision": 37,
+  "started_at": "2026-10-19T08:52:25.591235+00:00",
+  "scenario_sha256": "fbcae2919062f80a51740ae5b743afa7276d6f426e234e72dcae7ac49a48d9be",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "outcome": "ASSERTION_FAILED",
+  "steps": [
+    {
+      "step_id": "open",
+      "step_run_id": "5d19c2b9c8b2407c8774382133c1ddf1",
+      "operation_id": "openTicket",
+      "method": "POST",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "6028016ebf823411aed6287587474a64abd8b4a5ad12277e45ae974644efe39b",
+      "policy_template_sha256": "121fedafd9fd85f0b1c4648abc6764bdc54c437cfcf387dc5a8d0c492959659a",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            201
+          ],
+          "actual": 201
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "3b7f173576cb4458bfe114d918412ec4",
+          "status_code": 201,
+          "elapsed_ms": 51.445,
+          "response_bytes": 91,
+          "response_sha256": "4167a17d4bdaa84b819d0887487dc8281f02374108959660b69291aabfffc29e",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "list_owner",
+      "step_run_id": "8b1fa7ff87304697aa7d02ab9fa1e34e",
+      "operation_id": "listTickets",
+      "method": "GET",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "policy_template_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.items",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "b6d5d9a120644d0ba015d1f5ed9bb4ce",
+          "status_code": 200,
+          "elapsed_ms": 3.157,
+          "response_bytes": 103,
+          "response_sha256": "9e16b7a62462c394f7750050ff88f8eb34635d80db719e52e8081614f54036f9",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "close",
+      "step_run_id": "950f9d6ceaef49dea9b0df000701cfbd",
+      "operation_id": "closeTicket",
+      "method": "PATCH",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "074dac92a1bf8cd850fe38bc8a90b39d327625db8b4bc0d050baaead64d0b3e2",
+      "policy_template_sha256": "56c784482bd6feb1c86975f3c8dedd041858821fcaa2678c8af90ca947535107",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "6e1abb7352fd4ce0b13e1d9c77553213",
+          "status_code": 200,
+          "elapsed_ms": 4.265,
+          "response_bytes": 93,
+          "response_sha256": "60e7d9bbcbcdf6bfce06ecaaf045923aaefaa2265f65b96af34233e9a9a2811c",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "list_visitor",
+      "step_run_id": "4cf30978c5064f30b202d3249f8c703a",
+      "operation_id": "listTickets",
+      "method": "GET",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "policy_template_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.items",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "e760865ea0f44b1992e61bb46389b29e",
+          "status_code": 200,
+          "elapsed_ms": 1.858,
+          "response_bytes": 24,
+          "response_sha256": "fc564a50c79b250fda5a8ba9f5fe0ddabd47aaa34520d6cfd0a0dbfae7e7158f",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "read_closed",
+      "step_run_id": "700e388b6e1d4a4baf14044160450995",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "ASSERTION_FAILED",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "39ef6ae6143841f3f84ea09d705c76eb8bc0fba58b14d64ef77596826afa21cc",
+      "policy_template_sha256": "7d397cde90f7e9e7758a0eb1c6524c6f1f69d8554dfad0698d8ada63ed5d9f91",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": false,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "969e2a9147824cf4b94ef07bdf6473e3",
+          "status_code": 200,
+          "elapsed_ms": 3.44,
+          "response_bytes": 109,
+          "response_sha256": "29a2ab3f6fc5bde1ad9f26e0856f43706ef3b512168b8cd82b11ff7fccfbaf3f",
+          "error_code": null
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:8099",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_registry_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 1,
+  "tool_calls": 1,
+  "analysis_code": "REVIEW_FAILURE_EVIDENCE",
+  "workflow_completed": true,
+  "user_task_sha256": "78e1402177b0a8c297abfbe47cf07142a022118530d9ae9bd8697ee179590001",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "ticket_open_v1",
+    "ticket_list_v1",
+    "ticket_close_v1",
+    "ticket_list_v1",
+    "ticket_closed_read_v1",
+    "ticket_denied_v1"
+  ],
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "offline-nl-reliability",
+    "model_sha256": "bb28648e8fde5ccae85ab474868106f04492789d000ac0791ddcff8048d33404",
+    "http_status": 200,
+    "elapsed_ms": 16.0,
+    "request_bytes": 19055,
+    "request_sha256": "585cbacb12be8330e13483a6d2498d72c8faf68507a92e70f7489f50a855a532",
+    "response_bytes": 1777,
+    "input_token_upper_bound": 19567,
+    "input_tokens": 100,
+    "output_tokens": 50,
+    "total_tokens": 150,
+    "output_sha256": "9b96ebbd123d7e5ed8ce35cf565677629cae402fef74e7144bc3075af70384aa",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "plan_structure": [
+    {
+      "step_id": "open",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "policy_id": "ticket_open_v1",
+      "argument_sha256": {
+        "body.subject": "c9264cf1fdf89057abb555982fd2ba93dc30a1f54720d3f92ac3f109f700bc0f",
+        "body.priority": "b57c4299afe3cda154124bdb96ceaf618a9d8d9cd8d2c8f6580ff26faa5fe5ca"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "list_owner",
+      "operation_id": "listTickets",
+      "role": "owner",
+      "policy_id": "ticket_list_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "close",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "policy_id": "ticket_close_v1",
+      "argument_sha256": {
+        "body.state": "02e31f51aa8b1b6a622c4f7c30fab328d711cad4c9da74b9965ada8aa15d9df2"
+      },
+      "dependencies": {
+        "path_parameters.ticket_key": "open"
+      }
+    },
+    {
+      "step_id": "list_visitor",
+      "operation_id": "listTickets",
+      "role": "visitor",
+      "policy_id": "ticket_list_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "read_closed",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_closed_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "open"
+      }
+    },
+    {
+      "step_id": "denied",
+      "operation_id": "readTicket",
+      "role": "visitor",
+      "policy_id": "ticket_denied_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "open"
+      }
+    }
+  ],
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": true,
+  "task_mode": "natural_language",
+  "task_satisfied": false,
+  "investigations": [
+    {
+      "step_id": "investigation_d9f2d39fa7724139bfaf1daa453958c5",
+      "step_run_id": "d59ae5f673114b478cb13fdc5c1c9a18",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "39ef6ae6143841f3f84ea09d705c76eb8bc0fba58b14d64ef77596826afa21cc",
+      "policy_template_sha256": "7d397cde90f7e9e7758a0eb1c6524c6f1f69d8554dfad0698d8ada63ed5d9f91",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "3d2e055d1a2f4323a6fde0cd04ad6442",
+          "status_code": 200,
+          "elapsed_ms": 1.783,
+          "response_bytes": 93,
+          "response_sha256": "60e7d9bbcbcdf6bfce06ecaaf045923aaefaa2265f65b96af34233e9a9a2811c",
+          "error_code": null
+        }
+      ],
+      "parent_step_id": "read_closed",
+      "capability_id": "feedback_ticket_closed_read_v1",
+      "role": "owner",
+      "source_step_id": "open",
+      "resource_ref_sha256": "23996ef13704ad79c8b70e659e8c62bfc715404e0e1e1b393beb46457a1a364b",
+      "requests_used": 1,
+      "rounds_used": 1,
+      "model_calls_used": 1,
+      "elapsed_ms": 63.137
+    }
+  ],
+  "investigation_error": null,
+  "feedback": {
+    "state": "NEEDS_REVIEW",
+    "reason": "FEEDBACK_EVIDENCE_INSUFFICIENT",
+    "finding": "EVIDENCE_INSUFFICIENT",
+    "basis": "证据不足，需人工复核。",
+    "evidence_refs": [],
+    "decisions": [
+      {
+        "index": 0,
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "offline-nl-reliability",
+          "model_sha256": "bb28648e8fde5ccae85ab474868106f04492789d000ac0791ddcff8048d33404",
+          "http_status": 200,
+          "elapsed_ms": 0.0,
+          "request_bytes": 8823,
+          "request_sha256": "2bb43f4cbbd598de84ac0e581552a67ec8b090783632e34f702e1ad7be1ea086",
+          "response_bytes": 355,
+          "input_token_upper_bound": 9335,
+          "input_tokens": 100,
+          "output_tokens": 50,
+          "total_tokens": 150,
+          "output_sha256": "dd4619fe0de34494a0ac2757fe6293fe56c0f1fae62211c75dbfecbf65e247da",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "elapsed_ms": 1.805,
+        "public_context": {
+          "failure": {
+            "ref": "original",
+            "operation_id": "readTicket",
+            "role": "owner",
+            "outcome": "ASSERTION_FAILED",
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.state",
+                "passed": true
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.subject",
+                "passed": false
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.priority",
+                "passed": true
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.ticket_key",
+                "passed": true
+              }
+            ],
+            "public_policy_id": "ticket_closed_read_v1",
+            "public_policy_purpose": "Owner reads a ticket after closing it: check state=closed, resource identity, subject and priority. Select for closed-state readback."
+          },
+          "choices": [
+            {
+              "capability_id": "feedback_ticket_closed_read_v1",
+              "role": "owner",
+              "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+            },
+            {
+              "capability_id": "feedback_ticket_denied_v1",
+              "role": "visitor",
+              "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+            },
+            {
+              "capability_id": "feedback_ticket_read_v1",
+              "role": "owner",
+              "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+            }
+          ],
+          "finish_required": false,
+          "evidence": [],
+          "remaining": {
+            "model_calls": 3,
+            "requests": 2
+          },
+          "symptom_rule_version": "observable_symptoms_v1",
+          "tools": [
+            {
+              "choice": {
+                "capability_id": "feedback_ticket_closed_read_v1",
+                "role": "owner",
+                "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+              },
+              "operation_id": "readTicket",
+              "method": "GET",
+              "purpose": "Owner reads a ticket after closing it: check state=closed, resource identity, subject and priority. Select for closed-state readback.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    200
+                  ]
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.state"
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.subject"
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.priority"
+                }
+              ],
+              "binding_role_relation": "same",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": true,
+              "role_is_resource_producer": true,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": true
+            },
+            {
+              "choice": {
+                "capability_id": "feedback_ticket_denied_v1",
+                "role": "visitor",
+                "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+              },
+              "operation_id": "readTicket",
+              "method": "GET",
+              "purpose": "A different role attempts to read the owner's ticket and must receive HTTP 403; bind to the owner's open step.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    403
+                  ]
+                }
+              ],
+              "binding_role_relation": "different",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": false,
+              "role_is_resource_producer": false,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": false
+            },
+            {
+              "choice": {
+                "capability_id": "feedback_ticket_read_v1",
+                "role": "owner",
+                "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+              },
+              "operation_id": "readTicket",
+              "method": "GET",
+              "purpose": "Owner reads a ticket while it is open: check state=open, resource identity, subject and priority. Not the closed-state check.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    200
+                  ]
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.state"
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.subject"
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.priority"
+                }
+              ],
+              "binding_role_relation": "same",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": true,
+              "role_is_resource_producer": true,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": false
+            }
+          ],
+          "relations": []
+        },
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "index": 1,
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "offline-nl-reliability",
+          "model_sha256": "bb28648e8fde5ccae85ab474868106f04492789d000ac0791ddcff8048d33404",
+          "http_status": 200,
+          "elapsed_ms": 0.0,
+          "request_bytes": 6994,
+          "request_sha256": "f0df1346a94e3fd4527d1d778d3c26e9521decabb4334863e77a8b9ea77a08ee",
+          "response_bytes": 243,
+          "input_token_upper_bound": 7506,
+          "input_tokens": 100,
+          "output_tokens": 50,
+          "total_tokens": 150,
+          "output_sha256": "3ea54441e4cddec742abfbcee7c2231ada45357e6b396b4604e75e2da9f5148d",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "elapsed_ms": 3.041,
+        "public_context": {
+          "failure": {
+            "ref": "original",
+            "operation_id": "readTicket",
+            "role": "owner",
+            "outcome": "ASSERTION_FAILED",
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.state",
+                "passed": true
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.subject",
+                "passed": false
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.priority",
+                "passed": true
+              },
+              {
+                "kind": "equals",
+                "selector": "$.payload.ticket_key",
+                "passed": true
+              }
+            ],
+            "public_policy_id": "ticket_closed_read_v1",
+            "public_policy_purpose": "Owner reads a ticket after closing it: check state=closed, resource identity, subject and priority. Select for closed-state readback."
+          },
+          "choices": [
+            {
+              "capability_id": "feedback_ticket_denied_v1",
+              "role": "visitor",
+              "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+            }
+          ],
+          "finish_required": false,
+          "evidence": [
+            {
+              "ref": "investigation_d9f2d39fa7724139bfaf1daa453958c5",
+              "operation_id": "readTicket",
+              "role": "owner",
+              "outcome": "PASS",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "selector": null,
+                  "passed": true,
+                  "expected": [
+                    200
+                  ],
+                  "actual": 200
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.state",
+                  "passed": true
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.subject",
+                  "passed": true
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.priority",
+                  "passed": true
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.payload.ticket_key",
+                  "passed": true
+                }
+              ]
+            }
+          ],
+          "remaining": {
+            "model_calls": 2,
+            "requests": 1
+          },
+          "symptom_rule_version": "observable_symptoms_v1",
+          "tools": [
+            {
+              "choice": {
+                "capability_id": "feedback_ticket_denied_v1",
+                "role": "visitor",
+                "resource_ref": "df9419c76da34fdb898eb7cd7e6f641f"
+              },
+              "operation_id": "readTicket",
+              "method": "GET",
+              "purpose": "A different role attempts to read the owner's ticket and must receive HTTP 403; bind to the owner's open step.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    403
+                  ]
+                }
+              ],
+              "binding_role_relation": "different",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": false,
+              "role_is_resource_producer": false,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": false
+            }
+          ],
+          "relations": [
+            {
+              "ref": "investigation_d9f2d39fa7724139bfaf1daa453958c5",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": true,
+              "role_is_resource_producer": true,
+              "repeated_failed_checks": [],
+              "http_checks_passed": true,
+              "same_policy_as_original": true
+            }
+          ]
+        },
+        "proposal": {
+          "action": "finish",
+          "finding": "EVIDENCE_INSUFFICIENT",
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": null
+        }
+      }
+    ],
+    "requests_used": 1,
+    "model_calls_used": 2,
+    "elapsed_ms": 221.535
+  },
+  "trusted_symptom": {
+    "rule_version": "observable_symptoms_v1",
+    "state": "NEEDS_REVIEW",
+    "finding": "EVIDENCE_INSUFFICIENT",
+    "evidence_refs": [],
+    "reason": "RULE_EVIDENCE_INSUFFICIENT"
+  },
+  "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+}

@@ -1,0 +1,107 @@
+{
+  "run_id": "293bf18330e2412e8b1e089d78a2eff6",
+  "revision": 6,
+  "started_at": "2026-10-19T02:39:46.622391+00:00",
+  "scenario_sha256": "1379bca0e38c520e6fb30e1ce82877ae6c831a555759faebef58d5841977b778",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "outcome": "NEEDS_REVIEW",
+  "steps": [],
+  "completed": true,
+  "reason": "REVIEW_REQUIRED",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:8099",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 1,
+  "tool_calls": 0,
+  "analysis_code": "APPROVE_POLICY_OR_SCHEMA",
+  "workflow_completed": true,
+  "user_task_sha256": "5bce8867a048287a53666da12d32a00c200f45f03b63f2b4dffc5cf12093c5a6",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "ticket_open_v1"
+  ],
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-plus",
+    "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+    "http_status": 200,
+    "elapsed_ms": 3438.0,
+    "request_bytes": 19002,
+    "request_sha256": "c82c06da31ce3e4d21e2b372c67f849a2bf999cf8f7ec42109734d079b202a8e",
+    "response_bytes": 860,
+    "input_token_upper_bound": 19514,
+    "input_tokens": 2472,
+    "output_tokens": 82,
+    "total_tokens": 2554,
+    "output_sha256": "128532f033c6b81fae5c36619bb13cc5f09e117fa7073b444bd34396cf78eff3",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "plan_structure": [
+    {
+      "step_id": "owner_open_ticket",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "policy_id": "ticket_open_v1",
+      "argument_sha256": {
+        "body.subject": "0051518328570ca430ba190bf13c6ba62c81d38882bf2854aae26f4e1cdc6897",
+        "body.priority": "b57c4299afe3cda154124bdb96ceaf618a9d8d9cd8d2c8f6580ff26faa5fe5ca"
+      },
+      "dependencies": {}
+    }
+  ],
+  "validation_issue": "POLICY_OR_SCHEMA_REVIEW",
+  "diagnostic": {
+    "layer": "intent",
+    "code": "INTENT_TASK_CONTRACT_PLAN_MISMATCH",
+    "fields": [],
+    "intent": [
+      {
+        "branch": "STEP_COUNT",
+        "requirement_index": null
+      },
+      {
+        "branch": "OPERATION_ROLE_POLICY",
+        "requirement_index": 1
+      },
+      {
+        "branch": "OPERATION_ROLE_POLICY",
+        "requirement_index": 2
+      },
+      {
+        "branch": "OPERATION_ROLE_POLICY",
+        "requirement_index": 3
+      },
+      {
+        "branch": "OPERATION_ROLE_POLICY",
+        "requirement_index": 4
+      },
+      {
+        "branch": "OPERATION_ROLE_POLICY",
+        "requirement_index": 5
+      },
+      {
+        "branch": "ORDER",
+        "requirement_index": 0
+      },
+      {
+        "branch": "ORDER",
+        "requirement_index": 1
+      }
+    ]
+  },
+  "intent_verified": false,
+  "task_mode": "natural_language",
+  "task_satisfied": false,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+}

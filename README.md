@@ -6,7 +6,14 @@
 
 [证据可靠性与模型价值](docs/evidence-value-report.md) · [交付导航与五分钟演示](docs/goal-delivery-guide.md) · [简历和面试材料](docs/goal-resume-interview.md)。
 
-2026-10-18 新增量完成：固定计划三组各三轮，严格结论旧模型19/36、候选29/36、零模型规则36/36。
+2026-10-19 自然语言可靠性增量：公开资源/认证/角色/状态策略关系、生成前联合约束、
+独立可信症状与模型建议分层已实现；[根因与边界](docs/nl-reliability-20261019.md)。
+新排期Mock两组各36/36；真实首请求超时后71位置停止，操作员现已允许按原顺序继续未尝试位置，
+[后段准备与边界](docs/nl-validation-resumption.md)。**暂无可比较真实成绩**，原超时Token仍未知。
+[开发结果与候选选择](docs/nl-development-results.md) · [完整停止记录](docs/nl-validation-results.md) ·
+[可审阅CLI→pytest使用路径及待完成项](docs/nl-usage-guide.md)。新需求实跑、独立人审、节时均未完成。
+
+2026-10-18 历史增量：固定计划三组各三轮，严格结论旧模型19/36、候选29/36、零模型规则36/36。
 候选支持类结论24/24，但证据不足的正确弃权5/12低于旧模型9/12；单独自然语言端到端仅1/6。
 因此未达到完整可靠性目标，未证明相对确定性调查的额外价值；失败、成本与冷复核均保留。
 [固定协议](docs/evidence-comparison-protocol.md) / [108位置完整结果](docs/demo-evidence/evidence-validation-results.json) / [6题端到端](docs/demo-evidence/evidence-e2e-results.json)。

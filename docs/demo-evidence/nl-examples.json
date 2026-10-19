@@ -1,0 +1,57 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "selection": "Presentation examples only; full denominators in original archives",
+  "examples": [
+    {
+      "label": "normal",
+      "source": "real_development_abe1e6e",
+      "archive": "runs/nlr-development-real",
+      "position": 3,
+      "run_id": "46f8f063f46f45ff83fb895b9952c1cd",
+      "report_sha256": "eedbece4863f2ee7355e7a01b0805ac1e1569723b22b5ceeea8d50592d1f554f",
+      "product_complete": true,
+      "model_conclusion_correct": false
+    },
+    {
+      "label": "refused_plan",
+      "source": "real_development_abe1e6e",
+      "archive": "runs/nlr-development-real",
+      "position": 11,
+      "run_id": "293bf18330e2412e8b1e089d78a2eff6",
+      "report_sha256": "88bd30ecc2a0ee4383a427e21e973297e7bfc0666f5a16267deccc0d3b4cf530",
+      "product_complete": false,
+      "model_conclusion_correct": false
+    },
+    {
+      "label": "fault_model_abstains_rule_supports",
+      "source": "real_development_abe1e6e",
+      "archive": "runs/nlr-development-real",
+      "position": 10,
+      "run_id": "1a958c3764e8414dbeed2d30b775bcbd",
+      "report_sha256": "ed74aea906e08c5eafd960b6999fd703c401fc30bf6449901e69ba7fd1eff47f",
+      "product_complete": true,
+      "model_conclusion_correct": false
+    },
+    {
+      "label": "insufficient",
+      "source": "mock_transport_not_real_model_evidence",
+      "archive": "runs/nlr-validation-mock-final",
+      "position": 23,
+      "run_id": "22db75136421403eaad36a3368c38302",
+      "report_sha256": "78e0ae581d966d39cd6454d64311827f55309f5959ab6d828fcae41935dcf5f5",
+      "product_complete": true,
+      "model_conclusion_correct": true
+    },
+    {
+      "label": "model_timeout",
+      "source": "real_attempt_usage_unknown_no_plan",
+      "archive": "runs/nlr-validation-real",
+      "position": 1,
+      "run_id": "7e3026c09205418ea9bd553339cf85fd",
+      "report_sha256": "3e71b00906d4e44c2cd7a1e5bd769a56efe63a8fec046d5eed7d33111a1a5202",
+      "product_complete": false,
+      "model_conclusion_correct": false
+    }
+  ]
+}

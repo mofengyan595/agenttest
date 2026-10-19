@@ -1,0 +1,501 @@
+{
+  "run_id": "46f8f063f46f45ff83fb895b9952c1cd",
+  "revision": 38,
+  "started_at": "2026-10-19T02:34:44.799687+00:00",
+  "scenario_sha256": "81d459102c5819dcc978b149ba68f9c89d145c7dfce6fbed96e99dc189bf20ed",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "outcome": "PASS",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "step_run_id": "d5b108f3962149c3bff56e9cef77f1a4",
+      "operation_id": "listTickets",
+      "method": "GET",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "policy_template_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.items",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "097a692486e24243a5bf2ab59d3d307d",
+          "status_code": 200,
+          "elapsed_ms": 5.82,
+          "response_bytes": 24,
+          "response_sha256": "fc564a50c79b250fda5a8ba9f5fe0ddabd47aaa34520d6cfd0a0dbfae7e7158f",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_2",
+      "step_run_id": "bf251a4b58f44ab2ae2968de923e023b",
+      "operation_id": "openTicket",
+      "method": "POST",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "d70f457693644ac40f6a38d0557a0d589de0cff3932f2c4aeb8e48281ed0c7ad",
+      "policy_template_sha256": "121fedafd9fd85f0b1c4648abc6764bdc54c437cfcf387dc5a8d0c492959659a",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            201
+          ],
+          "actual": 201
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "ad4298eaa8be4e29a4415f243f5660ec",
+          "status_code": 201,
+          "elapsed_ms": 3.648,
+          "response_bytes": 91,
+          "response_sha256": "c024d6e0bd35b3358559984f2684a97bf7d0d63e9408ee7e0f0669ae48c84f2c",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_3",
+      "step_run_id": "3c32959bbfc140a1a355c7a820017d8c",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "d48000a0589db727fb43ed996618a10221d5c5eac80fa4a56380ef24288245df",
+      "policy_template_sha256": "3db090885823bc6176e9b182c2335b8e5472cc83b14cbac2b636dcff59267f8f",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "40042aa5d5e94bf58e979592ae49458c",
+          "status_code": 200,
+          "elapsed_ms": 3.63,
+          "response_bytes": 91,
+          "response_sha256": "c024d6e0bd35b3358559984f2684a97bf7d0d63e9408ee7e0f0669ae48c84f2c",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_4",
+      "step_run_id": "ffa27ce2a6a642e4a90c36515672ff58",
+      "operation_id": "closeTicket",
+      "method": "PATCH",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "a9acdb41d27844bc4ee8f51157a2babb549d4a355823fca66899af7a9df6020a",
+      "policy_template_sha256": "df2e8b314cbedd0f3c08686183036c7cb6e7ae4e22f72195f7d212a01c13163f",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "a3b3f58a091a4090945c1b3f42dcc1cf",
+          "status_code": 200,
+          "elapsed_ms": 3.61,
+          "response_bytes": 93,
+          "response_sha256": "9b5eb355579fa71514025bdd7b1301133067f97583a4877fd1e9e0426af55839",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_5",
+      "step_run_id": "910e4f707c8f46c7957746f7e386f6cb",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "08ba36aef1124349d9941999f5aaa506e292f48a6a644a490d13f2306d43c007",
+      "policy_template_sha256": "d0611e0c797b083fb657c1dd297fb91af140c9ed3a339e725101ff3de9e3b16c",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "97f4fdc9dff64cfc8fc3df071b44cd78",
+          "status_code": 200,
+          "elapsed_ms": 2.513,
+          "response_bytes": 93,
+          "response_sha256": "9b5eb355579fa71514025bdd7b1301133067f97583a4877fd1e9e0426af55839",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_6",
+      "step_run_id": "df039574eee74cca868d8d31f74ffa36",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "17de62a84335e169b26d4558d7000c9bfa36917ed9ae75e46dfe3a427f9f9d5b",
+      "policy_template_sha256": "17de62a84335e169b26d4558d7000c9bfa36917ed9ae75e46dfe3a427f9f9d5b",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            403
+          ],
+          "actual": 403
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "9e00b17e33424de9abd0e35d6e55029e",
+          "status_code": 403,
+          "elapsed_ms": 2.013,
+          "response_bytes": 46,
+          "response_sha256": "cb6ddf5658c93aca50cdcb9181556f746002f761041f08634c1f95eeb36f05bc",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "step_7",
+      "step_run_id": "05e309531d4240569abb7998b71057be",
+      "operation_id": "listTickets",
+      "method": "GET",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "policy_template_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.items",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "1dcc2bccd4964e10b1386ab1f9d8c2f7",
+          "status_code": 200,
+          "elapsed_ms": 1.829,
+          "response_bytes": 24,
+          "response_sha256": "fc564a50c79b250fda5a8ba9f5fe0ddabd47aaa34520d6cfd0a0dbfae7e7158f",
+          "error_code": null
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:8099",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_registry_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 1,
+  "tool_calls": 1,
+  "analysis_code": "COMPLETED",
+  "workflow_completed": true,
+  "user_task_sha256": "a34260dac8e4308b05721695a8bb2d69dce54d3c58756b1ac28e36fbcf251d93",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "ticket_list_v1",
+    "ticket_open_v1",
+    "ticket_read_v1",
+    "ticket_close_v1",
+    "ticket_closed_read_v1",
+    "ticket_denied_v1",
+    "ticket_list_v1"
+  ],
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-plus",
+    "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+    "http_status": 200,
+    "elapsed_ms": 30703.0,
+    "request_bytes": 19089,
+    "request_sha256": "81b29a9d86731c24065314ab923c215da5c1239a5408aa2ce55310ea4beeee3d",
+    "response_bytes": 3270,
+    "input_token_upper_bound": 19601,
+    "input_tokens": 2494,
+    "output_tokens": 750,
+    "total_tokens": 3244,
+    "output_sha256": "15476e628c7d05cc99ad7e25ec2409532b4e7fd74a006d663619ff5772001de6",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "plan_structure": [
+    {
+      "step_id": "step_1",
+      "operation_id": "listTickets",
+      "role": "owner",
+      "policy_id": "ticket_list_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "step_2",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "policy_id": "ticket_open_v1",
+      "argument_sha256": {
+        "body.subject": "7dc182c26b705eff70bc9c9b24c878a7065b363d848660debdc6ca3511bedd16",
+        "body.priority": "b57c4299afe3cda154124bdb96ceaf618a9d8d9cd8d2c8f6580ff26faa5fe5ca"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "step_3",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "step_2"
+      }
+    },
+    {
+      "step_id": "step_4",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "policy_id": "ticket_close_v1",
+      "argument_sha256": {
+        "body.state": "02e31f51aa8b1b6a622c4f7c30fab328d711cad4c9da74b9965ada8aa15d9df2"
+      },
+      "dependencies": {
+        "path_parameters.ticket_key": "step_2"
+      }
+    },
+    {
+      "step_id": "step_5",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_closed_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "step_2"
+      }
+    },
+    {
+      "step_id": "step_6",
+      "operation_id": "readTicket",
+      "role": "visitor",
+      "policy_id": "ticket_denied_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "step_2"
+      }
+    },
+    {
+      "step_id": "step_7",
+      "operation_id": "listTickets",
+      "role": "visitor",
+      "policy_id": "ticket_list_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    }
+  ],
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": true,
+  "task_mode": "natural_language",
+  "task_satisfied": true,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+}
