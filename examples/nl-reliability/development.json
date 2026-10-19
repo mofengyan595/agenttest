@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ND01", "project": "courses", "category": "healthy", "fault": "none",
+    "finding": null, "roles": ["alice", "bob"], "names": ["海湾甲", "海湾乙"],
+    "sequence": ["auth_a", "auth_b", "create_a", "create_b", "read_a", "read_b", "deny_a", "deny_b"],
+    "user_task": "先让alice登录，再让bob登录。alice创建课程“海湾甲”，随后bob创建“海湾乙”。依次由alice读取甲、bob读取乙，核对各自名称和ID。最后先由bob读取甲确认被拒绝，再由alice读取乙确认被拒绝。两项拒绝检查必须引用对应的创建资源。"
+  },
+  {
+    "id": "ND02", "project": "tickets", "category": "healthy", "fault": "none",
+    "finding": null, "names": ["岸线调度"], "priority": "high",
+    "sequence": ["list_owner", "open", "read_open", "close", "read_closed", "denied", "list_visitor"],
+    "user_task": "按下列先后完成工单检查：owner先列出可见工单，创建主题“岸线调度”、优先级high的工单，读取核对open状态和原内容，再关闭为closed，再读取核对closed状态及原内容。之后visitor读取同一工单应被拒绝，最后visitor列出自己的可见工单。全程使用创建响应的工单标识。"
+  },
+  {
+    "id": "ND03", "project": "courses", "category": "healthy", "fault": "none",
+    "finding": null, "roles": ["bob", "alice"], "names": ["回声甲", "回声乙"],
+    "sequence": ["auth_a", "create_a", "read_a", "auth_b", "create_b", "read_b", "deny_b"],
+    "user_task": "bob先登录，创建“回声甲”并读取核对名称和ID；完成后alice登录，创建“回声乙”并读取核对名称和ID。最后bob尝试读取alice创建的乙课程，确认被拒绝。不要用甲课程替代最后的乙课程引用。"
+  },
+  {
+    "id": "ND04", "project": "tickets", "category": "readback", "fault": "wrong_subject",
+    "finding": "PERSISTENT_READBACK_MISMATCH", "names": ["晨光登记"], "priority": "low",
+    "sequence": ["list_visitor", "open", "close", "read_closed", "list_owner"],
+    "user_task": "先visitor列出其可见工单，然后owner创建主题“晨光登记”、优先级low的工单并关闭为closed。接着owner读取创建的同一工单，核对closed状态、标识、主题和优先级，最后owner列出其可见工单。"
+  },
+  {
+    "id": "ND05", "project": "courses", "category": "access", "fault": "ownership",
+    "finding": "ACCESS_BOUNDARY_VIOLATION", "roles": ["alice", "bob"], "names": ["青石甲", "青石乙"],
+    "sequence": ["auth_b", "create_b", "read_b", "auth_a", "create_a", "read_a", "deny_b", "deny_a"],
+    "user_task": "bob先登录、创建“青石乙”并核对自己的读取。然后alice登录、创建“青石甲”并核对自己的读取。随后alice读取乙应被拒绝，最后bob读取甲应被拒绝。每次读取核对相应课程的名称与ID，两次拒绝的对象不可互换。"
+  },
+  {
+    "id": "ND06", "project": "tickets", "category": "insufficient", "fault": "transient_subject",
+    "finding": "EVIDENCE_INSUFFICIENT", "names": ["雾港记录"], "priority": "high",
+    "sequence": ["open", "close", "list_visitor", "read_closed", "denied", "list_owner"],
+    "user_task": "owner创建主题“雾港记录”、优先级high的工单并关闭为closed；随后visitor先列出自己的工单。接着owner读取新建工单核对closed状态与原内容，再由visitor读取同一工单确认被拒绝，最后owner列出自己的工单。"
+  }
+]

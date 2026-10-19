@@ -1,0 +1,12 @@
+{
+  "nl_login_v1": "Authenticate the named role using executor-managed credentials before protected operations; no planner arguments.",
+  "nl_create_v1": "Create one named resource as this role; produces $.courseId. Distinct named resources require distinct create steps.",
+  "nl_read_v1": "Read a resource as its producing role and verify its ID and original name; bind to that resource's create step.",
+  "nl_forbidden_v1": "Check that a different role cannot read the producing role's resource; approved denial HTTP status 403.",
+  "ticket_open_v1": "Create an open ticket with the requested subject and priority; produces $.payload.ticket_key.",
+  "ticket_read_v1": "Owner reads a ticket while it is open: check state=open, resource identity, subject and priority. Not the closed-state check.",
+  "ticket_closed_read_v1": "Owner reads a ticket after closing it: check state=closed, resource identity, subject and priority. Select for closed-state readback.",
+  "ticket_close_v1": "Owner changes their ticket to closed using body.state=closed; verifies the close response. Not a readback substitute.",
+  "ticket_denied_v1": "A different role attempts to read the owner's ticket and must receive HTTP 403; bind to the owner's open step.",
+  "ticket_list_v1": "List only the current role's visible tickets; collection operation needs no ticket key, and is not a single-ticket read or authentication."
+}

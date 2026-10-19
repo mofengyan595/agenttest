@@ -1,0 +1,74 @@
+[
+  {
+    "id": "NV01", "project": "courses", "category": "healthy", "fault": "none",
+    "finding": null, "roles": ["alice", "bob"], "names": ["松桥甲", "松桥乙"],
+    "sequence": ["auth_a", "auth_b", "create_a", "create_b", "read_b", "read_a", "deny_a", "deny_b"],
+    "user_task": "alice登录后bob登录，alice创建“松桥甲”，再由bob创建“松桥乙”。先bob读取乙核对名称和ID，再alice读取甲核对名称和ID。随后bob读取甲应被拒绝，最后alice读取乙应被拒绝。上述顺序必须保留，两个资源的来源不能混用。"
+  },
+  {
+    "id": "NV02", "project": "courses", "category": "healthy", "fault": "none",
+    "finding": null, "roles": ["bob", "alice"], "names": ["潮汐甲", "潮汐乙"],
+    "sequence": ["auth_a", "create_a", "read_a", "auth_b", "create_b", "read_b", "deny_a"],
+    "user_task": "bob先登录，创建并读取“潮汐甲”，核对名称及ID。之后alice登录、创建并读取“潮汐乙”，核对乙的名称及ID。最后只让alice读取bob创建的甲课程，确认被拒绝，不额外检查bob读取乙。"
+  },
+  {
+    "id": "NV03", "project": "courses", "category": "healthy", "fault": "none",
+    "finding": null, "roles": ["alice", "bob"], "names": ["林径甲", "林径乙"],
+    "sequence": ["auth_b", "create_b", "read_b", "auth_a", "create_a", "read_a", "deny_b"],
+    "user_task": "先由bob登录，创建“林径乙”并读取核对名称及ID；之后alice登录，创建“林径甲”并读取核对名称及ID。最后alice读取bob的乙课程应被拒绝。只检查这一方向的跨用户读取。"
+  },
+  {
+    "id": "NV04", "project": "tickets", "category": "healthy", "fault": "none",
+    "finding": null, "names": ["晴川巡检"], "priority": "low",
+    "sequence": ["list_owner", "open", "read_open", "close", "read_closed", "denied", "list_visitor"],
+    "user_task": "owner先列出自己的可见工单，再创建主题“晴川巡检”、优先级low的工单。先读取核对open状态与内容，然后关闭为closed，再读取核对closed状态、标识及原内容。接着visitor读取同一工单确认被拒绝，最后visitor列出自己的工单。依照上述顺序，所有单条读取使用新建工单标识。"
+  },
+  {
+    "id": "NV05", "project": "tickets", "category": "healthy", "fault": "none",
+    "finding": null, "names": ["白帆交接"], "priority": "high",
+    "sequence": ["list_visitor", "open", "close", "read_closed", "denied", "list_owner"],
+    "user_task": "visitor先查看自己的工单列表；然后owner新建主题“白帆交接”、优先级high的工单并关闭为closed。owner读取新建工单核对closed状态和原内容，visitor再读取同一工单应被拒绝，最后owner列出自己的工单。不要添加关闭前的单条读取。"
+  },
+  {
+    "id": "NV06", "project": "tickets", "category": "healthy", "fault": "none",
+    "finding": null, "names": ["远汀申请"], "priority": "low",
+    "sequence": ["list_owner", "open", "read_open", "denied", "list_visitor", "close", "read_closed"],
+    "user_task": "owner列出可见工单后创建主题“远汀申请”、优先级low的工单，并读取核对open状态及原内容。随后visitor读取该工单应被拒绝，再由visitor列出自己的工单。完成这些检查后owner关闭工单，最后owner读取核对closed状态、标识及原内容。所有步骤按这里的顺序执行。"
+  },
+  {
+    "id": "NV07", "project": "courses", "category": "access", "fault": "ownership",
+    "finding": "ACCESS_BOUNDARY_VIOLATION", "roles": ["bob", "alice"], "names": ["星浦甲", "星浦乙"],
+    "sequence": ["auth_a", "create_a", "auth_b", "create_b", "read_a", "read_b", "deny_b", "deny_a"],
+    "user_task": "bob登录并创建“星浦甲”，接着alice登录并创建“星浦乙”；然后bob读取甲、alice读取乙，分别核对名称与ID。之后先bob读取乙确认被拒绝，再alice读取甲确认被拒绝。不要交换两次拒绝所引用的创建资源。"
+  },
+  {
+    "id": "NV08", "project": "courses", "category": "readback", "fault": "response_name",
+    "finding": "PERSISTENT_READBACK_MISMATCH", "roles": ["alice", "bob"], "names": ["芦岸甲", "芦岸乙"],
+    "sequence": ["auth_b", "auth_a", "create_b", "create_a", "read_a", "read_b", "deny_a"],
+    "user_task": "先bob登录，再alice登录；bob先创建“芦岸乙”，alice再创建“芦岸甲”。之后alice读取甲核对名称及ID，再bob读取乙核对名称及ID；最后bob读取甲应被拒绝，不检查另一方向。前置创建必须保留给各自角色。"
+  },
+  {
+    "id": "NV09", "project": "tickets", "category": "access", "fault": "owner_leak",
+    "finding": "ACCESS_BOUNDARY_VIOLATION", "names": ["泊云受理"], "priority": "high",
+    "sequence": ["list_owner", "open", "close", "list_visitor", "read_closed", "denied"],
+    "user_task": "owner先列出工单，再新建主题“泊云受理”、优先级high的工单并关闭为closed。随后visitor列出自己的可见工单，再由owner读取新建工单核对closed状态与原内容，最后visitor读取同一工单应被拒绝。不要增加关闭前读取。"
+  },
+  {
+    "id": "NV10", "project": "tickets", "category": "readback", "fault": "wrong_subject",
+    "finding": "PERSISTENT_READBACK_MISMATCH", "names": ["溪亭跟进"], "priority": "low",
+    "sequence": ["list_visitor", "list_owner", "open", "close", "read_closed", "denied"],
+    "user_task": "visitor先列出工单，owner随后列出自己的工单。owner创建主题“溪亭跟进”、优先级low的工单，关闭为closed后读取核对closed状态、标识及原内容，最后visitor读取该工单应被拒绝。按照给出的先后执行，单条读取只绑定这次创建的工单。"
+  },
+  {
+    "id": "NV11", "project": "courses", "category": "insufficient", "fault": "read_unavailable",
+    "finding": "EVIDENCE_INSUFFICIENT", "roles": ["bob", "alice"], "names": ["柳堤甲", "柳堤乙"],
+    "sequence": ["auth_b", "auth_a", "create_a", "create_b", "read_b", "read_a", "deny_b"],
+    "user_task": "alice先登录，bob再登录；bob创建“柳堤甲”后alice创建“柳堤乙”。先alice读取乙核对名称及ID，再bob读取甲核对名称及ID，最后bob读取alice的乙课程应被拒绝，不添加另一个方向的拒绝读取。"
+  },
+  {
+    "id": "NV12", "project": "tickets", "category": "insufficient", "fault": "transient_subject",
+    "finding": "EVIDENCE_INSUFFICIENT", "names": ["苇塘核对"], "priority": "high",
+    "sequence": ["open", "list_owner", "close", "list_visitor", "read_closed", "denied"],
+    "user_task": "owner新建主题“苇塘核对”、优先级high的工单，接着owner列出自己的工单，然后关闭刚创建的工单为closed。visitor列出自己的工单后，owner读取新建工单核对closed状态、标识及原内容，最后visitor读取同一工单确认被拒绝。依次完成这些步骤。"
+  }
+]
