@@ -1,12 +1,17 @@
 """Seal completed offline evidence; hashes detect replacement, not a malicious OS owner."""
 
 import hashlib
+import json
+import math
 import os
 import re
 import stat
 
+from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.evaluation import save_evaluation
-from agenttest.plan_json import bounded_json
+
+MAX_ARCHIVE_BYTES = 5_000_000
+MAX_ARCHIVE_NODES = 100_000
 
 
 class UnverifiableArchive(ValueError):
@@ -24,10 +29,43 @@ def _regular(path):
 
 
 def read_json(path):
+    """Read bounded local evidence, whose repeated contexts exceed a model DSL's size.
+
+    Model/DSL parsing keeps its independent 20,000-node budget. Archive metadata
+    keeps duplicate-key, finite-number, depth, link and byte checks as before.
+    """
     _regular(path)
     with path.open("rb") as stream:
-        raw = stream.read(5_000_001)
-    return bounded_json(raw.decode("utf-8"), 5_000_000)
+        raw = stream.read(MAX_ARCHIVE_BYTES + 1)
+    if len(raw) > MAX_ARCHIVE_BYTES:
+        raise ValidationFailure(Layer.JSON, "JSON_SIZE")
+
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValidationFailure(Layer.JSON, "JSON_DUPLICATE_KEY")
+            result[key] = value
+        return result
+
+    def nonfinite(value):
+        raise ValidationFailure(Layer.JSON, "JSON_NONFINITE_NUMBER")
+
+    try:
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=unique, parse_constant=nonfinite)
+    except (json.JSONDecodeError, RecursionError):
+        raise ValidationFailure(Layer.JSON, "JSON_SYNTAX") from None
+    pending, nodes = [(data, 0)], 0
+    while pending:
+        value, depth = pending.pop()
+        nodes += 1
+        if (nodes > MAX_ARCHIVE_NODES or depth > 40
+                or type(value) is float and not math.isfinite(value)):
+            raise ValidationFailure(Layer.JSON, "JSON_STRUCTURE_LIMIT")
+        if isinstance(value, (dict, list)):
+            pending.extend((v, depth + 1) for v in (
+                value.values() if isinstance(value, dict) else value))
+    return data
 
 
 def inventory(directory):

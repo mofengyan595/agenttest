@@ -1,0 +1,39 @@
+{
+  "schema_version": "agenttest.nl-candidate-selection.v1",
+  "selected_at": "2026-10-19T03:29:36.220938+00:00",
+  "development_archive_sha256": "cd5eff2153ca2755d0a1554156aad47860c98cadde5d217de8bc2af99f5a2895",
+  "development_runtime_sha256": "02584cf739e6e40b6cf48a68d1738e17f9b71d0b5d94532f7a2fa79d912a051e",
+  "selected_runtime_sha256": "a7c81ecbd3ee0c29c0c6d3c62714cf0c65aed0f56e85a068bda26d1ccd5cbcea",
+  "changed_runtime_files": [
+    "scripts/evaluate_nl_reliability.py",
+    "src/agenttest/eval_v2/archive.py",
+    "src/agenttest/evidence_context.py",
+    "src/agenttest/feedback_runtime.py",
+    "src/agenttest/nl_evaluation.py"
+  ],
+  "grading_version": "nl_product_v1_model_proposals_v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "additional_paid_development_calls": 0,
+  "model_candidate_source_commit": "851bc125a7310afac3d1a06417e5c91434e8da18",
+  "model_selection_record_sha256": "751ffe587616bf3fc758b9f3a219c4fbd02672e35d564ae3338735ea60a8e996",
+  "real_validation_positions_attempted": 0,
+  "archive_only_followup": {
+    "changed_files_since_model_freeze": [
+      "src/agenttest/eval_v2/archive.py",
+      "src/agenttest/nl_evaluation.py"
+    ],
+    "original_mock_archive_sha256": "5bee48952c12c80558a0875a52c391747b073633d165f1414eced75a45f732cd",
+    "original_mock_positions": 72,
+    "original_mock_product": {
+      "baseline": "36/36",
+      "candidate": "36/36"
+    },
+    "original_cold_error": "JSON_STRUCTURE_LIMIT",
+    "archive_nodes": 100000,
+    "model_dsl_nodes": 20000,
+    "max_bytes": 5000000,
+    "max_depth": 40
+  },
+  "reason": "Bounded local archive reader repair only; model decisions, schema, symptoms, scoring, tasks and budgets are unchanged from the frozen candidate."
+}

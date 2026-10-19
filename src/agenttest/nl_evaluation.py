@@ -27,7 +27,8 @@ from agenttest.task_contract import TaskContract
 BASELINE = "ecc362cb19af79ea4e4102c3aac1ed7014afefb7"
 BASELINE_ROOT = PROJECT_ROOT / "runs/nlr-baseline-ecc362c"
 SELECTION_SCOPE = {"src/agenttest/evidence_context.py", "src/agenttest/feedback_runtime.py",
-                   "src/agenttest/nl_evaluation.py", "scripts/evaluate_nl_reliability.py"}
+                   "src/agenttest/nl_evaluation.py", "scripts/evaluate_nl_reliability.py",
+                   "src/agenttest/eval_v2/archive.py"}
 
 
 def runtime_files_identity():
@@ -38,7 +39,7 @@ def runtime_files_identity():
 
 
 def selected_candidate(prior_phase, selection_path, runtime_files):
-    """Bind the single pre-validation input fix to the unchanged development archive.
+    """Bind candidate input metadata and archive-only repair to the original development archive.
 
     This is a developer selection record, never independent review or permission
     to change tasks, scoring, assertions, authorization, execution or symptom rules.
