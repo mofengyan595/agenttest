@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from agenttest.contracts import ContractSummary
+from agenttest.diagnostics import IntentDiagnostic
 from agenttest.dsl import Scenario
 from agenttest.eval_v2.models import Rubric
 from agenttest.eval_v2.scoring import score_intent
@@ -49,7 +50,23 @@ def task_validator(
     def validate(user_task: str, scenario: Scenario) -> None:
         if fingerprint(user_task) != fingerprint(task.user_task):
             raise NeedsReview("INTENT_TASK_CONTRACT_TASK_MISMATCH")
-        if not score_intent(task.requirements, scenario).passed:
-            raise NeedsReview("INTENT_TASK_CONTRACT_PLAN_MISMATCH")
+        score = score_intent(task.requirements, scenario)
+        if not score.passed:
+            failure = NeedsReview("INTENT_TASK_CONTRACT_PLAN_MISMATCH")
+            branches = {"STEP_COUNT_MISMATCH": "STEP_COUNT",
+                "OPERATION_ROLE_POLICY_MISMATCH": "OPERATION_ROLE_POLICY",
+                "PARAMETER_SET_MISMATCH": "PARAMETERS",
+                "VALUE_SOURCE_SELECTOR_MISMATCH": "SOURCE_OR_VALUE", "ORDER_MISMATCH": "ORDER",
+                "UNLABELED_EXECUTION_OPTION": "EXECUTION_OPTION",
+                "SUBGOAL_MISSING": "GOAL_COVERAGE",
+                "EXTRA_OR_MISSING_STEPS": "STEP_SET"}
+            keys = [s.key for s in task.requirements.steps]
+            failure.diagnostic.intent = []
+            for detail in score.diagnostics[:8]:
+                family, _, key = detail.partition(":")
+                key = key.split(":", 1)[0].split(".", 1)[0]
+                failure.diagnostic.intent.append(IntentDiagnostic(branch=branches[family],
+                    requirement_index=keys.index(key) if key in keys else None))
+            raise failure
 
     return validate

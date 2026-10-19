@@ -247,7 +247,8 @@ def main(argv: list[str] | None = None) -> int:
                     "timeout": args.model_timeout, "max_output_tokens": args.max_output_tokens,
                     "max_total_tokens": args.max_total_tokens})
                 planner = OpenAICompatiblePlanner(
-                    settings, profile="generic" if generic else "mini")
+                    settings, profile="generic" if generic else "mini",
+                    planning_constraints=generic)
                 budget = WorkflowBudget(model_timeout=settings.timeout + 1,
                                         workflow_timeout=min(settings.timeout + 90, 300))
             else:

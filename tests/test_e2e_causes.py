@@ -27,6 +27,9 @@ def test_old_failure_shapes_match_original_requirements(index, cause):
     score = score_intent(task.requirements, plan)
     assert any(d.startswith(cause) for d in score.diagnostics), score.diagnostics
     original = plan.model_dump_json()
-    with pytest.raises(NeedsReview, match="INTENT_TASK_CONTRACT_PLAN_MISMATCH"):
+    with pytest.raises(NeedsReview, match="INTENT_TASK_CONTRACT_PLAN_MISMATCH") as rejected:
         task_validator(task, load_openapi(doc), target, policies)(task.user_task, plan)
     assert plan.model_dump_json() == original
+    details = rejected.value.diagnostic.intent
+    assert details and details[0].branch == ("ORDER" if index == 0 else "OPERATION_ROLE_POLICY")
+    assert "前置资源" not in rejected.value.diagnostic.model_dump_json()

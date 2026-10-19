@@ -45,3 +45,21 @@ TaskContract 使用逐操作/角色/策略唯一匹配，因此重复同签名�
 阶段 1 模型预算为零。后续每阶段在真实调用前另存固定排期/源码身份/安全预算，
 每 run 最多一规划加三反馈模型、两次只读调查，无隐式重试，未知用量停止后续付费调用。
 人工 TaskContract、策略与角色配置成本会记录；没有真实使用者计时，不报告节时。
+
+## 阶段 2：规划前关系和可定位拒绝
+
+`OpenAICompatiblePlanner(..., profile="generic", planning_constraints=True)` 增加
+公开 binding_rules 派生的 resource_dependencies、认证前提、合法步骤组合，以及
+通用需求完整性检查清单。CLI 的通用自然语言规划使用此开关；默认适配器仍可复现旧行为。
+策略公开 purpose 仍由操作员维护，本轮两版本对照会共享相同用途明确的批准配置。
+
+出站 Schema 联合绑定 operation/policy/批准角色集合，保留原参数槽位/类型约束。
+它不表达跨步骤资源身份、先后关系或动态角色比较；这些仍由原引用/Policy/DSL/Intent门禁判定。
+TaskContract 原拒绝码不变，新增封闭类别和 requirement_index 诊断，不输出参数值或标准答案。
+原文中独立资源的先后关系只由模型自行理解；没有把 TaskContract.before 派生为给模型的答案。
+结构化输出使用嵌套 anyOf 与闭合对象，核对过[官方格式约束](https://developers.openai.com/api/docs/guides/structured-outputs)。
+
+最终固定源码验证：75 passed / 160.19s，Ruff 全仓通过；EE6/6、EV108/108再次冷核对通过。
+首轮 3 failed / 72 passed 保留：一项新测试错误地期待批准角色也被 Schema 拒绝；
+两项是测试期间编辑源码触发已有漂移门禁。修正测试边界并保持源码静止后整组通过，未放宽门禁。
+该阶段零真实模型调用。下一步先完成规则结论和报告分层的离线验证，再进入新的有界开发排期。

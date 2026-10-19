@@ -32,13 +32,23 @@ class Diagnostic(BaseModel):
     # Paths contain only schema-owned field names and array indices; unknown names are masked.
     fields: list[str] = Field(default_factory=list, max_length=8)
     reference: ReferenceDiagnostic | None = None
+    # Closed rule families and operator requirement indexes, never values or rubric keys.
+    intent: list["IntentDiagnostic"] | None = Field(default=None, max_length=8)
 
     @model_serializer(mode="wrap")
     def serialize_reference(self, handler):
         data = handler(self)
         if self.reference is None:
             data.pop("reference", None)
+        if self.intent is None:
+            data.pop("intent", None)
         return data
+
+
+class IntentDiagnostic(BaseModel):
+    branch: Literal["STEP_COUNT", "OPERATION_ROLE_POLICY", "PARAMETERS", "SOURCE_OR_VALUE",
+                    "ORDER", "EXECUTION_OPTION", "GOAL_COVERAGE", "STEP_SET"]
+    requirement_index: int | None = Field(default=None, ge=0, le=19)
 
 
 class ValidationFailure(ValueError):

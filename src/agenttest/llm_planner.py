@@ -290,7 +290,7 @@ class OpenAICompatiblePlanner:
     def __init__(self, settings: ModelSettings, transport: httpx.AsyncBaseTransport | None = None,
                  *, profile: Literal["mini", "courseinsight", "mini_batch", "mini_composed",
                                      "generic"]
-                 = "mini"):
+                 = "mini", planning_constraints: bool = False):
         if profile not in {"mini", "courseinsight", "mini_batch", "mini_composed", "generic"}:
             raise ValueError("Unknown planner profile")
         self._draft_type = PlannerDraft
@@ -311,6 +311,7 @@ class OpenAICompatiblePlanner:
         self._settings = settings.model_copy(deep=True)
         self._transport = transport
         self._profile = profile
+        self._planning_constraints = planning_constraints
         self.stats = ModelCallStats()
 
     @property
@@ -396,6 +397,10 @@ class OpenAICompatiblePlanner:
             schema["$defs"]["GenericDraftArgument"] = {"anyOf": [scalar, container] +
                 ([reference] if selectors is not None else [])}
             constrain_generic_arguments(schema, step_type, context, argument)
+            if self._planning_constraints:
+                from agenttest.planning_relations import constrain_approved_steps
+
+                constrain_approved_steps(schema, step_type, context)
             strip_schema_titles(schema)
             short_container_refs(schema)
         public = {key: value for key, value in context.items() if key != "plan_schema"}
@@ -403,6 +408,11 @@ class OpenAICompatiblePlanner:
         if self._profile == "generic":
             from agenttest.generic_references import root_response_bindings
 
+            if self._planning_constraints:
+                from agenttest.planning_relations import PLANNING_CHECKLIST, planning_relations
+
+                public.update(planning_relations(context))
+                prompt += PLANNING_CHECKLIST
             roots = root_response_bindings(context)
             if roots:
                 public["root_response_bindings"] = roots
