@@ -131,6 +131,12 @@ async def run_feedback(executor: "Executor", client: httpx.AsyncClient, report: 
             "remaining": {"model_calls": budget.max_model_calls - calls,
                           "requests": max(0, requests["max_requests"] - requests["requests"])}}
         enhanced = getattr(executor.analyzer, "evidence_relations", False)
+        if executor.investigation.trusted_symptoms:
+            context["symptom_rule_version"] = "observable_symptoms_v1"
+            context["failure"]["public_policy_id"] = parent.policy_id
+            context["failure"]["public_policy_purpose"] = next((p.get("purpose")
+                for p in executor.registry.catalog(executor.config.business_scenario)
+                if p["id"] == parent.policy_id), None)
         if enhanced:
             from agenttest.evidence_context import relations
 

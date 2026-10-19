@@ -1,0 +1,19 @@
+{
+  "schema_version": "agenttest.nl-candidate-selection.v1",
+  "selected_at": "2026-10-19T02:53:02.709966+00:00",
+  "development_archive_sha256": "cd5eff2153ca2755d0a1554156aad47860c98cadde5d217de8bc2af99f5a2895",
+  "development_runtime_sha256": "02584cf739e6e40b6cf48a68d1738e17f9b71d0b5d94532f7a2fa79d912a051e",
+  "selected_runtime_sha256": "e932565d79144aee733ffcc9a13c754253c7313c7e1c74341b668a42ab02a3d6",
+  "changed_runtime_files": [
+    "scripts/evaluate_nl_reliability.py",
+    "src/agenttest/evidence_context.py",
+    "src/agenttest/feedback_runtime.py",
+    "src/agenttest/nl_evaluation.py"
+  ],
+  "grading_version": "nl_product_v1_model_proposals_v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "additional_paid_development_calls": 0,
+  "no_validation_positions_attempted": true,
+  "reason": "Original approved policy identity was absent from feedback context; publish it and same-policy relations without changing scoring, tasks, assertions or symptom rules."
+}

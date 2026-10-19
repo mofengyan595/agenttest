@@ -26,6 +26,44 @@ from agenttest.task_contract import TaskContract
 
 BASELINE = "ecc362cb19af79ea4e4102c3aac1ed7014afefb7"
 BASELINE_ROOT = PROJECT_ROOT / "runs/nlr-baseline-ecc362c"
+SELECTION_SCOPE = {"src/agenttest/evidence_context.py", "src/agenttest/feedback_runtime.py",
+                   "src/agenttest/nl_evaluation.py", "scripts/evaluate_nl_reliability.py"}
+
+
+def runtime_files_identity():
+    names = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        cwd=PROJECT_ROOT, capture_output=True, check=True, text=True).stdout.splitlines()
+    return {str(PROJECT_ROOT / n): fingerprint((PROJECT_ROOT / n).read_bytes().hex())
+        for n in names if n.startswith(("src/", "scripts/", "examples/nl-reliability/"))}
+
+
+def selected_candidate(prior_phase, selection_path, runtime_files):
+    """Bind the single pre-validation input fix to the unchanged development archive.
+
+    This is a developer selection record, never independent review or permission
+    to change tasks, scoring, assertions, authorization, execution or symptom rules.
+    """
+    prior = read_json(prior_phase / "freeze.json")
+    old = read_json(prior_phase / "execution-identity.json")
+    changed = sorted(Path(p).relative_to(PROJECT_ROOT).as_posix()
+                     for p, digest in runtime_files.items() if old.get(p) != digest)
+    removed = [p for p in old if str(PROJECT_ROOT) in p and p not in runtime_files
+        and Path(p).relative_to(PROJECT_ROOT).as_posix().startswith((
+            "src/", "scripts/", "examples/nl-reliability/"))]
+    if not changed and not removed:
+        return None
+    if selection_path is None or removed or not set(changed) <= SELECTION_SCOPE:
+        raise ValueError("Candidate change outside bounded pre-validation selection scope")
+    selection = read_json(selection_path)
+    required = dict(development_archive_sha256=fingerprint(read_json(prior_phase / "archive.json")),
+        development_runtime_sha256=prior["candidate_runtime_sha256"],
+        selected_runtime_sha256=fingerprint(runtime_files), changed_runtime_files=changed,
+        grading_version=GRADING_VERSION, classification="DEVELOPMENT_ONLY",
+        review_status="UNREVIEWED",
+        additional_paid_development_calls=0)
+    if any(selection.get(k) != v for k, v in required.items()):
+        raise ValueError("Pre-validation candidate selection identity mismatch")
+    return selection
 
 
 def baseline_snapshot():
@@ -132,7 +170,8 @@ def summarize(rows, schedule, source):
         real_business_http=0, database_writes=0, human_time_saved=None, generalization=None)
 
 
-def run_nl(output: Path, split: str, *, model_env=None, mock_acceptance=None, prior_phase=None):
+def run_nl(output: Path, split: str, *, model_env=None, mock_acceptance=None, prior_phase=None,
+           candidate_selection=None):
     output = output.resolve()
     model_env = model_env.resolve() if model_env else None
     private_output(PROJECT_ROOT, output)
@@ -155,25 +194,19 @@ def run_nl(output: Path, split: str, *, model_env=None, mock_acceptance=None, pr
             or any(g["metrics"].get("product_complete", 0) != g["denominator"]
                    for g in mock_result["groups"].values())):
             raise ValueError("Mock acceptance differs or did not complete every product target")
-        if split == "validation":
-            if prior_phase is None:
-                raise ValueError("Completed real development phase required before validation")
-            verify_nl(prior_phase)
-            prior = read_json(prior_phase / "results.json")
-            if (prior["source"] != "real" or prior["attempted"] != prior["scheduled"]
-                or any(r.get("attempted_unknown") or not r.get("usage_known")
-                       for r in prior["results"])):
-                raise ValueError("Development phase is incomplete")
+    if split == "validation":
+        if prior_phase is None:
+            raise ValueError("Completed real development phase required before validation")
+        verify_nl(prior_phase)
+        prior = read_json(prior_phase / "results.json")
+        if (prior["source"] != "real" or prior["attempted"] != prior["scheduled"]
+            or any(r.get("attempted_unknown") or not r.get("usage_known")
+                   for r in prior["results"])):
+            raise ValueError("Development phase is incomplete")
     baseline_files = baseline_snapshot()
-    names = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-        cwd=PROJECT_ROOT, capture_output=True, check=True, text=True).stdout.splitlines()
-    runtime_files = {str(PROJECT_ROOT / n): fingerprint((PROJECT_ROOT / n).read_bytes().hex())
-        for n in names if n.startswith(("src/", "scripts/", "examples/nl-reliability/"))}
-    if model_env and split == "validation" and (
-        read_json(prior_phase / "freeze.json")["candidate_runtime_sha256"] !=
-        fingerprint(runtime_files)
-    ):
-        raise ValueError("Candidate runtime changed after development selection")
+    runtime_files = runtime_files_identity()
+    selection = selected_candidate(prior_phase, candidate_selection, runtime_files) \
+        if split == "validation" else None
     files = {**baseline_files, **runtime_files}
     if model_env:
         files[str(model_env)] = fingerprint(model_env.read_bytes().hex())
@@ -206,6 +239,9 @@ def run_nl(output: Path, split: str, *, model_env=None, mock_acceptance=None, pr
     freeze = dict(schema_version="agenttest.nl-reliability.freeze.v1", git=identity,
         baseline_commit=BASELINE, baseline_export_sha256=fingerprint(baseline_files),
         candidate_runtime_sha256=fingerprint(runtime_files),
+        candidate_selection=selection,
+        prior_phase_archive_sha256=fingerprint(read_json(prior_phase / "archive.json"))
+            if prior_phase else None,
         frozen_at=datetime.now(timezone.utc).isoformat(), cases=selected, split=split,
         schedule=schedule, prepared=prepared, grading_version=GRADING_VERSION,
         model=public_model_config(settings), max_calls=len(schedule) * 4,
@@ -213,7 +249,8 @@ def run_nl(output: Path, split: str, *, model_env=None, mock_acceptance=None, pr
             settings.max_input_tokens + settings.max_output_tokens),
         per_run=dict(planning_calls=1, feedback_calls=3, readonly_requests=2, implicit_retries=0),
         intervention=dict(shared="public operator-owned policy purposes and original inputs",
-            candidate="derived planning relations, joint schema, independent symptom output"))
+            candidate="planning relations/joint schema, original-policy feedback context, "
+                      "independent symptom output"))
     save_evaluation(freeze, output / "freeze.json")
     guard()
     by_id = {c["id"]: c for c in selected}

@@ -148,3 +148,76 @@ def test_isolated_worker_preserves_workflow_schema_context(tmp_path):
     assert prepared["context"]["plan_schema"] == Scenario.model_json_schema()
     public = json.loads(prepared["payload"]["messages"][1]["content"])
     assert not {"requirements", "sequence", "finding", "task_contract"} & public.keys()
+
+
+def test_all_development_answers_are_representable_without_sending_them_to_model():
+    from jsonschema import Draft202012Validator
+
+    from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
+
+    for case in cases("development"):
+        _, doc, target, registry, _, task, draft, _ = task_inputs_for(case)
+        context = planning_context(load_openapi(doc), target, registry, task.user_task, {})
+        planner = OpenAICompatiblePlanner(ModelSettings(model="offline-schema-audit",
+            base_url="https://offline.invalid", api_key="synthetic-schema-audit"),
+            profile="generic", planning_constraints=True)
+        request = json.loads(planner.prepare_request(context))
+        validator = Draft202012Validator(request["response_format"]["json_schema"]["schema"])
+        assert validator.is_valid(draft.model_dump(mode="json")), case["id"]
+
+
+@pytest.mark.asyncio
+async def test_feedback_phase_is_public_only_when_operator_enables_trusted_rules(tmp_path):
+    from agenttest.evidence_context import EVIDENCE_PROMPT, EvidenceFeedbackModel
+    from agenttest.llm_planner import ModelSettings
+
+    class Capture(FixedEvidenceControl):
+        def __init__(self):
+            self.contexts = []
+
+        async def generate(self, context):
+            self.contexts.append(json.loads(json.dumps(context)))
+            return await super().generate(context)
+
+    for enabled in (False, True):
+        case = cases("development")[3]
+        app, doc, target, registry, env, task, draft, caps = task_inputs_for(case)
+        analyzer = Capture()
+        await Workflow(doc, target, registry, FakeLLM(draft.scenario().model_dump_json()),
+            ReportStore(tmp_path / str(enabled)), httpx.ASGITransport(app), env,
+            user_task=task.user_task,
+            intent_validator=task_validator(task, load_openapi(doc), target, registry),
+            investigation=InvestigationConfig(enabled=True, trusted_symptoms=enabled,
+                feedback=FeedbackBudget(timeout=10)), capabilities=caps, analyzer=analyzer).run()
+        context = analyzer.contexts[0]
+        model = EvidenceFeedbackModel(ModelSettings(model="offline-phase-context",
+            base_url="https://offline.invalid", api_key="synthetic-phase-context"))
+        prompt = json.loads(model.prepare_request(context))["messages"][0]["content"]
+        if enabled:
+            assert context["failure"]["public_policy_id"] == "ticket_closed_read_v1"
+            assert "closed" in context["failure"]["public_policy_purpose"]
+            matches = {t["choice"]["capability_id"]: t["same_policy_as_original"]
+                       for t in context["tools"]}
+            assert matches["feedback_ticket_closed_read_v1"]
+            assert not matches["feedback_ticket_read_v1"]
+            assert "same_policy_as_original" in prompt
+        else:
+            assert "public_policy_id" not in context["failure"]
+            assert "same_policy_as_original" not in json.dumps(context)
+            assert prompt == EVIDENCE_PROMPT
+        assert not {"task_contract", "requirements", "fault", "finding"} & context.keys()
+
+
+def test_candidate_selection_cannot_change_assertions_tasks_or_scorer(tmp_path):
+    from agenttest.demo import PROJECT_ROOT
+    from agenttest.nl_evaluation import selected_candidate
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "freeze.json").write_text(json.dumps({"candidate_runtime_sha256": "original"}),
+                                      encoding="utf-8")
+    (prior / "execution-identity.json").write_text("{}", encoding="utf-8")
+    for path in ("src/agenttest/policies.py", "src/agenttest/nl_scoring.py",
+                 "examples/nl-reliability/validation.json"):
+        with pytest.raises(ValueError, match="outside bounded"):
+            selected_candidate(prior, None, {str(PROJECT_ROOT / path): "changed"})

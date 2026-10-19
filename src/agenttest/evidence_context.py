@@ -2,6 +2,7 @@
 
 from agenttest.feedback import FEEDBACK_PROMPT, FeedbackModel
 from agenttest.plan_json import bounded_json
+from agenttest.report import fingerprint
 
 EVIDENCE_PROMPT = FEEDBACK_PROMPT + """
 The tools table explains each exact choice. Resource and role relations are observations,
@@ -12,6 +13,18 @@ If a rule's evidence is already present, finish and cite original plus that inve
 Do not require implementation logs, response values or another read when these checks suffice.
 If no permitted rule can be established, explicitly finish EVIDENCE_INSUFFICIENT.
 An unrelated approved read is safe but may not help; choose by purpose and relations.
+"""
+
+TRUSTED_POLICY_PROMPT = """
+The original failure's public_policy_id and public_policy_purpose identify its approved
+check and state. For persistent readback, use a same-role read with same_policy_as_original
+true. An open-state read and a closed-state read are different checks even on the same URL.
+The trusted rule requires the same approved policy, operation, role and resource, passing
+HTTP checks and a repeated failed field. Do not cite a different policy as corroboration.
+For access boundary, the forbidden original and producer read use different policies;
+retain the existing producer-role and same-resource requirements. These relations are
+public approval metadata, not computed findings. Choose an investigation or abstain from
+the evidence; never infer an implementation cause or alter the original business outcome.
 """
 
 
@@ -62,7 +75,9 @@ class EvidenceFeedbackModel(FeedbackModel):
         return super()._decode_output(content, context)
 
     def prepare_request(self, context: dict) -> bytes:
-        return self._encode_request(action_schema(context), context, EVIDENCE_PROMPT,
+        prompt = EVIDENCE_PROMPT + (TRUSTED_POLICY_PROMPT if
+            context.get("symptom_rule_version") == "observable_symptoms_v1" else "")
+        return self._encode_request(action_schema(context), context, prompt,
                                     "agenttest_feedback")
 
 
@@ -108,6 +123,10 @@ def relations(context, parent, failed, completed, approved, source_roles) -> dic
             "same_role_as_original": step.role == parent.role,
             "role_is_resource_producer": step.role == source_roles.get(source),
             "effect": "read_only", "returns": "approved check results only"})
+        if context.get("symptom_rule_version") == "observable_symptoms_v1":
+            tools[-1]["same_policy_as_original"] = bool(
+                failed.policy_template_sha256
+                and fingerprint(policy.model_dump()) == failed.policy_template_sha256)
     result["tools"] = tools
     observed = []
     for read in completed:
@@ -128,5 +147,8 @@ def relations(context, parent, failed, completed, approved, source_roles) -> dic
             "http_checks_passed": all(any(c.kind == "http_status" and c.passed
                 for c in item.checks) and all(c.passed for c in item.checks
                     if c.kind == "http_status") for item in (failed, read))})
+        if context.get("symptom_rule_version") == "observable_symptoms_v1":
+            observed[-1]["same_policy_as_original"] = bool(failed.policy_template_sha256
+                and read.policy_template_sha256 == failed.policy_template_sha256)
     result["relations"] = observed
     return result

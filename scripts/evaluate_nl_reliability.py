@@ -15,10 +15,11 @@ if __name__ == "__main__":
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--mock-acceptance", type=Path)
     parser.add_argument("--prior-phase", type=Path)
+    parser.add_argument("--candidate-selection", type=Path)
     args = parser.parse_args()
     if args.output and not args.split:
         parser.error("--output requires --split")
     result = verify_nl(args.verify) if args.verify else run_nl(args.output, args.split,
         model_env=args.model_env, mock_acceptance=args.mock_acceptance,
-        prior_phase=args.prior_phase)
+        prior_phase=args.prior_phase, candidate_selection=args.candidate_selection)
     print(json.dumps(result, ensure_ascii=False, indent=2))
