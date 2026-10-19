@@ -7,9 +7,13 @@
 ## 状态和职责
 
 新增需求[竹湾交接](../examples/nl-reliability/new-usage.json)在开发/验证题中未使用，
-五步结构与已用任务不重复。当前仅生成配置并做静态预检，模型0、业务请求0。
-尚未执行真实规划、导出或回归，不能宣称本Goal的真实新需求闭环已经完成。
-首超时后操作员已允许后续调用，原验证后段已完成并冷核对；本新需求按下面单独预算执行。
+五步结构与已用任务不重复。它在干净提交 `9c2f694a7dcc4a9ad06114595528930815951b43`
+上做唯一真实尝试：5步原业务PASS、task_satisfied=true、1次模型/3080 Token、0调查，
+完成导出；随后模型环境移除、模型和真实HTTP调用陷阱启用，无模型pytest **1 passed / 4.39s**。
+原报告 `113e59676b4c4ef18de62f449f33028b`，回归报告 `6bb052f516094ba7bdc95a9d0e88cc6c`；
+后者为operator_plan、task_satisfied=null、model_call=null，不冒充又一次自然语言理解。
+[实际结果](demo-evidence/nl-usage-results.json)与原封印 `runs/nlr-usage-pending` 保留，
+输入/报告/manifest字节摘要和两份实际报告均冷核对通过，没有Fake替代本新需求。
 
 本轮由代理显式编写需求与场景映射，复用既有契约、目标、六项工单策略/断言、两角色和GET批准能力；
 本需求显式映射5个步骤及4条偏序。整个开发/验证18题另有123步骤位置、105条相邻偏序，
@@ -53,13 +57,30 @@
 失败陷阱，并检查实际新报告为operator_plan、PASS、task_satisfied=null、没有模型统计。
 回归不声称再次完成了自然语言理解，不恢复原会话，不重试原写请求。
 
-已有开发题ND02的离线适配器验收已完成：CLI PASS、完整导出、无模型pytest 1 passed；
-正常/配置变更拒绝/不完整计划拒绝三项集成测试也通过。它们都不是上述新需求的真实效果证据。
+已有开发题ND02仅用于适配器离线验收；新需求没有参与开发Mock或调参。
+正常/配置变更拒绝/不完整计划拒绝/已有临时目录保护四项集成检查在18项关联验收内通过。
+
+## 直接使用已导出的无模型资产
+
+[NU01回归目录](../examples/regressions/NU01)包含原CLI导出的bundle、配置静态检查、
+原八项项目文件、人工ASGI fixture与来源摘要。bundle四文件逐字节保留，manifest绑定原真实报告；
+测试代码来自固定可信导出模板，模型只提供JSON计划。fixture复用隔离工单target，
+每次创建新目标和短期角色凭据，不读取.env，不访问真实数据库。
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest examples/regressions/NU01 -q `
+  --basetemp=runs/pytest-my-nu01
+```
+
+临时目录必须是自己可清理的专用路径；pytest会管理它，不要指向用户数据。
+回归仍使用原TaskContract及逐步策略断言，缺少/改变配置或断言失败会报错。
+全部四个已导出场景可用 `python -m pytest examples/regressions -q` 离线运行。
 
 ## 查看原业务、模型与规则
 
-[五份展示报告及来源](demo-evidence/nl-examples.json)保留正常、规划拒绝、症状、证据不足和超时。
-正常/拒绝/症状来自原真实开发封印；证据不足来自Mock并明确标注；不筛选替换全量成绩。
+[七份展示报告及来源](demo-evidence/nl-examples.json)保留正常、规划拒绝、症状、证据不足和超时。
+保留原五份，追加本次真实新需求和真实NV11候选证据不足报告；原Mock示例仍明确标注，
+真实证据不足示例中的模型不当主张由规则拒绝，不记模型答对；展示选择不替代全72位置成绩。
 
 ```powershell
 $env:AGENTTEST_RUNS_DIR = 'docs/demo-evidence/nl-examples'
@@ -81,4 +102,4 @@ $env:AGENTTEST_RUNS_DIR = 'docs/demo-evidence/nl-examples'
 完整[真实对照结果](nl-validation-completed.md)为产品29/36对31/36，模型结论9/18对8/18；
 正常差距由首基线超时产生，主动弃权未改善。不能据此宣称全面提高。
 `ticket_list_v1`仅验证HTTP200及items存在；list步骤不是列表归属过滤正确性的证明。
-真实新需求闭环尚待实跑，人工节时、独立人审、通用泛化均未验证。
+新需求CLI→导出→无模型回归闭环已完成；人工节时、独立人审、通用泛化均未验证。

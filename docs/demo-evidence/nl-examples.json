@@ -52,6 +52,26 @@
       "report_sha256": "3e71b00906d4e44c2cd7a1e5bd769a56efe63a8fec046d5eed7d33111a1a5202",
       "product_complete": false,
       "model_conclusion_correct": false
+    },
+    {
+      "label": "new_demand_first_attempt",
+      "source": "real_new_usage_9c2f694",
+      "archive": "runs/nlr-usage-pending",
+      "position": null,
+      "run_id": "113e59676b4c4ef18de62f449f33028b",
+      "report_sha256": "d78ff1320ec28f2b719af4856352624b3befc708bb0f40b8ae373e814a1e2efd",
+      "product_complete": true,
+      "model_conclusion_correct": false
+    },
+    {
+      "label": "insufficient_real_model_proposal_rejected",
+      "source": "real_validation_candidate_bc1b10d",
+      "archive": "runs/nlr-validation-resume-real",
+      "position": 22,
+      "run_id": "1d102c7a70b44022970df94a63ccafb2",
+      "report_sha256": "e3eaae7acaeca85ce0594ca19bc6144a39aab42ca9997c92fb47e47e993e8e18",
+      "product_complete": true,
+      "model_conclusion_correct": false
     }
   ]
 }

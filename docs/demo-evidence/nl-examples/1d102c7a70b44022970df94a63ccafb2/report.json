@@ -1,0 +1,725 @@
+{
+  "run_id": "1d102c7a70b44022970df94a63ccafb2",
+  "revision": 37,
+  "started_at": "2026-10-19T10:15:50.975551+00:00",
+  "scenario_sha256": "7c845f17f507abd3b89828704f0c80c6ccb1016bc56cbd03e641c07600668d13",
+  "contract_sha256": "afee72af762c8a2aac7eaa4ae26ccef91331ffdf1a1a22d0c245351bf3b84b72",
+  "outcome": "ASSERTION_FAILED",
+  "steps": [
+    {
+      "step_id": "login_alice",
+      "step_run_id": "73b0b15b4e31403a8e61ff0d2f112281",
+      "operation_id": "login",
+      "method": "POST",
+      "path_template": "/api/auth/login",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "23d074561922fc802a45236915056f7db6affada4887c4cfb0ce49f443d3c912",
+      "policy_template_sha256": "23d074561922fc802a45236915056f7db6affada4887c4cfb0ce49f443d3c912",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.access_token",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "6b575f71600a448195d654245e7b0e93",
+          "status_code": 200,
+          "elapsed_ms": 5.575,
+          "response_bytes": 62,
+          "response_sha256": "fa679e4dce4725f977b83a082d254a5d20b9534f18ff7ef8ec2bf2b22b6cbdc1",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "login_bob",
+      "step_run_id": "ed9ba473a4c1497bb3ef94d9f44f5ee9",
+      "operation_id": "login",
+      "method": "POST",
+      "path_template": "/api/auth/login",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "23d074561922fc802a45236915056f7db6affada4887c4cfb0ce49f443d3c912",
+      "policy_template_sha256": "23d074561922fc802a45236915056f7db6affada4887c4cfb0ce49f443d3c912",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.access_token",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "9154270899e64bddb0d3022d2c6cfb80",
+          "status_code": 200,
+          "elapsed_ms": 2.24,
+          "response_bytes": 62,
+          "response_sha256": "2654c0d100f0c08502271e76704d18cd9b49c52d231ef7abe4b3c56e357cab83",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "create_bob_course",
+      "step_run_id": "2fb91d009a41492b89d66179d13665c8",
+      "operation_id": "createCourse",
+      "method": "POST",
+      "path_template": "/api/courses",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "9df5d9d76e27be9007c29db1add6cc1e11d5f49017076b75f639bab3726046d2",
+      "policy_template_sha256": "fc12e3ca9d46bf7246d2d3ca6c72db092ed48ad352b6e9b58685c5559e520436",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            201
+          ],
+          "actual": 201
+        },
+        {
+          "kind": "exists",
+          "selector": "$.courseId",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.name",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "989f52f3153744ec87ffc29e0de07025",
+          "status_code": 201,
+          "elapsed_ms": 3.994,
+          "response_bytes": 47,
+          "response_sha256": "ccef396756743bc6bdd9d8827427a7d53eddcb390757296d700e0052051b39a8",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "create_alice_course",
+      "step_run_id": "2018e068c87a4723a366619af32f6080",
+      "operation_id": "createCourse",
+      "method": "POST",
+      "path_template": "/api/courses",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "159f98768cca87a4afaf4cba39e989a6aeac859951b5217df8fc33037069c0c5",
+      "policy_template_sha256": "fc12e3ca9d46bf7246d2d3ca6c72db092ed48ad352b6e9b58685c5559e520436",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            201
+          ],
+          "actual": 201
+        },
+        {
+          "kind": "exists",
+          "selector": "$.courseId",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.name",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "309c3a59c9a7496a85ec0e52f3dfca60",
+          "status_code": 201,
+          "elapsed_ms": 2.474,
+          "response_bytes": 49,
+          "response_sha256": "c1848bd4fb3c64da4d6b6f7ee855815c06052d46df97d2f2e0d15e6c21263c94",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "read_alice_course",
+      "step_run_id": "fb64f87ac78a4a52a87d7ce4caeb97b9",
+      "operation_id": "getCourse",
+      "method": "GET",
+      "path_template": "/api/courses/{courseId}",
+      "outcome": "ASSERTION_FAILED",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "6b184ab6764781de7bf51be4b7fda19986a3a83a52de26f259af290a60819423",
+      "policy_template_sha256": "a8e0031659aec666f5e89594a63ec114badd72ede37a9d4abee852896f1ae30a",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": false,
+          "expected": [
+            200
+          ],
+          "actual": 503
+        },
+        {
+          "kind": "equals",
+          "selector": "$.name",
+          "passed": false,
+          "expected": "[REDACTED]",
+          "actual": null
+        },
+        {
+          "kind": "equals",
+          "selector": "$.courseId",
+          "passed": false,
+          "expected": "[REDACTED]",
+          "actual": null
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "cd3faf7f6eba4d9fbb33beb9d820d352",
+          "status_code": 503,
+          "elapsed_ms": 3.557,
+          "response_bytes": 40,
+          "response_sha256": "0c3cbcf7dfb43a2c17a9fc9e8547e2020d1bf889a36d8286478b40b0543bccc6",
+          "error_code": null
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:8080",
+  "target_config_sha256": "1f408747edae696f515c9c1dc688fc4b1643b7b6aeb9a06f4608356ccfbb7c49",
+  "policy_registry_sha256": "14740d40c42db21cdabf1fc1448b5616099520fd61949cf284b503deba94d67d",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 1,
+  "tool_calls": 1,
+  "analysis_code": "REVIEW_FAILURE_EVIDENCE",
+  "workflow_completed": true,
+  "user_task_sha256": "73beae7eb3d05d08034b43429f73ea3920e1c691895d641326b56ace46dd0a2e",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "nl_login_v1",
+    "nl_login_v1",
+    "nl_create_v1",
+    "nl_create_v1",
+    "nl_read_v1",
+    "nl_read_v1",
+    "nl_forbidden_v1"
+  ],
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-plus",
+    "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+    "http_status": 200,
+    "elapsed_ms": 25485.0,
+    "request_bytes": 13772,
+    "request_sha256": "179d91ceaef0f3c899221b6abf84439bf28b7cd89345058b59cdecec9ca468ac",
+    "response_bytes": 2900,
+    "input_token_upper_bound": 14284,
+    "input_tokens": 1695,
+    "output_tokens": 663,
+    "total_tokens": 2358,
+    "output_sha256": "05f9b68dc03a4a606ca3eab816b11caf3a75324f337f4941c1957e077536b9e9",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "plan_structure": [
+    {
+      "step_id": "login_alice",
+      "operation_id": "login",
+      "role": "alice",
+      "policy_id": "nl_login_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "login_bob",
+      "operation_id": "login",
+      "role": "bob",
+      "policy_id": "nl_login_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "create_bob_course",
+      "operation_id": "createCourse",
+      "role": "bob",
+      "policy_id": "nl_create_v1",
+      "argument_sha256": {
+        "body.name": "59ae0e57676765f256112b7d497a1408c4ee75d172955ab5628f820260b3fd8d"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "create_alice_course",
+      "operation_id": "createCourse",
+      "role": "alice",
+      "policy_id": "nl_create_v1",
+      "argument_sha256": {
+        "body.name": "0efb64c5666d847d78b693ec49d83170a9ea817c68d2105bb24b3d5449a54a67"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "read_alice_course",
+      "operation_id": "getCourse",
+      "role": "alice",
+      "policy_id": "nl_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.courseId": "create_alice_course"
+      }
+    },
+    {
+      "step_id": "read_bob_course",
+      "operation_id": "getCourse",
+      "role": "bob",
+      "policy_id": "nl_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.courseId": "create_bob_course"
+      }
+    },
+    {
+      "step_id": "forbidden_bob_read_alice",
+      "operation_id": "getCourse",
+      "role": "bob",
+      "policy_id": "nl_forbidden_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.courseId": "create_alice_course"
+      }
+    }
+  ],
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": true,
+  "task_mode": "natural_language",
+  "task_satisfied": false,
+  "investigations": [
+    {
+      "step_id": "investigation_f613409542174dfc8d5cdefef6071fe8",
+      "step_run_id": "fc7469d909884f9f837bc6f5651516c9",
+      "operation_id": "getCourse",
+      "method": "GET",
+      "path_template": "/api/courses/{courseId}",
+      "outcome": "ASSERTION_FAILED",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "6b184ab6764781de7bf51be4b7fda19986a3a83a52de26f259af290a60819423",
+      "policy_template_sha256": "a8e0031659aec666f5e89594a63ec114badd72ede37a9d4abee852896f1ae30a",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": false,
+          "expected": [
+            200
+          ],
+          "actual": 503
+        },
+        {
+          "kind": "equals",
+          "selector": "$.name",
+          "passed": false,
+          "expected": "[REDACTED]",
+          "actual": null
+        },
+        {
+          "kind": "equals",
+          "selector": "$.courseId",
+          "passed": false,
+          "expected": "[REDACTED]",
+          "actual": null
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "d649705d4d4649569cc2f6d18fe02d25",
+          "status_code": 503,
+          "elapsed_ms": 1.955,
+          "response_bytes": 40,
+          "response_sha256": "0c3cbcf7dfb43a2c17a9fc9e8547e2020d1bf889a36d8286478b40b0543bccc6",
+          "error_code": null
+        }
+      ],
+      "parent_step_id": "read_alice_course",
+      "capability_id": "feedback_nl_read_v1",
+      "role": "alice",
+      "source_step_id": "create_alice_course",
+      "resource_ref_sha256": "c1ab488438ffd971bf0e245b0ae43036c850d297c651f1907a6cd9972083afcf",
+      "requests_used": 1,
+      "rounds_used": 1,
+      "model_calls_used": 1,
+      "elapsed_ms": 62.131
+    }
+  ],
+  "investigation_error": null,
+  "feedback": {
+    "state": "NEEDS_REVIEW",
+    "reason": "FEEDBACK_UNSUPPORTED_FINDING",
+    "finding": "EVIDENCE_INSUFFICIENT",
+    "basis": "证据不足，需人工复核。",
+    "evidence_refs": [],
+    "decisions": [
+      {
+        "index": 0,
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-plus",
+          "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+          "http_status": 200,
+          "elapsed_ms": 1297.0,
+          "request_bytes": 6882,
+          "request_sha256": "45508643475e4bd98ca3694af96c796e10311d0cfe889cfc96bff3b873db514f",
+          "response_bytes": 675,
+          "input_token_upper_bound": 7394,
+          "input_tokens": 1118,
+          "output_tokens": 73,
+          "total_tokens": 1191,
+          "output_sha256": "30295213fcda3d1bcdbca89833e3f4ccf105a0fc0ec325e63a80a136815d496b",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "elapsed_ms": 1284.807,
+        "public_context": {
+          "failure": {
+            "ref": "original",
+            "operation_id": "getCourse",
+            "role": "alice",
+            "outcome": "ASSERTION_FAILED",
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": false,
+                "expected": [
+                  200
+                ],
+                "actual": 503
+              },
+              {
+                "kind": "equals",
+                "selector": "$.name",
+                "passed": false
+              },
+              {
+                "kind": "equals",
+                "selector": "$.courseId",
+                "passed": false
+              }
+            ],
+            "public_policy_id": "nl_read_v1",
+            "public_policy_purpose": "Read a resource as its producing role and verify its ID and original name; bind to that resource's create step."
+          },
+          "choices": [
+            {
+              "capability_id": "feedback_nl_forbidden_v1",
+              "role": "bob",
+              "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+            },
+            {
+              "capability_id": "feedback_nl_read_v1",
+              "role": "alice",
+              "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+            }
+          ],
+          "finish_required": false,
+          "evidence": [],
+          "remaining": {
+            "model_calls": 3,
+            "requests": 2
+          },
+          "symptom_rule_version": "observable_symptoms_v1",
+          "tools": [
+            {
+              "choice": {
+                "capability_id": "feedback_nl_forbidden_v1",
+                "role": "bob",
+                "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+              },
+              "operation_id": "getCourse",
+              "method": "GET",
+              "purpose": "Check that a different role cannot read the producing role's resource; approved denial HTTP status 403.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    403
+                  ]
+                }
+              ],
+              "binding_role_relation": "different",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": false,
+              "role_is_resource_producer": false,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": false
+            },
+            {
+              "choice": {
+                "capability_id": "feedback_nl_read_v1",
+                "role": "alice",
+                "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+              },
+              "operation_id": "getCourse",
+              "method": "GET",
+              "purpose": "Read a resource as its producing role and verify its ID and original name; bind to that resource's create step.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    200
+                  ]
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.name"
+                }
+              ],
+              "binding_role_relation": "same",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": true,
+              "role_is_resource_producer": true,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": true
+            }
+          ],
+          "relations": []
+        },
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "index": 1,
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-plus",
+          "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+          "http_status": 200,
+          "elapsed_ms": 1047.0,
+          "request_bytes": 6712,
+          "request_sha256": "2deee0cbef5af9e3a9c91e036badf4a3ae0968b3ae1f2416389fc23e0edc5c35",
+          "response_bytes": 637,
+          "input_token_upper_bound": 7224,
+          "input_tokens": 1117,
+          "output_tokens": 56,
+          "total_tokens": 1173,
+          "output_sha256": "61595bfccedc8f6f4884233ed1cb81356654fbf3fbc12b30f18b37aebae15414",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "elapsed_ms": 1040.903,
+        "public_context": {
+          "failure": {
+            "ref": "original",
+            "operation_id": "getCourse",
+            "role": "alice",
+            "outcome": "ASSERTION_FAILED",
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": false,
+                "expected": [
+                  200
+                ],
+                "actual": 503
+              },
+              {
+                "kind": "equals",
+                "selector": "$.name",
+                "passed": false
+              },
+              {
+                "kind": "equals",
+                "selector": "$.courseId",
+                "passed": false
+              }
+            ],
+            "public_policy_id": "nl_read_v1",
+            "public_policy_purpose": "Read a resource as its producing role and verify its ID and original name; bind to that resource's create step."
+          },
+          "choices": [
+            {
+              "capability_id": "feedback_nl_forbidden_v1",
+              "role": "bob",
+              "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+            }
+          ],
+          "finish_required": false,
+          "evidence": [
+            {
+              "ref": "investigation_f613409542174dfc8d5cdefef6071fe8",
+              "operation_id": "getCourse",
+              "role": "alice",
+              "outcome": "ASSERTION_FAILED",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "selector": null,
+                  "passed": false,
+                  "expected": [
+                    200
+                  ],
+                  "actual": 503
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.name",
+                  "passed": false
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.courseId",
+                  "passed": false
+                }
+              ]
+            }
+          ],
+          "remaining": {
+            "model_calls": 2,
+            "requests": 1
+          },
+          "symptom_rule_version": "observable_symptoms_v1",
+          "tools": [
+            {
+              "choice": {
+                "capability_id": "feedback_nl_forbidden_v1",
+                "role": "bob",
+                "resource_ref": "123a02066160497db2cba68c9ee64fa5"
+              },
+              "operation_id": "getCourse",
+              "method": "GET",
+              "purpose": "Check that a different role cannot read the producing role's resource; approved denial HTTP status 403.",
+              "checks": [
+                {
+                  "kind": "http_status",
+                  "expected": [
+                    403
+                  ]
+                }
+              ],
+              "binding_role_relation": "different",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": false,
+              "role_is_resource_producer": false,
+              "effect": "read_only",
+              "returns": "approved check results only",
+              "same_policy_as_original": false
+            }
+          ],
+          "relations": [
+            {
+              "ref": "investigation_f613409542174dfc8d5cdefef6071fe8",
+              "same_resource_as_original": true,
+              "same_operation_as_original": true,
+              "same_role_as_original": true,
+              "role_is_resource_producer": true,
+              "repeated_failed_checks": [
+                {
+                  "kind": "equals",
+                  "selector": "$.courseId"
+                },
+                {
+                  "kind": "equals",
+                  "selector": "$.name"
+                }
+              ],
+              "http_checks_passed": false,
+              "same_policy_as_original": true
+            }
+          ]
+        },
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_f613409542174dfc8d5cdefef6071fe8"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "requests_used": 1,
+    "model_calls_used": 2,
+    "elapsed_ms": 2532.896
+  },
+  "trusted_symptom": {
+    "rule_version": "observable_symptoms_v1",
+    "state": "NEEDS_REVIEW",
+    "finding": "EVIDENCE_INSUFFICIENT",
+    "evidence_refs": [],
+    "reason": "RULE_EVIDENCE_INSUFFICIENT"
+  },
+  "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+}

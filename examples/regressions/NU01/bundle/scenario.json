@@ -1,0 +1,97 @@
+{
+  "name": "owner_ticket_lifecycle_with_visitor_list",
+  "steps": [
+    {
+      "id": "open_ticket",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "subject": {
+          "value": "竹湾交接",
+          "from_step": null,
+          "select": "$"
+        },
+        "priority": {
+          "value": "high",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_open_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "list_visitor_tickets",
+      "operation_id": "listTickets",
+      "role": "visitor",
+      "path_parameters": {},
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_list_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "read_ticket_open",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_ticket",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_read_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "close_ticket",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_ticket",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {
+        "state": {
+          "value": "closed",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_close_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "read_ticket_closed",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_ticket",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_closed_read_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

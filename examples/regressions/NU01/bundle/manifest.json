@@ -1,0 +1,30 @@
+{
+  "schema_version": "agenttest.regression.v1",
+  "source_run_id": "113e59676b4c4ef18de62f449f33028b",
+  "source_report_sha256": "d78ff1320ec28f2b719af4856352624b3befc708bb0f40b8ae373e814a1e2efd",
+  "scenario_sha256": "aa44ad96232f4f565fcf65878ac6641388d20eb450ee9a6687338e4ec846b754",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+  "task_contract_sha256": "e9c43ed53b99d1f89399f9650e740c487a7427a6b24b82dc7b85efba5a2e2d57",
+  "step_policy_sha256": {
+    "open_ticket": "121fedafd9fd85f0b1c4648abc6764bdc54c437cfcf387dc5a8d0c492959659a",
+    "list_visitor_tickets": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+    "read_ticket_open": "8cead040d05738b3356cb8bc03dd39307944e0f2656175376a7377ca3d9c3e41",
+    "close_ticket": "160973d55cc30caa9095110388ff7b08325beddfa6564719c0f2a02ad6c1604b",
+    "read_ticket_closed": "a957c0c5aee70dd3ca1107aaa09ae334f6f12333324223f49752a37925e90331"
+  },
+  "source_step_policy_sha256": {
+    "open_ticket": "0b65701b510a9ae116b6c173146b62c64471d57382b33e5f186a66be94583f8b",
+    "list_visitor_tickets": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+    "read_ticket_open": "37c3110797139762dc6abc218d23905078f57dd3534f4199990a71fd001e708f",
+    "close_ticket": "1051171aaf0512de7f473ae61da1ff33f086c4d4d9e16aa44df7f088a0b1df99",
+    "read_ticket_closed": "8de474a80d7809d129ab2f619aafa1e86843a5af0f0c23b3f44bd68433754b38"
+  },
+  "test_module": "test_agenttest_1ea8469e88034f6e891dd40dd5e2f7a2.py",
+  "files": {
+    "scenario.json": "19145dccba32dc7d59cfb05ca592215338ab3a87ead24a91a19b84902d5e0f6d",
+    "test_agenttest_1ea8469e88034f6e891dd40dd5e2f7a2.py": "a47b5a8e1b9c00a44cab072510a5b9f245a4736002fef4196c88fad4aca149ff",
+    "README.md": "16557510dd6f2d9ce8cc861f20c4ead3beee1682f6a50603841a63114a40c6a1"
+  }
+}

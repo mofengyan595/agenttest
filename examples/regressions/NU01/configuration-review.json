@@ -1,0 +1,31 @@
+{
+  "schema_version": "agenttest.project-check.v1",
+  "configuration_ready": true,
+  "issues": [],
+  "http_requests": 0,
+  "model_calls": 0,
+  "inputs": {
+    "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+    "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+    "policy_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+    "task_contract_sha256": "e9c43ed53b99d1f89399f9650e740c487a7427a6b24b82dc7b85efba5a2e2d57"
+  },
+  "reviewed_files": {
+    "capabilities.json": "971256d645ddb43960e217da3cf56481a9970af12f48bc816878cb2d989095e6",
+    "case.json": "d1faea5afa3f2eead6c7da157537f7070511b844be5a2bf640599741d24abc4b",
+    "openapi.json": "b4daa6ee7698035af1145e290df505db0ebb841eb08cb166e9797bb2555959dd",
+    "policies.json": "a5e389ff0fa9886bbf4966da5a7dc3b86161211327ca959b6df052953ff60405",
+    "project.json": "ad3eb2e79c3bbdf2b7bec3cd0e505c95d9f99758094ad9ea4864f5bbc7545afc",
+    "target.json": "5f4160c1962affa73396fca4eace9addf7057a0e4d2d7789d136d46a6141016d",
+    "task.json": "80f2cfd52a10801144ae8158a1f1edc5e6412702a3c2b19a03f94c67ab14bba9"
+  },
+  "review_status": "UNREVIEWED",
+  "review_actor": "agent_static_configuration_check",
+  "independent_human_reviewed": false,
+  "manually_authored": {
+    "task_steps": 5,
+    "before_edges": 4,
+    "public_policy_purposes": 6,
+    "note": "Manual case mapping and reused policy/assertion/target templates are required"
+  }
+}

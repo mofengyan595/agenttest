@@ -1,0 +1,128 @@
+{
+  "schema_version": "agenttest.task-contract.v1",
+  "user_task": "owner创建主题“竹湾交接”、优先级high的工单。随后visitor仅列出自己的可见工单。接着owner读取刚创建的工单，核对open状态、主题、优先级和标识，然后将其关闭为closed，最后owner再次读取并核对closed状态及原内容。两次单条读取和关闭都必须引用创建响应中的同一工单标识。",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+  "requirements": {
+    "steps": [
+      {
+        "key": "open",
+        "operation_id": "openTicket",
+        "role": "owner",
+        "policy_id": "ticket_open_v1",
+        "arguments": [
+          {
+            "location": "body",
+            "name": "subject",
+            "value": "竹湾交接",
+            "source": null,
+            "selector": null
+          },
+          {
+            "location": "body",
+            "name": "priority",
+            "value": "high",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "requested_flow"
+        ]
+      },
+      {
+        "key": "list_visitor",
+        "operation_id": "listTickets",
+        "role": "visitor",
+        "policy_id": "ticket_list_v1",
+        "arguments": [],
+        "goals": [
+          "requested_flow"
+        ]
+      },
+      {
+        "key": "read_open",
+        "operation_id": "readTicket",
+        "role": "owner",
+        "policy_id": "ticket_read_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "ticket_key",
+            "value": null,
+            "source": "open",
+            "selector": "$.payload.ticket_key"
+          }
+        ],
+        "goals": [
+          "requested_flow"
+        ]
+      },
+      {
+        "key": "close",
+        "operation_id": "closeTicket",
+        "role": "owner",
+        "policy_id": "ticket_close_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "ticket_key",
+            "value": null,
+            "source": "open",
+            "selector": "$.payload.ticket_key"
+          },
+          {
+            "location": "body",
+            "name": "state",
+            "value": "closed",
+            "source": null,
+            "selector": null
+          }
+        ],
+        "goals": [
+          "requested_flow"
+        ]
+      },
+      {
+        "key": "read_closed",
+        "operation_id": "readTicket",
+        "role": "owner",
+        "policy_id": "ticket_closed_read_v1",
+        "arguments": [
+          {
+            "location": "path_parameters",
+            "name": "ticket_key",
+            "value": null,
+            "source": "open",
+            "selector": "$.payload.ticket_key"
+          }
+        ],
+        "goals": [
+          "requested_flow"
+        ]
+      }
+    ],
+    "before": [
+      [
+        "open",
+        "list_visitor"
+      ],
+      [
+        "list_visitor",
+        "read_open"
+      ],
+      [
+        "read_open",
+        "close"
+      ],
+      [
+        "close",
+        "read_closed"
+      ]
+    ],
+    "required_goals": [
+      "requested_flow"
+    ]
+  }
+}

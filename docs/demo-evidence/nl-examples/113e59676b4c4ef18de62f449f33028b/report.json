@@ -1,0 +1,408 @@
+{
+  "run_id": "113e59676b4c4ef18de62f449f33028b",
+  "revision": 30,
+  "started_at": "2026-10-19T11:00:25.323307+00:00",
+  "scenario_sha256": "aa44ad96232f4f565fcf65878ac6641388d20eb450ee9a6687338e4ec846b754",
+  "contract_sha256": "a6f8a20acc2c695bcced8f3e64fd8b4efee1b12e71ec89024f309c1118d4dcc2",
+  "outcome": "PASS",
+  "steps": [
+    {
+      "step_id": "open_ticket",
+      "step_run_id": "1026ba3fd5004024b8de59c6352a36cc",
+      "operation_id": "openTicket",
+      "method": "POST",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "0b65701b510a9ae116b6c173146b62c64471d57382b33e5f186a66be94583f8b",
+      "policy_template_sha256": "121fedafd9fd85f0b1c4648abc6764bdc54c437cfcf387dc5a8d0c492959659a",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            201
+          ],
+          "actual": 201
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "0e5123b52ff34915a452b4544ed9f3af",
+          "status_code": 201,
+          "elapsed_ms": 7.594,
+          "response_bytes": 91,
+          "response_sha256": "5fff87f69b412e035c752da2f2f2c59b313ef95c21ffb7cffab651e363e175dc",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "list_visitor_tickets",
+      "step_run_id": "a3f74aafb3f6460f8e2e57b1bb4775d0",
+      "operation_id": "listTickets",
+      "method": "GET",
+      "path_template": "/v2/tickets",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "policy_template_sha256": "66b95b542227c2462cc93eb11f7ba1a043bf02ebc5053afe57e9ea1200d4f331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.payload.items",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "a4443bf808d642d48b5fec14c61ace69",
+          "status_code": 200,
+          "elapsed_ms": 4.424,
+          "response_bytes": 24,
+          "response_sha256": "fc564a50c79b250fda5a8ba9f5fe0ddabd47aaa34520d6cfd0a0dbfae7e7158f",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "read_ticket_open",
+      "step_run_id": "a292ab5858664c33ab79631a5939d02c",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "37c3110797139762dc6abc218d23905078f57dd3534f4199990a71fd001e708f",
+      "policy_template_sha256": "8cead040d05738b3356cb8bc03dd39307944e0f2656175376a7377ca3d9c3e41",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "9295b378b4224428bf4942ae462e2803",
+          "status_code": 200,
+          "elapsed_ms": 5.392,
+          "response_bytes": 91,
+          "response_sha256": "5fff87f69b412e035c752da2f2f2c59b313ef95c21ffb7cffab651e363e175dc",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "close_ticket",
+      "step_run_id": "11284392380047b2a895d2dbcab775ca",
+      "operation_id": "closeTicket",
+      "method": "PATCH",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "1051171aaf0512de7f473ae61da1ff33f086c4d4d9e16aa44df7f088a0b1df99",
+      "policy_template_sha256": "160973d55cc30caa9095110388ff7b08325beddfa6564719c0f2a02ad6c1604b",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "fbdd8c9862654348babe863051eade4d",
+          "status_code": 200,
+          "elapsed_ms": 5.628,
+          "response_bytes": 93,
+          "response_sha256": "71eb92e3900e4811a61c22a2a0cef6b7c33d8ae8bfddfc2e21b464f1548edd7a",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "step_id": "read_ticket_closed",
+      "step_run_id": "b37b3f3edd3c455290585cab5d99a739",
+      "operation_id": "readTicket",
+      "method": "GET",
+      "path_template": "/v2/tickets/{ticket_key}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "8de474a80d7809d129ab2f619aafa1e86843a5af0f0c23b3f44bd68433754b38",
+      "policy_template_sha256": "a957c0c5aee70dd3ca1107aaa09ae334f6f12333324223f49752a37925e90331",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.state",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.subject",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.priority",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        },
+        {
+          "kind": "equals",
+          "selector": "$.payload.ticket_key",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "2da52689268b4b13b93a9624f6d9cc7c",
+          "status_code": 200,
+          "elapsed_ms": 2.045,
+          "response_bytes": 93,
+          "response_sha256": "71eb92e3900e4811a61c22a2a0cef6b7c33d8ae8bfddfc2e21b464f1548edd7a",
+          "error_code": null
+        }
+      ]
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:8099",
+  "target_config_sha256": "e236497f2c521b6e363309f624ff911f14bae9a2e935f010159709d1b28bbb32",
+  "policy_registry_sha256": "2d2c8b0256da0e8853e605b8d73772fd67a57e6f69b2713cc89dc0e66bd21912",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 1,
+  "tool_calls": 1,
+  "analysis_code": "COMPLETED",
+  "workflow_completed": true,
+  "user_task_sha256": "abe8f1803ea6a7de5815ab8a08f591a44e3f5f033fc748bde85cb7f02da09d7a",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "ticket_open_v1",
+    "ticket_list_v1",
+    "ticket_read_v1",
+    "ticket_close_v1",
+    "ticket_closed_read_v1"
+  ],
+  "model_call": {
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-plus",
+    "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+    "http_status": 200,
+    "elapsed_ms": 11500.0,
+    "request_bytes": 19101,
+    "request_sha256": "dad14dac98021c37fab9937689a9a472e7a167f732b413e99d38fbdb59f21e86",
+    "response_bytes": 2746,
+    "input_token_upper_bound": 19613,
+    "input_tokens": 2492,
+    "output_tokens": 588,
+    "total_tokens": 3080,
+    "output_sha256": "b885d6a8d374eeea97f9cd94772d1d0aac0fd1e1744e3349300427e4551c7589",
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  "plan_structure": [
+    {
+      "step_id": "open_ticket",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "policy_id": "ticket_open_v1",
+      "argument_sha256": {
+        "body.subject": "46837dfa85381d9806a1ea7885cd306c4825235b96f8df990d12029ea47b1505",
+        "body.priority": "b57c4299afe3cda154124bdb96ceaf618a9d8d9cd8d2c8f6580ff26faa5fe5ca"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "list_visitor_tickets",
+      "operation_id": "listTickets",
+      "role": "visitor",
+      "policy_id": "ticket_list_v1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "read_ticket_open",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "open_ticket"
+      }
+    },
+    {
+      "step_id": "close_ticket",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "policy_id": "ticket_close_v1",
+      "argument_sha256": {
+        "body.state": "02e31f51aa8b1b6a622c4f7c30fab328d711cad4c9da74b9965ada8aa15d9df2"
+      },
+      "dependencies": {
+        "path_parameters.ticket_key": "open_ticket"
+      }
+    },
+    {
+      "step_id": "read_ticket_closed",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "policy_id": "ticket_closed_read_v1",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.ticket_key": "open_ticket"
+      }
+    }
+  ],
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": true,
+  "task_mode": "natural_language",
+  "task_satisfied": true,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "In-memory demo state discarded; external target cleanup is operator-owned"
+}

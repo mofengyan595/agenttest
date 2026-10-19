@@ -12,7 +12,8 @@
 正常17/18对18/18的差异来自首基线超时，不能据此证明正常规划更稳定；主动弃权未改善。
 [完整结果与归因限制](docs/nl-validation-completed.md) · [原顺序后段](docs/nl-validation-resumption.md)，超时Token仍未知。
 [开发结果与候选选择](docs/nl-development-results.md) · [首请求停止记录](docs/nl-validation-results.md) ·
-[可审阅CLI→pytest使用路径及待完成项](docs/nl-usage-guide.md)。新需求实跑、独立人审、节时均未完成。
+[可复制CLI→pytest使用路径](docs/nl-usage-guide.md)：新需求首次5步PASS，1次模型/3080 Token，
+已导出[NU01无模型回归资产](examples/regressions/NU01)。独立人审、节时与通用泛化仍未验证。
 
 2026-10-18 历史增量：固定计划三组各三轮，严格结论旧模型19/36、候选29/36、零模型规则36/36。
 候选支持类结论24/24，但证据不足的正确弃权5/12低于旧模型9/12；单独自然语言端到端仅1/6。

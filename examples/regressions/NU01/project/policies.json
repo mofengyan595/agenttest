@@ -1,0 +1,287 @@
+[
+  {
+    "id": "ticket_close_v1",
+    "operation_id": "closeTicket",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.payload.state",
+          "operator": "equals",
+          "expected": "closed"
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "ticket_key",
+        "literal_schema": null,
+        "source_policy_id": "ticket_open_v1",
+        "source_selector": "$.payload.ticket_key",
+        "role_relation": "same",
+        "response_selector": "$.payload.ticket_key",
+        "source_body_equalities": {
+          "$.payload.subject": "subject",
+          "$.payload.priority": "priority"
+        }
+      },
+      {
+        "location": "body",
+        "name": "state",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "closed"
+          ]
+        },
+        "source_policy_id": null,
+        "source_selector": "$",
+        "role_relation": null,
+        "response_selector": "$.payload.state",
+        "source_body_equalities": {}
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "Owner changes their ticket to closed using body.state=closed; verifies the close response. Not a readback substitute."
+  },
+  {
+    "id": "ticket_closed_read_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.payload.state",
+          "operator": "equals",
+          "expected": "closed"
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "ticket_key",
+        "literal_schema": null,
+        "source_policy_id": "ticket_open_v1",
+        "source_selector": "$.payload.ticket_key",
+        "role_relation": "same",
+        "response_selector": "$.payload.ticket_key",
+        "source_body_equalities": {
+          "$.payload.subject": "subject",
+          "$.payload.priority": "priority"
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "Owner reads a ticket after closing it: check state=closed, resource identity, subject and priority. Select for closed-state readback."
+  },
+  {
+    "id": "ticket_denied_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "visitor"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          403
+        ]
+      },
+      "fields": [],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "ticket_key",
+        "literal_schema": null,
+        "source_policy_id": "ticket_open_v1",
+        "source_selector": "$.payload.ticket_key",
+        "role_relation": "different",
+        "response_selector": null,
+        "source_body_equalities": {}
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "A different role attempts to read the owner's ticket and must receive HTTP 403; bind to the owner's open step."
+  },
+  {
+    "id": "ticket_list_v1",
+    "operation_id": "listTickets",
+    "roles": [
+      "owner",
+      "visitor"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.payload.items",
+          "operator": "exists",
+          "expected": null
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "List only the current role's visible tickets; collection operation needs no ticket key, and is not a single-ticket read or authentication."
+  },
+  {
+    "id": "ticket_open_v1",
+    "operation_id": "openTicket",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.payload.ticket_key",
+          "operator": "exists",
+          "expected": null
+        },
+        {
+          "select": "$.payload.state",
+          "operator": "equals",
+          "expected": "open"
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "subject",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "source_policy_id": null,
+        "source_selector": "$",
+        "role_relation": null,
+        "response_selector": "$.payload.subject",
+        "source_body_equalities": {}
+      },
+      {
+        "location": "body",
+        "name": "priority",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "low",
+            "high"
+          ]
+        },
+        "source_policy_id": null,
+        "source_selector": "$",
+        "role_relation": null,
+        "response_selector": "$.payload.priority",
+        "source_body_equalities": {}
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "Create an open ticket with the requested subject and priority; produces $.payload.ticket_key."
+  },
+  {
+    "id": "ticket_read_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "owner"
+    ],
+    "business_scenario": "portable_tickets_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/portability.md#工单演示规则",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.payload.state",
+          "operator": "equals",
+          "expected": "open"
+        }
+      ],
+      "public_evidence": []
+    },
+    "poll": null,
+    "required_bindings": {},
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "ticket_key",
+        "literal_schema": null,
+        "source_policy_id": "ticket_open_v1",
+        "source_selector": "$.payload.ticket_key",
+        "role_relation": "same",
+        "response_selector": "$.payload.ticket_key",
+        "source_body_equalities": {
+          "$.payload.subject": "subject",
+          "$.payload.priority": "priority"
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "csv_fixture": null,
+    "planning_purpose": "Owner reads a ticket while it is open: check state=open, resource identity, subject and priority. Not the closed-state check."
+  }
+]
