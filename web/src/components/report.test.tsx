@@ -8,6 +8,40 @@ import { StepEvidence } from "./StepEvidence";
 import { runFixture } from "../test/fixtures";
 import type { Outcome } from "../api/types";
 
+test("rule symptoms and model abstention remain separate from business failure", () => {
+  render(
+    <MemoryRouter>
+      <ReportView
+        refresh={() => {}}
+        run={runFixture({
+          outcome: "ASSERTION_FAILED",
+          trusted_symptom: {
+            state: "SUPPORTED",
+            finding: "ACCESS_BOUNDARY_VIOLATION",
+            evidence_refs: ["original", "investigation_" + "a".repeat(32)],
+            reason: "RULE_SUPPORTED",
+            rule_version: "observable_symptoms_v1",
+          },
+          feedback: {
+            state: "NEEDS_REVIEW",
+            finding: "EVIDENCE_INSUFFICIENT",
+            reason: "FEEDBACK_EVIDENCE_INSUFFICIENT",
+            basis: "证据不足，需人工复核。",
+          },
+        })}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText("规则支持的可信症状")).toBeInTheDocument();
+  expect(screen.getByText("模型行动与结论建议")).toBeInTheDocument();
+  expect(screen.getByText("ACCESS_BOUNDARY_VIOLATION")).toBeInTheDocument();
+  expect(screen.getByText("EVIDENCE_INSUFFICIENT")).toBeInTheDocument();
+  expect(screen.getByText(/ASSERTION_FAILED ·/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/FEEDBACK_EVIDENCE_INSUFFICIENT/),
+  ).toBeInTheDocument();
+});
+
 test.each(Object.keys(outcomes) as Outcome[])(
   "renders truthful outcome %s",
   (outcome) => {

@@ -130,6 +130,16 @@ class FeedbackResult(BaseModel):
     elapsed_ms: float = 0
 
 
+class TrustedSymptomResult(BaseModel):
+    rule_version: Literal["observable_symptoms_v1"] = "observable_symptoms_v1"
+    state: Literal["SUPPORTED", "NEEDS_REVIEW"] = "NEEDS_REVIEW"
+    finding: Literal["ACCESS_BOUNDARY_VIOLATION", "PERSISTENT_READBACK_MISMATCH",
+                     "EVIDENCE_INSUFFICIENT"] = "EVIDENCE_INSUFFICIENT"
+    evidence_refs: list[str] = Field(default_factory=list, max_length=2)
+    reason: Literal["RULE_SUPPORTED", "RULE_EVIDENCE_INSUFFICIENT",
+                    "RULE_AUTHORITY_CHANGED"] = "RULE_EVIDENCE_INSUFFICIENT"
+
+
 class PlanStepEvidence(BaseModel):
     step_id: str
     operation_id: str
@@ -174,6 +184,7 @@ class RunReport(BaseModel):
     investigations: list[InvestigationResult] = Field(default_factory=list)
     investigation_error: str | None = None
     feedback: FeedbackResult | None = None
+    trusted_symptom: TrustedSymptomResult | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
 
     @model_serializer(mode="wrap")
@@ -184,6 +195,8 @@ class RunReport(BaseModel):
                 data.pop(name, None)
         if self.feedback is None:
             data.pop("feedback", None)
+        if self.trusted_symptom is None:
+            data.pop("trusted_symptom", None)
         return data
 
 

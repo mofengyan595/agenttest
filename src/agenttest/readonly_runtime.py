@@ -105,7 +105,10 @@ async def investigate(executor: "Executor", client: httpx.AsyncClient, scenario:
                                digest, frozen, last_request)
         finally:
             for name in type(report).model_fields:
-                if name not in {"investigations", "investigation_error", "feedback", "revision"}:
+                retained = {"investigations", "investigation_error", "feedback", "revision"}
+                if authority.trusted_symptoms:
+                    retained.add("trusted_symptom")
+                if name not in retained:
                     setattr(report, name, getattr(original, name))
             executor.config, executor.contract, executor.registry = config, contract, registry
             executor.capabilities = capabilities

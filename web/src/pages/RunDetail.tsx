@@ -213,11 +213,33 @@ export function ReportView({
             title="失败后的只读调查"
             subtitle="调查不会修改原始业务测试结果"
           >
+            {run.trusted_symptom && (
+              <div className="investigation">
+                <h3>规则支持的可信症状</h3>
+                <Badge>{run.trusted_symptom.state}</Badge>
+                <p>{run.trusted_symptom.finding}</p>
+                <p className="caption">
+                  证据引用：
+                  {run.trusted_symptom.evidence_refs?.join(" · ") || "无"}
+                </p>
+                <p className="caption">
+                  {run.trusted_symptom.rule_version} ·{" "}
+                  {run.trusted_symptom.reason}
+                </p>
+                <p className="caption">
+                  仅描述可观察症状，不判定服务内部根因。
+                </p>
+              </div>
+            )}
             {run.feedback && (
               <div className="investigation">
+                <h3>模型行动与结论建议</h3>
                 <Badge>{run.feedback.state}</Badge>
-                <h3>{run.feedback.finding}</h3>
+                <p>{run.feedback.finding}</p>
                 <p>{run.feedback.basis}</p>
+                <p className="caption">
+                  采信 / 拒绝原因：{run.feedback.reason}
+                </p>
                 <p className="caption">
                   证据引用：{run.feedback.evidence_refs?.join(" · ") || "无"}
                 </p>
@@ -226,11 +248,34 @@ export function ReportView({
                   {run.feedback.model_calls_used} / 3
                 </p>
                 {run.feedback.decisions?.map((decision) => (
-                  <p className="caption" key={decision.index}>
-                    决策 {decision.index + 1} · {decision.action} ·{" "}
-                    {decision.reason} ·{" "}
-                    {metric(decision.model_call?.total_tokens)} tokens
-                  </p>
+                  <div className="caption" key={decision.index}>
+                    <p>
+                      决策 {decision.index + 1} · {decision.action} ·{" "}
+                      {decision.reason} ·{" "}
+                      {metric(decision.model_call?.total_tokens)} tokens
+                    </p>
+                    {typeof decision.proposal?.finding === "string" &&
+                      [
+                        "ACCESS_BOUNDARY_VIOLATION",
+                        "PERSISTENT_READBACK_MISMATCH",
+                        "EVIDENCE_INSUFFICIENT",
+                      ].includes(decision.proposal.finding) && (
+                        <p>
+                          原提案：{String(decision.proposal.finding)} · 引用：
+                          {Array.isArray(decision.proposal.evidence_refs)
+                            ? decision.proposal.evidence_refs
+                                .filter(
+                                  (ref) =>
+                                    typeof ref === "string" &&
+                                    /^(original|investigation_[a-f0-9]{32})$/.test(
+                                      ref,
+                                    ),
+                                )
+                                .join(" · ")
+                            : "未记录"}
+                        </p>
+                      )}
+                  </div>
                 ))}
               </div>
             )}
@@ -293,6 +338,15 @@ export function ReportView({
                   </dd>
                 </>
               )}
+              {run.diagnostic?.intent?.map((detail, index) => (
+                <div key={index}>
+                  <dt>意图约束诊断</dt>
+                  <dd>
+                    {detail.branch} · 约束序号{" "}
+                    {detail.requirement_index ?? "整体"}
+                  </dd>
+                </div>
+              ))}
               <dt>分析码</dt>
               <dd>{run.analysis_code || "未记录"}</dd>
               <dt>校验问题</dt>

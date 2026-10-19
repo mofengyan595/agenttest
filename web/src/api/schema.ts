@@ -130,6 +130,8 @@ export interface components {
       /** Fields */
       fields?: string[];
       reference?: components["schemas"]["ReferenceDiagnostic"] | null;
+      /** Intent */
+      intent?: components["schemas"]["IntentDiagnostic"][] | null;
     };
     /** FeedbackDecisionEvidence */
     FeedbackDecisionEvidence: {
@@ -152,6 +154,14 @@ export interface components {
        * @default 0
        */
       elapsed_ms?: number;
+      /** Public Context */
+      public_context?: {
+        [key: string]: unknown;
+      } | null;
+      /** Proposal */
+      proposal?: {
+        [key: string]: unknown;
+      } | null;
     };
     /** FeedbackResult */
     FeedbackResult: {
@@ -216,6 +226,24 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** IntentDiagnostic */
+    IntentDiagnostic: {
+      /**
+       * Branch
+       * @enum {string}
+       */
+      branch:
+        | "STEP_COUNT"
+        | "OPERATION_ROLE_POLICY"
+        | "PARAMETERS"
+        | "SOURCE_OR_VALUE"
+        | "ORDER"
+        | "EXECUTION_OPTION"
+        | "GOAL_COVERAGE"
+        | "STEP_SET";
+      /** Requirement Index */
+      requirement_index?: number | null;
     };
     /** InvestigationResult */
     InvestigationResult: {
@@ -510,6 +538,7 @@ export interface components {
       /** Investigation Error */
       investigation_error?: string | null;
       feedback?: components["schemas"]["FeedbackResult"] | null;
+      trusted_symptom?: components["schemas"]["TrustedSymptomResult"] | null;
       /**
        * Cleanup
        * @default In-memory demo state discarded; external target cleanup is operator-owned
@@ -553,6 +582,41 @@ export interface components {
       checks?: components["schemas"]["CheckResult"][];
       /** Attempts */
       attempts?: components["schemas"]["AttemptEvidence"][];
+    };
+    /** TrustedSymptomResult */
+    TrustedSymptomResult: {
+      /**
+       * Rule Version
+       * @default observable_symptoms_v1
+       * @constant
+       */
+      rule_version?: "observable_symptoms_v1";
+      /**
+       * State
+       * @default NEEDS_REVIEW
+       * @enum {string}
+       */
+      state?: "SUPPORTED" | "NEEDS_REVIEW";
+      /**
+       * Finding
+       * @default EVIDENCE_INSUFFICIENT
+       * @enum {string}
+       */
+      finding?:
+        | "ACCESS_BOUNDARY_VIOLATION"
+        | "PERSISTENT_READBACK_MISMATCH"
+        | "EVIDENCE_INSUFFICIENT";
+      /** Evidence Refs */
+      evidence_refs?: string[];
+      /**
+       * Reason
+       * @default RULE_EVIDENCE_INSUFFICIENT
+       * @enum {string}
+       */
+      reason?:
+        | "RULE_SUPPORTED"
+        | "RULE_EVIDENCE_INSUFFICIENT"
+        | "RULE_AUTHORITY_CHANGED";
     };
     /** ValidationError */
     ValidationError: {

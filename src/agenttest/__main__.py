@@ -266,7 +266,8 @@ def main(argv: list[str] | None = None) -> int:
                 capabilities = ReadOnlyCapabilityRegistry.from_json(
                     bounded_read(args.feedback_capabilities))
                 feedback_options = {
-                    "investigation": InvestigationConfig(enabled=True, feedback=FeedbackBudget(
+                    "investigation": InvestigationConfig(enabled=True, trusted_symptoms=True,
+                        feedback=FeedbackBudget(
                         timeout=min(3 * args.model_timeout + 15, 180))),
                     "capabilities": capabilities,
                     "analyzer": EvidenceFeedbackModel(settings) if args.real else FakeFeedback(),
@@ -333,6 +334,8 @@ def main(argv: list[str] | None = None) -> int:
             "report": str(store.root / result.run_id / "report.json"),
             **({"feedback_state": result.feedback.state, "feedback_basis": result.feedback.basis}
                if result.feedback is not None else {}),
+            **({"trusted_symptom": result.trusted_symptom.model_dump()}
+               if result.trusted_symptom is not None else {}),
             **({"regression": regression_result} if regression_result is not None else {}),
         }, ensure_ascii=False))
         if regression_error:

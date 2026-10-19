@@ -66,12 +66,15 @@ class InvestigationConfig(StrictModel):
     enabled: bool = False
     budget: InvestigationBudget = Field(default_factory=InvestigationBudget)
     feedback: FeedbackBudget | None = None
+    trusted_symptoms: bool = False
 
     @model_serializer(mode="wrap")
     def serialize_feedback(self, handler):
         data = handler(self)
         if self.feedback is None:
             data.pop("feedback", None)
+        if not self.trusted_symptoms:
+            data.pop("trusted_symptoms", None)
         return data
 
 

@@ -272,6 +272,12 @@ async def run_feedback(executor: "Executor", client: httpx.AsyncClient, report: 
         if pending and pending.reason == "FEEDBACK_READ_PENDING":
             pending.outcome, pending.reason = Outcome.TOOL_ERROR, "FEEDBACK_READ_FAILED"
     finally:
+        if executor.investigation.trusted_symptoms:
+            from agenttest.report import TrustedSymptomResult
+            from agenttest.trusted_symptoms import derive_symptom
+
+            report.trusted_symptom = (derive_symptom(failed, parent, completed, source_roles)
+                if digest() == frozen else TrustedSymptomResult(reason="RULE_AUTHORITY_CHANGED"))
         trace.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
         trace.requests_used = requests["requests"]
         action = entry = None

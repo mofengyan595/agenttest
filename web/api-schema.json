@@ -321,6 +321,21 @@
                 "type": "null"
               }
             ]
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IntentDiagnostic"
+                },
+                "type": "array",
+                "maxItems": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent"
           }
         },
         "type": "object",
@@ -369,6 +384,30 @@
             "type": "number",
             "title": "Elapsed Ms",
             "default": 0
+          },
+          "public_context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Context"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal"
           }
         },
         "type": "object",
@@ -471,6 +510,42 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IntentDiagnostic": {
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "STEP_COUNT",
+              "OPERATION_ROLE_POLICY",
+              "PARAMETERS",
+              "SOURCE_OR_VALUE",
+              "ORDER",
+              "EXECUTION_OPTION",
+              "GOAL_COVERAGE",
+              "STEP_SET"
+            ],
+            "title": "Branch"
+          },
+          "requirement_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 19.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "branch"
+        ],
+        "title": "IntentDiagnostic"
       },
       "InvestigationResult": {
         "properties": {
@@ -1226,6 +1301,16 @@
               }
             ]
           },
+          "trusted_symptom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrustedSymptomResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cleanup": {
             "type": "string",
             "title": "Cleanup",
@@ -1377,6 +1462,55 @@
           "policy_sha256"
         ],
         "title": "StepResult"
+      },
+      "TrustedSymptomResult": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "observable_symptoms_v1",
+            "title": "Rule Version",
+            "default": "observable_symptoms_v1"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "SUPPORTED",
+              "NEEDS_REVIEW"
+            ],
+            "title": "State",
+            "default": "NEEDS_REVIEW"
+          },
+          "finding": {
+            "type": "string",
+            "enum": [
+              "ACCESS_BOUNDARY_VIOLATION",
+              "PERSISTENT_READBACK_MISMATCH",
+              "EVIDENCE_INSUFFICIENT"
+            ],
+            "title": "Finding",
+            "default": "EVIDENCE_INSUFFICIENT"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "title": "Evidence Refs"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "RULE_SUPPORTED",
+              "RULE_EVIDENCE_INSUFFICIENT",
+              "RULE_AUTHORITY_CHANGED"
+            ],
+            "title": "Reason",
+            "default": "RULE_EVIDENCE_INSUFFICIENT"
+          }
+        },
+        "type": "object",
+        "title": "TrustedSymptomResult"
       },
       "ValidationError": {
         "properties": {

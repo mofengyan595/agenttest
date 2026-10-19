@@ -2,6 +2,62 @@ import { expect, test } from "@playwright/test";
 import path from "node:path";
 
 const shots = path.resolve("test-results/screenshots");
+test("display fixture: trusted rule and model abstention stay visibly separate", async ({
+  page,
+  request,
+}) => {
+  const catalog = await (await request.get("/api/runs?limit=100")).json();
+  const selected = catalog.items.find(
+    (row: { outcome: string }) => row.outcome === "ASSERTION_FAILED",
+  );
+  expect(selected).toBeTruthy();
+  const report = await (
+    await request.get(`/api/runs/${selected.run_id}`)
+  ).json();
+  expect(report.investigations[0]?.step_id).toBeTruthy();
+  // UI fixture only; execution/rule correctness is covered by ASGI Python tests.
+  report.trusted_symptom = {
+    state: "SUPPORTED",
+    finding: "ACCESS_BOUNDARY_VIOLATION",
+    reason: "RULE_SUPPORTED",
+    rule_version: "observable_symptoms_v1",
+    evidence_refs: ["original", report.investigations[0].step_id],
+  };
+  report.feedback = {
+    state: "NEEDS_REVIEW",
+    finding: "EVIDENCE_INSUFFICIENT",
+    reason: "FEEDBACK_EVIDENCE_INSUFFICIENT",
+    basis: "证据不足，需人工复核。",
+  };
+  await page.route(`**/api/runs/${selected.run_id}`, (route) =>
+    route.fulfill({ json: report }),
+  );
+  await page.goto(`/runs/${selected.run_id}`);
+  await expect(
+    page.getByRole("heading", { name: "规则支持的可信症状" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "模型行动与结论建议" }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".run-overview").getByText(/ASSERTION_FAILED ·/),
+  ).toBeVisible();
+  await page.screenshot({
+    path: path.join(shots, "rule-model-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+  await page.screenshot({
+    path: path.join(shots, "rule-model-390.png"),
+    fullPage: true,
+  });
+});
+
 test("real API: draft, import, history, evidence and responsive layouts", async ({
   page,
   request,
