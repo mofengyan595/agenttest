@@ -33,5 +33,17 @@
   "replay_report_sha256": "0ad57f0025a016eec0ffe6ac42dbdcf9f5959955fdc62030326537ade2cfbd2a",
   "review_actor": "agent_static_configuration_check",
   "independent_human_reviewed": false,
-  "human_time_saved": null
+  "human_time_saved": null,
+  "portable_artifact_note": "Git LF normalization of copied project/review JSON; original configuration-review reviewed_files binds source archive bytes; regression binds semantic contract/target/policy/task fingerprints. This is not a new human review.",
+  "portable_files_sha256": {
+    "configuration-review.json": "076d71004a3a91dd95cf6a21b9af0a50d0e9f131102908ff80a584c00372d19f",
+    "conftest.py": "a0ed89c5f613f984c02bdc4fbd11a4b82190b1a8623aa467b57a513400f7fff5",
+    "project/capabilities.json": "d6b6cfaa013e56f1cd2f9e02050c9da014922b21ad1fa2b4b7d859403b954139",
+    "project/case.json": "9e4c748efb8323c0cb7d68201d1d8cd61d87e331bcd04df8880d825f79370ab5",
+    "project/openapi.json": "0f310018f32f71a32052f7513ea4e4a223ffb142585bff980f148d9d6e4e50d9",
+    "project/policies.json": "2aac794d9527387df8134d2e1a52c5929a0e0c061df5fdb03cd617e978b8cea2",
+    "project/project.json": "bc8cd7b7f3f76d38b69efba923447d38bcb2400f048790c27faae427e902dea2",
+    "project/target.json": "d09eccc8fdf8747c2ab6260a0444db433d53321299454ec635d7f74f4f2dfb30",
+    "project/task.json": "e52dae00be5f35c2dbb2a7479649ecd7b566c53862dc394e61040c1ea819b114"
+  }
 }

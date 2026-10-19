@@ -12,6 +12,8 @@
 `bundle/`由真实CLI完整通过后的固定模板导出，四文件及manifest没有手工修改。
 `project/`是必要的显式配置：OpenAPI、隔离目标与角色、批准策略、五步TaskContract及四条偏序、只读能力。
 `configuration-review.json`是代理静态核对，不是独立人工审核。
+其中reviewed_files保留源归档的字节摘要；便携项目JSON依仓库规则规范为LF，
+其实际字节摘要另存provenance的portable_files_sha256。原契约/目标/策略/任务的语义指纹不变。
 `conftest.py`是操作员维护的ASGI运行适配器，不是模型代码；它禁止模型和真实HTTP transport调用。
 每次回归创建新的合成工单服务和短期凭据，使用原策略断言，不恢复原请求，不做写入重试。
 列表步骤只断言HTTP200和items存在；本包不证明列表归属过滤正确性。

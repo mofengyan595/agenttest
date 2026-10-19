@@ -66,6 +66,8 @@
 原八项项目文件、人工ASGI fixture与来源摘要。bundle四文件逐字节保留，manifest绑定原真实报告；
 测试代码来自固定可信导出模板，模型只提供JSON计划。fixture复用隔离工单target，
 每次创建新目标和短期角色凭据，不读取.env，不访问真实数据库。
+配置/静态核对JSON按仓库规则规范为LF；configuration-review中的字节摘要仍指向源归档，
+provenance另存便携文件实际字节摘要。回归绑定原契约、目标、策略、任务的语义指纹，未改变业务断言。
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest examples/regressions/NU01 -q `
