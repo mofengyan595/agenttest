@@ -8,9 +8,10 @@
 
 2026-10-19 自然语言可靠性增量：公开资源/认证/角色/状态策略关系、生成前联合约束、
 独立可信症状与模型建议分层已实现；[根因与边界](docs/nl-reliability-20261019.md)。
-新排期Mock两组各36/36；真实首请求超时后71位置停止，操作员现已允许按原顺序继续未尝试位置，
-[后段准备与边界](docs/nl-validation-resumption.md)。**暂无可比较真实成绩**，原超时Token仍未知。
-[开发结果与候选选择](docs/nl-development-results.md) · [完整停止记录](docs/nl-validation-results.md) ·
+新排期72位置已完成并冷核对：**产品29/36对31/36，模型结论9/18对8/18**；
+正常17/18对18/18的差异来自首基线超时，不能据此证明正常规划更稳定；主动弃权未改善。
+[完整结果与归因限制](docs/nl-validation-completed.md) · [原顺序后段](docs/nl-validation-resumption.md)，超时Token仍未知。
+[开发结果与候选选择](docs/nl-development-results.md) · [首请求停止记录](docs/nl-validation-results.md) ·
 [可审阅CLI→pytest使用路径及待完成项](docs/nl-usage-guide.md)。新需求实跑、独立人审、节时均未完成。
 
 2026-10-18 历史增量：固定计划三组各三轮，严格结论旧模型19/36、候选29/36、零模型规则36/36。

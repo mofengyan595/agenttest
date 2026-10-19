@@ -12,6 +12,7 @@ pytest.importorskip("langgraph")
 
 from agenttest import nl_usage as usage
 from agenttest.nl_tasks import cases, task_inputs_for
+from agenttest.report import ReportStore
 
 
 @pytest.fixture
@@ -29,13 +30,34 @@ def test_cli_complete_export_then_no_model_replay(root):
     fake = root / "nd02-fake.json"
     fake.write_text(task_inputs_for(case)[6].scenario().model_dump_json(), encoding="utf-8")
     result = usage.execute(root, fake_plan=fake)
-    assert result["product_complete"] and result["exported"]
+    assert result["product_complete"] and result["exported"], result
     assert result["model_calls"] == result["real_model_calls"] == 0
     assert result["replay_exit"] == 0
     assert "1 passed" in (root / "replay.stdout.txt").read_text()
+    assert not (root / "pytest-temp").exists()
+    snapshots = list((root / "replay-reports").glob("*/report.json"))
+    assert len(snapshots) == 1
+    replay = ReportStore(root / "replay-reports").read(result["replay_run_id"])
+    assert replay.model_call is None and replay.task_mode == "operator_plan"
     assert not (root / "project" / "fake-plan.json").exists()
     with pytest.raises(ValueError, match="already attempted"):
         usage.execute(root, fake_plan=fake)
+
+
+def test_existing_regression_temporary_directory_is_preserved(root):
+    usage.prepare(cases("development")[1], root)
+    temporary = root.parent / (root.name + "-pytest-temp")
+    temporary.mkdir()
+    sentinel = temporary / "operator-file.txt"
+    sentinel.write_text("preserve", encoding="utf-8")
+    try:
+        with pytest.raises(ValueError, match="temporary directory already exists"):
+            usage.execute(root, fake_plan=root / "never-read.json")
+        assert sentinel.read_text() == "preserve"
+        assert not (root / "freeze.json").exists()
+    finally:
+        assert temporary.resolve().is_relative_to((PROJECT_ROOT / "runs").resolve())
+        shutil.rmtree(temporary)
 
 
 def test_reviewed_configuration_change_stops_before_model(root):

@@ -4,6 +4,7 @@ import contextlib
 import io
 import json
 import os
+import stat
 import subprocess
 import sys
 import time
@@ -24,7 +25,7 @@ from agenttest.llm_planner import ModelSettings
 from agenttest.nl_tasks import task_inputs_for
 from agenttest.portability_demo import project_inputs
 from agenttest.project import check_project
-from agenttest.report import Outcome, ReportStore, RunReport, fingerprint
+from agenttest.report import Outcome, ReportStore, fingerprint
 from agenttest.workflow import Workflow as OriginalWorkflow
 
 FIXTURE = '''"""Operator-owned ASGI runtime. Inputs are reviewed files, never model code."""
@@ -105,6 +106,10 @@ def execute(output: Path, *, model_env: Path | None = None, fake_plan: Path | No
         raise ValueError("Real usage requires a clean committed checkout")
     if (output / "freeze.json").exists():
         raise ValueError("Usage already attempted; no replacement run")
+    temporary = output.parent / (output.name + "-pytest-temp")
+    private_output(PROJECT_ROOT, temporary)
+    if os.path.lexists(temporary):
+        raise ValueError("Regression temporary directory already exists")
     project = output / "project"
     case = json.loads((project / "case.json").read_bytes())
     app, _, _, _, env = project_inputs(case["project"])
@@ -166,14 +171,25 @@ def execute(output: Path, *, model_env: Path | None = None, fake_plan: Path | No
         child_env = {k: v for k, v in os.environ.items() if k not in {
             "OPENAI_API_KEY", "OPENAI_BASE_URL", "AGENTTEST_MODEL"}}
         replay = subprocess.run([sys.executable, "-m", "pytest", str(output / "bundle"),
-            "-q", "--basetemp", str(output / "pytest-temp"),
+            "-q", "--basetemp", str(temporary),
             "--junitxml", str(output / "replay.xml")],
             env=child_env, capture_output=True, timeout=90)
         (output / "replay.stdout.txt").write_bytes(replay.stdout)
         (output / "replay.stderr.txt").write_bytes(replay.stderr)
         replay_exit = replay.returncode
-        replay_reports = [RunReport.model_validate_json(p.read_bytes())
-                          for p in (output / "pytest-temp").rglob("report.json")]
+        replay_reports = []
+        for current, directories, names in os.walk(temporary, followlinks=False):
+            directories[:] = [name for name in directories
+                if not (stat.S_ISLNK((Path(current) / name).lstat().st_mode)
+                    or getattr((Path(current) / name).lstat(), "st_file_attributes", 0) & 0x400)]
+            if "report.json" in names:
+                report_path = Path(current) / "report.json"
+                replay_report = ReportStore(report_path.parent.parent).read(report_path.parent.name)
+                replay_reports.append(replay_report)
+                snapshot = output / "replay-reports" / replay_report.run_id
+                snapshot.mkdir(parents=True, exist_ok=False)
+                (snapshot / "report.json").write_text(replay_report.model_dump_json(indent=2),
+                                                     encoding="utf-8", newline="\n")
         if replay.returncode == 0 and len(replay_reports) == 1:
             replay_report = replay_reports[0]
             replay_verified = bool(replay_report.outcome == Outcome.PASS
