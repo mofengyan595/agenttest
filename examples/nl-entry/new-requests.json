@@ -1,0 +1,14 @@
+[
+  {"id":"NE01","project":"tickets","user_task":"请测试新建工单接口。"},
+  {"id":"NE02","project":"tickets","user_task":"测试 listTickets 接口。"},
+  {"id":"NE03","project":"courses","user_task":"测试 POST /api/courses 接口。"},
+  {"id":"NE04","project":"tickets","user_task":"请验证关闭工单接口。"},
+  {"id":"NE05","project":"courses","user_task":"测试 getCourse 接口。"},
+  {"id":"NE06","project":"tickets","user_task":"测试删除工单接口。"},
+  {"id":"NE07","project":"courses","user_task":"请创建课程、读回，以及其他用户不能读。"},
+  {"id":"NE08","project":"tickets","user_task":"请新建工单，然后关闭并读回。"},
+  {"id":"NE09","project":"tickets","user_task":"先创建工单，随后查询，随后关闭。"},
+  {"id":"NE10","project":"tickets","user_task":"先列出工单，再新建并查询。"},
+  {"id":"NE11","project":"courses","user_task":"请测试这个项目已授权的核心接口。"},
+  {"id":"NE12","project":"tickets","user_task":"测试所有已授权接口。"}
+]

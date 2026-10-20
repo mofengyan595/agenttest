@@ -68,6 +68,8 @@ def goal_command(args) -> int:
         settings = settings.model_copy(update={
             name: getattr(project.registration.budget, name) for name in (
                 "max_input_tokens", "max_output_tokens", "max_total_tokens")})
+        settings = ModelSettings.model_validate({**settings.model_dump(),
+                                                "timeout": args.model_timeout})
         if project.registration.native_function_calling:
             from agenttest.native_tools import NativeFunctionPlanner
 

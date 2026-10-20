@@ -1,0 +1,322 @@
+{
+  "version": "nl_entry_isolated_score_v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_human_reviewed": 0,
+  "cases": [
+    {
+      "id": "NE01",
+      "scope": "single",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "ticket_open_v1"
+      ],
+      "required_operations": [
+        "openTicket"
+      ],
+      "expected_normal_plans": 3,
+      "normal_completion_expected": true,
+      "expected_goals": [
+        "create"
+      ],
+      "schema_variants": [
+        {
+          "policy_id": "ticket_open_v1",
+          "field": "body.subject",
+          "lengths": [
+            1,
+            80
+          ]
+        },
+        {
+          "policy_id": "ticket_open_v1",
+          "field": "body.priority",
+          "values": [
+            "low",
+            "high"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "NE02",
+      "scope": "single",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "ticket_list_v1"
+      ],
+      "required_operations": [
+        "listTickets"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": true,
+      "expected_goals": [
+        "list"
+      ]
+    },
+    {
+      "id": "NE03",
+      "scope": "single",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "nl_login_v1",
+        "nl_create_v1"
+      ],
+      "required_operations": [
+        "login",
+        "createCourse"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": true,
+      "expected_goals": [
+        "create"
+      ]
+    },
+    {
+      "id": "NE04",
+      "scope": "single",
+      "behavior": "execute",
+      "fault": "close_ignored",
+      "required_policies": [
+        "ticket_open_v1",
+        "ticket_close_v1"
+      ],
+      "required_operations": [
+        "openTicket",
+        "closeTicket"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": false,
+      "designated_failure": [
+        "closeTicket",
+        "equals",
+        "$.payload.state"
+      ],
+      "expected_goals": [
+        "close"
+      ]
+    },
+    {
+      "id": "NE05",
+      "scope": "single",
+      "behavior": "review",
+      "fault": "none",
+      "required_policies": [],
+      "required_operations": [],
+      "expected_normal_plans": 0,
+      "review_reason": "INTENT_OPERATION_EXPECTATION_AMBIGUOUS",
+      "expected_goals": []
+    },
+    {
+      "id": "NE06",
+      "scope": "single",
+      "behavior": "review",
+      "fault": "none",
+      "required_policies": [],
+      "required_operations": [],
+      "expected_normal_plans": 0,
+      "review_reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT",
+      "expected_goals": []
+    },
+    {
+      "id": "NE07",
+      "scope": "flow",
+      "behavior": "execute",
+      "fault": "ownership",
+      "required_policies": [
+        "nl_login_v1",
+        "nl_create_v1",
+        "nl_read_v1",
+        "nl_forbidden_v1"
+      ],
+      "required_operations": [
+        "login",
+        "createCourse",
+        "getCourse"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": false,
+      "designated_failure": [
+        "getCourse",
+        "http_status",
+        null
+      ],
+      "policy_order": [
+        [
+          "nl_create_v1",
+          "nl_read_v1"
+        ],
+        [
+          "nl_read_v1",
+          "nl_forbidden_v1"
+        ]
+      ],
+      "expected_goals": [
+        "create",
+        "read",
+        "ownership"
+      ]
+    },
+    {
+      "id": "NE08",
+      "scope": "flow",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "ticket_open_v1",
+        "ticket_close_v1",
+        "ticket_closed_read_v1"
+      ],
+      "required_operations": [
+        "openTicket",
+        "closeTicket",
+        "readTicket"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": true,
+      "policy_order": [
+        [
+          "ticket_open_v1",
+          "ticket_close_v1"
+        ],
+        [
+          "ticket_close_v1",
+          "ticket_closed_read_v1"
+        ]
+      ],
+      "expected_goals": [
+        "create",
+        "close",
+        "read"
+      ]
+    },
+    {
+      "id": "NE09",
+      "scope": "flow",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "ticket_open_v1",
+        "ticket_read_v1",
+        "ticket_close_v1"
+      ],
+      "required_operations": [
+        "openTicket",
+        "readTicket",
+        "closeTicket"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": true,
+      "policy_order": [
+        [
+          "ticket_open_v1",
+          "ticket_read_v1"
+        ],
+        [
+          "ticket_read_v1",
+          "ticket_close_v1"
+        ]
+      ],
+      "expected_goals": [
+        "create",
+        "read",
+        "close"
+      ]
+    },
+    {
+      "id": "NE10",
+      "scope": "flow",
+      "behavior": "execute",
+      "fault": "wrong_subject",
+      "required_policies": [
+        "ticket_list_v1",
+        "ticket_open_v1",
+        "ticket_read_v1"
+      ],
+      "required_operations": [
+        "listTickets",
+        "openTicket",
+        "readTicket"
+      ],
+      "expected_normal_plans": 1,
+      "normal_completion_expected": false,
+      "designated_failure": [
+        "readTicket",
+        "equals",
+        "$.payload.subject"
+      ],
+      "policy_order": [
+        [
+          "ticket_list_v1",
+          "ticket_open_v1"
+        ],
+        [
+          "ticket_open_v1",
+          "ticket_read_v1"
+        ]
+      ],
+      "expected_goals": [
+        "list",
+        "create",
+        "read"
+      ]
+    },
+    {
+      "id": "NE11",
+      "scope": "project",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "nl_login_v1",
+        "nl_create_v1",
+        "nl_read_v1",
+        "nl_forbidden_v1"
+      ],
+      "required_operations": [
+        "login",
+        "createCourse",
+        "getCourse"
+      ],
+      "expected_normal_plans": 3,
+      "normal_completion_expected": true,
+      "expected_goals": [
+        "create",
+        "read",
+        "ownership"
+      ]
+    },
+    {
+      "id": "NE12",
+      "scope": "project",
+      "behavior": "execute",
+      "fault": "none",
+      "required_policies": [
+        "ticket_open_v1",
+        "ticket_read_v1",
+        "ticket_closed_read_v1",
+        "ticket_close_v1",
+        "ticket_denied_v1",
+        "ticket_list_v1"
+      ],
+      "required_operations": [
+        "openTicket",
+        "readTicket",
+        "closeTicket",
+        "listTickets"
+      ],
+      "expected_normal_plans": 6,
+      "normal_completion_expected": true,
+      "known_budget_limit": "11 required requests exceeds authorized 10; final group remains unexecuted and full completion fails",
+      "expected_goals": [
+        "create",
+        "read",
+        "close",
+        "ownership",
+        "list"
+      ]
+    }
+  ]
+}

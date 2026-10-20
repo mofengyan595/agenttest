@@ -69,7 +69,7 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
         from agenttest.investigation import FeedbackBudget, InvestigationConfig
 
         options = dict(capabilities=project.capabilities,
-            analyzer=BudgetPlanner(analyzer, local),
+            analyzer=BudgetPlanner(analyzer, local, guard),
             investigation=InvestigationConfig(enabled=True, trusted_symptoms=True,
                 feedback=FeedbackBudget(
                     max_model_calls=max(0, project.registration.budget.max_model_calls - 1),
@@ -77,7 +77,7 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
     try:
         report = await Workflow(project.document, project.target, project.registry,
             GoalPlanner(BudgetPlanner(planner, local), project, goal, guard), store,
-            transport=BudgetTransport(inner, local), environ=environ,
+            transport=BudgetTransport(inner, local, guard), environ=environ,
             user_task=user_task, intent_validator=validator, budget=budget,
             execution_guard=guard, **options).run()
     finally:

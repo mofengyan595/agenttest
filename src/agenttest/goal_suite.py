@@ -209,10 +209,16 @@ class SuiteLedger:
 
 
 class BudgetTransport(httpx.AsyncBaseTransport):
-    def __init__(self, inner, ledger):
+    def __init__(self, inner, ledger, guard=None):
         self.inner, self.ledger = inner, ledger
+        self.guard = guard
 
     async def handle_async_request(self, request):
+        if self.guard is not None:
+            try:
+                self.guard()
+            except Exception as exc:
+                raise httpx.RequestError("PROJECT_VERSION_CHANGED_RECHECK_REQUIRED") from exc
         if self.ledger.requests >= self.ledger.max_requests:
             raise httpx.RequestError("SUITE_REQUEST_BUDGET_EXHAUSTED")
         # Count before dispatch: a timeout may already have produced external effects.
@@ -221,8 +227,9 @@ class BudgetTransport(httpx.AsyncBaseTransport):
 
 
 class BudgetPlanner:
-    def __init__(self, inner, ledger):
+    def __init__(self, inner, ledger, guard=None):
         self.inner, self.ledger = inner, ledger
+        self.guard = guard
         self.stats = ModelCallStats()
 
     @property
@@ -239,6 +246,8 @@ class BudgetPlanner:
 
     async def generate(self, context):
         self.stats = ModelCallStats()
+        if self.guard is not None:
+            self.guard()
         if (self.ledger.usage_unknown or self.ledger.model_calls >= self.ledger.max_model_calls
                 or self.ledger.known_tokens + self.token_reservation
                 > self.ledger.max_total_tokens):

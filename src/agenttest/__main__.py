@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     subcommands = parser.add_subparsers(dest="command", required=True)
     goal = subcommands.add_parser("goal", help="复用项目目标配置，无需逐题编写完整任务步骤")
     goal.add_argument("--project", type=Path, required=True)
+    goal.add_argument("--model-timeout", type=float, default=30.0)
     goal.add_argument("--user-task", required=True)
     goal.add_argument("--runs-dir", type=Path, default=Path("runs"))
     mode = goal.add_mutually_exclusive_group(required=True)
