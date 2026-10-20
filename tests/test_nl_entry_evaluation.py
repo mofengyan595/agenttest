@@ -150,7 +150,8 @@ async def test_configuration_drift_after_first_sent_request_blocks_next_dispatch
     assert sent == ["POST"] and not report.task_satisfied
 
 
-def test_model_disabled_replay_derives_contract_from_old_original_text(tmp_path, capsys):
+def test_model_disabled_replay_derives_contract_from_old_original_text(
+        tmp_path, capsys, monkeypatch):
     pytest.importorskip("langgraph")
     from test_goal_entry import ticket_plan
 
@@ -169,6 +170,10 @@ def test_model_disabled_replay_derives_contract_from_old_original_text(tmp_path,
         "--export-regression", str(tmp_path / "bundle")])
     assert code == 0
     capsys.readouterr()
+    foreign = tmp_path / "unrelated-workspace"
+    foreign.mkdir()
+    (foreign / "pytest.ini").write_text("[pytest]\n", encoding="utf-8")
+    monkeypatch.chdir(foreign)
     replay = replay_export(tmp_path, tmp_path / "pytest-replay")
     if not replay["verified"] or replay["exit"] != 0:
         stdout = (tmp_path / "replay.stdout.txt").read_text(encoding="utf-8", errors="replace")

@@ -1,5 +1,16 @@
 # 开发进度
 
+## 自然语言入口 Goal：回归fixture发现根因（2026-10-20）
+
+65b1e65安装环境单项CI在两平台直接重现，完整日志确认`fixture 'agenttest_regression_runtime' not found`，
+不是模型、断言或HTTP执行失败。回归子pytest现在显式使用资产工作目录、rootdir和confcutdir，
+限定并加载上层操作员fixture；模型/真实HTTP陷阱与原导出模板、断言、路径保护不变。
+开发验证使用旧流程，新增从无关pytest工作目录调用的条件，未执行首次新需求。
+报告收集沿用旧nl_usage的不跟随链接遍历，排除pytest在POSIX创建的current别名，避免重复/链接报告。
+CLI/导出关联 **42 passed / 44.88s**；Ruff一处长行收尾修正后复核。
+原f12f8d3 Mock封印和后续诊断CI失败全部保留；模型入口/任务/提示/策略/评分未调。
+下一准确任务：确认两平台回归与完整CI，固定修正源码的独立Mock归档，再执行同SHA原36位置真实排期。
+
 CI子进程诊断补充：29f8bda日志确认子pytest退出1、0报告、setup error，原断言tuple被pytest再截断，
 尚未取得具体异常；改为保留完整失败文本，并在agent CI全量前增加同一安装环境的最小回归入口检查，
 用于区分安装环境与整套执行污染。没有放宽验证、增加重试或发模型请求。

@@ -4,6 +4,7 @@ import contextlib
 import io
 import json
 import os
+import stat
 import subprocess
 import sys
 import time
@@ -60,12 +61,19 @@ def replay_export(output, temporary):
     child_env = {k: v for k, v in os.environ.items() if k not in {
         "OPENAI_API_KEY", "OPENAI_BASE_URL", "AGENTTEST_MODEL"}}
     replay = subprocess.run([sys.executable, "-m", "pytest", str(output / "bundle"),
-        "-q", "--basetemp", str(temporary), "--junitxml", str(output / "replay.xml")],
-        env=child_env, capture_output=True, timeout=90)
+        "-q", "--rootdir", str(output), "--confcutdir", str(output),
+        "--basetemp", str(temporary), "--junitxml", str(output / "replay.xml")],
+        cwd=output, env=child_env, capture_output=True, timeout=90)
     (output / "replay.stdout.txt").write_bytes(replay.stdout)
     (output / "replay.stderr.txt").write_bytes(replay.stderr)
-    reports = []
-    for path in temporary.glob("*/reports/*/report.json"):
+    paths, reports = [], []
+    for current, directories, names in os.walk(temporary, followlinks=False):
+        directories[:] = [name for name in directories if not (
+            stat.S_ISLNK((Path(current) / name).lstat().st_mode)
+            or getattr((Path(current) / name).lstat(), "st_file_attributes", 0) & 0x400)]
+        if "report.json" in names and Path(current).parent.name == "reports":
+            paths.append(Path(current) / "report.json")
+    for path in paths:
         report = ReportStore(path.parent.parent).read(path.parent.name)
         reports.append(report)
         snapshot = output / "replay-reports" / report.run_id
