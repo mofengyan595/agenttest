@@ -17,6 +17,17 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-10-20 Goal establishes a new incremental milestone: reusable project-level
+natural-language goals, single/flow/project testing, shared tool protocols and bounded
+conversation context, then CLI-first SQLite task service and existing-console execution.
+Follow the operator objective in docs/nl-entry-goal.md. This supersedes the previous
+feature/frontend freeze only for that scope. Scoped commits/pushes and configured model
+calls are authorized. Keep every prior archive, failure and score unchanged. Freeze a
+new 12-request, three-round evaluation before real calls; labels/reference steps stay
+outside product runtime. No RAG, multi-agent, second framework, CourseInsight changes,
+real Java/PocketBase writes, model code execution, repair, replay or request recovery.
+
+### Historical freezes (preserved; new Goal scope above takes precedence)
 The 2026-10-18 Goal feature scope is now frozen for final acceptance and CI.
 The 24-task three-round development schedule is complete; preserve its two scheduler
 freezes, all failures and the separate explicit-finish audit. Do not add paid trials,

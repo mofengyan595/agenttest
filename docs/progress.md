@@ -1,5 +1,27 @@
 # 开发进度
 
+## 自然语言入口 Goal：现状核查与阶段1（2026-10-20，进行中）
+
+已读取本轮[原始目标](nl-entry-goal.md)、适用AGENTS/CODEX_TASK、README、进度、原配置、
+Workflow/DSL/Policy/Intent/候选发现/导出链路。基线b09cbcb工作区干净，准确SHA六项CI均success。
+保留上一轮产品29/36与31/36、正常17/18与18/18（差异含超时）、主动弃权3/6与0/6以及NU01原档。
+新Goal只覆盖新增入口/任务服务/既有工作台范围，已更新AGENTS当前里程碑，其余禁止项保留。
+
+新增项目目标目录与`goal`CLI；从原始需求及批准BindingRule独立派生TaskContract用于既有意图门禁，
+不把逐题步骤/Rubric送模型。课程/工单共用代码与原策略，角色认证、动态ID、状态选择和顺序有界支持；
+未知额外要求不丢弃，转简短待审。项目范围阶段1只识别，阶段2再实现分组；无新增依赖、真实模型或真实业务写入。
+
+首轮沙箱测试在集成段停滞后主动中止，未计通过；诊断环境首次完整运行31 passed/1 failed/9.36s，
+发现策略目录缺失触发KeyError，已修复。另一处测试路径误写`/tickets`已按真实`/v2/tickets`修正；
+首次关联命令误引用不存在test_regression_export.py，未收集测试，已改用实际文件。
+最终关联验收实际运行`pytest -q tests/test_goal_entry.py tests/test_project.py tests/test_task_contract.py
+tests/test_portability.py tests/test_regression.py tests/test_regression_cli.py`：
+**109 passed、1 skipped / 88.61s**；跳过为Windows已有链接权限检查。Ruff全仓通过、diff检查通过。
+新入口的ASGI正常、关闭无效与越权泄漏全部按原断言分类；模型只用Fake，未发真实付费请求。
+提交及准确SHA CI待核对，不将当前阶段当作全Goal交付。
+
+下一准确任务：完成阶段1关联验证、提交推送和准确SHA CI；然后阶段2复用发现器实现三层自动测试与共享总预算。
+
 ## 自然语言可靠性 Goal：新需求真实闭环、无模型资产与最终范围（2026-10-19）
 
 9c2f694干净提交上，NU01“竹湾交接”首次真实自然语言规划5步PASS、意图完整，

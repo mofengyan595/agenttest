@@ -4,6 +4,11 @@
 
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
+2026-10-20新里程碑：[自然语言入口与项目配置复用](docs/nl-entry.md)。
+阶段1新增`goal --project ... --user-task ... --preview`，受支持需求的约束从原文与批准关系派生，
+无需逐题手写完整TaskContract；旧入口仍可用。项目分组、工具协议、任务服务与工作台正在分阶段实现，
+尚未开展本轮真实模型效果验证。[完整范围](docs/nl-entry-goal.md)。
+
 [证据可靠性与模型价值](docs/evidence-value-report.md) · [交付导航与五分钟演示](docs/goal-delivery-guide.md) · [简历和面试材料](docs/goal-resume-interview.md)。
 
 2026-10-19 自然语言可靠性增量：公开资源/认证/角色/状态策略关系、生成前联合约束、

@@ -1,0 +1,9 @@
+{
+  "schema_version": "agenttest.goal-catalog.v1",
+  "resource_aliases": ["课程"],
+  "goals": [
+    {"id": "create", "aliases": ["创建", "新建"], "policy_id": "nl_create_v1", "role": "alice"},
+    {"id": "read", "aliases": ["查询", "读取", "读回"], "policy_id": "nl_read_v1", "role": "alice"},
+    {"id": "ownership", "aliases": ["其他用户不能读取", "其他用户不能读", "权限检查", "归属检查", "权限拒绝"], "policy_id": "nl_forbidden_v1", "role": "bob"}
+  ]
+}

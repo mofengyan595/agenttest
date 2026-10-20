@@ -26,6 +26,15 @@ def bounded_read(path: Path, limit: int = MAX_DOCUMENT_BYTES) -> bytes:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="AgentTest 确定性 API 测试")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    goal = subcommands.add_parser("goal", help="复用项目目标配置，无需逐题编写完整任务步骤")
+    goal.add_argument("--project", type=Path, required=True)
+    goal.add_argument("--user-task", required=True)
+    goal.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    mode = goal.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--preview", action="store_true", help="零模型/HTTP派生目标并预检")
+    mode.add_argument("--real", action="store_true")
+    mode.add_argument("--fake-plan", type=Path)
+    goal.add_argument("--model-env", type=Path)
     project_draft = subcommands.add_parser("prepare-project", help="从契约生成待审接入草案，不授权")
     project_draft.add_argument("--contract", type=Path, required=True)
     project_draft.add_argument("--output", type=Path, required=True)
@@ -101,6 +110,10 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     try:
+        if args.command == "goal":
+            from agenttest.goal_cli import goal_command
+
+            return goal_command(args)
         if args.command in {"prepare-project", "prepare-task"}:
             from agenttest.onboarding import prepare_project, prepare_task, write_draft
 
