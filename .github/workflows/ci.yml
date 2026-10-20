@@ -56,6 +56,9 @@ jobs:
         run: |
           "${{ matrix.python }}" -m pip install -r "${{ matrix.lock }}"
           "${{ matrix.python }}" -m pip install --no-build-isolation --no-deps -e '${{ matrix.extras }}'
+      - name: Installed regression fixture check
+        if: matrix.profile == 'agent'
+        run: '"${{ matrix.python }}" -m pytest -q tests/test_nl_entry_evaluation.py::test_model_disabled_replay_derives_contract_from_old_original_text'
       - name: Offline tests
         run: '"${{ matrix.python }}" -m pytest -q'
       - name: Exported fixed regressions without models

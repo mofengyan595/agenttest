@@ -170,8 +170,7 @@ def test_model_disabled_replay_derives_contract_from_old_original_text(tmp_path,
     assert code == 0
     capsys.readouterr()
     replay = replay_export(tmp_path, tmp_path / "pytest-replay")
-    assert replay["verified"] and replay["exit"] == 0, (
-        replay,
-        (tmp_path / "replay.stdout.txt").read_text(encoding="utf-8", errors="replace"),
-        (tmp_path / "replay.stderr.txt").read_text(encoding="utf-8", errors="replace"),
-    )
+    if not replay["verified"] or replay["exit"] != 0:
+        stdout = (tmp_path / "replay.stdout.txt").read_text(encoding="utf-8", errors="replace")
+        stderr = (tmp_path / "replay.stderr.txt").read_text(encoding="utf-8", errors="replace")
+        pytest.fail(f"MODEL_DISABLED_REPLAY_FAILED: {replay}\n{stdout}\n{stderr}", pytrace=False)
