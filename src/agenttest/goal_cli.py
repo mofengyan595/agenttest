@@ -15,16 +15,24 @@ def goal_command(args) -> int:
     summary = derived.summary()
     summary["budget"] = dict(project.registration.budget.model_dump(),
                              max_requests=project.target.max_requests)
-    if derived.task is None:
+    suite_mode = args.suite or derived.scope == "project"
+    if suite_mode and args.preview:
+        from agenttest.goal_suite import build_suite
+
+        print(json.dumps(build_suite(project, args.user_task, environ=dict(os.environ)).preview(),
+                         ensure_ascii=False))
+        return 0
+    if derived.task is None and not suite_mode:
         print(json.dumps(summary, ensure_ascii=False))
         return 1
     environ = dict(os.environ)
-    try:
-        check_goal_credentials(project, derived.task, environ)
-    except ValueError:
-        print(json.dumps(dict(summary, status="NEEDS_REVIEW",
-                              reason="PROJECT_CREDENTIAL_PREFLIGHT_FAILED"), ensure_ascii=False))
-        return 2
+    if not suite_mode:
+        try:
+            check_goal_credentials(project, derived.task, environ)
+        except ValueError:
+            print(json.dumps(dict(summary, status="NEEDS_REVIEW",
+                reason="PROJECT_CREDENTIAL_PREFLIGHT_FAILED"), ensure_ascii=False))
+            return 2
     if args.preview:
         print(json.dumps(summary, ensure_ascii=False))
         return 0
@@ -46,6 +54,13 @@ def goal_command(args) -> int:
     else:
         planner = FakeLLM(_read(args.fake_plan).decode("utf-8"))
     store = ReportStore(args.runs_dir)
+    if suite_mode:
+        from agenttest.goal_suite import run_suite
+
+        result = asyncio.run(run_suite(project, args.user_task, planner, store,
+                                      environ=environ, budget=budget))
+        print(json.dumps(result, ensure_ascii=False))
+        return 0 if result["complete"] else 1
     derived, report = asyncio.run(run_goal(project, args.user_task, planner, store,
         environ=environ, budget=budget))
     print(json.dumps(dict(derived.summary(), run_id=report.run_id,

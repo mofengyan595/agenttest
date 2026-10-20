@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from agenttest.goal_derivation import DerivedGoal, derive_goal
 from agenttest.project_goals import GoalProject, check_goal_credentials
+from agenttest.report import fingerprint
 from agenttest.task_contract import task_validator
 
 
@@ -17,7 +18,9 @@ class GoalPlanner:
             synthetic_input_defaults=deepcopy(goal.input_defaults),
             input_default_rule="Use synthetic_input_defaults for unspecified literal inputs; "
                 "explicit user literals take precedence. "
-                "This does not grant operations or assertions.")
+                "This does not grant operations or assertions.",
+            coordination_rule="For a bounded suite group, cover only requested_goals in this call; "
+                "the coordinator accounts for other groups. Do not add other catalog goals.")
 
     @property
     def stats(self):
@@ -33,11 +36,14 @@ class GoalPlanner:
 
 
 async def run_goal(project, user_task, planner, store, *, environ, transport=None,
-                   budget=None, execution_guard=None):
+                   budget=None, execution_guard=None, derived=None):
     """Preflight before spending model/HTTP budget; immutable derived gate during execution."""
     from agenttest.workflow import Workflow
 
-    goal = derive_goal(project, user_task)
+    goal = derived or derive_goal(project, user_task)
+    if (goal.project_identity != project.identity()
+            or goal.user_task_sha256 != fingerprint(user_task)):
+        raise ValueError("DERIVED_GOAL_VERSION_MISMATCH")
     if goal.task is None:
         return goal, None
     check_goal_credentials(project, goal.task, environ)

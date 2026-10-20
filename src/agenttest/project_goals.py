@@ -58,6 +58,8 @@ class ProjectBudget(StrictModel):
     max_input_tokens: int = Field(default=20_000, ge=1, le=100_000)
     max_output_tokens: int = Field(default=4096, ge=1, le=16_000)
     max_total_tokens: int = Field(default=25_000, ge=1, le=120_000)
+    suite_max_model_calls: int = Field(default=8, ge=1, le=20)
+    suite_max_total_tokens: int = Field(default=100_000, ge=1, le=500_000)
 
 
 class RegisteredProject(StrictModel):

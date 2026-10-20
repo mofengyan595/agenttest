@@ -35,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--real", action="store_true")
     mode.add_argument("--fake-plan", type=Path)
     goal.add_argument("--model-env", type=Path)
+    goal.add_argument("--suite", action="store_true",
+                      help="生成单接口Schema候选或项目分组，使用固定总预算执行可验证部分")
     project_draft = subcommands.add_parser("prepare-project", help="从契约生成待审接入草案，不授权")
     project_draft.add_argument("--contract", type=Path, required=True)
     project_draft.add_argument("--output", type=Path, required=True)
