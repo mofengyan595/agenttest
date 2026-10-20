@@ -119,9 +119,13 @@ def test_configuration_change_requires_new_checked_revision_and_no_budget_topup(
     session = GoalConversation(p)
     first, _ = session.plan(p, "创建工单", environ={})
     p.target.max_requests = 20
+    p.registration.budget.suite_max_model_calls = 2
+    p.registration.budget.suite_max_total_tokens = 10_000
     revised, checked = session.revalidate(p, first.id)
     assert checked["status"] == "READY" and revised.id != first.id
     assert session.ledger.max_requests == 10
+    assert session.ledger.max_model_calls == 2
+    assert session.ledger.max_total_tokens == 10_000
     assert session.snapshot()["plans"][0]["status"] == "STALE"
 
 

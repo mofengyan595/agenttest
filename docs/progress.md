@@ -1,5 +1,14 @@
 # 开发进度
 
+## 自然语言入口 Goal：配置漂移执行门禁（2026-10-20）
+
+规划期间也可能发生配置变更；CLI与任务服务在每次规划及执行前重新核对已注册项目身份，
+套件后续组不再花费模型/HTTP，旧计划不会继续执行。会话重新校验同时收紧请求、模型与Token额度，
+不刷新已用额度。关联 **37 passed / 44.28s**，Ruff通过；包含规划后配置变化的单任务/套件反例。
+前次统一离线交付已在 runs/ne4-final-delivery 完成 **9/9 VERIFIED**，source_unchanged=true、
+cleanup_unconfirmed=false，真实模型/Java/DB写0。b55c390的Web两平台CI均success；Python仍核对中。
+下一准确任务：冻结阶段5验收脚手架、新12需求与首次新需求协议，再按固定排期执行。
+
 ## 自然语言入口 Goal：阶段4完整门禁与根因修正（2026-10-20）
 
 6667fcb固定源码全量离线 **1685 passed、14 skipped / 1704.18s**，14项为已有Windows链接权限/POSIX语义；

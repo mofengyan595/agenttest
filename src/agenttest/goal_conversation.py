@@ -92,6 +92,10 @@ class GoalConversation:
         self._drafts[revised.id] = (revised, goal, text)
         self._states[revised.id] = revised.status
         self.ledger.max_requests = min(self.ledger.max_requests, project.target.max_requests)
+        self.ledger.max_model_calls = min(self.ledger.max_model_calls,
+                                         project.registration.budget.suite_max_model_calls)
+        self.ledger.max_total_tokens = min(self.ledger.max_total_tokens,
+                                          project.registration.budget.suite_max_total_tokens)
         return revised, goal.summary()
 
     async def execute(self, project, revision_id, planner, store, *, environ, transport=None,

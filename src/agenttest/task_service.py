@@ -148,6 +148,10 @@ class TaskService:
                     self.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW",
                                        summary=dict(reason="PROJECT_VERSION_CHANGED_RECHECK_REQUIRED"))
                     return
+
+                def guard():
+                    if self.project(project_id).identity() != row["project_identity"]:
+                        raise ValueError("PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
                 env, transport = (synthetic_runtime(project) if self.synthetic
                                   else (dict(self.environ), None))
                 own_transport = transport is None
@@ -190,7 +194,7 @@ class TaskService:
                     if suite:
                         result = await run_suite(project, text, planner, store, environ=env,
                             transport=transport, ledger=shared, budget=budget, analyzer=analyzer,
-                            on_report=retain)
+                            on_report=retain, execution_guard=guard)
                     else:
                         derived = derive_goal(project, text)
                         if (shared.requests + len(derived.task.requirements.steps)
@@ -200,7 +204,7 @@ class TaskService:
                             return
                         goal, report = await run_goal(project, text, BudgetPlanner(planner, shared),
                                                       store, environ=env,
-                            transport=bounded, budget=budget,
+                            transport=bounded, budget=budget, execution_guard=guard,
                             analyzer=BudgetPlanner(analyzer, shared) if analyzer else None)
                         result = dict(goal.summary(), run_id=report.run_id,
                             outcome=report.outcome.value, task_satisfied=report.task_satisfied)

@@ -11,6 +11,12 @@ from agenttest.report import Outcome, ReportStore
 
 def goal_command(args) -> int:
     project = load_goal_project(args.project)
+    identity = project.identity()
+
+    def guard():
+        if load_goal_project(args.project).identity() != identity:
+            raise ValueError("PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
+
     derived = derive_goal(project, args.user_task)
     summary = derived.summary()
     summary["budget"] = dict(project.registration.budget.model_dump(),
@@ -89,11 +95,13 @@ def goal_command(args) -> int:
         from agenttest.goal_suite import run_suite
 
         result = asyncio.run(run_suite(project, args.user_task, planner, store,
-            environ=environ, budget=budget, analyzer=analyzer, transport=transport))
+            environ=environ, budget=budget, analyzer=analyzer, transport=transport,
+            execution_guard=guard))
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["complete"] else 1
     derived, report = asyncio.run(run_goal(project, args.user_task, planner, store,
-        environ=environ, budget=budget, analyzer=analyzer, transport=transport))
+        environ=environ, budget=budget, analyzer=analyzer, transport=transport,
+        execution_guard=guard))
     exported = None
     if capture is not None and report.outcome == Outcome.PASS and report.task_satisfied:
         from agenttest.regression import RegressionRuntime, export_regression

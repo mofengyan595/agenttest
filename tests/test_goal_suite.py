@@ -159,3 +159,19 @@ async def test_budget_rejection_never_reuses_previous_call_stats():
     with pytest.raises(PlannerFailure):
         await bounded.generate({})
     assert bounded.stats.calls == 0 and inner.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_changed_configuration_stops_suite_before_any_model_or_http(tmp_path):
+    app, _, _, _, env = project_inputs("tickets")
+    planner = SyntheticPlanner()
+
+    def changed():
+        raise ValueError("PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
+
+    result = await run_suite(_project(), "测试这个项目已授权的核心接口", planner,
+        ReportStore(tmp_path), environ=env, transport=httpx.ASGITransport(app=app),
+        execution_guard=changed)
+    assert planner.calls == result["http_requests"] == 0
+    assert all(c["reason"] == "PROJECT_VERSION_CHANGED_RECHECK_REQUIRED"
+               and c["status"] == "NOT_EXECUTED" for c in result["cases"])

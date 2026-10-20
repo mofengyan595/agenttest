@@ -280,6 +280,14 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
             if goal is None or goal.task is None:
                 rows.append(row)
                 continue
+            if execution_guard is not None:
+                try:
+                    execution_guard()
+                except Exception:
+                    row.update(status="NOT_EXECUTED",
+                               reason="PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
+                    rows.append(row)
+                    continue
             try:
                 check_goal_credentials(project, goal.task, environ)
             except ValueError:

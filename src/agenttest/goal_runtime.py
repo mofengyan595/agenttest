@@ -13,8 +13,9 @@ from agenttest.task_contract import task_validator
 class GoalPlanner:
     """Add reusable public configuration; never expose derived steps or acceptance rubric."""
 
-    def __init__(self, planner, project: GoalProject, goal: DerivedGoal):
+    def __init__(self, planner, project: GoalProject, goal: DerivedGoal, guard=None):
         self.planner = planner
+        self.guard = guard
         self.public = dict(goal_scope=goal.scope, requested_goals=list(goal.requested_goals),
             project_goal_catalog=project.catalog.model_dump(),
             synthetic_input_defaults=deepcopy(goal.input_defaults),
@@ -33,6 +34,8 @@ class GoalPlanner:
         return getattr(self.planner, "token_reservation", 0)
 
     async def generate(self, context):
+        if self.guard is not None:
+            self.guard()
         public = dict(context, **deepcopy(self.public))
         return await self.planner.generate(public)
 
@@ -54,6 +57,12 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
 
     local = SuiteLedger(project.target.max_requests, project.registration.budget.max_model_calls,
                         project.registration.budget.max_total_tokens)
+
+    def guard():
+        if project.identity() != goal.project_identity:
+            raise ValueError("PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
+        if execution_guard is not None:
+            execution_guard()
     inner = transport or httpx.AsyncHTTPTransport(retries=0, trust_env=False)
     options = {}
     if analyzer is not None and project.capabilities.entries():
@@ -67,10 +76,10 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
                     max_requests=project.registration.budget.max_readonly_investigations)))
     try:
         report = await Workflow(project.document, project.target, project.registry,
-            GoalPlanner(BudgetPlanner(planner, local), project, goal), store,
+            GoalPlanner(BudgetPlanner(planner, local), project, goal, guard), store,
             transport=BudgetTransport(inner, local), environ=environ,
             user_task=user_task, intent_validator=validator, budget=budget,
-            execution_guard=execution_guard, **options).run()
+            execution_guard=guard, **options).run()
     finally:
         if transport is None:
             await inner.aclose()

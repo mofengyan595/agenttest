@@ -71,6 +71,40 @@ def test_restart_marks_unfinished_interrupted_and_never_reconstructs_requests(tm
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("suite", [False, True])
+async def test_configuration_change_during_planning_prevents_http(tmp_path, monkeypatch, suite):
+    from copy import deepcopy
+
+    from test_goal_suite import _project
+
+    pytest.importorskip("langgraph")
+    project = deepcopy(_project())
+
+    class Changed(SyntheticPlanner):
+        async def generate(self, context):
+            reply = await super().generate(context)
+            project.target.allow_mutations = False
+            return reply
+
+    planner = Changed()
+    svc = service(tmp_path, lambda project: planner)
+    monkeypatch.setattr(svc, "project", lambda project_id: project)
+    try:
+        task = await svc.submit("owner", "tickets", "创建工单", uuid4().hex, suite=suite)
+        done = await settle(svc, task["id"], "owner")
+        assert done["summary"]["context_usage"]["requests"] == 0
+        assert planner.calls == 1
+        if suite:
+            assert not done["summary"]["complete"]
+        else:
+            assert done["summary"]["task_satisfied"] is False
+            report = svc.reports.read(done["summary"]["run_id"])
+            assert report.reason == "EXECUTION_PREFLIGHT_FAILED"
+    finally:
+        await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_cancel_during_planning_stops_actions_and_preserves_unknown_usage(tmp_path):
     pytest.importorskip("langgraph")
     started = asyncio.Event()
