@@ -15,6 +15,7 @@ import { Workbench } from "./pages/Workbench";
 import { History } from "./pages/History";
 import { Inspect, RunDetail } from "./pages/RunDetail";
 import { Empty } from "./components/ui";
+import { GoalTasks } from "./pages/GoalTasks";
 export function App() {
   const [draft, setDraft] = useState("");
   const { pathname } = useLocation();
@@ -48,6 +49,10 @@ export function App() {
           <NavLink to="/" end>
             <LayoutDashboard size={18} />
             测试工作台
+          </NavLink>
+          <NavLink to="/tasks">
+            <ClipboardList size={18} />
+            受控测试任务
           </NavLink>
           <Link
             to="/inspect"
@@ -106,7 +111,9 @@ export function App() {
           </div>
           <span className="topbar-label">
             <ShieldCheck size={14} />
-            READ-ONLY EVIDENCE
+            {pathname === "/tasks"
+              ? "受控任务 · 项目授权"
+              : "READ-ONLY EVIDENCE"}
           </span>
         </header>
         <main id="main" tabIndex={-1}>
@@ -116,6 +123,7 @@ export function App() {
               element={<Workbench draft={draft} setDraft={setDraft} />}
             />
             <Route path="/runs" element={<History />} />
+            <Route path="/tasks" element={<GoalTasks />} />
             <Route path="/inspect" element={<Inspect />} />
             <Route path="/runs/:runId" element={<RunDetail />} />
             <Route

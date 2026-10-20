@@ -67,7 +67,11 @@ export function Workbench({
           <Panel
             title="你想验证什么？"
             subtitle="测试目标草稿"
-            action={<Badge>规划 API 尚未开放</Badge>}
+            action={
+              <Link className="inline-link" to="/tasks">
+                发起受控测试
+              </Link>
+            }
           >
             <label className="sr-only" htmlFor="task-draft">
               自然语言测试目标
@@ -152,8 +156,7 @@ export function Workbench({
             </p>
             <Notice>
               <LockKeyhole size={14} /> Web
-              执行尚未开放：需要独立的鉴权、授权预算和持久化重复提交保护。没有任意
-              URL、策略或脚本入口。
+              受控任务入口复用操作员注册的项目、授权与预算；在任务页查看计划、进度及脱敏结果。
             </Notice>
           </Panel>
         </div>

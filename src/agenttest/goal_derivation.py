@@ -36,8 +36,21 @@ class DerivedGoal:
             scope=self.scope, requested_goals=self.requested_goals,
             status="READY" if self.task else "NEEDS_REVIEW", reason=self.reason,
             question=self.question,
+            required_plan=public_goal_plan(self),
             required_steps=len(self.task.requirements.steps) if self.task else 0,
             http_requests=0, model_calls=0)
+
+
+def public_goal_plan(goal):
+    """Concrete reviewable constraints with hashed literals; never raw request bodies."""
+    if goal.task is None:
+        return []
+    return [dict(key=s.key, operation_id=s.operation_id, role=s.role, policy_id=s.policy_id,
+        arguments=[dict(location=a.location, name=a.name,
+            **(dict(source=a.source, selector=a.selector) if a.source else
+               dict(value_sha256=fingerprint(a.value)))) for a in s.arguments],
+        before=[b for a, b in goal.task.requirements.before if a == s.key])
+        for s in goal.task.requirements.steps]
 
 
 def _recognize(project: GoalProject, text: str) -> tuple[str, list[str], str | None]:

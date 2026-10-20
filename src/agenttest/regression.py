@@ -93,6 +93,10 @@ class RegressionCapture:
     def stats(self) -> ModelCallStats | None:
         return getattr(self.delegate, "stats", None)
 
+    @property
+    def token_reservation(self):
+        return getattr(self.delegate, "token_reservation", 0)
+
     async def generate(self, context: dict) -> str:
         self.scenario = None
         raw = await self.delegate.generate(context)

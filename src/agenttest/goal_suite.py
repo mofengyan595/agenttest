@@ -7,7 +7,12 @@ import httpx
 
 from agenttest.discovery import discover
 from agenttest.discovery_schema import fields, variations
-from agenttest.goal_derivation import DerivedGoal, _derive_requirements, derive_goal
+from agenttest.goal_derivation import (
+    DerivedGoal,
+    _derive_requirements,
+    derive_goal,
+    public_goal_plan,
+)
 from agenttest.llm_planner import PlannerFailure
 from agenttest.policies import NeedsReview
 from agenttest.project_goals import check_goal_credentials
@@ -28,6 +33,7 @@ class SuiteCase:
             status="READY" if self.goal and self.goal.task and not self.reason else "NEEDS_REVIEW",
             reason=self.reason,
             requested_goals=self.goal.requested_goals if self.goal else [],
+            required_plan=public_goal_plan(self.goal) if self.goal else [],
             max_business_requests=len(self.goal.task.requirements.steps)
                 if self.goal and self.goal.task else 0)
 
@@ -42,12 +48,13 @@ class GoalSuite:
     operation_ids: list[str]
     budgets: dict
 
-    def allocated_cases(self):
+    def allocated_cases(self, max_requests=None):
         used, allowed = 0, set()
         for case in self.cases:
             if case.goal and case.goal.task and not case.reason:
                 required = len(case.goal.task.requirements.steps)
-                if used + required <= self.budgets["max_requests"]:
+                if used + required <= (self.budgets["max_requests"]
+                                       if max_requests is None else max_requests):
                     allowed.add(case.id)
                     used += required
         return allowed
@@ -247,18 +254,18 @@ class BudgetPlanner:
 
 
 async def run_suite(project, user_task, planner, store, *, environ, transport=None,
-                    budget=None, execution_guard=None, analyzer=None):
+                    budget=None, execution_guard=None, analyzer=None, ledger=None, on_report=None):
     from agenttest.goal_runtime import run_goal
 
     suite = build_suite(project, user_task, environ=environ)
-    ledger = SuiteLedger(**{key: suite.budgets[key] for key in (
+    ledger = ledger or SuiteLedger(**{key: suite.budgets[key] for key in (
         "max_requests", "max_model_calls", "max_total_tokens")})
     own_transport = transport is None
     inner = transport or httpx.AsyncHTTPTransport(retries=0, trust_env=False)
     bounded_transport = BudgetTransport(inner, ledger)
     bounded_planner = BudgetPlanner(planner, ledger)
     rows = []
-    allocated = suite.allocated_cases()
+    allocated = suite.allocated_cases(max(0, ledger.max_requests - ledger.requests))
     try:
         for case in suite.cases:
             row = case.preview()
@@ -292,6 +299,8 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                                    if s.attempts and s.outcome == Outcome.PASS],
                 http_requests=sum(len(s.attempts) for s in report.steps),
                 reason=report.reason)
+            if on_report is not None:
+                on_report(goal, report)
             rows.append(row)
     finally:
         if own_transport:

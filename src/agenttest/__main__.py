@@ -37,6 +37,12 @@ def main(argv: list[str] | None = None) -> int:
     goal.add_argument("--model-env", type=Path)
     goal.add_argument("--suite", action="store_true",
                       help="生成单接口Schema候选或项目分组，使用固定总预算执行可验证部分")
+    goal.add_argument("--synthetic-target", action="store_true",
+                      help="仅两个已核对样例使用一次性ASGI目标与合成账号，无真实业务HTTP")
+    goal.add_argument("--review-approved", action="store_true",
+                      help="操作员已审阅预览约束；仅用于项目显式要求审阅时")
+    goal.add_argument("--export-regression", type=Path,
+                      help="单接口/流程完整通过后导出固定pytest模板；不接受模型代码")
     project_draft = subcommands.add_parser("prepare-project", help="从契约生成待审接入草案，不授权")
     project_draft.add_argument("--contract", type=Path, required=True)
     project_draft.add_argument("--output", type=Path, required=True)

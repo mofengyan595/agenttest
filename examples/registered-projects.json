@@ -1,0 +1,4 @@
+{
+  "tickets": "portability/tickets/registered.project.json",
+  "courses": "portability/courses/registered.project.json"
+}

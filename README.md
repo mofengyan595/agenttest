@@ -5,9 +5,9 @@
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
 2026-10-20新里程碑：[自然语言入口与项目配置复用](docs/nl-entry.md)。
-阶段1新增`goal --project ... --user-task ... --preview`，受支持需求的约束从原文与批准关系派生，
-无需逐题手写完整TaskContract；旧入口仍可用。项目分组、工具协议、任务服务与工作台正在分阶段实现，
-尚未开展本轮真实模型效果验证。[完整范围](docs/nl-entry-goal.md)。
+阶段1–4新增`goal --project ... --user-task ... --preview`、三层套件、工具协议适配、有界上下文、
+SQLite任务服务及`/tasks`工作台。受支持需求的约束从原文与批准关系派生，无需逐题手写完整TaskContract；
+旧入口仍可用。默认离线流程保持不变，尚未开展本轮真实模型效果验证。[完整范围](docs/nl-entry-goal.md)。
 
 [证据可靠性与模型价值](docs/evidence-value-report.md) · [交付导航与五分钟演示](docs/goal-delivery-guide.md) · [简历和面试材料](docs/goal-resume-interview.md)。
 
@@ -47,7 +47,7 @@
 
 后续[引用字段约束](docs/reference-selectors-20261018.md)限制引用候选并核对先前来源，三条新任务真实九次完成 **7/9、12,614 Token**。嵌套与数组索引各 3/3，根响应 1/3；两次绑定拒绝均零业务请求，[失败与统计](docs/demo-evidence/reference-selectors-live-summary.json)原样保留。业务仍为 Mock，原授权、断言和旧未知用量不变。
 
-**新增本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。仅查询真实脱敏报告，不开放浏览器规划或业务执行。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
+**本地 Web Console**：React + TypeScript + Vite，支持目标草稿、OpenAPI 导入、历史筛选、四层校验、步骤证据、只读调查和模型统计。默认保留只读报告路径；操作员显式启用任务服务后，可在`/tasks`对注册项目发起受控测试。[安装、启动、架构、安全边界与真实截图](docs/web-console.md)。
 
 **新增离线 OpenAPI 候选发现**：复用契约、Schema 子集与 Policy Registry，发现正常输入、静态负例、批准资源/角色关系，输出稳定 JSON 与明确分母的静态覆盖。所有候选待审，不执行 HTTP 或调用模型。[算法、模型、真实输出与安全边界](docs/candidate-discovery.md)。
 
@@ -116,7 +116,7 @@ npm run dev
 # http://127.0.0.1:5173；npm run build 构建，npm run preview 预览，npm test 测试
 ```
 
-工作台上传/粘贴 JSON 或 YAML → 查看真实摘要；目标可下载本地草稿，尚不发起规划。运行 CLI 演示 → 历史页刷新 → 点击 Run ID → 展开断言、HTTP 尝试与调查。默认同源 Vite Proxy，不放宽 CORS；API 地址通过 `web/.env.local` 配置。禁止填写密码/JWT/模型 Key；详情不提供原始 HTTP 正文。当前没有 Web 执行、生产认证、深色主题或任意目标入口。
+工作台上传/粘贴 JSON 或 YAML → 查看真实摘要；草稿可本地下载，注册项目的执行入口见`/tasks`。运行 CLI 演示 → 历史页刷新 → 点击 Run ID → 展开断言、HTTP 尝试与调查。默认同源 Vite Proxy，不放宽 CORS；API 地址通过 `web/.env.local` 配置。禁止填写密码/JWT/模型 Key；详情不提供原始 HTTP 正文。没有生产认证或任意目标入口。
 
 已实际跑通 **中文需求 → 学校 ecnu-plus → 安全校验 → CourseInsight Java 登录/创建/查询 → 14 项断言 PASS**。这是独立项目；不修改 CourseInsight 业务代码，不在生产或真实用户数据上测试。
 

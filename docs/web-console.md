@@ -1,5 +1,9 @@
 # AgentTest Web Console（2026-10-12）
 
+2026-10-20增量新增[受控任务页与服务](nl-entry.md#cli任务服务与工作台)：`/tasks`可对操作员注册项目
+发起需求、查看派生约束/预算/进度、澄清/补充、取消、读取证据与导出固定pytest。
+任务服务需显式配置启用，原默认只读运行方式继续可用。下文保留原只读里程碑的结构及验收记录。
+
 这是当前仓库新增的本地 Web 里程碑。复用 FastAPI、ReportStore 和脱敏 RunReport；不重建 Agent，也不修改 Executor、Vault、Policy、Intent Validator、MCP 或冻结评测数据。CourseInsight 只是验证对象之一。
 
 ## 页面与架构

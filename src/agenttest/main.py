@@ -4,6 +4,7 @@ import asyncio
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -23,11 +24,20 @@ _IMPORT_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENT_IMPORTS)
 
 def create_app(runs_dir: Path = Path("runs"), *,
                public_policies: PolicyRegistry | None = None,
-               allowed_origins: frozenset[str] = DEFAULT_ORIGINS) -> FastAPI:
-    app = FastAPI(title="AgentTest", version="0.1.0")
+               allowed_origins: frozenset[str] = DEFAULT_ORIGINS, task_service=None) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app):
+        yield
+        if task_service is not None:
+            await task_service.close()
+
+    app = FastAPI(title="AgentTest", version="0.1.0", lifespan=lifespan)
     app.add_middleware(LocalAccessMiddleware, allowed_origins=allowed_origins)
     registry = public_policies.snapshot() if public_policies else None
     store = ReportStore(runs_dir)
+    from agenttest.task_api import install_task_api
+
+    install_task_api(app, task_service)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -73,6 +83,11 @@ def create_app(runs_dir: Path = Path("runs"), *,
         try:
             return public_report(store.read(run_id), registry)
         except (ValueError, OSError):
+            if task_service is not None and task_service.reports.root != store.root:
+                try:
+                    return public_report(task_service.reports.read(run_id), registry)
+                except (ValueError, OSError):
+                    pass
             raise HTTPException(404, "Run not found") from None
 
     return app
@@ -81,7 +96,13 @@ def create_app(runs_dir: Path = Path("runs"), *,
 def configured_app() -> FastAPI:
     policy_path = os.environ.get("AGENTTEST_PUBLIC_POLICIES")
     registry = (PolicyRegistry.from_json(Path(policy_path).read_bytes()) if policy_path else None)
-    return create_app(Path(os.environ.get("AGENTTEST_RUNS_DIR", "runs")), public_policies=registry)
+    runs_dir = Path(os.environ.get("AGENTTEST_RUNS_DIR", "runs"))
+    task_service = None
+    if os.environ.get("AGENTTEST_PROJECTS_FILE"):
+        from agenttest.goal_server import configured_task_service
+
+        task_service = configured_task_service(runs_dir)
+    return create_app(runs_dir, public_policies=registry, task_service=task_service)
 
 
 app = configured_app()

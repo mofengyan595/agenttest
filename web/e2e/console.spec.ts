@@ -2,6 +2,40 @@ import { expect, test } from "@playwright/test";
 import path from "node:path";
 
 const shots = path.resolve("test-results/screenshots");
+test("registered goal: session protected submission, progress, evidence and narrow layout", async ({
+  page,
+}) => {
+  await page.goto("/tasks");
+  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await page.getByLabel("测试需求").fill("测试创建工单接口");
+  await page.getByRole("button", { name: "开始测试", exact: true }).click();
+  await expect(page.getByText("PASS", { exact: true })).toBeVisible();
+  await expect(page.getByText("已满足", { exact: false })).toBeVisible();
+  const archive = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出 pytest 回归包" }).click();
+  expect((await archive).suggestedFilename()).toBe("agenttest-regression.zip");
+  await page.screenshot({
+    path: path.join(shots, "goals-desktop.png"),
+    fullPage: true,
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: /tickets.*已结束/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /tickets.*已结束/ }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: path.join(shots, "goals-mobile.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(391);
+  await page.getByRole("link", { name: "查看业务、模型与规则证据" }).click();
+  await expect(
+    page.getByText("open / openTicket", { exact: true }),
+  ).toBeVisible();
+});
 test("display fixture: trusted rule and model abstention stay visibly separate", async ({
   page,
   request,

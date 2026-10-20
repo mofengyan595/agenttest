@@ -10,6 +10,13 @@
   --border: #e4eae6;
   --ink: #22352e;
 }
+.task-history { display: grid; gap: 8px; }
+.task-history button { justify-content: space-between; flex-wrap: wrap; white-space: normal; }
+.task-history button[aria-pressed="true"] { border-color: var(--accent); background: #edf6f1; }
+.task-case { display: grid; gap: 4px; border-bottom: 1px solid var(--border); padding: 12px 0; }
+.task-case small, .task-case span { overflow-wrap: anywhere; }
+.task-option { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+#goal-project { display: block; width: 100%; margin: 8px 0 16px; padding: 10px; }
 * {
   box-sizing: border-box;
 }
