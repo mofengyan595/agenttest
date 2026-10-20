@@ -24,3 +24,10 @@ examples/eval-v2/goal-used-task-identities.json，由原require_review门禁核�
 - [独立开发协议](paired-development-protocol.md)：调查选择、有效证据、症状结论与证据不足的评分定义。
 
 正式流程沿用 [人工审核说明](eval-v2-human-review.md)：真实审核后建立独立新版本 Suite，review-freeze 生成版本锁，再 validate --formal 核对锁与一致性。当前 formal 评分能力仍限原支持范围；新增调查指标保持独立开发协议，未把原正式评分器伪扩展成已通过正式验收。取得独立任务与人工标签是后续外部输入，不通过重复运行本轮题目替代。
+
+## 2026-10-20 自然语言入口新增排除
+
+上文60为旧Goal当时登记。本轮在既有79身份上新增NE01–NE12与NE_NEW01，当前共92个唯一身份，
+均在[排除表](../examples/eval-v2/goal-used-task-identities.json)。首次新需求通过也不能成为正式留出题。
+当前待审空包为runs/ne-independent-review-pending/enrollment.json，仍为UNREVIEWED、人审0。
+新增[原三轮/追加重试/首次需求证据](nl-entry-value-report.md)只供方法审阅，不能代替独立采样。

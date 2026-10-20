@@ -1,0 +1,3228 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "original_schedule": 36,
+  "model_calls_added": 0,
+  "by_position": [
+    {
+      "position": 1,
+      "round": 1,
+      "case_id": "NE01",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 14,
+        "normal": 6,
+        "negative": 8,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 7
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "normal",
+            "enum_boundary:body:priority:9156f668",
+            "string_min_length:body:subject:ddb9eb7f"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "d16445cc8f9144798c0afb0fe25fbe5a",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_4fb4642ea24d099065b35db7",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:priority:d51b5fc0"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_7ea3ee03eb933418c79b2780",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:priority:bb8d6fec"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4248289ffc6f94b6e2ed1f9b",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:31ddd95d"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "7fb57db4ac194539afb872ce49100678",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_56d5fa0303f698683f0e1b21",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:14763423"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_5876780c572909542ed5b679",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:subject:486b1b60"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_2cdaa7af49733fee3b806bf0",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:subject:59334d85"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_495cfd1b2ffe36e216cc1ed5",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_min_length:body:subject:72caec20"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4c269a1b705d3c5fe714ec99",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:1bab4e6b"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "60f9a6ff89c640ba9bcbcd8e9dd35257",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_018179bfac9d95a7b6befd44",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:2ebb9826"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 2,
+      "round": 1,
+      "case_id": "NE02",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 4,
+        "normal": 4,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "d05a019b2d734139a1fd38415f2c64d6",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "listTickets"
+          ],
+          "executed_operations": [
+            "listTickets"
+          ],
+          "passed_operations": [
+            "listTickets"
+          ],
+          "http_requests": 1
+        }
+      ]
+    },
+    {
+      "position": 3,
+      "round": 1,
+      "case_id": "NE03",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 11,
+        "normal": 8,
+        "negative": 3,
+        "review": 0,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 2
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "8456ccb7598d44cea6eaaf227a44ab73",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_02706572c1c55c2541624de8",
+          "operation_id": "createCourse",
+          "kinds": [
+            "required_missing:body:name:07417878"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_362a7c7454099bab8b7be5d5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "type_mismatch:body:name:2de6896b"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 4,
+      "round": 1,
+      "case_id": "NE04",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 26,
+        "normal": 7,
+        "negative": 15,
+        "review": 4,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 9,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 8
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "5ff9da4c36304dbab4c1cea5a18b0d17",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_873fe85f67eaff815cd6ccce",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:path_parameters:ticket_key:5355b1eb"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_ef55f65e1d44836c190c89a2",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:path_parameters:ticket_key:73f5613d"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_3d0a0698d849badce88275e6",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:body:state:14f84702"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_43066eadb1e93016496fd28c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:body:state:4f6d9ad5"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_945ab749e073504a8798dc15",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:519fec23"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_651170866c9088036561098c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:21b95d69"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_088c4ff67a09e92e452ebc33",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:508a1c36"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_8d96d4f4b9c96a7b4bfe54ff",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:21222fa4"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 5,
+      "round": 1,
+      "case_id": "NE05",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_e8d0bc73f662cddd61f2aadc",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_OPERATION_EXPECTATION_AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "position": 6,
+      "round": 1,
+      "case_id": "NE06",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_445b4bf8fccd7275655917dd",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 7,
+      "round": 1,
+      "case_id": "NE07",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_a56c397a65d7d90a81d633f1",
+          "operation_id": "getCourse",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "28cbf5e8b4204c35b00f39dc7160bc83",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login"
+          ],
+          "http_requests": 5
+        }
+      ]
+    },
+    {
+      "position": 8,
+      "round": 1,
+      "case_id": "NE08",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_4b6f5d41dfdcba55874a3e2e",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "e480286c5f4f43f8b0196bafdaa39626",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 9,
+      "round": 1,
+      "case_id": "NE09",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_96eafee4ff31decff615c68c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "e74846d94a8f4f4e9725827ba8721ce0",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 10,
+      "round": 1,
+      "case_id": "NE10",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 29,
+        "normal": 13,
+        "negative": 10,
+        "review": 6,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_ccde717a48f9acc60581c629",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "99a2535be97348c1b83647cf37af32fc",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "listTickets",
+            "openTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 11,
+      "round": 1,
+      "case_id": "NE11",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 3,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 2,
+        "assertion_passed_scenarios": 2,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "1c16db3ec3424441a2dc2d7c9ff7f34c",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+          "operation_id": "getCourse",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "3e91e5928dc845c6b0b62e972cad2b4d",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "http_requests": 3
+        },
+        {
+          "case_id": "case_faa3b0745ff77df8c7d4b00d",
+          "operation_id": "getCourse",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "dbb34677d47c41728b3d654092b1ab54",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "login",
+            "getCourse",
+            "getCourse"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        }
+      ]
+    },
+    {
+      "position": 12,
+      "round": 1,
+      "case_id": "NE12",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 41,
+        "normal": 14,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 6,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 5
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "95071e04548944e3bc9768bedbc3a31f",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket",
+            "listTickets",
+            "listTickets",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_cb97f837581410c4d28debaf",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "abc0ed20f40b4598b3e1bdee19b1beb5",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "listTickets",
+            "listTickets",
+            "openTicket",
+            "readTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_3bcb5ecd74945855c54c3bfc",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:state:close"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "badc8c24d011412daa478296286841e9",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket",
+            "listTickets",
+            "listTickets",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "close:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "ba83846f44f844e0ad7040ced20d8284",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_bb47d15b9eb252a807d4b04b",
+          "operation_id": "readTicket",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "f759a32da68c406ebf8ba8f9d9dec82c",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "listTickets",
+            "listTickets",
+            "readTicket",
+            "closeTicket",
+            "readTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "list:normal"
+          ],
+          "status": "NOT_EXECUTED",
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    },
+    {
+      "position": 13,
+      "round": 2,
+      "case_id": "NE01",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 14,
+        "normal": 6,
+        "negative": 8,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 7
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "normal",
+            "enum_boundary:body:priority:9156f668",
+            "string_min_length:body:subject:ddb9eb7f"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "be9f6b1003ba4cb288bf5c2519372749",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_4fb4642ea24d099065b35db7",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:priority:d51b5fc0"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_7ea3ee03eb933418c79b2780",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:priority:bb8d6fec"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4248289ffc6f94b6e2ed1f9b",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:31ddd95d"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "1ec6a60c7d534af59673521bb3576364",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_56d5fa0303f698683f0e1b21",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:14763423"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_5876780c572909542ed5b679",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:subject:486b1b60"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_2cdaa7af49733fee3b806bf0",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:subject:59334d85"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_495cfd1b2ffe36e216cc1ed5",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_min_length:body:subject:72caec20"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4c269a1b705d3c5fe714ec99",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:1bab4e6b"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "5708afb61008410895a5d426a186dbf0",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_018179bfac9d95a7b6befd44",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:2ebb9826"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 14,
+      "round": 2,
+      "case_id": "NE02",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 4,
+        "normal": 4,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "5e51a2da9ecf407f93e6a46ae6c3d38b",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "listTickets"
+          ],
+          "executed_operations": [
+            "listTickets"
+          ],
+          "passed_operations": [
+            "listTickets"
+          ],
+          "http_requests": 1
+        }
+      ]
+    },
+    {
+      "position": 15,
+      "round": 2,
+      "case_id": "NE03",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 11,
+        "normal": 8,
+        "negative": 3,
+        "review": 0,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 2
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "d38f41477e4b455987887384b9703110",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_02706572c1c55c2541624de8",
+          "operation_id": "createCourse",
+          "kinds": [
+            "required_missing:body:name:07417878"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_362a7c7454099bab8b7be5d5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "type_mismatch:body:name:2de6896b"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 16,
+      "round": 2,
+      "case_id": "NE04",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 26,
+        "normal": 7,
+        "negative": 15,
+        "review": 4,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 9,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 3,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 9
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "c8e8408851d04937934fabefc22e5ac8",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_873fe85f67eaff815cd6ccce",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:path_parameters:ticket_key:5355b1eb"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_ef55f65e1d44836c190c89a2",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:path_parameters:ticket_key:73f5613d"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_3d0a0698d849badce88275e6",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:body:state:14f84702"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_43066eadb1e93016496fd28c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:body:state:4f6d9ad5"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_945ab749e073504a8798dc15",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:519fec23"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_651170866c9088036561098c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:21b95d69"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_088c4ff67a09e92e452ebc33",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:508a1c36"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_8d96d4f4b9c96a7b4bfe54ff",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:21222fa4"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 17,
+      "round": 2,
+      "case_id": "NE05",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_e8d0bc73f662cddd61f2aadc",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_OPERATION_EXPECTATION_AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "position": 18,
+      "round": 2,
+      "case_id": "NE06",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_445b4bf8fccd7275655917dd",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 19,
+      "round": 2,
+      "case_id": "NE07",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_a56c397a65d7d90a81d633f1",
+          "operation_id": "getCourse",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "441277c29ab4488884499d1c253169b0",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login"
+          ],
+          "http_requests": 5
+        }
+      ]
+    },
+    {
+      "position": 20,
+      "round": 2,
+      "case_id": "NE08",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_4b6f5d41dfdcba55874a3e2e",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "fc46e8ce879b48baa336eb89e8c0dbef",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 21,
+      "round": 2,
+      "case_id": "NE09",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_96eafee4ff31decff615c68c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "3a02f6048e9c4153b0327d655fb7b205",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 22,
+      "round": 2,
+      "case_id": "NE10",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 29,
+        "normal": 13,
+        "negative": 10,
+        "review": 6,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_ccde717a48f9acc60581c629",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "ce3b0a922ad74230bbb5395909f0280c",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "listTickets",
+            "openTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 23,
+      "round": 2,
+      "case_id": "NE11",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 3,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 2
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "09a5a8caf9f84d549941304386278792",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+          "operation_id": "getCourse",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "d3bcb39e44964825b5e71aa19ec537f2",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "http_requests": 3
+        },
+        {
+          "case_id": "case_faa3b0745ff77df8c7d4b00d",
+          "operation_id": "getCourse",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "860737b8036448c89a8b59a19c647f4e",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "login",
+            "login",
+            "createCourse",
+            "getCourse",
+            "getCourse"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        }
+      ]
+    },
+    {
+      "position": 24,
+      "round": 2,
+      "case_id": "NE12",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 41,
+        "normal": 14,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 6,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 2,
+        "assertion_passed_scenarios": 2,
+        "not_executed": 4
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "2ef44534de694ac4b211395634dd4eb5",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_cb97f837581410c4d28debaf",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "b1c830e2c7094b52b1f5d28f19930aba",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "listTickets",
+            "listTickets",
+            "readTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_3bcb5ecd74945855c54c3bfc",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:state:close"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "be421a02101f4566badcc0f958c32c1d",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "listTickets",
+            "readTicket",
+            "closeTicket",
+            "readTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "close:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "69589180118948b3a3ad5a5135d224a0",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "listTickets",
+            "readTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_bb47d15b9eb252a807d4b04b",
+          "operation_id": "readTicket",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "04cff54455304976a8cfb49e86ae1241",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "list:normal"
+          ],
+          "status": "NOT_EXECUTED",
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    },
+    {
+      "position": 25,
+      "round": 3,
+      "case_id": "NE01",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 14,
+        "normal": 6,
+        "negative": 8,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 7
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "normal",
+            "enum_boundary:body:priority:9156f668",
+            "string_min_length:body:subject:ddb9eb7f"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "b9da51d19d30483da03ad74f9fff52db",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_4fb4642ea24d099065b35db7",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:priority:d51b5fc0"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_7ea3ee03eb933418c79b2780",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:priority:bb8d6fec"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4248289ffc6f94b6e2ed1f9b",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:31ddd95d"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "46642c0a50204c77bec086d98c79409c",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_56d5fa0303f698683f0e1b21",
+          "operation_id": "openTicket",
+          "kinds": [
+            "enum_boundary:body:priority:14763423"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_5876780c572909542ed5b679",
+          "operation_id": "openTicket",
+          "kinds": [
+            "required_missing:body:subject:486b1b60"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_2cdaa7af49733fee3b806bf0",
+          "operation_id": "openTicket",
+          "kinds": [
+            "type_mismatch:body:subject:59334d85"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_495cfd1b2ffe36e216cc1ed5",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_min_length:body:subject:72caec20"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_4c269a1b705d3c5fe714ec99",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:1bab4e6b"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "f6d3f3c93ddc406cabe3271b3c5a53d5",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket"
+          ],
+          "executed_operations": [
+            "openTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 1
+        },
+        {
+          "case_id": "case_018179bfac9d95a7b6befd44",
+          "operation_id": "openTicket",
+          "kinds": [
+            "string_max_length:body:subject:2ebb9826"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 26,
+      "round": 3,
+      "case_id": "NE02",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 4,
+        "normal": 4,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "76d6e13cf96b4ae283d868a7e029d336",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "listTickets",
+            "listTickets"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        }
+      ]
+    },
+    {
+      "position": 27,
+      "round": 3,
+      "case_id": "NE03",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 11,
+        "normal": 8,
+        "negative": 3,
+        "review": 0,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 2
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "7f2b86a4dcc44f5faf07177ffbb937af",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_02706572c1c55c2541624de8",
+          "operation_id": "createCourse",
+          "kinds": [
+            "required_missing:body:name:07417878"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_362a7c7454099bab8b7be5d5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "type_mismatch:body:name:2de6896b"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 28,
+      "round": 3,
+      "case_id": "NE04",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 26,
+        "normal": 7,
+        "negative": 15,
+        "review": 4,
+        "configuration_operations": 2,
+        "candidate_operations": 2,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 9,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 8
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "0850e8cdd7d741b5bfb1f65c070de1de",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_873fe85f67eaff815cd6ccce",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:path_parameters:ticket_key:5355b1eb"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_ef55f65e1d44836c190c89a2",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:path_parameters:ticket_key:73f5613d"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_3d0a0698d849badce88275e6",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "required_missing:body:state:14f84702"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_43066eadb1e93016496fd28c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "type_mismatch:body:state:4f6d9ad5"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_945ab749e073504a8798dc15",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:519fec23"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_651170866c9088036561098c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_min_length:body:state:21b95d69"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        },
+        {
+          "case_id": "case_088c4ff67a09e92e452ebc33",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:508a1c36"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "VARIATION_OUTSIDE_APPROVED_POLICY"
+        },
+        {
+          "case_id": "case_8d96d4f4b9c96a7b4bfe54ff",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "string_max_length:body:state:21222fa4"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"
+        }
+      ]
+    },
+    {
+      "position": 29,
+      "round": 3,
+      "case_id": "NE05",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_e8d0bc73f662cddd61f2aadc",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_OPERATION_EXPECTATION_AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "position": 30,
+      "round": 3,
+      "case_id": "NE06",
+      "scope": "single",
+      "candidate_generation": {
+        "candidates": 0,
+        "normal": 0,
+        "negative": 0,
+        "review": 0,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "configuration_operations": 0,
+        "candidate_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 1
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_445b4bf8fccd7275655917dd",
+          "operation_id": null,
+          "kinds": [
+            "unverified_goal"
+          ],
+          "status": "NEEDS_REVIEW",
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 31,
+      "round": 3,
+      "case_id": "NE07",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_a56c397a65d7d90a81d633f1",
+          "operation_id": "getCourse",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "9bdf0aab8d8b4992a88f66d210bbe271",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse",
+            "login"
+          ],
+          "http_requests": 5
+        }
+      ]
+    },
+    {
+      "position": 32,
+      "round": 3,
+      "case_id": "NE08",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_4b6f5d41dfdcba55874a3e2e",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "8676a227eda04461b93a78f50f554c7e",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 33,
+      "round": 3,
+      "case_id": "NE09",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 37,
+        "normal": 10,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_96eafee4ff31decff615c68c",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "398a7129148548f88b2a79f17d52a440",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 34,
+      "round": 3,
+      "case_id": "NE10",
+      "scope": "flow",
+      "candidate_generation": {
+        "candidates": 29,
+        "normal": 13,
+        "negative": 10,
+        "review": 6,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_ccde717a48f9acc60581c629",
+          "operation_id": "readTicket",
+          "kinds": [
+            "resource_flow"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "ffe10ab6d9ae4de5ab64fb74d78b9978",
+          "outcome": "ASSERTION_FAILED",
+          "intent_verified": true,
+          "planned_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "listTickets",
+            "openTicket"
+          ],
+          "http_requests": 3
+        }
+      ]
+    },
+    {
+      "position": 35,
+      "round": 3,
+      "case_id": "NE11",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 25,
+        "normal": 12,
+        "negative": 5,
+        "review": 8,
+        "configuration_operations": 3,
+        "candidate_operations": 3,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 3,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "planned_operations": 3,
+        "executed_operations": 3,
+        "assertion_passed_operations": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 0
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": true,
+      "cases": [
+        {
+          "case_id": "case_b070eca6485fda8716a5fee5",
+          "operation_id": "createCourse",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "3b59dbf733754ea6bcab9702bd30496a",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+          "operation_id": "getCourse",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "da250de658f9477fb63c706662f94164",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "getCourse"
+          ],
+          "http_requests": 3
+        },
+        {
+          "case_id": "case_faa3b0745ff77df8c7d4b00d",
+          "operation_id": "getCourse",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "d975abfeea074cffbfbf4d642d264615",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "login",
+            "createCourse",
+            "login",
+            "getCourse"
+          ],
+          "executed_operations": [
+            "login",
+            "createCourse",
+            "login",
+            "getCourse"
+          ],
+          "passed_operations": [
+            "login",
+            "createCourse",
+            "login",
+            "getCourse"
+          ],
+          "http_requests": 4
+        }
+      ]
+    },
+    {
+      "position": 36,
+      "round": 3,
+      "case_id": "NE12",
+      "scope": "project",
+      "candidate_generation": {
+        "candidates": 41,
+        "normal": 14,
+        "negative": 17,
+        "review": 10,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "execution_count": 0
+      },
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 6,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 5
+      },
+      "budget": {
+        "max_requests": 10,
+        "max_model_calls": 8,
+        "max_total_tokens": 100000,
+        "per_run_model_calls": 4,
+        "per_run_readonly_investigations": 2
+      },
+      "complete": false,
+      "cases": [
+        {
+          "case_id": "case_c14f66273fbb2ad6b59d6d6e",
+          "operation_id": "openTicket",
+          "kinds": [
+            "create:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "465cbf98f7f748d18435494951020801",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "listTickets",
+            "readTicket",
+            "readTicket",
+            "listTickets",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_cb97f837581410c4d28debaf",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "",
+          "run_id": "44dfbac18c1e4c3b86823b83307109bc",
+          "outcome": "PASS",
+          "intent_verified": true,
+          "planned_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "executed_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "passed_operations": [
+            "openTicket",
+            "readTicket"
+          ],
+          "http_requests": 2
+        },
+        {
+          "case_id": "case_3bcb5ecd74945855c54c3bfc",
+          "operation_id": "readTicket",
+          "kinds": [
+            "read:state:close"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "5da099217d50445683c0e3485584c1d1",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "openTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_6e2843649a4cd235aac2698d",
+          "operation_id": "closeTicket",
+          "kinds": [
+            "close:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "REVIEW_REQUIRED",
+          "run_id": "f287097df2c34be1a90dda77a01447c7",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [
+            "listTickets",
+            "openTicket",
+            "readTicket",
+            "closeTicket",
+            "readTicket",
+            "listTickets",
+            "readTicket"
+          ],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_bb47d15b9eb252a807d4b04b",
+          "operation_id": "readTicket",
+          "kinds": [
+            "ownership:normal"
+          ],
+          "status": "FINISHED",
+          "reason": "MODEL_NO_APPROVED_PLAN",
+          "run_id": "493b0b089f7e40378be792c6cdca9036",
+          "outcome": "NEEDS_REVIEW",
+          "intent_verified": false,
+          "planned_operations": [],
+          "executed_operations": [],
+          "passed_operations": [],
+          "http_requests": 0
+        },
+        {
+          "case_id": "case_4594a2d6629e84ea37e17670",
+          "operation_id": "listTickets",
+          "kinds": [
+            "list:normal"
+          ],
+          "status": "NOT_EXECUTED",
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    }
+  ],
+  "sum_over_positions": {
+    "operation_denominator": 75,
+    "scenario_denominator": 114,
+    "configuration_operations": 42,
+    "candidate_operations": 75,
+    "planned_operations": 76,
+    "executed_operations": 66,
+    "assertion_passed_operations": 61,
+    "executed_scenarios": 38,
+    "assertion_passed_scenarios": 30,
+    "not_executed": 76
+  },
+  "caution": "Repeated catalog candidates and rejected-plan operations are not executed coverage"
+}

@@ -1,0 +1,34 @@
+{
+  "case_statuses": {
+    "FINISHED": 54,
+    "NEEDS_REVIEW": 57,
+    "NOT_EXECUTED": 3
+  },
+  "case_reasons": {
+    "": 38,
+    "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED": 45,
+    "VARIATION_OUTSIDE_APPROVED_POLICY": 6,
+    "INTENT_OPERATION_EXPECTATION_AMBIGUOUS": 3,
+    "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT": 3,
+    "REVIEW_REQUIRED": 15,
+    "SUITE_BUDGET_OR_USAGE_STOP": 3,
+    "MODEL_NO_APPROVED_PLAN": 1
+  },
+  "outcomes": {
+    "PASS": 30,
+    "ASSERTION_FAILED": 8,
+    "NEEDS_REVIEW": 16
+  },
+  "intent_rejection_branches": {
+    "STEP_COUNT": 15,
+    "STEP_SET": 15
+  },
+  "coverage": {
+    "intent_verified_runs": 38,
+    "asserted_checks": 325,
+    "passed_checks": 315,
+    "required_operation_count": 75,
+    "executed_required_operations": 66,
+    "passing_runs": 30
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "registered_ticket_closed_read_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "owner"
+    ],
+    "policy_id": "ticket_closed_read_v1",
+    "business_scenario": "portable_tickets_v1",
+    "source_policy_id": "ticket_open_v1",
+    "source_selector": "$.payload.ticket_key",
+    "path_parameter": "ticket_key",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed disposable GET: lookup and ownership check; no mutation, asynchronous advancement, repair or external service access."
+  },
+  {
+    "id": "registered_ticket_denied_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "visitor"
+    ],
+    "policy_id": "ticket_denied_v1",
+    "business_scenario": "portable_tickets_v1",
+    "source_policy_id": "ticket_open_v1",
+    "source_selector": "$.payload.ticket_key",
+    "path_parameter": "ticket_key",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed disposable GET: lookup and ownership check; no mutation, asynchronous advancement, repair or external service access."
+  },
+  {
+    "id": "registered_ticket_read_v1",
+    "operation_id": "readTicket",
+    "roles": [
+      "owner"
+    ],
+    "policy_id": "ticket_read_v1",
+    "business_scenario": "portable_tickets_v1",
+    "source_policy_id": "ticket_open_v1",
+    "source_selector": "$.payload.ticket_key",
+    "path_parameter": "ticket_key",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed disposable GET: lookup and ownership check; no mutation, asynchronous advancement, repair or external service access."
+  }
+]

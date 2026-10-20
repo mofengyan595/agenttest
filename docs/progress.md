@@ -1,5 +1,26 @@
 # 开发进度
 
+## 自然语言入口 Goal：真实排期、首次需求与交付（2026-10-20）
+
+bfa36e5准确SHA的Python四组合/Web两组合均success。同源码最终Mock36/36冷核对，质量与初始Mock一致；
+原真实三轮36/36完成，72次/173894 Token、97 ASGI总请求（含10调查），未知0。范围/目标36/36，
+完整计划/实际执行各23/36，完整任务15/36，指定故障8/9，关键澄清6/6。规则支持5、模型严格支持3、
+不当确定性提案3、模型主动明确弃权0；负面结果与全部分母保留。
+NE_NEW01首次真实CLI仅原文+项目配置，5步PASS，1次/3358 Token；导出固定pytest在模型/真实HTTP
+禁用条件下1 passed / 1.87s，operator_plan不算第二次LLM成功。新增用户授权的7位置一次独立重试
+另归档，不替换原36成绩；[完整统计](nl-entry-value-report.md)。
+统一九项离线验收9/9 VERIFIED，source_unchanged=true、cleanup_unconfirmed=false，真实模型/Java/DB写0。
+交付[三层演示](nl-entry-delivery.md)、[简历面试](nl-entry-resume-interview.md)、[逐项核对](nl-entry-completion-audit.md)、脱敏JSON和1440/390px截图；首次配置每域6文件，
+新增支持需求无需手写步骤/偏序/TaskContract，未知语义继续待审。正式人审0、人工节时未测，原生FC仅Mock。
+本轮功能范围冻结。最终准确HEAD六项CI以本提交Actions及私有runs/ne-entry-final-ci.json记录核对；
+后续外部输入为独立人审与真实使用者计时，不继续调已用题或无限重试。
+
+交付收尾：五份固定回归 **5 passed / 6.26s**、Ruff全仓与git diff --check通过；34份改动文件的JSON、
+本地链接、占位与已知密钥值扫描通过，原导出/fixture字节一致，配套原文/项目配置JSON语义一致、保存为LF。
+逐位置候选、覆盖和未执行原因
+另存脱敏证据，不把被拒绝计划涉及的操作计为已执行覆盖。
+配套JSON换行规范化后，新资产独立复核 **1 passed / 1.93s**，原导出与暂存Git对象字节一致。
+
 ## 自然语言入口 Goal：回归fixture发现根因（2026-10-20）
 
 65b1e65安装环境单项CI在两平台直接重现，完整日志确认`fixture 'agenttest_regression_runtime' not found`，

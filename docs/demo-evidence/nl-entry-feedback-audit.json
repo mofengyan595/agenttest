@@ -1,0 +1,384 @@
+[
+  {
+    "position": 4,
+    "case_id": "NE04",
+    "run_id": "5ff9da4c36304dbab4c1cea5a18b0d17",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "NEEDS_REVIEW",
+      "finding": "EVIDENCE_INSUFFICIENT",
+      "evidence_refs": [],
+      "reason": "RULE_EVIDENCE_INSUFFICIENT"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_0cbeeb1f0e3a4d63a1f1f1a118a9dba7"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "EVIDENCE_INSUFFICIENT",
+    "final_refs": []
+  },
+  {
+    "position": 7,
+    "case_id": "NE07",
+    "run_id": "28cbf5e8b4204c35b00f39dc7160bc83",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "SUPPORTED",
+      "finding": "ACCESS_BOUNDARY_VIOLATION",
+      "evidence_refs": [
+        "original",
+        "investigation_eaf6b3d816f44508afa763db43b10489"
+      ],
+      "reason": "RULE_SUPPORTED"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "ACCESS_BOUNDARY_VIOLATION",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_4fa99c92c4d24a47ab58a970c2c5b3f7"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "EVIDENCE_INSUFFICIENT",
+    "final_refs": []
+  },
+  {
+    "position": 10,
+    "case_id": "NE10",
+    "run_id": "99a2535be97348c1b83647cf37af32fc",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "SUPPORTED",
+      "finding": "PERSISTENT_READBACK_MISMATCH",
+      "evidence_refs": [
+        "original",
+        "investigation_90991df598224bca8301a1371e6368ee"
+      ],
+      "reason": "RULE_SUPPORTED"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_90991df598224bca8301a1371e6368ee"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "PERSISTENT_READBACK_MISMATCH",
+    "final_refs": [
+      "original",
+      "investigation_90991df598224bca8301a1371e6368ee"
+    ]
+  },
+  {
+    "position": 19,
+    "case_id": "NE07",
+    "run_id": "441277c29ab4488884499d1c253169b0",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "NEEDS_REVIEW",
+      "finding": "EVIDENCE_INSUFFICIENT",
+      "evidence_refs": [],
+      "reason": "RULE_EVIDENCE_INSUFFICIENT"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "ACCESS_BOUNDARY_VIOLATION",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_49f1e87cd6be4acfa7d5347e97960607"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "EVIDENCE_INSUFFICIENT",
+    "final_refs": []
+  },
+  {
+    "position": 22,
+    "case_id": "NE10",
+    "run_id": "ce3b0a922ad74230bbb5395909f0280c",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "SUPPORTED",
+      "finding": "PERSISTENT_READBACK_MISMATCH",
+      "evidence_refs": [
+        "original",
+        "investigation_c7c39589765b4c1ebd77a2aae139619d"
+      ],
+      "reason": "RULE_SUPPORTED"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_c7c39589765b4c1ebd77a2aae139619d"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "PERSISTENT_READBACK_MISMATCH",
+    "final_refs": [
+      "original",
+      "investigation_c7c39589765b4c1ebd77a2aae139619d"
+    ]
+  },
+  {
+    "position": 28,
+    "case_id": "NE04",
+    "run_id": "0850e8cdd7d741b5bfb1f65c070de1de",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "NEEDS_REVIEW",
+      "finding": "EVIDENCE_INSUFFICIENT",
+      "evidence_refs": [],
+      "reason": "RULE_EVIDENCE_INSUFFICIENT"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_5eb85058581647c58ce57a8a01070b20"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "EVIDENCE_INSUFFICIENT",
+    "final_refs": []
+  },
+  {
+    "position": 31,
+    "case_id": "NE07",
+    "run_id": "9bdf0aab8d8b4992a88f66d210bbe271",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "SUPPORTED",
+      "finding": "ACCESS_BOUNDARY_VIOLATION",
+      "evidence_refs": [
+        "original",
+        "investigation_60eb261be1af459dbf048a7695b3aed5"
+      ],
+      "reason": "RULE_SUPPORTED"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "ACCESS_BOUNDARY_VIOLATION",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_f60436513fa44ba4b9207de7865120a0"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "EVIDENCE_INSUFFICIENT",
+    "final_refs": []
+  },
+  {
+    "position": 34,
+    "case_id": "NE10",
+    "run_id": "ffe10ab6d9ae4de5ab64fb74d78b9978",
+    "product_outcome": "ASSERTION_FAILED",
+    "rule": {
+      "rule_version": "observable_symptoms_v1",
+      "state": "SUPPORTED",
+      "finding": "PERSISTENT_READBACK_MISMATCH",
+      "evidence_refs": [
+        "original",
+        "investigation_c2ab113ca4034df6a68aea27a3979641"
+      ],
+      "reason": "RULE_SUPPORTED"
+    },
+    "decisions": [
+      {
+        "action": "investigate",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "investigate",
+          "finding": null,
+          "refs_valid": true,
+          "evidence_refs": [],
+          "selection_approved": true
+        }
+      },
+      {
+        "action": "finish",
+        "reason": "FEEDBACK_ACTION_RECEIVED",
+        "proposal": {
+          "action": "finish",
+          "finding": "PERSISTENT_READBACK_MISMATCH",
+          "refs_valid": true,
+          "evidence_refs": [
+            "original",
+            "investigation_c2ab113ca4034df6a68aea27a3979641"
+          ],
+          "selection_approved": null
+        }
+      }
+    ],
+    "final_finding": "PERSISTENT_READBACK_MISMATCH",
+    "final_refs": [
+      "original",
+      "investigation_c2ab113ca4034df6a68aea27a3979641"
+    ]
+  }
+]

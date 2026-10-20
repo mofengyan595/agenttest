@@ -5,9 +5,11 @@
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
 2026-10-20新里程碑：[自然语言入口与项目配置复用](docs/nl-entry.md)。
-阶段1–4新增`goal --project ... --user-task ... --preview`、三层套件、工具协议适配、有界上下文、
+阶段1–5新增`goal --project ... --user-task ... --preview`、三层套件、工具协议适配、有界上下文、
 SQLite任务服务及`/tasks`工作台。受支持需求的约束从原文与批准关系派生，无需逐题手写完整TaskContract；
-旧入口仍可用。默认离线流程保持不变，尚未开展本轮真实模型效果验证。[完整范围](docs/nl-entry-goal.md)。
+旧入口与默认离线流程保持可用。原真实三轮36/36完成：完整计划23/36、完整任务15/36、故障检出8/9；
+首次新需求通过并导出无模型pytest。全部DEVELOPMENT_ONLY/UNREVIEWED，独立人审0；追加重试不替换首次成绩。
+[三层演示](docs/nl-entry-delivery.md) · [实际价值与失败](docs/nl-entry-value-report.md) · [简历材料](docs/nl-entry-resume-interview.md) · [逐项核对](docs/nl-entry-completion-audit.md)。
 
 [证据可靠性与模型价值](docs/evidence-value-report.md) · [交付导航与五分钟演示](docs/goal-delivery-guide.md) · [简历和面试材料](docs/goal-resume-interview.md)。
 

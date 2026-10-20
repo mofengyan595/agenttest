@@ -1,0 +1,79 @@
+{
+  "classification": "OFFLINE_DELIVERY_ACCEPTANCE",
+  "verified": true,
+  "source_unchanged": true,
+  "cleanup_unconfirmed": false,
+  "scheduled_checks": 9,
+  "verified_checks": 9,
+  "real_model_calls": 0,
+  "real_java_requests": 0,
+  "real_database_writes": 0,
+  "model_usage": "FAKE_OR_SIMULATED",
+  "human_reviewed": 0,
+  "formal_eval_v2_score": null,
+  "results": [
+    {
+      "check": "project-courses",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/project-courses",
+      "reason": null
+    },
+    {
+      "check": "project-tickets",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/project-tickets",
+      "reason": null
+    },
+    {
+      "check": "project-petclinic",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/project-petclinic",
+      "reason": null
+    },
+    {
+      "check": "showcase",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/showcase",
+      "reason": null
+    },
+    {
+      "check": "portability",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/portability",
+      "reason": null
+    },
+    {
+      "check": "json-literals",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/json-literals",
+      "reason": null
+    },
+    {
+      "check": "fixed-regressions",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/fixed-regressions",
+      "reason": null
+    },
+    {
+      "check": "portability-archive",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/portability-archive",
+      "reason": null
+    },
+    {
+      "check": "json-literals-archive",
+      "status": "VERIFIED",
+      "exit_code": 0,
+      "evidence_directory": "logs/json-literals-archive",
+      "reason": null
+    }
+  ]
+}

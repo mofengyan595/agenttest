@@ -1,0 +1,57 @@
+{
+  "archive_verified": true,
+  "schema_version": "agenttest.nl-entry-novel-result.v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "source_run_id": "3dccf29c3bc04c78b7748ff12baba6d9",
+  "business_outcome": "PASS",
+  "task_satisfied": true,
+  "required_steps": 5,
+  "cli_exit": 0,
+  "exported": true,
+  "replay": {
+    "exit": 0,
+    "verified": true,
+    "run_id": "fda5b4194dab4befbe8c7e743855a677"
+  },
+  "source_unchanged": true,
+  "product_complete": true,
+  "bundle_hashes": {
+    "manifest.json": "db7b980e0f2b8365510273799de426723726acd68a880ec6288fd9c3f1bca72d",
+    "README.md": "a01c455d105a737f2b9128b8fdc0944d11ccf5cf86cc750401b2dc641029e166",
+    "scenario.json": "d4f66b5ec8e61f8bfd6b4505ff79340fdf98911c567ec8cb2b794e1d531a9785",
+    "test_agenttest_e6b13a60bb1a4a52bb84f83eb71a43a8.py": "a02e35b9a355f44afbc24affec094a8ed4ab8cfd4f4675975758cace7d8154f9"
+  },
+  "usage_known": true,
+  "model_calls": 1,
+  "real_model_calls": 1,
+  "total_tokens": 3358,
+  "readonly_requests": 0,
+  "elapsed_ms": 57437.255700002424,
+  "human_time_saved": null,
+  "independent_human_reviewed": 0,
+  "real_business_http": 0,
+  "database_writes": 0,
+  "new_model_calls": 0,
+  "frozen_source": {
+    "commit": "bfa36e537d14715d2b9bff03c15e1a24479dbb85",
+    "worktree_status": "",
+    "checkout_sha256": "e5c20006e7b150452bcd46a96fce685bb6e699687288a9445614aef7bdc0d1aa"
+  },
+  "frozen_model": {
+    "model": "ecnu-plus",
+    "base_url_sha256": "c12d632b453824d3a1f87fdc093e50f9ebec58673d7561673a09da6d09d8c0fa",
+    "protocol": "chatecnu",
+    "timeout": 60.0,
+    "max_input_tokens": 25000,
+    "max_output_tokens": 4096,
+    "max_total_tokens": 100000,
+    "max_response_bytes": 200000
+  },
+  "public_request": {
+    "id": "NE_NEW01",
+    "project": "tickets",
+    "user_task": "先创建工单“星岚交接”，再权限检查、列表、关闭、查询。"
+  },
+  "archive_manifest_sha256": "d12bf558c18017f13464fccce9e4f2023626af6147f06300b4a4c68e9e2437af"
+}
