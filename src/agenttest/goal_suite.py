@@ -32,6 +32,7 @@ class SuiteCase:
         return dict(case_id=self.id, operation_id=self.operation_id, kinds=self.kinds,
             status="READY" if self.goal and self.goal.task and not self.reason else "NEEDS_REVIEW",
             reason=self.reason,
+            question=self.goal.question if self.goal else None,
             requested_goals=self.goal.requested_goals if self.goal else [],
             required_plan=public_goal_plan(self.goal) if self.goal else [],
             max_business_requests=len(self.goal.task.requirements.steps)
@@ -106,6 +107,12 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
                     goal.reason = "INTENT_GOAL_CONFIGURATION_UNSUPPORTED"
                 add(goal, policies[template.policy_id].operation_id,
                     template.id + ":" + kind, goal.reason)
+        represented = {c.operation_id for c in cases}
+        represented.update(s.operation_id for c in cases if c.goal and c.goal.task
+                           for s in c.goal.task.requirements.steps)
+        for operation_id in sorted(set(project.target.allowed_operations) - represented):
+            add(None, operation_id, "unmapped_project_operation",
+                "PROJECT_OPERATION_WITHOUT_APPROVED_GOAL")
     elif base.task:
         template = next(g for g in project.catalog.goals if g.id == base.requested_goals[-1])
         operation_id = policies[template.policy_id].operation_id

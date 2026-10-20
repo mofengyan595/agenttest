@@ -28,6 +28,7 @@ export interface GoalTask {
       operation_id: string | null;
       status: string;
       reason?: string;
+      question?: string | null;
       max_business_requests: number;
       run_id?: string;
       outcome?: string;
@@ -96,8 +97,17 @@ async function call<T>(
   })) as T;
 }
 
+let pendingSession: Promise<{ csrf_token: string }> | null = null;
 export const taskApi = {
-  session: () => call<{ csrf_token: string }>("/api/task-session"),
+  session: () => {
+    if (!pendingSession)
+      pendingSession = call<{ csrf_token: string }>(
+        "/api/task-session",
+      ).finally(() => {
+        pendingSession = null;
+      });
+    return pendingSession;
+  },
   projects: () =>
     call<{ projects: { id: string; identity: string }[] }>("/api/projects"),
   list: () => call<{ tasks: GoalTask[] }>("/api/tasks"),

@@ -81,6 +81,7 @@ export function GoalTasks() {
     async function load() {
       try {
         const session = await taskApi.session();
+        if (!active) return;
         const [catalog, history] = await Promise.all([
           taskApi.projects(),
           taskApi.list(),
@@ -310,6 +311,7 @@ export function GoalTasks() {
                   <strong>{item.operation_id || "待澄清目标"}</strong>
                   <span>{item.outcome || item.status}</span>
                   {item.reason && <small>{item.reason}</small>}
+                  {item.question && <p>{item.question}</p>}
                   {item.run_id && (
                     <Link className="inline-link" to={`/runs/${item.run_id}`}>
                       查看分层证据

@@ -215,6 +215,17 @@ async def test_policy_review_and_stale_versions_do_not_call_the_model(tmp_path, 
 
 
 @pytest.mark.asyncio
+async def test_missing_server_credentials_need_review_before_planner_admission(tmp_path):
+    svc = service(tmp_path)
+    svc.synthetic = False
+    row = await svc.submit("owner", "tickets", "创建工单", uuid4().hex)
+    assert row["status"] == "NEEDS_REVIEW"
+    assert row["summary"]["reason"] == "PROJECT_CREDENTIAL_PREFLIGHT_FAILED"
+    assert not svc._workers
+    await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_cancel_after_sent_write_does_not_claim_rollback(tmp_path, monkeypatch):
     pytest.importorskip("langgraph")
     from agenttest.portability_demo import project_inputs

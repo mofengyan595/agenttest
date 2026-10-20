@@ -24,7 +24,10 @@ def check(output: Path) -> dict:
         assets[manifest.scenario_sha256] = key
     rows = []
     for phase in ("normal", "faults"):
-        command = [sys.executable, "-m", "pytest", "examples/regressions", "-q",
+        # This acceptance owns the three paired fault assets; other exported assets
+        # have independent fixtures and must not enter its fixed three-case denominator.
+        command = [sys.executable, "-m", "pytest",
+                   *("examples/regressions/" + key.lower() for key in CASE_IDS), "-q",
                    "--basetemp=" + str(output / phase)]
         if phase == "faults":
             command.append("--agenttest-ticket-faults")

@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { GoalTasks } from "./GoalTasks";
@@ -45,7 +46,9 @@ function setup(status = "FINISHED") {
   vi.stubGlobal("fetch", fetcher);
   render(
     <MemoryRouter>
-      <GoalTasks />
+      <StrictMode>
+        <GoalTasks />
+      </StrictMode>
     </MemoryRouter>,
   );
   return fetcher;
@@ -54,6 +57,9 @@ function setup(status = "FINISHED") {
 test("registered project text submits session protected and shows actual evidence", async () => {
   const fetcher = setup();
   await screen.findByRole("option", { name: "tickets" });
+  expect(
+    fetcher.mock.calls.filter(([url]) => url === "/api/task-session"),
+  ).toHaveLength(1);
   await userEvent.type(screen.getByLabelText("测试需求"), "测试创建工单接口");
   await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
   expect(await screen.findByText("PASS")).toBeInTheDocument();

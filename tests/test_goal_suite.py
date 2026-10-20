@@ -89,6 +89,17 @@ def test_preview_credentials_are_separate_from_static_candidates():
     assert suite.discovery["candidate_operations"] == 4
 
 
+def test_unmapped_authorized_operation_and_unknown_requirement_remain_explicit():
+    p = deepcopy(_project())
+    p.catalog.goals = [g for g in p.catalog.goals if g.id != "list"]
+    suite = build_suite(p, "测试这个项目已授权的核心接口")
+    missing = next(c for c in suite.cases if c.operation_id == "listTickets")
+    assert missing.reason == "PROJECT_OPERATION_WITHOUT_APPROVED_GOAL"
+    assert missing.preview()["status"] == "NEEDS_REVIEW"
+    unknown = build_suite(p, "创建工单并退款").preview()
+    assert unknown["cases"][0]["question"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("scope", ["single", "flow", "project"])
 async def test_all_three_scopes_use_workflow_and_aggregate_budget(tmp_path, scope):

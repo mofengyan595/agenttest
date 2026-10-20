@@ -11,7 +11,7 @@ from agenttest.goal_derivation import derive_goal
 from agenttest.goal_runtime import run_goal
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger, build_suite, run_suite
 from agenttest.planner_input import validate_user_task
-from agenttest.project_goals import RegisteredProject, load_goal_project
+from agenttest.project_goals import RegisteredProject, check_goal_credentials, load_goal_project
 from agenttest.report import Outcome, ReportStore, fingerprint
 from agenttest.report_files import pinned_directory
 from agenttest.task_store import TERMINAL, ServiceLease, TaskConflict, TaskStore
@@ -83,7 +83,8 @@ class TaskService:
                 validate_user_task(text)
         goal = derive_goal(project, text)
         is_suite = suite or goal.scope == "project"
-        summary = (build_suite(project, text).preview() if is_suite else goal.summary())
+        summary = (build_suite(project, text, environ=None if self.synthetic else self.environ)
+                   .preview() if is_suite else goal.summary())
         summary["budget"] = dict(max_requests=project.target.max_requests,
             max_model_calls=project.registration.budget.suite_max_model_calls,
             max_total_tokens=project.registration.budget.suite_max_total_tokens)
@@ -97,6 +98,13 @@ class TaskService:
             summary["parent_task_id"] = parent
         ready = (any(c["status"] == "READY" for c in summary["cases"])
                  if is_suite else goal.task is not None)
+        if ready and not is_suite and not self.synthetic:
+            try:
+                check_goal_credentials(project, goal.task, self.environ)
+            except ValueError:
+                ready = False
+                summary.update(status="NEEDS_REVIEW", reason="PROJECT_CREDENTIAL_PREFLIGHT_FAILED",
+                    question="请由操作员在服务端配置角色凭据；不要在测试需求中填写密码或令牌。")
         state = ("WAITING_REVIEW" if project.registration.require_plan_review else "QUEUED")
         if not ready:
             state = "NEEDS_REVIEW"
