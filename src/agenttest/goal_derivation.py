@@ -14,7 +14,8 @@ from agenttest.task_contract import TaskContract
 
 # Deliberately closed grammar: leftover words are unverified business requirements.
 FILLER = ("已授权的", "核心接口", "这个项目", "这个", "项目", "接口", "流程", "验证", "测试",
-          "帮我", "请", "先", "再", "然后", "随后", "以及", "并且", "并", "和", "及", "的", "后")
+          "帮我", "请", "先", "再", "然后", "随后", "以及", "并且", "并", "和", "及", "的", "后",
+          "补充", "补", "测")
 PROJECT_PHRASES = ("已授权的核心接口", "项目核心接口", "项目全部接口", "所有已授权接口")
 
 

@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+import httpx
+
 from agenttest.goal_derivation import DerivedGoal, derive_goal
 from agenttest.project_goals import GoalProject, check_goal_credentials
 from agenttest.report import fingerprint
@@ -36,7 +38,7 @@ class GoalPlanner:
 
 
 async def run_goal(project, user_task, planner, store, *, environ, transport=None,
-                   budget=None, execution_guard=None, derived=None):
+                   budget=None, execution_guard=None, derived=None, analyzer=None):
     """Preflight before spending model/HTTP budget; immutable derived gate during execution."""
     from agenttest.workflow import Workflow
 
@@ -48,8 +50,28 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
         return goal, None
     check_goal_credentials(project, goal.task, environ)
     validator = task_validator(goal.task, project.contract, project.target, project.registry)
-    report = await Workflow(project.document, project.target, project.registry,
-        GoalPlanner(planner, project, goal), store, transport=transport, environ=environ,
-        user_task=user_task, intent_validator=validator, budget=budget,
-        execution_guard=execution_guard).run()
+    from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
+
+    local = SuiteLedger(project.target.max_requests, project.registration.budget.max_model_calls,
+                        project.registration.budget.max_total_tokens)
+    inner = transport or httpx.AsyncHTTPTransport(retries=0, trust_env=False)
+    options = {}
+    if analyzer is not None and project.capabilities.entries():
+        from agenttest.investigation import FeedbackBudget, InvestigationConfig
+
+        options = dict(capabilities=project.capabilities,
+            analyzer=BudgetPlanner(analyzer, local),
+            investigation=InvestigationConfig(enabled=True, trusted_symptoms=True,
+                feedback=FeedbackBudget(
+                    max_model_calls=max(0, project.registration.budget.max_model_calls - 1),
+                    max_requests=project.registration.budget.max_readonly_investigations)))
+    try:
+        report = await Workflow(project.document, project.target, project.registry,
+            GoalPlanner(BudgetPlanner(planner, local), project, goal), store,
+            transport=BudgetTransport(inner, local), environ=environ,
+            user_task=user_task, intent_validator=validator, budget=budget,
+            execution_guard=execution_guard, **options).run()
+    finally:
+        if transport is None:
+            await inner.aclose()
     return goal, report

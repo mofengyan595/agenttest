@@ -508,15 +508,20 @@ class OpenAICompatiblePlanner:
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_OUTPUT_TRUNCATED")
         if choice["message"].get("refusal") or choice["finish_reason"] == "content_filter":
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_REFUSAL")
-        if choice["finish_reason"] != "stop" or len(data["choices"]) != 1:
+        if len(data["choices"]) != 1:
             raise ValidationFailure(Layer.MODEL, "MODEL_CHOICE_INVALID")
-        content = choice["message"]["content"]
+        content = self._message_content(choice)
         self.stats.output_sha256 = fingerprint(content)
         if settings.api_key.get_secret_value() in content:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_SECRET_OUTPUT")
         result = self._decode_output(content, context)
         self.stats.reason = "MODEL_OUTPUT_RECEIVED"
         return result
+
+    def _message_content(self, choice: dict) -> str:
+        if choice["finish_reason"] != "stop" or choice["message"].get("tool_calls"):
+            raise ValidationFailure(Layer.MODEL, "MODEL_CHOICE_INVALID")
+        return choice["message"]["content"]
 
     def _decode_output(self, content: str, context: dict) -> str:
         draft = self._draft_type.model_validate(bounded_json(

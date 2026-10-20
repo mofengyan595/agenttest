@@ -9,7 +9,7 @@ from pathlib import Path
 from uuid import UUID
 
 import httpx
-from pydantic import Field, ValidationError
+from pydantic import ValidationError
 
 from agenttest.contracts import summarize_openapi
 from agenttest.demo import PROJECT_ROOT, demo_inputs
@@ -20,32 +20,10 @@ from agenttest.mini_target import create_target
 from agenttest.planner_input import planning_context
 from agenttest.policies import NeedsReview, PolicyRegistry
 from agenttest.report import ReportStore, RunReport, fingerprint
-from agenttest.safety import StrictModel
+from agenttest.tool_registry import REQUESTS, RunRequest
 
 SCENARIOS = {"mini_normal": "none", "mini_ownership_fault": "ownership",
              "mini_terminal_fault": "terminal"}
-
-
-class EmptyRequest(StrictModel):
-    pass
-
-
-class ValidateRequest(StrictModel):
-    plan_json: str = Field(min_length=1, max_length=64_000)
-
-
-class RunRequest(StrictModel):
-    scenario_id: str = Field(min_length=1, max_length=64)
-    invocation_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-
-
-class ReportRequest(StrictModel):
-    run_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-
-
-REQUESTS = {"list_tests": EmptyRequest, "get_contract": EmptyRequest,
-            "validate_plan": ValidateRequest, "run_scenario": RunRequest,
-            "read_report": ReportRequest}
 
 
 @dataclass(frozen=True)

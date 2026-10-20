@@ -215,6 +215,14 @@ class BudgetPlanner:
     def token_reservation(self):
         return getattr(self.inner, "token_reservation", 0)
 
+    @property
+    def evidence_relations(self):
+        return getattr(self.inner, "evidence_relations", False)
+
+    @property
+    def last_proposal(self):
+        return getattr(self.inner, "last_proposal", None)
+
     async def generate(self, context):
         self.stats = ModelCallStats()
         if (self.ledger.usage_unknown or self.ledger.model_calls >= self.ledger.max_model_calls
@@ -239,7 +247,7 @@ class BudgetPlanner:
 
 
 async def run_suite(project, user_task, planner, store, *, environ, transport=None,
-                    budget=None, execution_guard=None):
+                    budget=None, execution_guard=None, analyzer=None):
     from agenttest.goal_runtime import run_goal
 
     suite = build_suite(project, user_task, environ=environ)
@@ -274,7 +282,8 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                 continue
             _, report = await run_goal(project, user_task, bounded_planner, store,
                 environ=environ, transport=bounded_transport, budget=budget,
-                execution_guard=execution_guard, derived=goal)
+                execution_guard=execution_guard, derived=goal,
+                analyzer=BudgetPlanner(analyzer, ledger) if analyzer else None)
             row.update(status="FINISHED", outcome=report.outcome.value, run_id=report.run_id,
                 intent_verified=report.intent_verified, task_satisfied=report.task_satisfied,
                 planned_operations=[s.operation_id for s in report.plan_structure],

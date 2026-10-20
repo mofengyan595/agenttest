@@ -48,21 +48,33 @@ def goal_command(args) -> int:
         settings = settings.model_copy(update={
             name: getattr(project.registration.budget, name) for name in (
                 "max_input_tokens", "max_output_tokens", "max_total_tokens")})
-        planner = OpenAICompatiblePlanner(settings, profile="generic", planning_constraints=True)
+        if project.registration.native_function_calling:
+            from agenttest.native_tools import NativeFunctionPlanner
+
+            planner = NativeFunctionPlanner(settings, provider_supported=True)
+        else:
+            planner = OpenAICompatiblePlanner(settings, profile="generic",
+                                               planning_constraints=True)
         budget = WorkflowBudget(model_timeout=settings.timeout + 1,
                                 workflow_timeout=min(settings.timeout + 90, 300))
     else:
         planner = FakeLLM(_read(args.fake_plan).decode("utf-8"))
     store = ReportStore(args.runs_dir)
+    analyzer = None
+    if project.capabilities.entries():
+        from agenttest.evidence_context import EvidenceFeedbackModel
+        from agenttest.feedback import FakeFeedback
+
+        analyzer = EvidenceFeedbackModel(settings) if args.real else FakeFeedback()
     if suite_mode:
         from agenttest.goal_suite import run_suite
 
         result = asyncio.run(run_suite(project, args.user_task, planner, store,
-                                      environ=environ, budget=budget))
+                                      environ=environ, budget=budget, analyzer=analyzer))
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["complete"] else 1
     derived, report = asyncio.run(run_goal(project, args.user_task, planner, store,
-        environ=environ, budget=budget))
+        environ=environ, budget=budget, analyzer=analyzer))
     print(json.dumps(dict(derived.summary(), run_id=report.run_id,
         outcome=report.outcome.value, task_satisfied=report.task_satisfied,
         report=str(store.root / report.run_id / "report.json")), ensure_ascii=False))

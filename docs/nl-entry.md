@@ -2,7 +2,7 @@
 
 2026-10-20新Goal按[原始目标](nl-entry-goal.md)推进。阶段1–2提供CLI预检和同一Workflow执行，
 不要求受支持需求另写完整步骤、资源偏序或逐题TaskContract；旧`agent --project`保持兼容。
-三层分组与Schema候选已实现；工具协议、会话、持久化和工作台尚待后续阶段。
+三层分组、Schema候选、工具协议适配和有界会话已实现；任务持久化和工作台尚待后续阶段。
 
 ## 首次接入与新增需求
 
@@ -70,4 +70,29 @@
 未知业务预期不会生成可信断言；配置通过、规划通过与业务断言通过分别判断。
 
 预算继续受目标请求数与步骤数限制，单run默认最多4模型/2只读调查；
-阶段1仅启用一次规划，不隐式重试。真实模型验证尚未执行，全部开发材料为DEVELOPMENT_ONLY/UNREVIEWED。
+默认一次规划，不隐式重试。项目可通过本地`capabilities`文件引用批准只读能力；
+配置时检查GET、角色与来源绑定关系，失败后复用原有最多两次调查/三次反馈，
+原业务、模型建议及可信规则结果分别保存。规划与反馈共享单run和套件预算，未知用量停止。
+真实模型验证尚未执行，全部开发材料为DEVELOPMENT_ONLY/UNREVIEWED。
+
+## 工具协议与有界上下文
+
+统一注册表描述工具名称、参数Schema、用途、权限、资源关系与结果类型；
+既有MCP工具广告/参数门禁与原生规划提交工具共用注册信息及已有引擎。
+原JSON动作继续可用。`native_function_calling=true`仅由操作员项目配置启用；
+原生工具只能提交不可信计划，不能直接指定任意HTTP或执行代码。
+只接收单一`submit_test_plan`函数，拒绝未知工具、并行调用与额外正文；
+调用参数继续经过原Generic DSL、授权及意图校验。
+
+实现前于2026-10-20核对[官方Function Calling](https://developers.openai.com/api/docs/guides/function-calling)
+和[MCP Python SDK v2结构化输出](https://py.sdk.modelcontextprotocol.io/v2/servers/structured-output/)。
+本轮原生函数协议仅有Mock验收；没有真实供应商验证结果。
+未显式声明支持或使用chatecnu时，返回`NATIVE_FUNCTION_PROTOCOL_UNSUPPORTED`，零请求，不猜测兼容性。
+当前已配置供应商后续真实试验仍采用原JSON协议，不把JSON实测当作原生Function Calling实测。
+
+`GoalConversation`保存最多8轮、累计原文2000字符的内存上下文，支持“先测创建”再“补权限检查”。
+保留原始需求、澄清哈希、不可变计划版本、报告引用和共享剩余额度；不保存业务正文或模型原文。
+补充需求生成新版本，新执行使用新资源，已开始的计划不能改写或重复执行。
+项目/策略身份变化必须重新派生校验，新版本不能提高会话原有预算；
+明确澄清可替换未验证需求的有效范围，但原始历史保留，不能授予新断言或权限。
+这些是任务内状态，不是长期语义记忆，也不恢复或重放HTTP。

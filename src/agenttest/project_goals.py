@@ -1,6 +1,6 @@
 """Reusable operator-owned goal vocabulary; no per-request recipe or model authority."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -9,6 +9,7 @@ from pydantic import Field, field_validator, model_validator
 from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
 from agenttest.discovery import trusted
+from agenttest.investigation import ReadOnlyCapabilityRegistry
 from agenttest.planner_input import validate_user_task
 from agenttest.policies import PolicyRegistry
 from agenttest.project import ProjectConfig, _read
@@ -69,12 +70,15 @@ class RegisteredProject(StrictModel):
     target: str
     policies: str
     goals: str
+    capabilities: str | None = None
+    native_function_calling: bool = False
+    require_plan_review: bool = False
     budget: ProjectBudget = Field(default_factory=ProjectBudget)
 
-    @field_validator("contract", "target", "policies", "goals")
+    @field_validator("contract", "target", "policies", "goals", "capabilities")
     @classmethod
     def local_reference(cls, value):
-        return ProjectConfig.local_reference(value)
+        return ProjectConfig.local_reference(value) if value is not None else None
 
 
 @dataclass(repr=False)
@@ -85,11 +89,13 @@ class GoalProject:
     target: TargetConfig
     registry: PolicyRegistry
     catalog: GoalCatalog
+    capabilities: ReadOnlyCapabilityRegistry = field(default_factory=ReadOnlyCapabilityRegistry)
 
     def identity(self) -> str:
         return fingerprint(dict(project=self.registration.model_dump(),
             contract=self.contract.model_dump(), target=self.target.model_dump(),
-            policies=self.registry.digest(), goals=self.catalog.model_dump()))
+            policies=self.registry.digest(), goals=self.catalog.model_dump(),
+            capabilities=[c.model_dump() for c in self.capabilities.entries()]))
 
 
 def load_goal_project(path: Path) -> GoalProject:
@@ -117,6 +123,22 @@ def load_goal_project(path: Path) -> GoalProject:
             # Disallowed target operations remain catalogued for explicit review reporting.
     if set(project.target.allowed_operations) - operations.keys():
         raise ValueError("PROJECT_OPERATION_UNKNOWN")
+    if registration.capabilities:
+        project.capabilities = ReadOnlyCapabilityRegistry.from_json(
+            _read(path.parent / registration.capabilities))
+        for cap in project.capabilities.entries():
+            policy = policies.get(cap.policy_id)
+            op = operations.get(cap.operation_id)
+            if (op is None or op.method != "GET" or policy is None or not trusted(policy)
+                    or policy.operation_id != cap.operation_id
+                    or cap.business_scenario != project.target.business_scenario
+                    or not set(cap.roles) <= set(project.target.roles)
+                    or not set(cap.roles) <= set(policy.roles)
+                    or not any(r.source_policy_id == cap.source_policy_id
+                        and r.source_selector == cap.source_selector
+                        and r.location == "path_parameters" and r.name == cap.path_parameter
+                        for r in policy.binding_rules)):
+                raise ValueError("PROJECT_READONLY_CAPABILITY_REJECTED")
     return project
 
 

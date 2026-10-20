@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from agenttest.demo import PROJECT_ROOT
 from agenttest.mcp_service import REQUESTS, MCPService, MCPSettings
+from agenttest.tool_registry import TOOLS
 
 
 def result(payload: dict) -> CallToolResult:
@@ -63,7 +64,7 @@ def create_server(service: MCPService) -> MCPServer:
 
     tools = []
     for fn in (list_tests, get_contract, validate_plan, run_scenario, read_report):
-        mutates = fn.__name__ == "run_scenario"
+        mutates = TOOLS[fn.__name__].permission == "isolated_execution"
         tool = Tool.from_function(fn, structured_output=False, annotations=ToolAnnotations(
             read_only_hint=not mutates, open_world_hint=False,
             destructive_hint=False, idempotent_hint=mutates))
