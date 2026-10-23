@@ -342,14 +342,29 @@ class BudgetPlanner:
 
 
 async def run_suite(project, user_task, planner, store, *, environ, transport=None,
-                    budget=None, execution_guard=None, analyzer=None, ledger=None, on_report=None):
+                    budget=None, execution_guard=None, analyzer=None, ledger=None, on_report=None,
+                    semantic_model=None):
     from agenttest.goal_runtime import run_goal
+    from agenttest.goal_spec import SEMANTIC_REASONS
 
     suite = build_suite(project, user_task, environ=environ)
     ledger = ledger or SuiteLedger(**{key: suite.budgets[key] for key in (
         "max_requests", "max_model_calls", "max_total_tokens")})
     for key in ("max_requests", "max_model_calls", "max_total_tokens"):
         setattr(ledger, key, min(getattr(ledger, key), suite.budgets[key]))
+    if (project.registration.semantic_goal_drafts and semantic_model is not None
+            and len(suite.cases) == 1 and suite.cases[0].goal
+            and suite.cases[0].goal.task is None
+            and suite.cases[0].goal.reason in SEMANTIC_REASONS):
+        from agenttest.goal_spec import propose_goal_spec
+
+        draft = await propose_goal_spec(project, user_task,
+            BudgetPlanner(semantic_model, ledger, execution_guard), environ=environ,
+            timeout=budget.model_timeout if budget else 5.0)
+        result = suite.preview()
+        result.update(goal_spec=draft, usage=ledger.summary(), complete=False,
+                      model_calls=ledger.model_calls, http_requests=ledger.requests)
+        return result
     own_transport = transport is None
     inner = transport or httpx.AsyncHTTPTransport(retries=0, trust_env=False)
     bounded_transport = BudgetTransport(inner, ledger)

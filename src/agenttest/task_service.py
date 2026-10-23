@@ -31,7 +31,8 @@ class ProgressStore(ReportStore):
 
 class TaskService:
     def __init__(self, projects: dict[str, Path], db: TaskStore, reports: ReportStore,
-                 planner_factory, *, synthetic=False, environ=None, analyzer_factory=None):
+                 planner_factory, *, synthetic=False, environ=None, analyzer_factory=None,
+                 semantic_factory=None):
         self.projects = dict(projects)
         for key, path in self.projects.items():
             if load_goal_project(path).registration.id != key:
@@ -41,6 +42,7 @@ class TaskService:
         self.db.interrupt_unfinished()
         self.synthetic = synthetic
         self.analyzer_factory = analyzer_factory
+        self.semantic_factory = semantic_factory
         self.environ = dict(os.environ if environ is None else environ)
         self._inputs, self._workers = {}, {}
         self._owners = {}
@@ -82,7 +84,12 @@ class TaskService:
                 text = original + "，" + text
                 validate_user_task(text)
         goal = derive_goal(project, text)
-        is_suite = suite or goal.scope == "project"
+        from agenttest.goal_spec import SEMANTIC_REASONS
+
+        draft_allowed = (project.registration.semantic_goal_drafts
+                         and self.semantic_factory is not None and goal.task is None
+                         and goal.reason in SEMANTIC_REASONS)
+        is_suite = suite or goal.scope == "project" or draft_allowed
         summary = (build_suite(project, text, environ=None if self.synthetic else self.environ)
                    .preview() if is_suite else goal.summary())
         summary["budget"] = dict(max_requests=project.target.max_requests,
@@ -105,6 +112,7 @@ class TaskService:
                 ready = False
                 summary.update(status="NEEDS_REVIEW", reason="PROJECT_CREDENTIAL_PREFLIGHT_FAILED",
                     question="请由操作员在服务端配置角色凭据；不要在测试需求中填写密码或令牌。")
+        ready = ready or draft_allowed
         state = ("WAITING_REVIEW" if project.registration.require_plan_review else "QUEUED")
         if not ready:
             state = "NEEDS_REVIEW"
@@ -194,7 +202,11 @@ class TaskService:
                     if suite:
                         result = await run_suite(project, text, planner, store, environ=env,
                             transport=transport, ledger=shared, budget=budget, analyzer=analyzer,
-                            on_report=retain, execution_guard=guard)
+                            on_report=retain, execution_guard=guard,
+                            semantic_model=self.semantic_factory(project)
+                                if (self.semantic_factory
+                                    and project.registration.semantic_goal_drafts)
+                                else None)
                     else:
                         derived = derive_goal(project, text)
                         if (shared.requests + len(derived.task.requirements.steps)
@@ -212,8 +224,9 @@ class TaskService:
                     result["context_usage"] = shared.summary()
                     result["budget"] = row["summary"]["budget"]
                     result["model_source"] = model_source
-                    self.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=result)
-                    self.db.event(task_id, "FINISHED")
+                    terminal = "NEEDS_REVIEW" if result.get("goal_spec") else "FINISHED"
+                    self.db.transition(task_id, owner, "RUNNING", terminal, summary=result)
+                    self.db.event(task_id, terminal)
                 finally:
                     if own_transport:
                         await transport.aclose()

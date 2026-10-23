@@ -21,7 +21,8 @@ def goal_command(args) -> int:
     summary = derived.summary()
     summary["budget"] = dict(project.registration.budget.model_dump(),
                              max_requests=project.target.max_requests)
-    suite_mode = args.suite or derived.scope == "project"
+    suite_mode = (args.suite or derived.scope == "project"
+                  or project.registration.semantic_goal_drafts and derived.task is None)
     if suite_mode and args.preview:
         from agenttest.goal_suite import build_suite
 
@@ -94,11 +95,14 @@ def goal_command(args) -> int:
 
         analyzer = EvidenceFeedbackModel(settings) if args.real else FakeFeedback()
     if suite_mode:
+        from agenttest.goal_spec import GoalSpecModel
         from agenttest.goal_suite import run_suite
 
+        semantic = (GoalSpecModel(settings) if args.real else planner)
         result = asyncio.run(run_suite(project, args.user_task, planner, store,
             environ=environ, budget=budget, analyzer=analyzer, transport=transport,
-            execution_guard=guard))
+            execution_guard=guard, semantic_model=semantic
+                if project.registration.semantic_goal_drafts else None))
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["complete"] else 1
     derived, report = asyncio.run(run_goal(project, args.user_task, planner, store,

@@ -30,10 +30,17 @@ def configured_task_service(runs_dir):
     return TaskService(projects, TaskStore(runs_dir / "tasks.sqlite3"),
         ReportStore(runs_dir), planner,
         synthetic=os.environ.get("AGENTTEST_SYNTHETIC_TARGETS") == "1",
-        analyzer_factory=lambda project: feedback(settings_for(project)))
+        analyzer_factory=lambda project: feedback(settings_for(project)),
+        semantic_factory=lambda project: goal_spec_model(settings_for(project)))
 
 
 def feedback(settings):
     from agenttest.evidence_context import EvidenceFeedbackModel
 
     return EvidenceFeedbackModel(settings)
+
+
+def goal_spec_model(settings):
+    from agenttest.goal_spec import GoalSpecModel
+
+    return GoalSpecModel(settings, profile="generic")

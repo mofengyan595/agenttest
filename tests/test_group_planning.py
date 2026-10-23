@@ -54,6 +54,7 @@ async def test_group_context_contains_only_selected_policies_roles_and_dependenc
 
 @pytest.mark.asyncio
 async def test_sufficient_frozen_budget_covers_all_groups_without_inserting_model_steps(tmp_path):
+    pytest.importorskip("langgraph")
     p = deepcopy(_project())
     p.target.max_requests = 12
     p.registration.budget.suite_max_model_calls = 6
@@ -78,6 +79,7 @@ async def test_sufficient_frozen_budget_covers_all_groups_without_inserting_mode
 @pytest.mark.asyncio
 @pytest.mark.parametrize("constraint", ["requests", "models", "prior_entry_call", "tokens"])
 async def test_insufficient_shared_budget_keeps_full_denominators(tmp_path, constraint):
+    pytest.importorskip("langgraph")
     p = deepcopy(_project())
     p.target.max_requests = 12
     p.registration.budget.suite_max_model_calls = 6
@@ -112,6 +114,7 @@ async def test_insufficient_shared_budget_keeps_full_denominators(tmp_path, cons
 
 @pytest.mark.asyncio
 async def test_optional_feedback_cannot_consume_later_required_group_budget(tmp_path):
+    pytest.importorskip("langgraph")
     prepare_profiles(tmp_path / "projects")
     p = load_goal_project(tmp_path / "projects/tickets/registered.project.json")
     p.target.max_requests = 12
@@ -130,6 +133,7 @@ async def test_optional_feedback_cannot_consume_later_required_group_budget(tmp_
 
 @pytest.mark.asyncio
 async def test_extra_model_step_is_retained_rejected_and_excluded_from_valid_coverage(tmp_path):
+    pytest.importorskip("langgraph")
     from agenttest.dsl import Scenario
     from agenttest.workflow import FakeLLM
 

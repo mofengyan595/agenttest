@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
@@ -73,7 +73,15 @@ class RegisteredProject(StrictModel):
     capabilities: str | None = None
     native_function_calling: bool = False
     require_plan_review: bool = False
+    semantic_goal_drafts: bool = False
     budget: ProjectBudget = Field(default_factory=ProjectBudget)
+
+    @model_serializer(mode="wrap")
+    def compatible_optional_entry(self, handler):
+        data = handler(self)
+        if not self.semantic_goal_drafts:
+            data.pop("semantic_goal_drafts", None)
+        return data
 
     @field_validator("contract", "target", "policies", "goals", "capabilities")
     @classmethod

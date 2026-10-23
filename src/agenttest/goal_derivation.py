@@ -1,6 +1,7 @@
 """Derive bounded goals from original text and approved relations, before any planner."""
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -17,6 +18,12 @@ FILLER = ("已授权的", "核心接口", "这个项目", "这个", "项目", "�
           "帮我", "请", "先", "再", "然后", "随后", "以及", "并且", "并", "和", "及", "的", "后",
           "补充", "补", "测")
 PROJECT_PHRASES = ("已授权的核心接口", "项目核心接口", "项目全部接口", "所有已授权接口")
+
+
+def _reference_text(text):
+    """Normalize typography and identifier case, never user-supplied quoted input values."""
+    text = re.sub(r"`([^`\n]+)`", r"\1", text)
+    return unicodedata.normalize("NFKC", text).casefold()
 
 
 @dataclass(repr=False)
@@ -62,11 +69,12 @@ def _recognize(project: GoalProject, text: str) -> tuple[str, list[str], str | N
         match = quoted[0]
         literal = match.group(1) or match.group(2)
         text = text[:match.start()] + text[match.end():]
+    text = _reference_text(text)
     if any(p in text for p in PROJECT_PHRASES):
         residue = text
         for part in sorted((*PROJECT_PHRASES, *FILLER, *project.catalog.resource_aliases),
                            key=len, reverse=True):
-            residue = residue.replace(part, "")
+            residue = residue.replace(_reference_text(part), "")
         if re.sub(r"[\s，。；、：:;(),!?！？]+", "", residue) or literal is not None:
             raise NeedsReview("INTENT_UNVERIFIED_BUSINESS_REQUIREMENT")
         return "project", [g.id for g in project.catalog.goals], None
@@ -80,11 +88,13 @@ def _recognize(project: GoalProject, text: str) -> tuple[str, list[str], str | N
         if op is None:
             raise NeedsReview("INTENT_GOAL_POLICY_NOT_APPROVED")
         choices.extend([(op.operation_id, goal.id), (op.method + " " + op.path, goal.id)])
+    choices = [(_reference_text(alias), key) for alias, key in choices]
     tokens = sorted({alias for alias, _ in choices}, key=lambda s: (-len(s), s))
-    expression = re.compile("|".join(re.escape(token) for token in tokens))
+    expression = re.compile("|".join(re.escape(token).replace(r"\ ", r"\s+") for token in tokens))
     found, residue, last = [], [], 0
     for match in expression.finditer(text):
-        candidates = {key for alias, key in choices if alias == match.group()}
+        candidates = {key for alias, key in choices
+                      if re.sub(r"\s+", " ", alias) == re.sub(r"\s+", " ", match.group())}
         if len(candidates) != 1:
             raise NeedsReview("INTENT_OPERATION_EXPECTATION_AMBIGUOUS")
         found.append(next(iter(candidates)))
@@ -93,7 +103,7 @@ def _recognize(project: GoalProject, text: str) -> tuple[str, list[str], str | N
     residue.append(text[last:])
     remaining = "".join(residue)
     for part in sorted((*project.catalog.resource_aliases, *FILLER), key=len, reverse=True):
-        remaining = remaining.replace(part, "")
+        remaining = remaining.replace(_reference_text(part), "")
     if re.sub(r"[\s，。；、：:;(),!?！？]+", "", remaining) or not found:
         raise NeedsReview("INTENT_UNVERIFIED_BUSINESS_REQUIREMENT")
     if len(set(found)) != len(found):
