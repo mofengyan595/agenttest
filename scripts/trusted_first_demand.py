@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from evaluate_trusted_testing import DATA, settings_for, verify_archive
+from evaluate_trusted_testing import DATA, DATASETS, settings_for, verify_archive
 from trusted_validation_support import ObservedASGI, PublicTrace, copied_profiles, model_stats
 
 from agenttest.demo import PROJECT_ROOT
@@ -129,9 +129,9 @@ if __name__ == "__main__":
     mode.add_argument("--verify", type=Path)
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--prior", type=Path)
-    parser.add_argument("--dataset", choices=("v1", "v2"), default="v1")
+    parser.add_argument("--dataset", choices=tuple(DATASETS), default="v1")
     args = parser.parse_args()
     result = verify(args.verify) if args.verify else asyncio.run(
         run(args.output, args.model_env, args.prior,
-            DATA if args.dataset == "v1" else DATA.with_name("evaluation-v2")))
+            DATASETS[args.dataset]))
     print(json.dumps(result, ensure_ascii=False, indent=2))

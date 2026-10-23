@@ -36,11 +36,30 @@ from agenttest.report import ModelCallStats, Outcome, ReportStore, fingerprint
 from agenttest.workflow import WorkflowBudget
 
 DATA = PROJECT_ROOT / "examples/trusted-testing/evaluation"
+DATASETS = {"v1": DATA, "v2": DATA.with_name("evaluation-v2"),
+            "v2-amended": DATA.with_name("evaluation-v2-amended")}
 
 
 def settings_for(path):
     return ModelSettings.from_env_file(path).model_copy(update=dict(timeout=60.0,
         max_input_tokens=20000, max_output_tokens=4096, max_total_tokens=100000))
+
+
+def validate_references(requests, labels):
+    """Reject impossible operator references before model settings or target execution."""
+    by_id = {request["id"]: request for request in requests}
+    for label in labels:
+        profile = load_goal_project(PROFILES[by_id[label["id"]]["project"]] /
+                                    "registered.project.json")
+        policies = {policy.id: policy for policy in profile.registry.definitions()}
+        for group in label["expected_groups"]:
+            if group["root"] not in policies:
+                raise ValueError("REFERENCE_NOT_APPROVED")
+            for operation, role, policy_id in group["steps"]:
+                policy = policies.get(policy_id)
+                if (policy is None or operation != policy.operation_id or role not in policy.roles
+                        or operation not in profile.target.allowed_operations):
+                    raise ValueError("REFERENCE_NOT_APPROVED")
 
 
 async def position(folder, request, fault, settings, verify, mock_protocol="chatecnu"):
@@ -252,6 +271,7 @@ async def run(output, model_env=None, mock_archive=None, data_dir=None):
                 != protocol["eligible_project_positions"]
             or protocol["retries"] != 0 or protocol["additional_attempts"] != 0):
         raise ValueError("ELIGIBILITY_OR_RETRY_PROTOCOL_CHANGED")
+    validate_references(requests, labels)
     settings = settings_for(model_env) if model_env else None
     source_kind = "real" if settings else "mock"
     if settings:
@@ -328,9 +348,9 @@ if __name__ == "__main__":
     mode.add_argument("--verify", type=Path)
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--mock-archive", type=Path)
-    parser.add_argument("--dataset", choices=("v1", "v2"), default="v1")
+    parser.add_argument("--dataset", choices=tuple(DATASETS), default="v1")
     args = parser.parse_args()
     result = (verify_archive(args.verify) if args.verify else
               asyncio.run(run(args.output, args.model_env, args.mock_archive,
-                  DATA if args.dataset == "v1" else DATA.with_name("evaluation-v2"))))
+                  DATASETS[args.dataset])))
     print(json.dumps(result, ensure_ascii=False, indent=2))

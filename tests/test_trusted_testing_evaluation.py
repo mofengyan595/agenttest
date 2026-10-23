@@ -222,6 +222,28 @@ def test_v2_metadata_is_new_and_preserves_budgets_without_executing_requests(har
     assert first["max_model_calls"] == 4 and first["max_requests"] == 8
 
 
+def test_reference_amendment_only_fixes_two_impossible_operation_spellings(harness):
+    from agenttest.eval_v2.archive import read_json
+
+    old = harness.DATASETS["v2"]
+    amended = harness.DATASETS["v2-amended"]
+    for name in ("requests.json", "first-demand.json"):
+        assert (old / name).read_bytes() == (amended / name).read_bytes()
+    labels = read_json(old / "labels.json")
+    expected = deepcopy(labels)
+    expected[6]["expected_groups"][0]["steps"][3][0] = "readTicket"
+    expected[6]["expected_groups"][0]["steps"][4][0] = "readTicket"
+    assert read_json(amended / "labels.json") == expected
+    requests = read_json(old / "requests.json")
+    with pytest.raises(ValueError, match="REFERENCE_NOT_APPROVED"):
+        harness.validate_references(requests, labels)
+    harness.validate_references(requests, expected)
+    before, after = [read_json(path / "protocol.json") for path in (old, amended)]
+    assert before["per_run"] == after["per_run"]
+    assert before["per_position"] == after["per_position"]
+    assert after["reference_amendment"]["original_scores_preserved"]
+
+
 def test_cold_archive_rejects_work_after_unknown_usage_and_preserves_all_36(tmp_path, harness):
     from agenttest.eval_v2.archive import inventory, seal
     from agenttest.evaluation import save_evaluation

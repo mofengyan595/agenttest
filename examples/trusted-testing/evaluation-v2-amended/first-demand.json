@@ -1,0 +1,11 @@
+{
+  "id": "TV_NEW01",
+  "project": "tickets",
+  "user_task": "创建工单“岑川终验”，然后关闭、列出、读回、权限拒绝。",
+  "first_attempt_only": true,
+  "development_execution_forbidden": true,
+  "max_model_calls": 4,
+  "max_requests": 8,
+  "max_readonly_investigations": 2,
+  "max_total_tokens": 100000
+}

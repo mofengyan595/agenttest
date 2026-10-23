@@ -1,5 +1,8 @@
 # 已批准新里程碑：v2冻结协议
 
+原v2离线排期已封印，发现V207隔离参考两处接口拼写错误；[独立校正记录](trusted-testing-reference-amendment.md)
+保留原27/36评分。以下原协议/指令作为历史记录，当前执行使用v2-amended，不覆盖原数据。
+
 用户已明确批准 `trusted-testing-next-milestone.md`。原6031212离线失败、36位置、预算和归档不改。
 新核心冻结于4707c07，src树59d40c0715002b30d6b03b2014ee7fef051dfa4a；仅精简通用提示，
 Schema、公开目录/关系、Policy/Intent/Executor/断言未修改。旧五步开发需求在原20000输入上限内编码通过，
