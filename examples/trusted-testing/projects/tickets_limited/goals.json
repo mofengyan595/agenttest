@@ -1,0 +1,12 @@
+{
+  "schema_version": "agenttest.goal-catalog.v1",
+  "resource_aliases": ["工单"],
+  "goals": [
+    {"id": "create", "aliases": ["创建", "新建", "打开"], "policy_id": "ticket_open_v1", "role": "owner"},
+    {"id": "read", "aliases": ["查询", "读取", "读回"], "policy_id": "ticket_read_v1", "role": "owner",
+     "variants": [{"after_goal": "close", "policy_id": "ticket_closed_read_v1"}]},
+    {"id": "close", "aliases": ["关闭"], "policy_id": "ticket_close_v1", "role": "owner"},
+    {"id": "ownership", "aliases": ["其他用户不能读取", "其他用户不能读", "权限检查", "归属检查", "权限拒绝"], "policy_id": "ticket_denied_v1", "role": "visitor"},
+    {"id": "list", "aliases": ["列表", "列出"], "policy_id": "ticket_list_v1", "role": "owner"}
+  ]
+}

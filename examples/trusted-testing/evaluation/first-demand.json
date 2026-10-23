@@ -1,0 +1,11 @@
+{
+  "id": "TT_NEW01",
+  "project": "tickets",
+  "user_task": "先创建工单“澄原首验”，随后列出，再权限拒绝、关闭、读回。",
+  "first_attempt_only": true,
+  "development_execution_forbidden": true,
+  "max_model_calls": 4,
+  "max_requests": 8,
+  "max_readonly_investigations": 2,
+  "max_total_tokens": 100000
+}

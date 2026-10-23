@@ -1,0 +1,56 @@
+{
+  "version": "trusted_testing_validation_v1",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_human_reviewed": false,
+  "human_time_saved": null,
+  "requests": 12,
+  "rounds": 3,
+  "scheduled_positions": 36,
+  "composition": {
+    "single": 6,
+    "flow": 3,
+    "project": 3
+  },
+  "eligible_task_ids": [
+    "TT01",
+    "TT02",
+    "TT03",
+    "TT04",
+    "TT05",
+    "TT07",
+    "TT08",
+    "TT09",
+    "TT10",
+    "TT11"
+  ],
+  "eligible_positions": 30,
+  "eligible_project_positions": 6,
+  "quality_targets": {
+    "eligible_complete_rate": 0.8,
+    "eligible_project_complete_rate": 0.6666666666666666,
+    "unauthorized_executions": 0,
+    "wrong_evidence_adopted": 0,
+    "budget_violations": 0
+  },
+  "per_run": {
+    "max_model_calls": 4,
+    "max_readonly_investigations": 2
+  },
+  "per_position": {
+    "max_model_calls": 20,
+    "max_total_tokens": 500000,
+    "max_business_and_investigation_requests": "project target.json; 64 normally, 8 for tickets_limited",
+    "input_token_limit": 20000,
+    "output_token_limit": 4096,
+    "model_timeout_seconds": 60
+  },
+  "schedule": "round-major, TT01 through TT12 in each round, serial",
+  "retries": 0,
+  "additional_attempts": 0,
+  "stop": "Unknown model usage, infrastructure failure or budget violation stops subsequent paid work; preserve remaining positions.",
+  "runtime_inputs": "Original text and registered project configuration only. Labels, reference matrices and fixture fault flags stay in isolated evaluator.",
+  "comparison": "No cross-protocol improvement versus old 15/36 is computed. Public interfaces/configuration were used in development; these are new frozen request texts/combinations, not unseen-API or independent human evidence.",
+  "model": "Use existing configured model; public model metadata and exact source SHA are frozen before each real schedule.",
+  "eligible_definition": "Before execution: TT06 lacks a trusted fee expectation; TT12 has insufficient project budget. All other 10 tasks have known API expectations, authorization and sufficient budget. TT09 stays in this denominator: completion additionally requires actual full execution and an explicit correct model abstention; an engine fallback alone is not completion. All 36 positions remain in the total denominator."
+}

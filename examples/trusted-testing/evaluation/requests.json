@@ -1,0 +1,62 @@
+[
+  {
+    "id": "TT01",
+    "project": "tickets",
+    "user_task": "请验证 POST /v2/tickets 接口。"
+  },
+  {
+    "id": "TT02",
+    "project": "tickets",
+    "user_task": "请测试 GET /v2/tickets 接口。"
+  },
+  {
+    "id": "TT03",
+    "project": "courses",
+    "user_task": "验证 `createCourse` 接口。"
+  },
+  {
+    "id": "TT04",
+    "project": "laboratory",
+    "user_task": "验证 ＭＡＫＥＳＰＥＣＩＭＥＮ 接口。"
+  },
+  {
+    "id": "TT05",
+    "project": "laboratory",
+    "user_task": "请测试 POST /lab/trays 接口。"
+  },
+  {
+    "id": "TT06",
+    "project": "courses",
+    "user_task": "请创建课程，并核对收费是否正确。"
+  },
+  {
+    "id": "TT07",
+    "project": "tickets",
+    "user_task": "请先列出工单，再创建工单“棠溪归档”，然后权限检查、关闭、读回。"
+  },
+  {
+    "id": "TT08",
+    "project": "laboratory",
+    "user_task": "先录入样本“青岚首检”，再登记容器，并装载、查验、其他角色不能查验。"
+  },
+  {
+    "id": "TT09",
+    "project": "laboratory",
+    "user_task": "请装载，然后查验。"
+  },
+  {
+    "id": "TT10",
+    "project": "courses",
+    "user_task": "验证项目全部接口。"
+  },
+  {
+    "id": "TT11",
+    "project": "laboratory",
+    "user_task": "请测试所有已授权接口。"
+  },
+  {
+    "id": "TT12",
+    "project": "tickets_limited",
+    "user_task": "验证这个项目已授权的核心接口。"
+  }
+]
