@@ -39,7 +39,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = [".python311"]
+extend-exclude = [".python311", ".venv-comparison"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

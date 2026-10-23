@@ -17,6 +17,17 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The new 2026-10-23 plan-reuse Goal in docs/plan-reuse-goal.md authorizes five
+incremental stages: bounded mature-tool comparison, validated immutable plan reuse
+and deterministic variants, shared entry integration/attribution, a NEW frozen
+six-task three-round baseline/candidate comparison, and user-review/value delivery.
+Baseline is 86d68225ab39c6f31d950298e51d0c77d1f2cac0. Commits/pushes and configured
+model calls are authorized; no branches/worktrees. Schemathesis is an independent
+optional evaluation environment first. All historical results below remain frozen.
+No multi-agent, RAG, rejected-plan repair, write replay, real Java/PocketBase writes
+or CourseInsight modifications. See the new Goal for exact budgets and gates.
+
+### Previous milestone (frozen results)
 The scoped 2026-10-23 implementation and frozen paid schedules are complete;
 only final delivery checks/documentation and exact-SHA CI remain in scope.
 See docs/trusted-testing-final-results.md: real full tasks12/36, eligible12/30,

@@ -1,0 +1,960 @@
+{
+  "schema_version": "agenttest.mature-tools.development.v1",
+  "classification": "DEVELOPMENT_ONLY/UNREVIEWED",
+  "real_model_calls": 0,
+  "project_identity": "dc6e8b0297350837f6c52f2b9c1c68043da2ded589ec3820f1788551efd160d1",
+  "contract_sha256": "1168587738ed152818e2da30cc0852bb5968e0444333a042ebdaa8f02510d4e6",
+  "common_policy_denominator": 9,
+  "rows": [
+    {
+      "arm": "fixed_pytest",
+      "fault": "none",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "af466eb3e07e40b3a45eee9ec7b0bbd8",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "f0021f17458b4c52b1cc0e2b2406eca4",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "bfc608a2b8a54b79bfcaacbb00206eb5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "b7be33d5cb2248c188026734013b19c5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "a956d03c90b9486483f403b70ce9e961",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "8ad3dab4a5fa47a7ae8daae6411eadfc",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "aea61cfae4934689bcc88b054168c177",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "61c78b3533114f4ba5d2b40b26a61622",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "027ead4f77d349a9920de4a668be2866",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 9,
+      "business_checks_passed": 9,
+      "model_calls": 0,
+      "elapsed_seconds": 1.971292500034906,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    },
+    {
+      "arm": "agenttest_mock",
+      "fault": "none",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "fc639474d6514887803b81df735c72e7",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "0b094c58dc994bc890300186cfaa390c",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "8de734a9da9b4f7ea30085e776de5251",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "9f20ebd08ece46f390603e1b0439a2c3",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "319eaa47807744e39649da369212e5d4",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "below_count",
+          "run_id": "9cc4ab552fe34d3a91cbce1645bf3ab8",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "above_count",
+          "run_id": "13baff9c5eb04379a6143b807bd54812",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "short_message",
+          "run_id": "5d98be738b114fde9a9e1509947fee0a",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "long_message",
+          "run_id": "e46ed88aeda34c09957d138d1fa69203",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        }
+      ],
+      "schema_checks_passed": 9,
+      "business_checks_passed": 9,
+      "model_calls": 9,
+      "elapsed_seconds": 5.679531299974769,
+      "natural_language_denominator": 9,
+      "natural_language_result": "SIMULATED_ONLY"
+    },
+    {
+      "arm": "schemathesis",
+      "fault": "none",
+      "request_budget": 9,
+      "http_requests": 4,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "275062c376394bf6bef95e5ab96a0da0",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "1b5140a25bf444f28f8dd2e8998fbe37",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "4a96542fa61342d59f3ca4b25f252a47",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "6907cc40eafa456a9fb9b163b8ad9529",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "b6186f076a374671a81860adc80492c5",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "2345e9486ad845ad877d4c1a247fa1e9",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "559f634b55944dc68577d3213e1d3edb",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "7327d00a57b4455ab43d57ececfb7155",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "375c7e09bbd44300be6180927fe52f30",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 4,
+      "business_checks_passed": 4,
+      "model_calls": 0,
+      "elapsed_seconds": 1.2476503999205306,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    },
+    {
+      "arm": "fixed_pytest",
+      "fault": "accept_invalid",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "e44c26b688df41969792d3e31fdaeeaa",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "b1363075a75843b2af94e7a47ed170e9",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "7b1a14b1e4594a52a5282ffb6f77346a",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "416a29dd412f41af8784cc75de2b396e",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "070dfbc9920846ee986ebee05bce624a",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "15aa8e837524474ca134ba374dc402d0",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "9e404b02a2244420b84b064b987f4a01",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "e9d13c6313ae41afb197f6efd8d0513e",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "729bccbc6675472eac5cdb03768c5cb2",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 1,
+      "business_checks_passed": 1,
+      "model_calls": 0,
+      "elapsed_seconds": 2.141718400060199,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    },
+    {
+      "arm": "agenttest_mock",
+      "fault": "accept_invalid",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "3ebe442873874fba8ed8a83d4b3157d0",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "9dc2e2fc27dd46cf9705969d420e35ca",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "4124338097e04e49abf4ac038f77550f",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "7f1ced0694f4481da263bf5daaefdad5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "3e1c73c5c9fc486aa147ee52f6f99e7e",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "below_count",
+          "run_id": "e13e10b2207f46cdae2bb484e090fc67",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "above_count",
+          "run_id": "622ff33c6a2942a3a139e84bcdeb9734",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "short_message",
+          "run_id": "755c9b6de0b1476c8200a2e7d9298bbc",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "long_message",
+          "run_id": "526eb627754349f39902a4c0aa873cc5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        }
+      ],
+      "schema_checks_passed": 1,
+      "business_checks_passed": 1,
+      "model_calls": 9,
+      "elapsed_seconds": 4.622880399925634,
+      "natural_language_denominator": 9,
+      "natural_language_result": "SIMULATED_ONLY"
+    },
+    {
+      "arm": "schemathesis",
+      "fault": "accept_invalid",
+      "request_budget": 9,
+      "http_requests": 4,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "59348de7c053480ea3b5fb5f5b52e0c3",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "0972dab9059f4f488be201de9efa8d43",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "d74b9d46032046de894ca60135356522",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "835644306ff64ff7bfcc1e3986540ba2",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "a8445faefe7e4b778efb63ce0fe60797",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "80a06cc8cb47450695c8bf61777939a5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "57669d828f7742e4a354fac9f6d2b9d6",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "908ec1342efa4f9382538a99cb15c5e5",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "8a60969dba13462c91bbbd4cf355345a",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 1,
+      "business_checks_passed": 1,
+      "model_calls": 0,
+      "elapsed_seconds": 1.1910126999719068,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    },
+    {
+      "arm": "fixed_pytest",
+      "fault": "wrong_error",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "847dd0974d8745aaa0e519788fdeb2c0",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "dd8b5e0cafcc4b0bbb7ffc2f0ea90806",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "e86ad92a7dcf49bdbf0ca48723db81a9",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "d8a29421d08c475db08a64372d92e1ed",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "a3858c4f8c6c4ae7b15ae90e822981f2",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "29a6465121e74b76872daa7f82e7d90b",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "f5918771774e4eacbb7eebb71e8767b7",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "c55586a5e35d4905b0d3df8b24d197f4",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "fd4fc47a894d4dd4a303d106e406a3f1",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 9,
+      "business_checks_passed": 1,
+      "model_calls": 0,
+      "elapsed_seconds": 2.0778810000047088,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    },
+    {
+      "arm": "agenttest_mock",
+      "fault": "wrong_error",
+      "request_budget": 9,
+      "http_requests": 9,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "cef3d9c8355f443ab56ea47c8bf358fb",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 1
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "dd4f23a5ef3d4d788a3e10be7bb34458",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "10495b83fe2f4dd4af3e352f6e30f40b",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "ab737c98867244a38a4bd775b1b8afd2",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "e3218fad7df14b798b9c633c03b4ec33",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "below_count",
+          "run_id": "d458748cca63490bb0d2ed85f65d4f7a",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "above_count",
+          "run_id": "41c1d209e378478faffd53cc9053db83",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "short_message",
+          "run_id": "55df78da6131443ca60ee39025f636cd",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        },
+        {
+          "policy": "long_message",
+          "run_id": "0b16d2461d264477af2475669ef09fda",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 1
+        }
+      ],
+      "schema_checks_passed": 9,
+      "business_checks_passed": 1,
+      "model_calls": 9,
+      "elapsed_seconds": 4.509452300029807,
+      "natural_language_denominator": 9,
+      "natural_language_result": "SIMULATED_ONLY"
+    },
+    {
+      "arm": "schemathesis",
+      "fault": "wrong_error",
+      "request_budget": 9,
+      "http_requests": 4,
+      "cases": [
+        {
+          "policy": "validation_normal",
+          "run_id": "9aef2bdff35f49db822feb6edf8d656a",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": true,
+          "outcome": "PASS",
+          "model_calls": 0
+        },
+        {
+          "policy": "missing_message",
+          "run_id": "054227f9848d4933894b2ae1a4b8751c",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_message_type",
+          "run_id": "9dfd921c727d4ae7a71eb7c64d4642b4",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "wrong_category_type",
+          "run_id": "8722f83cae1a447babab3ff4024e20d4",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "outside_category",
+          "run_id": "9251db7cc20e426a95cc9d7fb71cb4e5",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "below_count",
+          "run_id": "c6d1ab305e37465a87852a8b4fcc7b8d",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "above_count",
+          "run_id": "bdfdfacbe8524b18b97bdb20a65adfd7",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        },
+        {
+          "policy": "short_message",
+          "run_id": "b2aa5355678b44b48e72278c5eccf704",
+          "executed": true,
+          "diagnostic": "",
+          "schema_check_passed": true,
+          "business_check_passed": false,
+          "outcome": "ASSERTION_FAILED",
+          "model_calls": 0
+        },
+        {
+          "policy": "long_message",
+          "run_id": "9dd1d7de5efe4c5ab90a1e18889edc6d",
+          "executed": false,
+          "diagnostic": "OPENAPI_VALUE_TYPE",
+          "schema_check_passed": false,
+          "business_check_passed": false,
+          "outcome": "TOOL_ERROR",
+          "model_calls": 0
+        }
+      ],
+      "schema_checks_passed": 4,
+      "business_checks_passed": 1,
+      "model_calls": 0,
+      "elapsed_seconds": 1.3069617000874132,
+      "natural_language_denominator": null,
+      "natural_language_result": "OUTSIDE_DECLARED_CAPABILITY"
+    }
+  ],
+  "schemathesis_version": "4.32.4",
+  "raw_negative_execution_count": 0,
+  "negative_generation_scope": "Exploratory only; broad fuzz data is not fixed-policy approval",
+  "mutation_contribution": "AgentTest approved deterministic rules in ALL arms",
+  "reset": "fresh stateless ASGI app per arm/fault; no real DB/network",
+  "preparation": {
+    "fixed_pytest": "9 explicit cases, values and assertions; one fixture",
+    "schemathesis": "public schema + generation settings + approved-policy adapter; no steps for this stateless endpoint",
+    "agenttest": "approved project files + original text; fixture model is simulated"
+  },
+  "human_time_seconds": null,
+  "independent_human_review": false,
+  "archive_summary_sha256": "241f1a2aa374d8dbebc2281304b47bbcf1c1f1b72fff42cb684ea0a29f64270f",
+  "raw_generation_sha256": "55b33e848eb2cccfa3625dad0cc08020ad7b787b5f6e9442ee1a9718f5d03792"
+}

@@ -1,4 +1,6 @@
 .venv/
+.venv-comparison/
+.hypothesis/
 .python311/
 .env
 .env.*
