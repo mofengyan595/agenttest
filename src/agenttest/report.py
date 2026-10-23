@@ -184,6 +184,7 @@ class RunReport(BaseModel):
     selected_policy_ids: list[str] = Field(default_factory=list)
     model_call: ModelCallStats | None = None
     plan_structure: list[PlanStepEvidence] = Field(default_factory=list)
+    plan_derivation: dict | None = None
     validation_issue: str | None = None
     diagnostic: Diagnostic | None = None
     intent_verified: bool = False
@@ -199,7 +200,7 @@ class RunReport(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_execution_identity(self, handler):
         data = handler(self)
-        for name in ("target_config_sha256", "policy_registry_sha256"):
+        for name in ("target_config_sha256", "policy_registry_sha256", "plan_derivation"):
             if getattr(self, name) is None:
                 data.pop(name, None)
         if self.feedback is None:

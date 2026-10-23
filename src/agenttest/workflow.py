@@ -78,6 +78,9 @@ class Workflow:
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
         intent_validator: Callable[[str, Scenario], None] | None = None,
         execution_guard: Callable[[], None] | None = None,
+        prepared_plan: Scenario | None = None,
+        plan_derivation: dict | None = None,
+        on_validated_plan: Callable[[Scenario], None] | None = None,
     ) -> None:
         if task_mode not in {"natural_language", "operator_plan"}:
             raise ValueError("TASK_MODE_INVALID")
@@ -101,6 +104,9 @@ class Workflow:
         self._analyzer = analyzer
         self._intent_validator = intent_validator
         self._execution_guard = execution_guard
+        self._prepared_plan = prepared_plan.model_copy(deep=True) if prepared_plan else None
+        self._plan_derivation = plan_derivation
+        self._on_validated_plan = on_validated_plan
 
     async def run(self) -> RunReport:
         report = RunReport(
@@ -179,6 +185,12 @@ class Workflow:
         async def plan(state: GraphState) -> dict:
             nonlocal raw_plan
             enter("plan")
+            if self._prepared_plan is not None:
+                # Revalidate via the same following node; no model invocation or paid slot.
+                raw_plan = self._prepared_plan.model_dump_json()
+                report.user_task_sha256 = fingerprint(self._user_task)
+                report.plan_derivation = self._plan_derivation
+                return {"ready": True}
             if report.planner_calls >= self._budget.max_model_calls:
                 return reject(Outcome.TEST_INFRA_ERROR, "MODEL_CALL_LIMIT")
             report.planner_calls += 1
@@ -240,6 +252,8 @@ class Workflow:
                             and self._intent_validator is not None):
                         self._intent_validator(self._user_task, scenario.model_copy(deep=True))
                     report.intent_verified = True
+                if self._on_validated_plan is not None:
+                    self._on_validated_plan(scenario.model_copy(deep=True))
                 return {"ready": True}
             except NeedsReview as exc:
                 report.diagnostic = exc.diagnostic

@@ -14,6 +14,7 @@ from agenttest.goal_derivation import (
     public_goal_plan,
 )
 from agenttest.llm_planner import PlannerFailure
+from agenttest.plan_reuse import LegalStructure, structure_id
 from agenttest.policies import NeedsReview
 from agenttest.project_goals import check_goal_credentials
 from agenttest.report import ModelCallStats, Outcome, fingerprint
@@ -27,11 +28,22 @@ class SuiteCase:
     operation_id: str | None
     kinds: list[str]
     reason: str | None = None
+    base: DerivedGoal | None = None
+
+    @property
+    def structure_id(self):
+        return structure_id(self.base) if self.base and self.base.task else None
+
+    @property
+    def is_derived(self):
+        return (self.base is not None and self.goal is not None and self.goal.task is not None
+                and structure_id(self.goal) != self.structure_id)
 
     def preview(self):
         return dict(case_id=self.id, operation_id=self.operation_id, kinds=self.kinds,
             status="READY" if self.goal and self.goal.task and not self.reason else "NEEDS_REVIEW",
-            reason=self.reason,
+            reason=self.reason, base_structure_id=self.structure_id,
+            plan_source="DETERMINISTIC_RULE" if self.is_derived else "PLANNER_BASE",
             question=self.goal.question if self.goal else None,
             requested_goals=self.goal.requested_goals if self.goal else [],
             required_plan=public_goal_plan(self.goal) if self.goal else [],
@@ -50,17 +62,18 @@ class GoalSuite:
     budgets: dict
 
     def allocated_cases(self, max_requests=None, max_model_calls=None):
-        used, calls, allowed = 0, 0, set()
+        used, structures, allowed = 0, set(), set()
         for case in self.cases:
             if case.goal and case.goal.task and not case.reason:
                 required = len(case.goal.task.requirements.steps)
                 if used + required <= (self.budgets["max_requests"]
-                        if max_requests is None else max_requests) and calls < (
+                        if max_requests is None else max_requests) and (
+                        case.structure_id in structures or len(structures) < (
                         self.budgets["max_model_calls"]
-                        if max_model_calls is None else max_model_calls):
+                        if max_model_calls is None else max_model_calls)):
                     allowed.add(case.id)
                     used += required
-                    calls += 1
+                    structures.add(case.structure_id)
         return allowed
 
     def preview(self):
@@ -73,21 +86,33 @@ class GoalSuite:
         required = sum(len(c.goal.task.requirements.steps) for c in ready)
         assigned = sum(len(c.goal.task.requirements.steps) for c in ready if c.id in allowed)
         reservation = self.budgets["plan_token_reservation"]
+        structures = {c.structure_id for c in ready}
+        assigned_structures = {c.structure_id for c in ready if c.id in allowed}
         allocation = dict(required_business_requests=required,
-            required_planning_calls=len(ready),
-            planning_token_upper_bound=reservation * len(ready),
+            required_planning_calls=len(structures),
+            derived_cases=sum(c.is_derived for c in ready),
+            normal_cases=sum(not c.is_derived for c in ready),
+            approved_negative_cases=sum(any(k.startswith("approved_negative:") for k in c.kinds)
+                                        for c in ready),
+            boundary_or_enum_cases=sum(c.is_derived and not any(
+                k.startswith("approved_negative:") for k in c.kinds) for c in ready),
+            planning_token_upper_bound=reservation * len(structures),
             optional_readonly_requests=max(0, self.budgets["max_requests"] - assigned),
-            optional_model_calls=max(0, self.budgets["max_model_calls"] - len(allowed)),
+            optional_model_calls=max(0, self.budgets["max_model_calls"]
+                                     - len(assigned_structures)),
             executable_groups=sorted(allowed),
             excluded_groups=[dict(case_id=c["case_id"], reason=c["reason"])
                              for c in cases if c["status"] != "READY"],
             complete_project_within_budget=(len(allowed) == len(self.cases)
-                and reservation * len(ready) <= self.budgets["max_total_tokens"]),
+                and reservation * len(structures) <= self.budgets["max_total_tokens"]),
             token_rule="Upper bound uses configured input plus output reservation per plan; "
                 "actual known usage can be lower. All calls share one ledger.")
         return dict(schema_version="agenttest.goal-suite.v1",
             project_identity=self.project_identity,
             user_task_sha256=self.user_task_sha256, scope=self.scope,
+            input_record=dict(request_sha256=self.user_task_sha256,
+                approved_project_sha256=self.project_identity,
+                raw_request_storage="CALLER_OWNED_INPUT"),
             cases=cases, budget=self.budgets, budget_preview=allocation,
             side_effects="AUTHORIZED_ISOLATED_WRITES_POSSIBLE",
             candidate_generation=self.discovery, http_requests=0, model_calls=0,
@@ -101,13 +126,13 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
     cases, signatures = [], {}
     policies = {p.id: p for p in project.registry.definitions()}
 
-    def add(goal, op, kind, reason=None):
+    def add(goal, op, kind, reason=None, *, basis=None):
         signature = (fingerprint(goal.task.requirements.model_dump(mode="json"))
                      if goal and goal.task else fingerprint([op, kind, reason]))
         if signature in signatures:
             signatures[signature].kinds.append(kind)
             return
-        case = SuiteCase("case_" + signature[:24], goal, op, [kind], reason)
+        case = SuiteCase("case_" + signature[:24], goal, op, [kind], reason, basis or goal)
         signatures[signature] = case
         cases.append(case)
 
@@ -229,7 +254,7 @@ def _single_candidates(project, base, operation_id, add):
                 if (default["policy_id"], default["location"], default["name"]) == (
                         step.policy_id, spec.location, spec.name):
                     default["value"] = value
-            add(goal, operation_id, name)
+            add(goal, operation_id, name, basis=base)
 
 
 def _approved_negatives(project, base, operation_id, add):
@@ -257,7 +282,12 @@ def _approved_negatives(project, base, operation_id, add):
         for default in goal.input_defaults:
             if default["policy_id"] == approval.base_policy_id:
                 default["policy_id"] = policy.id
-        add(goal, operation_id, "approved_negative:" + policy.id)
+        # Explicit user literals restrict input intent even when mutation is approved globally.
+        if any(q in base.task.user_task for q in ('"', '“', '”')):
+            add(None, operation_id, "approved_negative:" + policy.id,
+                "EXPLICIT_INPUT_VALUE_FIXED")
+            continue
+        add(goal, operation_id, "approved_negative:" + policy.id, basis=base)
         approved_mutations.append(approval)
     return approved_mutations
 
@@ -343,7 +373,7 @@ class BudgetPlanner:
 
 async def run_suite(project, user_task, planner, store, *, environ, transport=None,
                     budget=None, execution_guard=None, analyzer=None, ledger=None, on_report=None,
-                    semantic_model=None):
+                    semantic_model=None, on_validated_plan=None):
     from agenttest.goal_runtime import run_goal
     from agenttest.goal_spec import SEMANTIC_REASONS
 
@@ -370,6 +400,7 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
     bounded_transport = BudgetTransport(inner, ledger)
     bounded_planner = BudgetPlanner(planner, ledger)
     rows = []
+    structures, base_failures = {}, {}
     allocated = suite.allocated_cases(max(0, ledger.max_requests - ledger.requests),
                                       max(0, ledger.max_model_calls - ledger.model_calls))
     try:
@@ -393,10 +424,18 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                 row.update(status="NEEDS_REVIEW", reason="PROJECT_CREDENTIAL_PREFLIGHT_FAILED")
                 rows.append(row)
                 continue
+            cached = structures.get(case.structure_id)
+            if case.is_derived and cached is None and case.structure_id in base_failures:
+                row.update(status="NOT_EXECUTED", reason="LEGAL_BASE_PLAN_REJECTED",
+                    base_failure=base_failures[case.structure_id])
+                rows.append(row)
+                continue
+            planning_calls = 0 if case.is_derived else 1
             if (case.id not in allocated
                     or ledger.requests + len(goal.task.requirements.steps) > ledger.max_requests
-                    or ledger.model_calls >= ledger.max_model_calls or ledger.usage_unknown
-                    or ledger.known_tokens + bounded_planner.token_reservation
+                    or ledger.model_calls + planning_calls > ledger.max_model_calls
+                    or ledger.usage_unknown
+                    or ledger.known_tokens + planning_calls * bounded_planner.token_reservation
                     > ledger.max_total_tokens):
                 row.update(status="NOT_EXECUTED", reason="SUITE_BUDGET_OR_USAGE_STOP")
                 rows.append(row)
@@ -406,14 +445,38 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
             required = len(goal.task.requirements.steps)
             reserved_requests = required + sum(len(c.goal.task.requirements.steps) for c in future)
             optional_requests = max(0, ledger.max_requests - ledger.requests - reserved_requests)
-            optional_calls = max(0, ledger.max_model_calls - ledger.model_calls - 1 - len(future))
+            future_structures = {c.structure_id for c in future if not c.is_derived}
+            optional_calls = max(0, ledger.max_model_calls - ledger.model_calls
+                                 - planning_calls - len(future_structures))
+            prepared, lineage, captured = None, None, []
+            if case.is_derived:
+                try:
+                    if cached is None:
+                        raise NeedsReview("LEGAL_BASE_PLAN_UNAVAILABLE")
+                    prepared, lineage = cached.derive(project, case.base, goal, environ)
+                except (NeedsReview, ValueError) as exc:
+                    row.update(status="NOT_EXECUTED", reason=getattr(
+                        getattr(exc, "diagnostic", None), "code", "PLAN_DERIVATION_REJECTED"))
+                    rows.append(row)
+                    continue
             _, report = await run_goal(project, user_task, bounded_planner, store,
                 environ=environ, transport=bounded_transport, budget=budget,
                 execution_guard=execution_guard, derived=goal,
-                analyzer=BudgetPlanner(analyzer, ledger, reserve_calls=len(future),
-                    reserve_tokens=len(future) * bounded_planner.token_reservation)
+                analyzer=BudgetPlanner(analyzer, ledger, reserve_calls=len(future_structures),
+                    reserve_tokens=len(future_structures) * bounded_planner.token_reservation)
                     if analyzer else None,
-                readonly_allowance=optional_requests, feedback_model_allowance=optional_calls)
+                readonly_allowance=optional_requests, feedback_model_allowance=optional_calls,
+                prepared_plan=prepared, plan_derivation=lineage,
+                on_validated_plan=lambda plan: captured.append(plan))
+            if not case.is_derived:
+                if captured:
+                    structures[case.structure_id] = LegalStructure.capture(project, goal,
+                        captured[0], report, environ)
+                else:
+                    base_failures[case.structure_id] = dict(run_id=report.run_id,
+                        diagnostic=report.diagnostic.code if report.diagnostic else report.reason)
+            if captured and on_validated_plan is not None:
+                on_validated_plan(goal, captured[0].model_copy(deep=True))
             row.update(status="FINISHED", outcome=report.outcome.value, run_id=report.run_id,
                 intent_verified=report.intent_verified, task_satisfied=report.task_satisfied,
                 plan_authorized_complete=bool(report.dsl_valid and report.policy_authorized
@@ -434,7 +497,19 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                                               for s in report.steps),
                 assertion_count=sum(len(s.checks) for s in report.steps),
                 assertions_passed=sum(c.passed for s in report.steps for c in s.checks),
-                reason=report.reason)
+                reason=report.reason, plan_derivation=lineage,
+                base_plan_sha256=(cached.scenario_sha256 if cached else
+                                  report.scenario_sha256 if captured else None),
+                model_calls=report.model_call.calls if report.model_call else 0,
+                diagnostic_code=report.diagnostic.code if report.diagnostic else report.reason,
+                execution_complete=(len(report.steps) == len(report.plan_structure)
+                    and bool(report.steps) and all(s.attempts for s in report.steps)),
+                model_conclusion=(dict(state=report.feedback.state, finding=report.feedback.finding)
+                                  if report.feedback else None),
+                rule_conclusion=(report.trusted_symptom.model_dump(mode="json")
+                                 if report.trusted_symptom else None),
+                structural_validation_passed=bool(report.dsl_valid and report.policy_authorized
+                                                  and report.intent_verified))
             if on_report is not None:
                 on_report(goal, report)
             rows.append(row)
@@ -466,6 +541,17 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
         not_executed=len(rows) - len(executed),
         assertions_evaluated=sum(r["assertion_count"] for r in finished),
         assertions_passed=sum(r["assertions_passed"] for r in finished),
+        base_structure_denominator=len({c.structure_id for c in suite.cases
+                                        if c.goal and c.goal.task and not c.reason}),
+        legal_base_structures=len(structures),
+        rejected_base_structures=len(base_failures),
+        derived_denominator=sum(c.is_derived for c in suite.cases),
+        derived_validated=sum(bool(r.get("plan_derivation")) for r in finished),
+        derived_executed=sum(bool(r.get("plan_derivation")) and bool(r["http_requests"])
+                             for r in finished),
+        unknown_expectations=sum(r["status"] == "NEEDS_REVIEW" for r in rows),
+        budget_excluded_cases=sum(r.get("reason") == "SUITE_BUDGET_OR_USAGE_STOP" for r in rows),
+        base_rejected_variants=sum(r.get("reason") == "LEGAL_BASE_PLAN_REJECTED" for r in rows),
         by_operation=details),
         complete=len(passed) == len(rows), http_requests=ledger.requests,
         model_calls=ledger.model_calls)

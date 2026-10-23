@@ -72,7 +72,8 @@ class GoalPlanner:
 
 async def run_goal(project, user_task, planner, store, *, environ, transport=None,
                    budget=None, execution_guard=None, derived=None, analyzer=None,
-                   readonly_allowance=None, feedback_model_allowance=None):
+                   readonly_allowance=None, feedback_model_allowance=None,
+                   prepared_plan=None, plan_derivation=None, on_validated_plan=None):
     """Preflight before spending model/HTTP budget; immutable derived gate during execution."""
     from agenttest.workflow import Workflow
 
@@ -103,7 +104,8 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
             analyzer=BudgetPlanner(analyzer, local, guard),
             investigation=InvestigationConfig(enabled=True, trusted_symptoms=True,
                 feedback=FeedbackBudget(
-                    max_model_calls=min(max(0, project.registration.budget.max_model_calls - 1),
+                    max_model_calls=min(max(0, project.registration.budget.max_model_calls
+                        - (0 if prepared_plan is not None else 1)), 3,
                         feedback_model_allowance if feedback_model_allowance is not None else 3),
                     max_requests=min(project.registration.budget.max_readonly_investigations,
                         readonly_allowance if readonly_allowance is not None else 2))))
@@ -112,7 +114,8 @@ async def run_goal(project, user_task, planner, store, *, environ, transport=Non
             GoalPlanner(BudgetPlanner(planner, local), project, goal, guard), store,
             transport=BudgetTransport(inner, local, guard), environ=environ,
             user_task=user_task, intent_validator=validator, budget=budget,
-            execution_guard=guard, **options).run()
+            execution_guard=guard, prepared_plan=prepared_plan, plan_derivation=plan_derivation,
+            on_validated_plan=on_validated_plan, **options).run()
     finally:
         if transport is None:
             await inner.aclose()
