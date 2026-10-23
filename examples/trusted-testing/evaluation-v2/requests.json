@@ -1,0 +1,62 @@
+[
+  {
+    "id": "V201",
+    "project": "tickets",
+    "user_task": "帮我测 openTicket 接口。"
+  },
+  {
+    "id": "V202",
+    "project": "tickets",
+    "user_task": "请验证工单列表接口。"
+  },
+  {
+    "id": "V203",
+    "project": "courses",
+    "user_task": "帮我测试课程创建接口。"
+  },
+  {
+    "id": "V204",
+    "project": "laboratory",
+    "user_task": "请帮我测 makeSpecimen 接口。"
+  },
+  {
+    "id": "V205",
+    "project": "laboratory",
+    "user_task": "帮我验证 makeTray 接口。"
+  },
+  {
+    "id": "V206",
+    "project": "courses",
+    "user_task": "请新建课程，并检查折扣是否合理。"
+  },
+  {
+    "id": "V207",
+    "project": "tickets",
+    "user_task": "先列出，再创建工单“霁安交付”，随后关闭、读回、权限检查。"
+  },
+  {
+    "id": "V208",
+    "project": "laboratory",
+    "user_task": "先登记容器，再录入样本“白露留样”，然后装载、查验、跨角色拒绝。"
+  },
+  {
+    "id": "V209",
+    "project": "laboratory",
+    "user_task": "先录入样本“林汀复核”，再查验。"
+  },
+  {
+    "id": "V210",
+    "project": "tickets",
+    "user_task": "请测工单项目核心接口。"
+  },
+  {
+    "id": "V211",
+    "project": "laboratory",
+    "user_task": "帮我测所有已授权接口。"
+  },
+  {
+    "id": "V212",
+    "project": "courses_limited",
+    "user_task": "帮我验证课程项目全部接口。"
+  }
+]

@@ -1,0 +1,244 @@
+{
+  "core_sha": "4707c07baa0bc7aaf6443a35613f843292914ded",
+  "core_tree": "59d40c0715002b30d6b03b2014ee7fef051dfa4a",
+  "core_unchanged": true,
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_human_reviewed": false,
+  "real_model_calls": 0,
+  "external_business_requests": 0,
+  "model_contribution": "CatalogFixturePlanner is deterministic, not real-model evidence",
+  "configuration_files": 6,
+  "goals": 5,
+  "approved_negative_rules": 15,
+  "human_time_saved": null,
+  "results": [
+    {
+      "scope": "single",
+      "complete": true,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 11,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 11,
+        "executed_scenarios": 11,
+        "assertion_passed_scenarios": 11,
+        "not_executed": 0,
+        "assertions_evaluated": 28,
+        "assertions_passed": 28,
+        "by_operation": [
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 11,
+            "planned_scenarios": 11,
+            "executed_steps": 11,
+            "assertion_passed_steps": 11
+          }
+        ]
+      },
+      "usage": {
+        "requests": 11,
+        "model_calls": 11,
+        "known_tokens": 1650,
+        "total_tokens": 1650,
+        "usage_known": true
+      },
+      "budget_preview": {
+        "required_business_requests": 11,
+        "required_planning_calls": 11,
+        "planning_token_upper_bound": 265056,
+        "optional_readonly_requests": 53,
+        "optional_model_calls": 9,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_281fcc02534897789222f9d5",
+          "case_529218d1df99f1b64af3fcad",
+          "case_786afab2e81baa2d1ed160e6",
+          "case_795334a091553d86b74294c6",
+          "case_81b1fa60f49bb4c632e4433f",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      }
+    },
+    {
+      "scope": "flow",
+      "complete": true,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 18,
+        "assertions_passed": 18,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "usage": {
+        "requests": 5,
+        "model_calls": 1,
+        "known_tokens": 150,
+        "total_tokens": 150,
+        "usage_known": true
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_6b02edc83c3e36b76dbdeaa2"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      }
+    },
+    {
+      "scope": "project",
+      "complete": true,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 20,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 20,
+        "executed_scenarios": 20,
+        "assertion_passed_scenarios": 20,
+        "not_executed": 0,
+        "assertions_evaluated": 107,
+        "assertions_passed": 107,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 16,
+            "planned_scenarios": 16,
+            "executed_steps": 16,
+            "assertion_passed_steps": 16
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 11,
+            "planned_scenarios": 11,
+            "executed_steps": 11,
+            "assertion_passed_steps": 11
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 7,
+            "planned_scenarios": 7,
+            "executed_steps": 7,
+            "assertion_passed_steps": 7
+          }
+        ]
+      },
+      "usage": {
+        "requests": 36,
+        "model_calls": 20,
+        "known_tokens": 3000,
+        "total_tokens": 3000,
+        "usage_known": true
+      },
+      "budget_preview": {
+        "required_business_requests": 36,
+        "required_planning_calls": 20,
+        "planning_token_upper_bound": 481920,
+        "optional_readonly_requests": 28,
+        "optional_model_calls": 0,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_04b133207d07ac54767a8915",
+          "case_12eea717a0487e40b41f8033",
+          "case_159f2d489e305da1048b6277",
+          "case_1e0492c093f557ec68bb92d4",
+          "case_281fcc02534897789222f9d5",
+          "case_320caea797f628f888df9bdd",
+          "case_529218d1df99f1b64af3fcad",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_734fe810e01a33d1bf616f23",
+          "case_795334a091553d86b74294c6",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_adf51446231e6fc2e81d1605",
+          "case_b4e8322ae19ed9881fc99e74",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82",
+          "case_eaa699f8b8e2b02868e825ff",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      }
+    }
+  ]
+}

@@ -1,0 +1,1249 @@
+[
+  {
+    "id": "V201",
+    "scope": "single",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "ticket_open_v1",
+        "count": 3,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__enum_boundary__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__enum_boundary__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__required_missing__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__required_missing__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__required_missing__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__required_missing__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__string_max_length__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__string_max_length__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__string_min_length__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__string_min_length__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__type_mismatch__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__type_mismatch__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__type_mismatch__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__type_mismatch__subject"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "create"
+    ],
+    "operation_denominator": 1,
+    "scenario_denominator": 10,
+    "schema_variants": [
+      {
+        "policy": "ticket_open_v1",
+        "field": "body.subject",
+        "lengths": [
+          1,
+          80
+        ]
+      },
+      {
+        "policy": "ticket_open_v1",
+        "field": "body.priority",
+        "values": [
+          "low",
+          "high"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "V202",
+    "scope": "single",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "ticket_list_v1",
+        "count": 1,
+        "steps": [
+          [
+            "listTickets",
+            "owner",
+            "ticket_list_v1"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "list"
+    ],
+    "operation_denominator": 1,
+    "scenario_denominator": 1
+  },
+  {
+    "id": "V203",
+    "scope": "single",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "nl_create_v1",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1"
+          ]
+        ]
+      },
+      {
+        "root": "nl_create_v1__required_missing__name",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1__required_missing__name"
+          ]
+        ]
+      },
+      {
+        "root": "nl_create_v1__type_mismatch__name",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1__type_mismatch__name"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "create"
+    ],
+    "operation_denominator": 2,
+    "scenario_denominator": 3
+  },
+  {
+    "id": "V204",
+    "scope": "single",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "lab_specimen_v1",
+        "count": 3,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_high",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_high"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_low",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_low"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_type"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_long",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_long"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_short",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_short"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_type"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_missing_aliquots",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_missing_aliquots"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_missing_label",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_missing_label"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "specimen"
+    ],
+    "operation_denominator": 1,
+    "scenario_denominator": 11,
+    "schema_variants": [
+      {
+        "policy": "lab_specimen_v1",
+        "field": "body.label",
+        "lengths": [
+          3,
+          8
+        ]
+      },
+      {
+        "policy": "lab_specimen_v1",
+        "field": "body.aliquots",
+        "values": [
+          1,
+          4
+        ]
+      }
+    ]
+  },
+  {
+    "id": "V205",
+    "scope": "single",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "lab_tray_v1",
+        "count": 2,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ]
+        ]
+      },
+      {
+        "root": "tray_missing_zone",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_missing_zone"
+          ]
+        ]
+      },
+      {
+        "root": "tray_zone_enum",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_zone_enum"
+          ]
+        ]
+      },
+      {
+        "root": "tray_zone_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_zone_type"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "tray"
+    ],
+    "operation_denominator": 1,
+    "scenario_denominator": 5,
+    "schema_variants": [
+      {
+        "policy": "lab_tray_v1",
+        "field": "body.zone",
+        "values": [
+          "cold",
+          "ambient"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "V206",
+    "scope": "single",
+    "behavior": "clarify",
+    "eligible": false,
+    "fault": "none",
+    "expected_groups": [],
+    "expected_goals": [],
+    "operation_denominator": 0,
+    "scenario_denominator": 1,
+    "unknown_requirement_span": {
+      "start": 9,
+      "end": 11
+    }
+  },
+  {
+    "id": "V207",
+    "scope": "flow",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "ticket_denied_v1",
+        "count": 1,
+        "steps": [
+          [
+            "listTickets",
+            "owner",
+            "ticket_list_v1"
+          ],
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1"
+          ],
+          [
+            "getTicket",
+            "owner",
+            "ticket_closed_read_v1"
+          ],
+          [
+            "getTicket",
+            "visitor",
+            "ticket_denied_v1"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "list",
+      "create",
+      "close",
+      "read",
+      "ownership"
+    ],
+    "operation_denominator": 4,
+    "scenario_denominator": 1,
+    "ordered": true
+  },
+  {
+    "id": "V208",
+    "scope": "flow",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "owner_leak",
+    "expected_groups": [
+      {
+        "root": "lab_denied_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "lab_place_v1"
+          ],
+          [
+            "getPlacement",
+            "tech",
+            "lab_lookup_v1"
+          ],
+          [
+            "getPlacement",
+            "auditor",
+            "lab_denied_v1"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "tray",
+      "specimen",
+      "place",
+      "lookup",
+      "ownership"
+    ],
+    "operation_denominator": 4,
+    "scenario_denominator": 1,
+    "ordered": true,
+    "designated_failure": [
+      "getPlacement",
+      "http_status",
+      null
+    ]
+  },
+  {
+    "id": "V209",
+    "scope": "flow",
+    "behavior": "evidence_insufficient",
+    "eligible": true,
+    "fault": "evidence_gap",
+    "expected_groups": [
+      {
+        "root": "lab_lookup_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "lab_place_v1"
+          ],
+          [
+            "getPlacement",
+            "tech",
+            "lab_lookup_v1"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "specimen",
+      "lookup"
+    ],
+    "operation_denominator": 4,
+    "scenario_denominator": 1,
+    "ordered": false
+  },
+  {
+    "id": "V210",
+    "scope": "project",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "ticket_close_v1",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_closed_read_v1",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1"
+          ],
+          [
+            "readTicket",
+            "owner",
+            "ticket_closed_read_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_denied_v1",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "readTicket",
+            "visitor",
+            "ticket_denied_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_list_v1",
+        "count": 1,
+        "steps": [
+          [
+            "listTickets",
+            "owner",
+            "ticket_list_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_read_v1",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "readTicket",
+            "owner",
+            "ticket_read_v1"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_close_v1__required_missing__state",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1__required_missing__state"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_close_v1__string_max_length__state",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1__string_max_length__state"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_close_v1__string_min_length__state",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1__string_min_length__state"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_close_v1__type_mismatch__state",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1"
+          ],
+          [
+            "closeTicket",
+            "owner",
+            "ticket_close_v1__type_mismatch__state"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__enum_boundary__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__enum_boundary__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__required_missing__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__required_missing__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__required_missing__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__required_missing__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__string_max_length__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__string_max_length__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__string_min_length__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__string_min_length__subject"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__type_mismatch__priority",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__type_mismatch__priority"
+          ]
+        ]
+      },
+      {
+        "root": "ticket_open_v1__type_mismatch__subject",
+        "count": 1,
+        "steps": [
+          [
+            "openTicket",
+            "owner",
+            "ticket_open_v1__type_mismatch__subject"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "create",
+      "read",
+      "close",
+      "ownership",
+      "list"
+    ],
+    "operation_denominator": 4,
+    "scenario_denominator": 17
+  },
+  {
+    "id": "V211",
+    "scope": "project",
+    "behavior": "execute",
+    "eligible": true,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "lab_denied_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "lab_place_v1"
+          ],
+          [
+            "getPlacement",
+            "auditor",
+            "lab_denied_v1"
+          ]
+        ]
+      },
+      {
+        "root": "lab_lookup_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "lab_place_v1"
+          ],
+          [
+            "getPlacement",
+            "tech",
+            "lab_lookup_v1"
+          ]
+        ]
+      },
+      {
+        "root": "lab_place_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "lab_place_v1"
+          ]
+        ]
+      },
+      {
+        "root": "lab_specimen_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ]
+        ]
+      },
+      {
+        "root": "lab_tray_v1",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ]
+        ]
+      },
+      {
+        "root": "place_missing_position",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "place_missing_position"
+          ]
+        ]
+      },
+      {
+        "root": "place_position_high",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "place_position_high"
+          ]
+        ]
+      },
+      {
+        "root": "place_position_low",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "place_position_low"
+          ]
+        ]
+      },
+      {
+        "root": "place_position_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "lab_tray_v1"
+          ],
+          [
+            "makeSpecimen",
+            "tech",
+            "lab_specimen_v1"
+          ],
+          [
+            "placeSpecimen",
+            "tech",
+            "place_position_type"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_high",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_high"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_low",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_low"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_aliquots_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_aliquots_type"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_long",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_long"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_short",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_short"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_label_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_label_type"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_missing_aliquots",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_missing_aliquots"
+          ]
+        ]
+      },
+      {
+        "root": "specimen_missing_label",
+        "count": 1,
+        "steps": [
+          [
+            "makeSpecimen",
+            "tech",
+            "specimen_missing_label"
+          ]
+        ]
+      },
+      {
+        "root": "tray_missing_zone",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_missing_zone"
+          ]
+        ]
+      },
+      {
+        "root": "tray_zone_enum",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_zone_enum"
+          ]
+        ]
+      },
+      {
+        "root": "tray_zone_type",
+        "count": 1,
+        "steps": [
+          [
+            "makeTray",
+            "tech",
+            "tray_zone_type"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "specimen",
+      "tray",
+      "place",
+      "lookup",
+      "ownership"
+    ],
+    "operation_denominator": 4,
+    "scenario_denominator": 20
+  },
+  {
+    "id": "V212",
+    "scope": "project",
+    "behavior": "budget_exit",
+    "eligible": false,
+    "fault": "none",
+    "expected_groups": [
+      {
+        "root": "nl_create_v1",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1"
+          ]
+        ]
+      },
+      {
+        "root": "nl_read_v1",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1"
+          ],
+          [
+            "getCourse",
+            "alice",
+            "nl_read_v1"
+          ]
+        ]
+      },
+      {
+        "root": "nl_forbidden_v1",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1"
+          ],
+          [
+            "login",
+            "bob",
+            "nl_login_v1"
+          ],
+          [
+            "getCourse",
+            "bob",
+            "nl_forbidden_v1"
+          ]
+        ]
+      },
+      {
+        "root": "nl_create_v1__required_missing__name",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1__required_missing__name"
+          ]
+        ]
+      },
+      {
+        "root": "nl_create_v1__type_mismatch__name",
+        "count": 1,
+        "steps": [
+          [
+            "login",
+            "alice",
+            "nl_login_v1"
+          ],
+          [
+            "createCourse",
+            "alice",
+            "nl_create_v1__type_mismatch__name"
+          ]
+        ]
+      }
+    ],
+    "expected_goals": [
+      "create",
+      "read",
+      "ownership"
+    ],
+    "operation_denominator": 3,
+    "scenario_denominator": 5
+  }
+]

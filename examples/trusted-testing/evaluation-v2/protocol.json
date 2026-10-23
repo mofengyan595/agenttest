@@ -1,0 +1,61 @@
+{
+  "version": "trusted_testing_validation_v2",
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "independent_human_reviewed": false,
+  "human_time_saved": null,
+  "requests": 12,
+  "rounds": 3,
+  "scheduled_positions": 36,
+  "composition": {
+    "single": 6,
+    "flow": 3,
+    "project": 3
+  },
+  "eligible_task_ids": [
+    "V201",
+    "V202",
+    "V203",
+    "V204",
+    "V205",
+    "V207",
+    "V208",
+    "V209",
+    "V210",
+    "V211"
+  ],
+  "eligible_positions": 30,
+  "eligible_project_positions": 6,
+  "quality_targets": {
+    "eligible_complete_rate": 0.8,
+    "eligible_project_complete_rate": 0.6666666666666666,
+    "unauthorized_executions": 0,
+    "wrong_evidence_adopted": 0,
+    "budget_violations": 0
+  },
+  "per_run": {
+    "max_model_calls": 4,
+    "max_readonly_investigations": 2
+  },
+  "per_position": {
+    "max_model_calls": 20,
+    "max_total_tokens": 500000,
+    "max_business_and_investigation_requests": "project target.json; 64 normally, 8 for courses_limited",
+    "input_token_limit": 20000,
+    "output_token_limit": 4096,
+    "model_timeout_seconds": 60
+  },
+  "schedule": "round-major, V201 through V212 in each round, serial",
+  "retries": 0,
+  "additional_attempts": 0,
+  "stop": "Unknown model usage, infrastructure failure or budget violation stops subsequent paid work; preserve remaining positions.",
+  "runtime_inputs": "Original text and registered project configuration only. Labels, reference matrices and fixture fault flags stay in isolated evaluator.",
+  "comparison": "No cross-protocol improvement versus old 15/36 is computed. Public interfaces/configuration were used in development; these are new frozen request texts/combinations, not unseen-API or independent human evidence.",
+  "model": "Use existing configured model; public model metadata and exact source SHA are frozen before each real schedule.",
+  "eligible_definition": "Before execution: V206 lacks a trusted discount expectation; V212 has insufficient project budget. V209 remains eligible and requires actual execution plus correct explicit model abstention. All 36 positions remain in the full denominator.",
+  "core_freeze_sha": "4707c07baa0bc7aaf6443a35613f843292914ded",
+  "original_failed_archive": "runs/ttg-validation-mock",
+  "original_failed_source": "6031212dcd9ddeddb9d67fc42cfb903c4be208e1",
+  "authorization": "Operator explicitly approved the new milestone after the frozen v1 preflight failed.",
+  "freshness": "New request texts and flow order/combinations. The five supported single-interface intents reuse public interfaces; rewrites are not counted as additional business kinds. No unseen API, independent human review or cross-protocol improvement is claimed."
+}

@@ -191,6 +191,37 @@ def test_new_protocol_metadata_and_identity_exclusion_without_execution(harness)
                [*requests, read_json(harness.DATA / "first-demand.json")])
 
 
+def test_v2_metadata_is_new_and_preserves_budgets_without_executing_requests(harness):
+    from collections import Counter
+
+    from agenttest.eval_v2.archive import read_json
+    from agenttest.eval_v2.review import task_identity
+
+    data = harness.DATA.with_name("evaluation-v2")
+    old = read_json(harness.DATA / "requests.json")
+    requests = read_json(data / "requests.json")
+    labels = read_json(data / "labels.json")
+    protocol = read_json(data / "protocol.json")
+    assert {q["id"] for q in requests} == {label["id"] for label in labels}
+    assert Counter(label["scope"] for label in labels) == dict(single=6, flow=3, project=3)
+    assert len({task_identity(q["user_task"]) for q in requests}) == 12
+    assert not {task_identity(q["user_task"]) for q in requests}.intersection(
+        task_identity(q["user_task"]) for q in old)
+    assert [label["id"] for label in labels if label["eligible"]] == protocol["eligible_task_ids"]
+    assert protocol["eligible_positions"] == 30 and protocol["eligible_project_positions"] == 6
+    previous = read_json(harness.DATA / "protocol.json")
+    assert protocol["per_run"] == previous["per_run"]
+    assert {k: v for k, v in protocol["per_position"].items()
+        if k != "max_business_and_investigation_requests"} == {
+        k: v for k, v in previous["per_position"].items()
+        if k != "max_business_and_investigation_requests"}
+    span = labels[5]["unknown_requirement_span"]
+    assert requests[5]["user_task"][span["start"]:span["end"]] == "折扣"
+    first = read_json(data / "first-demand.json")
+    assert first["first_attempt_only"] and first["development_execution_forbidden"]
+    assert first["max_model_calls"] == 4 and first["max_requests"] == 8
+
+
 def test_cold_archive_rejects_work_after_unknown_usage_and_preserves_all_36(tmp_path, harness):
     from agenttest.eval_v2.archive import inventory, seal
     from agenttest.evaluation import save_evaluation
