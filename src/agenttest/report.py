@@ -58,12 +58,21 @@ class StepResult(BaseModel):
     policy_template_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     checks: list[CheckResult] = Field(default_factory=list)
     attempts: list[AttemptEvidence] = Field(default_factory=list)
+    input_validation: Literal["NORMAL_VALIDATED", "APPROVED_NEGATIVE"] | None = None
+    negative_test: str | None = None
+    approved_violation_codes: list[str] = Field(default_factory=list)
+    negative_rejected_as_expected: bool | None = None
 
     @model_serializer(mode="wrap")
     def serialize_template_identity(self, handler):
         data = handler(self)
         if self.policy_template_sha256 is None:
             data.pop("policy_template_sha256", None)
+        for key in ("input_validation", "negative_test", "negative_rejected_as_expected"):
+            if getattr(self, key) is None:
+                data.pop(key, None)
+        if not self.approved_violation_codes:
+            data.pop("approved_violation_codes", None)
         return data
 
 

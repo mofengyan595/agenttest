@@ -371,6 +371,52 @@ def discover(
         if not pairs:
             pairs = [(None, None)]
         for policy, role in pairs:
+            if policy and policy.negative:
+                from agenttest.negative import validate_approval
+
+                approval = policy.negative
+                result = build(operation_id, policy, role, True)
+                steps, descriptions, deps, auth, missing, valid, approved, error = result
+                try:
+                    validate_approval(approval, op)
+                    if config and any(
+                            operation_id == r.login_operation for r in config.roles.values()):
+                        raise NeedsReview("NEGATIVE_AUTHENTICATION_FORBIDDEN")
+                except ValueError as exc:
+                    error = (exc.diagnostic.code if isinstance(exc, ValidationFailure)
+                             else "NEGATIVE_APPROVAL_CONFIGURATION_INVALID")
+                    missing.append(error)
+                field = next((f for f in specs if (f.location, f.name)
+                              == (approval.location, approval.name)), None)
+                kind = {"required_missing": "required_missing", "type_mismatch": "type_mismatch",
+                        "enum_outside": "enum_boundary"}.get(approval.kind)
+                if kind is None and error:
+                    kind = "type_mismatch"
+                if kind is None:
+                    if type(approval.value) is str:
+                        kind = ("string_min_length" if field and len(approval.value)
+                                < field.schema.get("minLength", 0) else "string_max_length")
+                    else:
+                        from agenttest.discovery_schema import edge
+
+                        bound = edge(field.schema, True) if field else None
+                        kind = ("numeric_lower" if bound is not None
+                                and approval.value < bound else "numeric_upper")
+                slots.add((operation_id, kind))
+                emit(Candidate(operation_id=operation_id,
+                    operation_ids=list(dict.fromkeys([s.operation_id for s in steps]
+                                                     + [operation_id])),
+                    method=op.method, path=op.path, scenario_kind=kind,
+                    polarity="review" if error else "negative",
+                    schema_basis=[field.basis if field else basis[operation_id]],
+                    input_variations=[describe(field, approval.value,
+                        "executor_approved_" + approval.kind)] if field else [],
+                    policy_refs=[s.policy_id for s in steps if s.policy_id] + [policy.id],
+                    roles=[role] if role else [], dependencies=deps, authentication_order=auth,
+                    missing_evidence=missing, schema_valid=False, policy_match=approved,
+                    rejection_reason=error,
+                    executable_status="STATIC_VALIDATED" if not missing else "BLOCKED"))
+                continue
             variants = [("normal", "normal", None)]
             if role is not None:
                 variants.append(("role_scope", "normal", None))

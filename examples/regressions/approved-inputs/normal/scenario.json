@@ -1,0 +1,33 @@
+{
+  "name": "fixed development proposal",
+  "steps": [
+    {
+      "id": "create",
+      "operation_id": "validateRecord",
+      "role": null,
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "message": {
+          "value": "aa",
+          "from_step": null,
+          "select": "$"
+        },
+        "category": {
+          "value": "a",
+          "from_step": null,
+          "select": "$"
+        },
+        "count": {
+          "value": 1,
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "validation_normal",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

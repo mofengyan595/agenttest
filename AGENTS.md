@@ -17,6 +17,15 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-10-23 Goal establishes the incremental milestone in
+docs/trusted-testing-goal.md: approved negative execution, bounded project planning,
+expression adaptation and a third synthetic project, evidence attribution, then a
+new frozen 12-request/three-round evaluation. Scoped commits/pushes and configured
+model calls are authorized. Preserve all historical scores and archives. No new
+real Java/PocketBase writes, CourseInsight changes, RAG, multi-agent, generated
+code execution, repair, recovery or write replay. All existing safety gates apply.
+
+### Previous milestone (preserved)
 The 2026-10-20 Goal establishes a new incremental milestone: reusable project-level
 natural-language goals, single/flow/project testing, shared tool protocols and bounded
 conversation context, then CLI-first SQLite task service and existing-console execution.

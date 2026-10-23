@@ -7,6 +7,7 @@ from pydantic import Field, model_serializer
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.dsl import AssertionPolicy, CSVUpload, FieldAssertion, PollPolicy, Step
+from agenttest.negative import ApprovedNegative
 from agenttest.safety import StrictModel
 
 
@@ -64,12 +65,15 @@ class RegisteredPolicy(StrictModel):
     csv_fixture: ApprovedCSVFixture | None = None
     # Explicitly public, operator-authored catalog text; never an execution rule.
     planning_purpose: str | None = Field(default=None, min_length=1, max_length=160)
+    negative: ApprovedNegative | None = None
 
     @model_serializer(mode="wrap")
     def serialize_public_purpose(self, handler):
         data = handler(self)
         if self.planning_purpose is None:
             data.pop("planning_purpose", None)
+        if self.negative is None:
+            data.pop("negative", None)
         return data
 
 
@@ -86,6 +90,23 @@ class PolicyRegistry:
             if policy.id in self._entries:
                 raise ValueError("Duplicate policy id")
             self._entries[policy.id] = policy.model_dump_json()
+        for policy in self.definitions():
+            if policy.negative is None:
+                continue
+            base_raw = self._entries.get(policy.negative.base_policy_id)
+            base = RegisteredPolicy.model_validate_json(base_raw) if base_raw else None
+            if (base is None or base.negative is not None
+                    or any(getattr(policy, k) != getattr(base, k) for k in (
+                        "operation_id", "roles", "business_scenario", "required_bindings",
+                        "binding_rules", "closed_arguments"))
+                    or policy.csv_fixture or policy.poll or base.csv_fixture or base.poll
+                    or not policy.assertions.reviewed or not policy.assertions.source.strip()
+                    or not policy.assertions.status
+                    or any(not 400 <= c < 500 for c in policy.assertions.status.codes)
+                    or not any(r.location == policy.negative.location
+                        and r.name == policy.negative.name and r.literal_schema is not None
+                        and r.source_policy_id is None for r in base.binding_rules)):
+                raise NeedsReview("NEGATIVE_APPROVAL_SCOPE_MISMATCH")
 
     @classmethod
     def from_json(cls, raw: bytes | str) -> "PolicyRegistry":
@@ -110,6 +131,8 @@ class PolicyRegistry:
                 raise NeedsReview("POLICY_BINDING_MISMATCH")
         if policy.csv_fixture is not None and step.upload != policy.csv_fixture.upload:
             raise NeedsReview("POLICY_CSV_FIXTURE_MISMATCH")
+        if policy.negative and (step.upload or step.poll or step.read_retries):
+            raise NeedsReview("NEGATIVE_EXECUTION_OPTIONS_NOT_APPROVED")
         if policy.closed_arguments:
             for location in ("body", "path_parameters", "query"):
                 names = {r.name for r in policy.binding_rules if r.location == location}
@@ -128,11 +151,15 @@ class PolicyRegistry:
                 validate_value(binding.value, rule.literal_schema)
             elif rule.source_policy_id is not None:
                 source = (previous or {}).get(binding.from_step)
+                source_raw = self._entries.get(source.policy_id or "") if source else None
+                if source_raw and RegisteredPolicy.model_validate_json(source_raw).negative:
+                    raise NeedsReview("NEGATIVE_RESPONSE_IS_NOT_A_RESOURCE")
                 if (source is None or source.policy_id != rule.source_policy_id
                         or binding.select != rule.source_selector
                         or not dependency_roles_match(source.role, step.role, rule.role_relation)):
                     raise NeedsReview("POLICY_DEPENDENCY_MISMATCH")
-                for selector, field in rule.source_body_equalities.items():
+                for selector, field in (rule.source_body_equalities.items()
+                                        if policy.negative is None else ()):
                     original = source.body.get(field)
                     if original is None or original.from_step is not None:
                         raise NeedsReview("POLICY_SOURCE_LITERAL_REQUIRED")
@@ -150,6 +177,8 @@ class PolicyRegistry:
     def request_assertions(policy: RegisteredPolicy, resolved: dict) -> AssertionPolicy:
         """Instantiate approved equality relations using already validated request data."""
         assertions = policy.assertions.model_copy(deep=True)
+        if policy.negative:
+            return assertions
         for rule in policy.binding_rules:
             if rule.response_selector:
                 assertions.fields.append(FieldAssertion(
@@ -164,6 +193,11 @@ class PolicyRegistry:
                  "binding_rules": [r.model_dump() for r in item.binding_rules],
                  "closed_arguments": item.closed_arguments,
                  "poll_allowed": item.poll is not None,
+                 **({"negative_test": dict(base_policy_id=item.negative.base_policy_id,
+                       location=item.negative.location, name=item.negative.name,
+                       kind=item.negative.kind,
+                       input_rule="Supply valid baseline inputs; executor owns mutation.")}
+                    if item.negative else {}),
                  **({"purpose": item.planning_purpose} if item.planning_purpose else {}),
                  **({"csv_fixture": {"id": item.csv_fixture.id,
                                       "classification": item.csv_fixture.classification}}

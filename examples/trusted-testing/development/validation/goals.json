@@ -1,0 +1,17 @@
+{
+  "schema_version": "agenttest.goal-catalog.v1",
+  "resource_aliases": [
+    "记录"
+  ],
+  "goals": [
+    {
+      "id": "create",
+      "aliases": [
+        "创建",
+        "新建"
+      ],
+      "policy_id": "validation_normal",
+      "role": null
+    }
+  ]
+}

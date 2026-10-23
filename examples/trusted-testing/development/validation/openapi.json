@@ -1,0 +1,57 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Synthetic validation development target",
+    "version": "1"
+  },
+  "paths": {
+    "/validation-records": {
+      "post": {
+        "operationId": "validateRecord",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "message",
+                  "category",
+                  "count"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 8
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "a",
+                      "b"
+                    ]
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Rejected invalid input"
+          }
+        }
+      }
+    }
+  }
+}

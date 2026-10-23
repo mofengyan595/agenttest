@@ -74,6 +74,12 @@ class Executor:
         for step in scenario.steps:
             policies[step.id] = self.registry.resolve(
                 step, self.config.business_scenario, previous)
+            if policies[step.id].negative:
+                from agenttest.negative import validate_approval
+
+                if any(step.operation_id == r.login_operation for r in self.config.roles.values()):
+                    raise NeedsReview("NEGATIVE_AUTHENTICATION_FORBIDDEN")
+                validate_approval(policies[step.id].negative, operations[step.operation_id])
             previous[step.id] = step
         if report is not None:
             report.policy_authorized = True
@@ -269,6 +275,17 @@ class Executor:
                  if step.body or is_login else None)
         request_payload = {step.upload.field: step.upload.content} if step.upload else payload
         validate_request(operation, path_values, query, request_payload, media)
+        result.input_validation = "NORMAL_VALIDATED"
+        if policy.negative:
+            from agenttest.negative import mutate_request
+
+            query, payload = mutate_request(policy.negative, operation,
+                path_values, query, request_payload, media)
+            if vault.contains_secret([query, payload]):
+                raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
+            result.input_validation = "APPROVED_NEGATIVE"
+            result.negative_test = policy.negative.kind
+            result.approved_violation_codes = list(policy.negative.violation_codes)
         policy = policy.model_copy(deep=True)
         policy.assertions = self.registry.request_assertions(policy, {
             "path_parameters": path_values, "query": query, "body": request_payload,
@@ -311,6 +328,8 @@ class Executor:
                     continue
             result.outcome, result.checks = self._verify(policy.assertions, status, body, vault)
             result.reason = "POLICY_EVALUATED"
+            if policy.negative:
+                result.negative_rejected_as_expected = result.outcome == Outcome.PASS
             if is_login and result.outcome == Outcome.PASS:
                 vault.capture(step.role, body)
                 return {}

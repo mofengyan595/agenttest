@@ -1,0 +1,22 @@
+{
+  "schema_version": "agenttest.regression.v1",
+  "source_run_id": "80aba85874f14a37be12c90c66df313e",
+  "source_report_sha256": "a775d90e7c181161a5bfce36e172e683019ee68948136dcd28ccdb092ad45346",
+  "scenario_sha256": "fc9d35bf23826c53eb61c4b2854f5d2311c2936f62e79f99e94bd214544b0147",
+  "contract_sha256": "4b6cab10246cba5d4d45323ffc2daa22535096499ad4a5b1af701a98a3281ad0",
+  "target_config_sha256": "1809ddd4a569868f5f15d2665f14f755ff35b44153c6c3df041b883270f64940",
+  "policy_sha256": "8dea178ec7f9ab07c713232fa68ccd08497d5b638e2f1cd1c293aa59f52e799d",
+  "task_contract_sha256": "ec9a22f7bf2f051a7f2f82b11273bd5c494eb988c059fbf492d74123e3844f18",
+  "step_policy_sha256": {
+    "create": "1fee8585234a8246fa5538d9fa3e8bfd4fc26cce5eff3252b399ec969c777254"
+  },
+  "source_step_policy_sha256": {
+    "create": "1fee8585234a8246fa5538d9fa3e8bfd4fc26cce5eff3252b399ec969c777254"
+  },
+  "test_module": "test_agenttest_e5cad85606cf4a0891abf6ce6de86972.py",
+  "files": {
+    "scenario.json": "40012572b13799617db308dd1353aae32681d348da03dbb2fc81285d1803324b",
+    "test_agenttest_e5cad85606cf4a0891abf6ce6de86972.py": "a47b5a8e1b9c00a44cab072510a5b9f245a4736002fef4196c88fad4aca149ff",
+    "README.md": "16557510dd6f2d9ce8cc861f20c4ead3beee1682f6a50603841a63114a40c6a1"
+  }
+}

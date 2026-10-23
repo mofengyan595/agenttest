@@ -1,0 +1,578 @@
+[
+  {
+    "id": "validation_normal",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.created",
+          "expected": true
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true
+  },
+  {
+    "id": "missing_message",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "message",
+      "kind": "required_missing",
+      "value": null,
+      "violation_codes": [
+        "OPENAPI_BODY_FIELD_REQUIRED"
+      ]
+    }
+  },
+  {
+    "id": "wrong_message_type",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "message",
+      "kind": "type_mismatch",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE"
+      ]
+    }
+  },
+  {
+    "id": "wrong_category_type",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "category",
+      "kind": "type_mismatch",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE",
+        "OPENAPI_VALUE_ENUM"
+      ]
+    }
+  },
+  {
+    "id": "outside_category",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "category",
+      "kind": "enum_outside",
+      "value": "c",
+      "violation_codes": [
+        "OPENAPI_VALUE_ENUM"
+      ]
+    }
+  },
+  {
+    "id": "below_count",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "count",
+      "kind": "boundary_outside",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  },
+  {
+    "id": "above_count",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "count",
+      "kind": "boundary_outside",
+      "value": 6,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  },
+  {
+    "id": "short_message",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "message",
+      "kind": "boundary_outside",
+      "value": "a",
+      "violation_codes": [
+        "OPENAPI_VALUE_LENGTH"
+      ]
+    }
+  },
+  {
+    "id": "long_message",
+    "operation_id": "validateRecord",
+    "roles": [
+      null
+    ],
+    "business_scenario": "approved_validation_development_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-stage1.md#专用合成规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "message",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        }
+      },
+      {
+        "location": "body",
+        "name": "category",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "location": "body",
+        "name": "count",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "negative": {
+      "base_policy_id": "validation_normal",
+      "location": "body",
+      "name": "message",
+      "kind": "boundary_outside",
+      "value": "abcdefghi",
+      "violation_codes": [
+        "OPENAPI_VALUE_LENGTH"
+      ]
+    }
+  }
+]

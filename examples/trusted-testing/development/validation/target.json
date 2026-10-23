@@ -1,0 +1,11 @@
+{
+  "base_url": "http://127.0.0.1:8097",
+  "environment": "isolated",
+  "allow_mutations": true,
+  "allowed_operations": [
+    "validateRecord"
+  ],
+  "business_scenario": "approved_validation_development_v1",
+  "max_requests": 40,
+  "min_request_interval": 0.0
+}

@@ -154,10 +154,47 @@ def _single_candidates(project, base, operation_id, add):
         add(None, operation_id, "unsupported_schema", "SCHEMA_SUBSET_UNSUPPORTED")
         return
     definitions = {p.id: p for p in project.registry.definitions()}
+    approved_mutations = []
+    for policy in definitions.values():
+        approval = policy.negative
+        if approval is None or policy.operation_id != operation_id:
+            continue
+        goal = deepcopy(base)
+        steps = [s for s in goal.task.requirements.steps
+                 if s.policy_id == approval.base_policy_id]
+        if len(steps) != 1:
+            continue
+        from agenttest.negative import validate_approval
+
+        try:
+            validate_approval(approval, operation)
+        except (NeedsReview, ValueError):
+            add(None, operation_id, "approved_negative:" + policy.id,
+                "NEGATIVE_APPROVAL_CONFIGURATION_INVALID")
+            continue
+        steps[0].policy_id = policy.id
+        for default in goal.input_defaults:
+            if default["policy_id"] == approval.base_policy_id:
+                default["policy_id"] = policy.id
+        add(goal, operation_id, "approved_negative:" + policy.id)
+        approved_mutations.append(approval)
     for spec in specs:
         for kind, polarity, description, value in variations(spec):
             name = f"{kind}:{spec.location}:{spec.name}:{fingerprint(description.model_dump())[:8]}"
             if polarity == "negative":
+                approved_kind = ({"enum_boundary": "enum_outside",
+                    "numeric_lower": "boundary_outside", "numeric_upper": "boundary_outside",
+                    "string_min_length": "boundary_outside",
+                    "string_max_length": "boundary_outside"}.get(kind, kind))
+                from agenttest.json_values import json_equal
+
+                if any((spec.location, spec.name, approved_kind) == (
+                        a.location, a.name, a.kind) and (a.kind != "boundary_outside"
+                        or (value is not None and json_equal(a.value, value))
+                        or (description.string_length is not None and type(a.value) is str
+                            and len(a.value) == description.string_length))
+                        for a in approved_mutations):
+                    continue
                 add(None, operation_id, name, "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED")
                 continue
             # An explicit literal restricts this task; do not silently replace user data.
