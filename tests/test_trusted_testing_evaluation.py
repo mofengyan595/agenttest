@@ -67,6 +67,26 @@ async def test_fixed_development_request_uses_adapter_and_independent_negative_d
     receipt = first.evidence(folder)
     assert receipt["full_task_complete"] and receipt["budget_ok"]
     assert receipt["real_model_calls"] == 1 and not receipt["exported"]
+    import json
+    import shutil
+
+    from agenttest.eval_v2.archive import inventory
+
+    shutil.copytree(tmp_path / "projects", folder / "projects")
+    (folder / "freeze.json").write_bytes(json.dumps(dict(
+        request=dict(max_model_calls=20, max_requests=64, max_readonly_investigations=2,
+                     max_total_tokens=500000), source=dict(commit="old-development-fixture"),
+        profile_inventory=inventory(folder / "projects"))).encode())
+    (folder / "result.json").write_bytes(json.dumps(receipt).encode())
+    result = first.finalize(folder, recovering=True)
+    assert result["archive_verified"] and result["new_model_calls"] == 0
+    assert first.verify(folder) == result
+    assert (folder / "results.json").exists() and (folder / "summary.md").exists()
+    changed_receipt = json.loads((folder / "results.json").read_bytes())
+    changed_receipt["result"]["real_model_calls"] += 1
+    (folder / "results.json").write_bytes(json.dumps(changed_receipt).encode())
+    with pytest.raises(ValueError, match="ARCHIVE_CHANGED"):
+        first.verify(folder)
 
 
 @pytest.mark.asyncio

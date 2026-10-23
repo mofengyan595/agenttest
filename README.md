@@ -5,8 +5,9 @@
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
 2026-10-23增量：[批准负例、分组预算与第三项目复用](docs/trusted-testing-delivery.md)。
-阶段1–4工程及新12×3冻结脚手架已实现；离线门禁在第8位置触发输入预算限制，真实排期尚未启动，
-整个Goal未完成。[完整失败与分母](docs/trusted-testing-results.md) · [接入成本](docs/trusted-testing-approved-projects.md) ·
+工程与冻结验证已交付，真实质量目标未达到：完整任务12/36，明确足额分母12/30，足额项目0/6；
+82/144批准负例实际执行并正确拒绝，安全计数0。首次新需求真实PASS并通过无模型固定回归。
+[最终结果与完整分母](docs/trusted-testing-final-results.md) · [原失败](docs/trusted-testing-results.md) · [接入成本](docs/trusted-testing-approved-projects.md) ·
 [简历/面试边界](docs/trusted-testing-resume-interview.md)。
 
 2026-10-20新里程碑：[自然语言入口与项目配置复用](docs/nl-entry.md)。

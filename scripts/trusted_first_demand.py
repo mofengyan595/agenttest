@@ -20,7 +20,12 @@ from agenttest.goal_cli import synthetic_runtime
 from agenttest.goal_runtime import run_goal
 from agenttest.llm_planner import OpenAICompatiblePlanner
 from agenttest.project_goals import load_goal_project
-from agenttest.regression import RegressionCapture, RegressionRuntime, export_regression
+from agenttest.regression import (
+    RegressionCapture,
+    RegressionRuntime,
+    export_regression,
+    load_regression,
+)
 from agenttest.report import Outcome, ReportStore, fingerprint
 from agenttest.workflow import WorkflowBudget
 
@@ -56,9 +61,45 @@ def verify(output):
     if read_json(output / "archive.json")["files"] != inventory(output):
         raise ValueError("FIRST_DEMAND_ARCHIVE_CHANGED")
     result = evidence(output)
-    if result != read_json(output / "result.json"):
+    frozen = read_json(output / "freeze.json")
+    batch = read_json(output / "results.json")
+    if (result != read_json(output / "result.json") or batch["result"] != result
+            or batch["execution_source"] != frozen["source"]
+            or inventory(output / "projects") != frozen["profile_inventory"]
+            or batch["postprocessing"]["new_model_calls"] != 0
+            or batch["postprocessing"]["new_target_requests"] != 0):
         raise ValueError("FIRST_DEMAND_EVIDENCE_MISMATCH")
+    if result["exported"]:
+        manifest, _ = load_regression(output / "bundle")
+        report = ReportStore(output / "reports").read(result["run_id"])
+        if (manifest.source_run_id != result["run_id"]
+                or manifest.source_report_sha256 != fingerprint(report.model_dump(mode="json"))):
+            raise ValueError("FIRST_DEMAND_EXPORT_SOURCE_MISMATCH")
     return dict(archive_verified=True, new_model_calls=0, result=result)
+
+
+def finalize(output, recovering=False):
+    """Seal already saved evidence; never call a model or rerun the target."""
+    if (output / "archive.json").exists():
+        return verify(output)
+    result = evidence(output)
+    frozen = read_json(output / "freeze.json")
+    if (result != read_json(output / "result.json")
+            or inventory(output / "projects") != frozen["profile_inventory"]):
+        raise ValueError("FIRST_DEMAND_EVIDENCE_MISMATCH")
+    batch = dict(schema_version="agenttest.first-demand.result.v1", result=result,
+        execution_source=frozen["source"], postprocessing=dict(metadata_only=True,
+            new_model_calls=0, new_target_requests=0, recovered_sealing_failure=recovering))
+    if (output / "results.json").exists():
+        if read_json(output / "results.json") != batch:
+            raise ValueError("FIRST_DEMAND_FINALIZATION_CONFLICT")
+    else:
+        save_evaluation(batch, output / "results.json")
+    if not (output / "summary.md").exists():
+        with (output / "summary.md").open("x", encoding="utf-8", newline="\n") as summary:
+            summary.write("# First real demand\n\n" + json.dumps(result, indent=2) + "\n")
+    seal(output)
+    return verify(output)
 
 
 async def run(output, model_env, prior, data_dir=None):
@@ -118,8 +159,7 @@ async def run(output, model_env, prior, data_dir=None):
         export_regression(output / "bundle", runtime, planner.scenario, report)
     (output / "result.json").write_text(json.dumps(evidence(output), indent=2) + "\n",
                                          encoding="utf-8")
-    seal(output)
-    return verify(output)
+    return finalize(output)
 
 
 if __name__ == "__main__":
@@ -127,11 +167,13 @@ if __name__ == "__main__":
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--output", type=Path)
     mode.add_argument("--verify", type=Path)
+    mode.add_argument("--finalize-existing", type=Path,
+                      help="Metadata only: seal an existing completed run without model/HTTP")
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--prior", type=Path)
     parser.add_argument("--dataset", choices=tuple(DATASETS), default="v1")
     args = parser.parse_args()
-    result = verify(args.verify) if args.verify else asyncio.run(
-        run(args.output, args.model_env, args.prior,
-            DATASETS[args.dataset]))
+    result = (verify(args.verify) if args.verify else
+        finalize(args.finalize_existing, recovering=True) if args.finalize_existing else
+        asyncio.run(run(args.output, args.model_env, args.prior, DATASETS[args.dataset])))
     print(json.dumps(result, ensure_ascii=False, indent=2))

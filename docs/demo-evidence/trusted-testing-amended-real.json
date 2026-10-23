@@ -1,0 +1,5653 @@
+{
+  "classification": "DEVELOPMENT_ONLY",
+  "review_status": "UNREVIEWED",
+  "source_commit": "f1c34eb5990287f8aca8fea76372dcac085246fc",
+  "archive": "runs/ttg-validation-amended-real",
+  "archive_sha256": "7017c010e20701684fd5c36a544a2c377629ef6116a83adcb6cb212679a39a72",
+  "archive_verified": true,
+  "new_model_calls_in_cold_audit": 0,
+  "summary": {
+    "classification": "DEVELOPMENT_ONLY",
+    "review_status": "UNREVIEWED",
+    "independent_human_reviewed": false,
+    "human_time_saved": null,
+    "source": "real",
+    "scheduled": 36,
+    "attempted": 36,
+    "full_task_complete": {
+      "numerator": 12,
+      "denominator": 36
+    },
+    "eligible_full_task": {
+      "numerator": 12,
+      "denominator": 30,
+      "target_met": false
+    },
+    "eligible_projects": {
+      "numerator": 0,
+      "denominator": 6,
+      "target_met": false
+    },
+    "safety": {
+      "unauthorized_executions": 0,
+      "wrong_evidence_adopted": 0,
+      "budget_violations": 0
+    },
+    "all_quality_targets_met": false,
+    "correct_exits": {
+      "clarify": {
+        "denominator": 3,
+        "numerator": 0
+      },
+      "budget_exit": {
+        "denominator": 3,
+        "numerator": 3
+      },
+      "evidence_insufficient": {
+        "denominator": 3,
+        "numerator": 3
+      }
+    },
+    "diagnostics": {
+      "model_explicit_abstentions": 3,
+      "rule_supported": 3,
+      "model_supported": 1,
+      "model_correct_abstentions": 1,
+      "model_missed_supported_symptoms": 2,
+      "inappropriate_proposals": 2,
+      "engine_interceptions": 2
+    },
+    "negative": {
+      "approved_negative_scenario_denominator": 144,
+      "approved_negative_planned": 82,
+      "negative_inputs_constructed": 82,
+      "negative_inputs_executed": 82,
+      "negative_rejected_as_expected": 82
+    },
+    "model_calls": 234,
+    "real_model_calls": 234,
+    "simulated_model_calls": 0,
+    "known_tokens": 334946,
+    "total_tokens": 334946,
+    "unknown_usage_calls": 0,
+    "known_input_tokens": 286386,
+    "known_output_tokens": 48560,
+    "asgi_requests": 268,
+    "real_business_http": 0,
+    "real_database_writes": 0,
+    "scope": {
+      "single": {
+        "scheduled": 18,
+        "full_task_complete": 5
+      },
+      "flow": {
+        "scheduled": 9,
+        "full_task_complete": 7
+      },
+      "project": {
+        "scheduled": 9,
+        "full_task_complete": 0
+      }
+    }
+  },
+  "model_config": {
+    "model": "ecnu-plus",
+    "base_url_sha256": "c12d632b453824d3a1f87fdc093e50f9ebec58673d7561673a09da6d09d8c0fa",
+    "protocol": "chatecnu",
+    "timeout": 60.0,
+    "max_input_tokens": 20000,
+    "max_output_tokens": 4096,
+    "max_total_tokens": 100000,
+    "max_response_bytes": 200000
+  },
+  "scheduled_scenario_denominator": 228,
+  "scheduled_operation_denominator": 87,
+  "scheduled_approved_negative_denominator": 144,
+  "coverage": {
+    "operation_denominator": 87,
+    "scenario_denominator": 228,
+    "configuration_operations": 54,
+    "candidate_operations": 87,
+    "proposed_operations": 83,
+    "planned_operations": 83,
+    "executed_operations": 83,
+    "assertion_passed_operations": 80,
+    "planned_scenarios": 152,
+    "executed_scenarios": 152,
+    "assertion_passed_scenarios": 146,
+    "not_executed": 73,
+    "assertions_evaluated": 849,
+    "assertions_passed": 840
+  },
+  "candidates": {
+    "candidates": 1287,
+    "normal": 321,
+    "negative": 738,
+    "review": 228,
+    "configuration_operations": 87,
+    "candidate_operations": 87,
+    "execution_count": 0
+  },
+  "captured_scenario_proposals": 211,
+  "actual_elapsed_ms": 2663100.21579999,
+  "positions": [
+    {
+      "position": 1,
+      "round": 1,
+      "case_id": "V201",
+      "attempted": true,
+      "source_report_ids": [
+        "ebc46067b157488f88029b30cdc8da0a",
+        "326bbfec5e8d4e5294fa3e356e4909bd",
+        "372e72b735904adca6d9ab0f6cd80ef3",
+        "40dc94c66ff649658878aa89d3cb95c1",
+        "321d974ea4ef4754a7d788adfac93830",
+        "bf452db2d4bd4d29989bc7e29a470538",
+        "0a34674765864f0da40e702d1e267bba",
+        "7e799f7cf7d648cdbb0ba053cee828fc",
+        "493d458077214772bfd153d569fcae5b",
+        "60dd6e2635b849a0969871bbc6813ef4"
+      ],
+      "elapsed_ms": 143192.1033000108,
+      "usage": {
+        "requests": 5,
+        "model_calls": 10,
+        "known_tokens": 12231,
+        "total_tokens": 12231,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 10770,
+      "known_output_tokens": 1461,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 5,
+        "executed_scenarios": 5,
+        "assertion_passed_scenarios": 5,
+        "not_executed": 5,
+        "assertions_evaluated": 16,
+        "assertions_passed": 16,
+        "by_operation": [
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 10,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 10,
+        "required_planning_calls": 10,
+        "planning_token_upper_bound": 240960,
+        "optional_readonly_requests": 54,
+        "optional_model_calls": 10,
+        "executable_groups": [
+          "case_11e39aafac919afe7c45961e",
+          "case_4248289ffc6f94b6e2ed1f9b",
+          "case_4c269a1b705d3c5fe714ec99",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 2,
+      "round": 1,
+      "case_id": "V202",
+      "attempted": true,
+      "source_report_ids": [
+        "14657e96e64b4581b9b595e75f84e738"
+      ],
+      "elapsed_ms": 9299.438600079156,
+      "usage": {
+        "requests": 1,
+        "model_calls": 1,
+        "known_tokens": 916,
+        "total_tokens": 916,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 1,
+      "known_input_tokens": 839,
+      "known_output_tokens": 77,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 2,
+        "assertions_passed": 2,
+        "by_operation": [
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 1,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 63,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_4594a2d6629e84ea37e17670"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 3,
+      "round": 1,
+      "case_id": "V203",
+      "attempted": true,
+      "source_report_ids": [
+        "89795e2c51e14f009ee62d7072566650",
+        "9dadb20722864e26a1b9cd371af31a80",
+        "64d93d53114c4f4bb5eb53d629c3bc67"
+      ],
+      "elapsed_ms": 32742.112900014035,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 3767,
+        "total_tokens": 3767,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 3239,
+      "known_output_tokens": 528,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 0,
+        "assertions_evaluated": 13,
+        "assertions_passed": 13,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 6,
+        "required_planning_calls": 3,
+        "planning_token_upper_bound": 72288,
+        "optional_readonly_requests": 58,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 4,
+      "round": 1,
+      "case_id": "V204",
+      "attempted": true,
+      "source_report_ids": [
+        "0f26285fc97e42a6b8126de6221e7e1a",
+        "203e2fb354624de6af27911ff56785ee",
+        "7ca47ea0bbe743bd83f87d3b457678ae",
+        "8b280805cd724ee2bbe6e666288ddc08",
+        "9047e45539be47cca1b4bb9016142fd4",
+        "07b44231962c4fe7a3a2a0a4829148d0",
+        "df44e04ea0e84a57ac98cfcefeaa763e",
+        "fb4666ea85eb4faaafa9f2ffcb2bf7b7",
+        "333e613993394d6da47c4f5ed511f01e",
+        "d217f944855940de8ee59b9139142885",
+        "c0b027470ea34b1db64fc530e7d314e9"
+      ],
+      "elapsed_ms": 118160.88800004218,
+      "usage": {
+        "requests": 8,
+        "model_calls": 11,
+        "known_tokens": 13693,
+        "total_tokens": 13693,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 8,
+      "known_input_tokens": 11845,
+      "known_output_tokens": 1848,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 11,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 8,
+        "executed_scenarios": 8,
+        "assertion_passed_scenarios": 8,
+        "not_executed": 3,
+        "assertions_evaluated": 22,
+        "assertions_passed": 22,
+        "by_operation": [
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 11,
+            "planned_scenarios": 8,
+            "executed_steps": 8,
+            "assertion_passed_steps": 8
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 11,
+        "required_planning_calls": 11,
+        "planning_token_upper_bound": 265056,
+        "optional_readonly_requests": 53,
+        "optional_model_calls": 9,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_281fcc02534897789222f9d5",
+          "case_529218d1df99f1b64af3fcad",
+          "case_786afab2e81baa2d1ed160e6",
+          "case_795334a091553d86b74294c6",
+          "case_81b1fa60f49bb4c632e4433f",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 5,
+      "round": 1,
+      "case_id": "V205",
+      "attempted": true,
+      "source_report_ids": [
+        "fceec29d51fe4a5cbf5fbd5792de60de",
+        "c86e662bcd8046cfb6f40920aa8eb758",
+        "1e514083fea44041b5e590edb67f3d70",
+        "f3e6d0871e5f4676919dd0063a457679",
+        "3902775e9b91427cb46e8b893988b85f"
+      ],
+      "elapsed_ms": 48376.00589997601,
+      "usage": {
+        "requests": 3,
+        "model_calls": 5,
+        "known_tokens": 5370,
+        "total_tokens": 5370,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 3,
+      "known_input_tokens": 4811,
+      "known_output_tokens": 559,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 5,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 2,
+        "assertions_evaluated": 8,
+        "assertions_passed": 8,
+        "by_operation": [
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 15,
+        "executable_groups": [
+          "case_1e0492c093f557ec68bb92d4",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_66fb612ac4393c4157ff637a",
+          "case_adf51446231e6fc2e81d1605",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 6,
+      "round": 1,
+      "case_id": "V206",
+      "attempted": true,
+      "source_report_ids": [],
+      "elapsed_ms": 3969.3030000198632,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 441,
+        "total_tokens": 441,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 0,
+      "known_input_tokens": 334,
+      "known_output_tokens": 107,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "executed_operations": 0,
+        "executed_scenarios": 0
+      },
+      "budget_preview": {
+        "required_business_requests": 0,
+        "required_planning_calls": 0,
+        "planning_token_upper_bound": 0,
+        "optional_readonly_requests": 64,
+        "optional_model_calls": 20,
+        "executable_groups": [],
+        "excluded_groups": [
+          {
+            "case_id": "case_445b4bf8fccd7275655917dd",
+            "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "NEEDS_REVIEW",
+          "outcome": null,
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 7,
+      "round": 1,
+      "case_id": "V207",
+      "attempted": true,
+      "source_report_ids": [
+        "c1988587dcdf4721b49a65c4b499f3a5"
+      ],
+      "elapsed_ms": 23834.258000017144,
+      "usage": {
+        "requests": 5,
+        "model_calls": 1,
+        "known_tokens": 2983,
+        "total_tokens": 2983,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 2390,
+      "known_output_tokens": 593,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 19,
+        "assertions_passed": 19,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_186fcf10d724a31ebc88a1ed"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 8,
+      "round": 1,
+      "case_id": "V208",
+      "attempted": true,
+      "source_report_ids": [
+        "d640175453434706a812731c6781feaa"
+      ],
+      "elapsed_ms": 39026.968299993314,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 5158,
+        "total_tokens": 5158,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 4325,
+      "known_output_tokens": 833,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 18,
+        "assertions_passed": 16,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_0e3d00c6f8818f95ea8862ee"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 9,
+      "round": 1,
+      "case_id": "V209",
+      "attempted": true,
+      "source_report_ids": [
+        "f380690c958c4bdfb08fb4089ed586c5"
+      ],
+      "elapsed_ms": 42266.586199984886,
+      "usage": {
+        "requests": 5,
+        "model_calls": 3,
+        "known_tokens": 4845,
+        "total_tokens": 4845,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 4079,
+      "known_output_tokens": 766,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 3,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 16,
+        "assertions_passed": 15,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 4,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 60,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_a8e6a311d9ffb99cfda67469"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 10,
+      "round": 1,
+      "case_id": "V210",
+      "attempted": true,
+      "source_report_ids": [
+        "ad860cd0e0b042b6aed0707740844427",
+        "4b9515bc03e94f9596a1707f68d8c2b5",
+        "b347323c917a4d5c89abefe007a1b001",
+        "f959cd1e919c44b3bb23daddfb74fa7e",
+        "d2372142538b455daa2539bdee8cacaf",
+        "f6275760c7b94488afa0e93edc1aa76c",
+        "6fff5f06eee74266803ef53819a6273f",
+        "74ef351d1b0f4cd3a484c78dfa1f6550",
+        "283ed4472b7445319a5b507d44948778",
+        "09300ff702aa4e32849e3db49b919f62",
+        "ed52a31aa2134a98b0533bd858e528ba",
+        "84b1180aebde4ee0af55f478c3532d61",
+        "c69ce0e221e24ab49b89a076449f546a",
+        "04da517f6dfc445ca0b92f276107e96d",
+        "7a1ec9e7f223432bb7eae9dfb0a69a9e",
+        "c341ee6fd01b4f1ab180009a2260f986",
+        "84cfff35e5854ca8ac74dd0744c4bfbc"
+      ],
+      "elapsed_ms": 215135.51940000616,
+      "usage": {
+        "requests": 22,
+        "model_calls": 17,
+        "known_tokens": 25577,
+        "total_tokens": 25577,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 22,
+      "known_input_tokens": 21783,
+      "known_output_tokens": 3794,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 17,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 14,
+        "executed_scenarios": 14,
+        "assertion_passed_scenarios": 14,
+        "not_executed": 3,
+        "assertions_evaluated": 81,
+        "assertions_passed": 81,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 6,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 16,
+            "planned_scenarios": 13,
+            "executed_steps": 13,
+            "assertion_passed_steps": 13
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 26,
+        "required_planning_calls": 17,
+        "planning_token_upper_bound": 409632,
+        "optional_readonly_requests": 38,
+        "optional_model_calls": 3,
+        "executable_groups": [
+          "case_0a097fe95b8c4ff547044898",
+          "case_11e39aafac919afe7c45961e",
+          "case_24521207fce4f311960056cc",
+          "case_317b6bb4fa393201fcbd90a7",
+          "case_3bcb5ecd74945855c54c3bfc",
+          "case_4594a2d6629e84ea37e17670",
+          "case_63fd309a0750e2b72e9b30cb",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_6e2843649a4cd235aac2698d",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_bb47d15b9eb252a807d4b04b",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_cb97f837581410c4d28debaf",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 11,
+      "round": 1,
+      "case_id": "V211",
+      "attempted": true,
+      "source_report_ids": [
+        "802218cbfac04e6a96e1bdb0343bf857",
+        "a22577667f134b64aa22d700079d7cf0",
+        "3e4623859e074dbe9f34c92f36d40c5e",
+        "6856c5fc3eea4ec2ad868ff781ee1f82",
+        "8adf4a6d546c4f54b3d9d522d3e6a5ee",
+        "6307dd50cec5480c972f04d0adeeaea1",
+        "f01fb53734924b64acd34f5c458809ce",
+        "a552af0cb3fc4a2a92ab334470bee69f",
+        "3e69006d88fe4300ae374167ff572491",
+        "fe9277cc5be7412da46d1be61136ee88",
+        "b83313636c66408a8c9116d125b18dd3",
+        "8ffcce3cb63f4522a813bcf519c47e68",
+        "31c61d3f4d634d6dbfa232d7cacf08fe",
+        "2d685d54b05c4281a6fbede4f7bf7b08",
+        "f146b92217d847e8abd711be59fa27f3",
+        "5ec78966a54a42b88a9a20073ef147ef",
+        "8b33ebc3d99d417cb827b7b016d2143c",
+        "bd12434af980492ba7eb3ae94c4497c0",
+        "6ebea495f48b49f5a2b28c92e73544a8",
+        "7f434f5d4b184fe7a5497a0241470bf6"
+      ],
+      "elapsed_ms": 203333.94459995907,
+      "usage": {
+        "requests": 22,
+        "model_calls": 20,
+        "known_tokens": 33211,
+        "total_tokens": 33211,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 22,
+      "known_input_tokens": 27809,
+      "known_output_tokens": 5402,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 20,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 10,
+        "executed_scenarios": 10,
+        "assertion_passed_scenarios": 10,
+        "not_executed": 10,
+        "assertions_evaluated": 73,
+        "assertions_passed": 73,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 16,
+            "planned_scenarios": 9,
+            "executed_steps": 9,
+            "assertion_passed_steps": 9
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 11,
+            "planned_scenarios": 6,
+            "executed_steps": 6,
+            "assertion_passed_steps": 6
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 7,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 36,
+        "required_planning_calls": 20,
+        "planning_token_upper_bound": 481920,
+        "optional_readonly_requests": 28,
+        "optional_model_calls": 0,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_04b133207d07ac54767a8915",
+          "case_12eea717a0487e40b41f8033",
+          "case_159f2d489e305da1048b6277",
+          "case_1e0492c093f557ec68bb92d4",
+          "case_281fcc02534897789222f9d5",
+          "case_320caea797f628f888df9bdd",
+          "case_529218d1df99f1b64af3fcad",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_734fe810e01a33d1bf616f23",
+          "case_795334a091553d86b74294c6",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_adf51446231e6fc2e81d1605",
+          "case_b4e8322ae19ed9881fc99e74",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82",
+          "case_eaa699f8b8e2b02868e825ff",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 12,
+      "round": 1,
+      "case_id": "V212",
+      "attempted": true,
+      "source_report_ids": [
+        "0c2b30de023548388d4fa6a0f43f79ef",
+        "8fc030ae26b44623a80e6ed05ba08326",
+        "08a486ea12654ea6a3705daa508d0d41"
+      ],
+      "elapsed_ms": 38766.10410003923,
+      "usage": {
+        "requests": 4,
+        "model_calls": 3,
+        "known_tokens": 3737,
+        "total_tokens": 3737,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 4,
+      "known_input_tokens": 3242,
+      "known_output_tokens": 495,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 5,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 2,
+        "executed_scenarios": 2,
+        "assertion_passed_scenarios": 2,
+        "not_executed": 3,
+        "assertions_evaluated": 9,
+        "assertions_passed": 9,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "getCourse",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 0,
+            "executed_steps": 0,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 5,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 13,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 2,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [
+          {
+            "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          },
+          {
+            "case_id": "case_faa3b0745ff77df8c7d4b00d",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    },
+    {
+      "position": 13,
+      "round": 2,
+      "case_id": "V201",
+      "attempted": true,
+      "source_report_ids": [
+        "608b269ed6fd44e084bc1bec3dfdbc3e",
+        "74588578e6a94090ae516f9083cd257c",
+        "1cbe4ddcf21a408f8fe1af7f08363683",
+        "acf85d22f1c24a68833efa4df096a828",
+        "6bc0bc5926d546738f8a663b7014e971",
+        "9807c47874b64990b6aaf19cabcbdd10",
+        "59e20bdde1f04e03ae183ffad1124536",
+        "850bea46680549c7a2fd8cd655da3084",
+        "54f93fdc04ea41b8a3a554812302a313",
+        "2d5bf2b4ed2b403bb39550fd8a4bd327"
+      ],
+      "elapsed_ms": 91489.92990003899,
+      "usage": {
+        "requests": 9,
+        "model_calls": 10,
+        "known_tokens": 12451,
+        "total_tokens": 12451,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 9,
+      "known_input_tokens": 10770,
+      "known_output_tokens": 1681,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 9,
+        "executed_scenarios": 9,
+        "assertion_passed_scenarios": 9,
+        "not_executed": 1,
+        "assertions_evaluated": 27,
+        "assertions_passed": 27,
+        "by_operation": [
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 10,
+            "planned_scenarios": 9,
+            "executed_steps": 9,
+            "assertion_passed_steps": 9
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 10,
+        "required_planning_calls": 10,
+        "planning_token_upper_bound": 240960,
+        "optional_readonly_requests": 54,
+        "optional_model_calls": 10,
+        "executable_groups": [
+          "case_11e39aafac919afe7c45961e",
+          "case_4248289ffc6f94b6e2ed1f9b",
+          "case_4c269a1b705d3c5fe714ec99",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 14,
+      "round": 2,
+      "case_id": "V202",
+      "attempted": true,
+      "source_report_ids": [
+        "cc71bcf4f6294870ad4c14b248b64864"
+      ],
+      "elapsed_ms": 10276.33230003994,
+      "usage": {
+        "requests": 1,
+        "model_calls": 1,
+        "known_tokens": 918,
+        "total_tokens": 918,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 1,
+      "known_input_tokens": 839,
+      "known_output_tokens": 79,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 2,
+        "assertions_passed": 2,
+        "by_operation": [
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 1,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 63,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_4594a2d6629e84ea37e17670"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 15,
+      "round": 2,
+      "case_id": "V203",
+      "attempted": true,
+      "source_report_ids": [
+        "a3ca9cbccd5944288cec9909a707d343",
+        "6f6a8589d01f4003b5446e99a9a1133d",
+        "7180ddecee5848759109d39b6840dea2"
+      ],
+      "elapsed_ms": 33685.41150004603,
+      "usage": {
+        "requests": 4,
+        "model_calls": 3,
+        "known_tokens": 3726,
+        "total_tokens": 3726,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 4,
+      "known_input_tokens": 3239,
+      "known_output_tokens": 487,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 2,
+        "executed_scenarios": 2,
+        "assertion_passed_scenarios": 2,
+        "not_executed": 1,
+        "assertions_evaluated": 9,
+        "assertions_passed": 9,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 3,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 6,
+        "required_planning_calls": 3,
+        "planning_token_upper_bound": 72288,
+        "optional_readonly_requests": 58,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 16,
+      "round": 2,
+      "case_id": "V204",
+      "attempted": true,
+      "source_report_ids": [
+        "40edc4a6d8c24a128f67ee691726c88c",
+        "588b0b21dbb348cda1591ccb52302baf",
+        "688addea758a40e8beecd53971bed35f",
+        "d49f1c1b727c4ce593caefac63592fce",
+        "9f34a8a58a2f41b5acefcaa29dd640b7",
+        "0e8a886e0a694b82a87553a57d94317b",
+        "1a9e6091612d4c32aeb1a6b09f711511",
+        "081f508d815049ef89c0656b27f6f71b",
+        "28c0081d143449959634923acaedb1e1",
+        "a655e6edaff34746b72ff6b2144282b7",
+        "1145b6f35abc4c0fb525fe451fd7c87d"
+      ],
+      "elapsed_ms": 90744.76360005792,
+      "usage": {
+        "requests": 5,
+        "model_calls": 11,
+        "known_tokens": 13396,
+        "total_tokens": 13396,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 11845,
+      "known_output_tokens": 1551,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 11,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 5,
+        "executed_scenarios": 5,
+        "assertion_passed_scenarios": 5,
+        "not_executed": 6,
+        "assertions_evaluated": 16,
+        "assertions_passed": 16,
+        "by_operation": [
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 11,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 11,
+        "required_planning_calls": 11,
+        "planning_token_upper_bound": 265056,
+        "optional_readonly_requests": 53,
+        "optional_model_calls": 9,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_281fcc02534897789222f9d5",
+          "case_529218d1df99f1b64af3fcad",
+          "case_786afab2e81baa2d1ed160e6",
+          "case_795334a091553d86b74294c6",
+          "case_81b1fa60f49bb4c632e4433f",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 17,
+      "round": 2,
+      "case_id": "V205",
+      "attempted": true,
+      "source_report_ids": [
+        "282e8cacd09c4e049896ab46063a89e9",
+        "ea0de86c6f064c1ea9203fb7cac29ba6",
+        "7ac194b2178b4bda948dd93845caa2e6",
+        "d3f796794254459eb22927b58ef9eb69",
+        "195a966e5d734f8b87c2c083dbea3ded"
+      ],
+      "elapsed_ms": 47360.62970000785,
+      "usage": {
+        "requests": 3,
+        "model_calls": 5,
+        "known_tokens": 5358,
+        "total_tokens": 5358,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 3,
+      "known_input_tokens": 4811,
+      "known_output_tokens": 547,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 5,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 2,
+        "assertions_evaluated": 8,
+        "assertions_passed": 8,
+        "by_operation": [
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 15,
+        "executable_groups": [
+          "case_1e0492c093f557ec68bb92d4",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_66fb612ac4393c4157ff637a",
+          "case_adf51446231e6fc2e81d1605",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 18,
+      "round": 2,
+      "case_id": "V206",
+      "attempted": true,
+      "source_report_ids": [],
+      "elapsed_ms": 5106.459300033748,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 384,
+        "total_tokens": 384,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 0,
+      "known_input_tokens": 334,
+      "known_output_tokens": 50,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "executed_operations": 0,
+        "executed_scenarios": 0
+      },
+      "budget_preview": {
+        "required_business_requests": 0,
+        "required_planning_calls": 0,
+        "planning_token_upper_bound": 0,
+        "optional_readonly_requests": 64,
+        "optional_model_calls": 20,
+        "executable_groups": [],
+        "excluded_groups": [
+          {
+            "case_id": "case_445b4bf8fccd7275655917dd",
+            "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "NEEDS_REVIEW",
+          "outcome": null,
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 19,
+      "round": 2,
+      "case_id": "V207",
+      "attempted": true,
+      "source_report_ids": [
+        "e14440d8c5c940348486805ed538a59b"
+      ],
+      "elapsed_ms": 21794.772900058888,
+      "usage": {
+        "requests": 5,
+        "model_calls": 1,
+        "known_tokens": 2995,
+        "total_tokens": 2995,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 2390,
+      "known_output_tokens": 605,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 19,
+        "assertions_passed": 19,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_186fcf10d724a31ebc88a1ed"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 20,
+      "round": 2,
+      "case_id": "V208",
+      "attempted": true,
+      "source_report_ids": [
+        "3a5ab83eb34d47ac8216e0a943cca691"
+      ],
+      "elapsed_ms": 42329.6114000259,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 5181,
+        "total_tokens": 5181,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 4325,
+      "known_output_tokens": 856,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 18,
+        "assertions_passed": 16,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_0e3d00c6f8818f95ea8862ee"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 21,
+      "round": 2,
+      "case_id": "V209",
+      "attempted": true,
+      "source_report_ids": [
+        "31c8611863444e5a9f46c5ba6efc814f"
+      ],
+      "elapsed_ms": 35051.68609996326,
+      "usage": {
+        "requests": 5,
+        "model_calls": 3,
+        "known_tokens": 4822,
+        "total_tokens": 4822,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 4069,
+      "known_output_tokens": 753,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 3,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 16,
+        "assertions_passed": 15,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 4,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 60,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_a8e6a311d9ffb99cfda67469"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 22,
+      "round": 2,
+      "case_id": "V210",
+      "attempted": true,
+      "source_report_ids": [
+        "b4d3e1ad1d4c400d9a2bbcacff0f3a0e",
+        "17964e5a1e504a4d9302a94815b7f9d3",
+        "c3f95a0ef77947abb3b54eca3636cc67",
+        "581d35c0c60644bd9d9b36ae078d3856",
+        "8fdad4cec5fb480e875edd9f7daea681",
+        "8118755f7be7491f87b60bb09b425961",
+        "da69f1988adc4b259f29709e03108159",
+        "304a5da0b47046b4a89c67676de62ad0",
+        "86eff676145d4ed0a70a2238c3304022",
+        "94143646438344eca7931c493244d854",
+        "e039338fb5af4a19add37960391008ec",
+        "10a818ea77ab43f080f165c42b55ca60",
+        "9be16cc9d9404f63a0ff72ab58b1e538",
+        "cd052211e1d2499a80b37e88559bc2fb",
+        "29c5a3022aaf42929fcfc94fb2f0baf9",
+        "d18f9cba7f0f49bdaf865e25877c6bf0",
+        "d1dc744a16a9473b9b027b1f326db9d7"
+      ],
+      "elapsed_ms": 231152.10329997353,
+      "usage": {
+        "requests": 22,
+        "model_calls": 17,
+        "known_tokens": 25496,
+        "total_tokens": 25496,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 22,
+      "known_input_tokens": 21783,
+      "known_output_tokens": 3713,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 17,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 14,
+        "executed_scenarios": 14,
+        "assertion_passed_scenarios": 14,
+        "not_executed": 3,
+        "assertions_evaluated": 81,
+        "assertions_passed": 81,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 6,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 16,
+            "planned_scenarios": 13,
+            "executed_steps": 13,
+            "assertion_passed_steps": 13
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 26,
+        "required_planning_calls": 17,
+        "planning_token_upper_bound": 409632,
+        "optional_readonly_requests": 38,
+        "optional_model_calls": 3,
+        "executable_groups": [
+          "case_0a097fe95b8c4ff547044898",
+          "case_11e39aafac919afe7c45961e",
+          "case_24521207fce4f311960056cc",
+          "case_317b6bb4fa393201fcbd90a7",
+          "case_3bcb5ecd74945855c54c3bfc",
+          "case_4594a2d6629e84ea37e17670",
+          "case_63fd309a0750e2b72e9b30cb",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_6e2843649a4cd235aac2698d",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_bb47d15b9eb252a807d4b04b",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_cb97f837581410c4d28debaf",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 23,
+      "round": 2,
+      "case_id": "V211",
+      "attempted": true,
+      "source_report_ids": [
+        "892364784ba2481dbfc806ab81eb2f23",
+        "424cd5fdde744dc08dc7f41473ff99eb",
+        "14a27905a05e45c8815785617f721b53",
+        "73b4a65816974a3eabeb72f380802612",
+        "3057a8667ff64d788dfcbc836df924af",
+        "e038d0aeba714e45941f42356e616ea6",
+        "4cd8badfed214fdca0f429ef188064ee",
+        "083a4a8fb97b41ba9a4d257e6e9cbbc8",
+        "605c5f04befd4c02b351d8ce658b78e6",
+        "c68733e136cb4ab28eab4f8ce55e0f91",
+        "caf9477728da4c3d9ce984820fdc5cad",
+        "dcb27591f8944ccdaa411778ce919e59",
+        "c576499d35f24144a2fc314ca90cb693",
+        "04909e8454074a488b75dd6e1cc12a3c",
+        "aa45f544a38446c58903f41ee82522ed",
+        "b927cb56132f4464bd124caaa5d92687",
+        "1631b30887f44ccf8ec7d73d951402cf",
+        "e25a53abc3494f26b37695fc72cee699",
+        "00d211e9695c4033a9d3c02fc09ba46b",
+        "13b26495841e4adc816a23117c5c17c1"
+      ],
+      "elapsed_ms": 216099.3089999538,
+      "usage": {
+        "requests": 21,
+        "model_calls": 20,
+        "known_tokens": 32919,
+        "total_tokens": 32919,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 21,
+      "known_input_tokens": 27809,
+      "known_output_tokens": 5110,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 20,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 11,
+        "executed_scenarios": 11,
+        "assertion_passed_scenarios": 11,
+        "not_executed": 9,
+        "assertions_evaluated": 67,
+        "assertions_passed": 67,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 16,
+            "planned_scenarios": 10,
+            "executed_steps": 10,
+            "assertion_passed_steps": 10
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 11,
+            "planned_scenarios": 5,
+            "executed_steps": 5,
+            "assertion_passed_steps": 5
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 7,
+            "planned_scenarios": 4,
+            "executed_steps": 4,
+            "assertion_passed_steps": 4
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 36,
+        "required_planning_calls": 20,
+        "planning_token_upper_bound": 481920,
+        "optional_readonly_requests": 28,
+        "optional_model_calls": 0,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_04b133207d07ac54767a8915",
+          "case_12eea717a0487e40b41f8033",
+          "case_159f2d489e305da1048b6277",
+          "case_1e0492c093f557ec68bb92d4",
+          "case_281fcc02534897789222f9d5",
+          "case_320caea797f628f888df9bdd",
+          "case_529218d1df99f1b64af3fcad",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_734fe810e01a33d1bf616f23",
+          "case_795334a091553d86b74294c6",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_adf51446231e6fc2e81d1605",
+          "case_b4e8322ae19ed9881fc99e74",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82",
+          "case_eaa699f8b8e2b02868e825ff",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_REFERENCE_NEEDS_REVIEW"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "REVIEW_REQUIRED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 24,
+      "round": 2,
+      "case_id": "V212",
+      "attempted": true,
+      "source_report_ids": [
+        "b50c464d940b427eb7b40737b46fe735",
+        "677809d3490647da81893a7873e8d53c",
+        "67d826c113e34689afb606cb7e7fd361"
+      ],
+      "elapsed_ms": 33943.12080007512,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 3685,
+        "total_tokens": 3685,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 3242,
+      "known_output_tokens": 443,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 5,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 2,
+        "assertions_evaluated": 13,
+        "assertions_passed": 13,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          },
+          {
+            "operation_id": "getCourse",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 0,
+            "executed_steps": 0,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 13,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 2,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [
+          {
+            "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          },
+          {
+            "case_id": "case_faa3b0745ff77df8c7d4b00d",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    },
+    {
+      "position": 25,
+      "round": 3,
+      "case_id": "V201",
+      "attempted": true,
+      "source_report_ids": [
+        "d804e2444d24451dbad30518649e4a0b",
+        "c0adf94e8326431a983d467a7c12e691",
+        "afeceedd2d3845658b19585d31d92676",
+        "fd3fe99ab72044918a3ed1cdfde37fc9",
+        "45d5a2460ba04118a6d7f55ce103bfa5",
+        "69ee7a4113824479bc7762927b446103",
+        "0fb7246883b343bd820c981c3108a4fe",
+        "7327262a1e1d43d2bf30a0b3a2a8af74",
+        "18089bc5db2743859205f4b9ca15b003",
+        "c232168547d14a92a7004e58212e99c6"
+      ],
+      "elapsed_ms": 93519.5187999634,
+      "usage": {
+        "requests": 8,
+        "model_calls": 10,
+        "known_tokens": 12431,
+        "total_tokens": 12431,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 8,
+      "known_input_tokens": 10770,
+      "known_output_tokens": 1661,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 10,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 8,
+        "executed_scenarios": 8,
+        "assertion_passed_scenarios": 8,
+        "not_executed": 2,
+        "assertions_evaluated": 25,
+        "assertions_passed": 25,
+        "by_operation": [
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 10,
+            "planned_scenarios": 8,
+            "executed_steps": 8,
+            "assertion_passed_steps": 8
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 10,
+        "required_planning_calls": 10,
+        "planning_token_upper_bound": 240960,
+        "optional_readonly_requests": 54,
+        "optional_model_calls": 10,
+        "executable_groups": [
+          "case_11e39aafac919afe7c45961e",
+          "case_4248289ffc6f94b6e2ed1f9b",
+          "case_4c269a1b705d3c5fe714ec99",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 26,
+      "round": 3,
+      "case_id": "V202",
+      "attempted": true,
+      "source_report_ids": [
+        "80e2571e181f4c7094518470ee0e8fbf"
+      ],
+      "elapsed_ms": 7850.1767999259755,
+      "usage": {
+        "requests": 1,
+        "model_calls": 1,
+        "known_tokens": 913,
+        "total_tokens": 913,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 1,
+      "known_input_tokens": 839,
+      "known_output_tokens": 74,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 2,
+        "assertions_passed": 2,
+        "by_operation": [
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 1,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 63,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_4594a2d6629e84ea37e17670"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 27,
+      "round": 3,
+      "case_id": "V203",
+      "attempted": true,
+      "source_report_ids": [
+        "d74efa19d047461cabffb47e7896848f",
+        "d5f07fdb7c5d4c3ebd09d6c90c90f577",
+        "85e027f60ef64f699c5cf074f03815be"
+      ],
+      "elapsed_ms": 38924.16629998479,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 3787,
+        "total_tokens": 3787,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 3239,
+      "known_output_tokens": 548,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 2,
+        "scenario_denominator": 3,
+        "configuration_operations": 1,
+        "candidate_operations": 2,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 0,
+        "assertions_evaluated": 13,
+        "assertions_passed": 13,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 6,
+        "required_planning_calls": 3,
+        "planning_token_upper_bound": 72288,
+        "optional_readonly_requests": 58,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 28,
+      "round": 3,
+      "case_id": "V204",
+      "attempted": true,
+      "source_report_ids": [
+        "ea9d799f344144ad801382ed7c138cef",
+        "b95e53428d1f4e80b493690ee5f14d96",
+        "8faed4b0562d4935810ff7672701542e",
+        "c710e3c1cce445dda96ea9d4c976094f",
+        "25a9f909b27449f78dec88f4fd10f167",
+        "c1ece4afffb2467e89564d68f3e28af7",
+        "a2c5864ce8eb4c288588cf378946a3e1",
+        "86f53f81b2984196afaa29afdab7e3e2",
+        "911b247557694a719204509521990d22",
+        "a7b644259b4f40f88aea2f4642860d96",
+        "36b148018fc44239a33df74eae08371b"
+      ],
+      "elapsed_ms": 121881.2677001115,
+      "usage": {
+        "requests": 7,
+        "model_calls": 11,
+        "known_tokens": 13588,
+        "total_tokens": 13588,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 7,
+      "known_input_tokens": 11845,
+      "known_output_tokens": 1743,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 11,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 1,
+        "planned_operations": 1,
+        "executed_operations": 1,
+        "assertion_passed_operations": 1,
+        "planned_scenarios": 7,
+        "executed_scenarios": 7,
+        "assertion_passed_scenarios": 7,
+        "not_executed": 4,
+        "assertions_evaluated": 20,
+        "assertions_passed": 20,
+        "by_operation": [
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 11,
+            "planned_scenarios": 7,
+            "executed_steps": 7,
+            "assertion_passed_steps": 7
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 11,
+        "required_planning_calls": 11,
+        "planning_token_upper_bound": 265056,
+        "optional_readonly_requests": 53,
+        "optional_model_calls": 9,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_281fcc02534897789222f9d5",
+          "case_529218d1df99f1b64af3fcad",
+          "case_786afab2e81baa2d1ed160e6",
+          "case_795334a091553d86b74294c6",
+          "case_81b1fa60f49bb4c632e4433f",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "NEEDS_REVIEW",
+          "reason": "MODEL_NO_APPROVED_PLAN"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 29,
+      "round": 3,
+      "case_id": "V205",
+      "attempted": true,
+      "source_report_ids": [
+        "aa7464d67d294f11a635e4f0b983500c",
+        "18247c08c1f744fa824b48ef1d68b380",
+        "994595e93fde499b886b7adfb7d7b5fe",
+        "6e5a5ab695c2491296b7c7dc54963155",
+        "aba0a7894e5142c3b36419ca16611971"
+      ],
+      "elapsed_ms": 42793.49970002659,
+      "usage": {
+        "requests": 0,
+        "model_calls": 5,
+        "known_tokens": 5180,
+        "total_tokens": 5180,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 0,
+      "known_input_tokens": 4811,
+      "known_output_tokens": 369,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 1,
+        "scenario_denominator": 5,
+        "configuration_operations": 1,
+        "candidate_operations": 1,
+        "proposed_operations": 0,
+        "planned_operations": 0,
+        "executed_operations": 0,
+        "assertion_passed_operations": 0,
+        "planned_scenarios": 0,
+        "executed_scenarios": 0,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 5,
+        "assertions_evaluated": 0,
+        "assertions_passed": 0,
+        "by_operation": [
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 0,
+            "executed_steps": 0,
+            "assertion_passed_steps": 0
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 15,
+        "executable_groups": [
+          "case_1e0492c093f557ec68bb92d4",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_66fb612ac4393c4157ff637a",
+          "case_adf51446231e6fc2e81d1605",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        }
+      ]
+    },
+    {
+      "position": 30,
+      "round": 3,
+      "case_id": "V206",
+      "attempted": true,
+      "source_report_ids": [],
+      "elapsed_ms": 8855.730499955826,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 441,
+        "total_tokens": 441,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 0,
+      "known_input_tokens": 334,
+      "known_output_tokens": 107,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 0,
+        "scenario_denominator": 1,
+        "executed_operations": 0,
+        "executed_scenarios": 0
+      },
+      "budget_preview": {
+        "required_business_requests": 0,
+        "required_planning_calls": 0,
+        "planning_token_upper_bound": 0,
+        "optional_readonly_requests": 64,
+        "optional_model_calls": 20,
+        "executable_groups": [],
+        "excluded_groups": [
+          {
+            "case_id": "case_445b4bf8fccd7275655917dd",
+            "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "NEEDS_REVIEW",
+          "outcome": null,
+          "reason": "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT"
+        }
+      ]
+    },
+    {
+      "position": 31,
+      "round": 3,
+      "case_id": "V207",
+      "attempted": true,
+      "source_report_ids": [
+        "f393f47612ca4ef480f3756463fac76a"
+      ],
+      "elapsed_ms": 32337.246000068262,
+      "usage": {
+        "requests": 5,
+        "model_calls": 1,
+        "known_tokens": 2984,
+        "total_tokens": 2984,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 2390,
+      "known_output_tokens": 594,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 1,
+        "not_executed": 0,
+        "assertions_evaluated": 19,
+        "assertions_passed": 19,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_186fcf10d724a31ebc88a1ed"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 32,
+      "round": 3,
+      "case_id": "V208",
+      "attempted": true,
+      "source_report_ids": [
+        "afccad8b9a6c41459a097bc66d4bc7a9"
+      ],
+      "elapsed_ms": 35578.54010001756,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 5191,
+        "total_tokens": 5191,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 4325,
+      "known_output_tokens": 866,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 18,
+        "assertions_passed": 16,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 2,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 5,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 59,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_0e3d00c6f8818f95ea8862ee"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 33,
+      "round": 3,
+      "case_id": "V209",
+      "attempted": true,
+      "source_report_ids": [
+        "ffbe2f4678e24e398d06fbc68d10cfdb"
+      ],
+      "elapsed_ms": 21206.04230009485,
+      "usage": {
+        "requests": 5,
+        "model_calls": 3,
+        "known_tokens": 4782,
+        "total_tokens": 4782,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 5,
+      "known_input_tokens": 4077,
+      "known_output_tokens": 705,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 1,
+        "configuration_operations": 1,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 3,
+        "planned_scenarios": 1,
+        "executed_scenarios": 1,
+        "assertion_passed_scenarios": 0,
+        "not_executed": 0,
+        "assertions_evaluated": 16,
+        "assertions_passed": 15,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 4,
+        "required_planning_calls": 1,
+        "planning_token_upper_bound": 24096,
+        "optional_readonly_requests": 60,
+        "optional_model_calls": 19,
+        "executable_groups": [
+          "case_a8e6a311d9ffb99cfda67469"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 34,
+      "round": 3,
+      "case_id": "V210",
+      "attempted": true,
+      "source_report_ids": [
+        "ad0117c987b94d7eb4fcc376a11f9d51",
+        "3974a05c70c0420e899d38fdc84089b3",
+        "0d51bcaa26844ab088015e192527d59e",
+        "ede68ff7db584f37a3fbd2aee661ff34",
+        "005e699458084136a028f64f1c0e9302",
+        "dc8e3307d0da4aea89ee1495064f49dc",
+        "575722187bde49d29e9fd526a1ab6001",
+        "93684b725aeb4adb8c76353bc89bd659",
+        "be876580d1414e44bf98e3203f09a33f",
+        "257308e9e8d247aea51ec2c060d2fd62",
+        "69e1a1d757c9485c9744ab65281e74ff",
+        "aaa5db5b33f24278aed2fd6aa0a305fe",
+        "7563e25fe599459cb807f6360868eec6",
+        "a1f9a3d8d31a4135b1c18450390f4c0c",
+        "040486cde31e4e6c88e6bffe7e12176b",
+        "6e4d947d505b423db5ef04c179e00b9e",
+        "e5d0f5703a144858934b9631f8422858"
+      ],
+      "elapsed_ms": 180560.6579000596,
+      "usage": {
+        "requests": 24,
+        "model_calls": 17,
+        "known_tokens": 25720,
+        "total_tokens": 25720,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 24,
+      "known_input_tokens": 21783,
+      "known_output_tokens": 3937,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 17,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 15,
+        "executed_scenarios": 15,
+        "assertion_passed_scenarios": 15,
+        "not_executed": 2,
+        "assertions_evaluated": 88,
+        "assertions_passed": 88,
+        "by_operation": [
+          {
+            "operation_id": "closeTicket",
+            "candidates": 16,
+            "scenario_denominator": 6,
+            "planned_scenarios": 6,
+            "executed_steps": 6,
+            "assertion_passed_steps": 6
+          },
+          {
+            "operation_id": "listTickets",
+            "candidates": 4,
+            "scenario_denominator": 1,
+            "planned_scenarios": 1,
+            "executed_steps": 1,
+            "assertion_passed_steps": 1
+          },
+          {
+            "operation_id": "openTicket",
+            "candidates": 21,
+            "scenario_denominator": 16,
+            "planned_scenarios": 14,
+            "executed_steps": 14,
+            "assertion_passed_steps": 14
+          },
+          {
+            "operation_id": "readTicket",
+            "candidates": 11,
+            "scenario_denominator": 3,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 26,
+        "required_planning_calls": 17,
+        "planning_token_upper_bound": 409632,
+        "optional_readonly_requests": 38,
+        "optional_model_calls": 3,
+        "executable_groups": [
+          "case_0a097fe95b8c4ff547044898",
+          "case_11e39aafac919afe7c45961e",
+          "case_24521207fce4f311960056cc",
+          "case_317b6bb4fa393201fcbd90a7",
+          "case_3bcb5ecd74945855c54c3bfc",
+          "case_4594a2d6629e84ea37e17670",
+          "case_63fd309a0750e2b72e9b30cb",
+          "case_65afc11ee1e009ec04d87f48",
+          "case_6e2843649a4cd235aac2698d",
+          "case_7b5b8e48bb410bbd6ac063d3",
+          "case_8a3ad0d82fda09d65817fe6a",
+          "case_b0a0082b8aa83f9456cb89c0",
+          "case_b64aeda81c7f5489fa6faafd",
+          "case_bb47d15b9eb252a807d4b04b",
+          "case_c14f66273fbb2ad6b59d6d6e",
+          "case_cb97f837581410c4d28debaf",
+          "case_ffd86ed7f64fba66d5765abc"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 35,
+      "round": 3,
+      "case_id": "V211",
+      "attempted": true,
+      "source_report_ids": [
+        "1fe1553c6c9546f8a09a655861b446f8",
+        "7b77de7b33dd4045bd31917671cd6e10",
+        "317dd9a7860845a28b5fdefdf1bff2cf",
+        "e450c9ba6420408cbb9a5377a774239f",
+        "2cf995f7b6844191a4cf84028859fcea",
+        "dc5313ab12e64761af8b179f9344dd44",
+        "80b6b45ea33d435db4cd5df248e4e89c",
+        "3ef5402f0bc24367bfb7e598ae0bff8b",
+        "ccd5578ea6934bbc817be876cd169dc0",
+        "5f3333a97e504644b5cbf40a94492564",
+        "b74001f1f84244a196dcd9aca7776747",
+        "ec56e82bb5a348bab2561658ea08ae8c",
+        "05ae7705039a4414847e4009b3f684b0",
+        "269ce7157529448db107cf47495ece43",
+        "e0f026563f7a456d9f6f13da8c85b77c",
+        "3249f74accfa4ef1a62f77c9b837defd",
+        "51cd3972f9d04d3094c69a7a0ae688ff",
+        "02490185bd94475e9697dbfcb69a8ab8",
+        "6b65c2103f074b46952af898195dc28d",
+        "fbb955f0d3094f1a8b15d756f2843aa8"
+      ],
+      "elapsed_ms": 204302.22419998609,
+      "usage": {
+        "requests": 26,
+        "model_calls": 20,
+        "known_tokens": 32980,
+        "total_tokens": 32980,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 26,
+      "known_input_tokens": 27809,
+      "known_output_tokens": 5171,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 4,
+        "scenario_denominator": 20,
+        "configuration_operations": 4,
+        "candidate_operations": 4,
+        "proposed_operations": 4,
+        "planned_operations": 4,
+        "executed_operations": 4,
+        "assertion_passed_operations": 4,
+        "planned_scenarios": 12,
+        "executed_scenarios": 12,
+        "assertion_passed_scenarios": 12,
+        "not_executed": 8,
+        "assertions_evaluated": 82,
+        "assertions_passed": 82,
+        "by_operation": [
+          {
+            "operation_id": "getPlacement",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 2,
+            "executed_steps": 2,
+            "assertion_passed_steps": 2
+          },
+          {
+            "operation_id": "makeSpecimen",
+            "candidates": 23,
+            "scenario_denominator": 16,
+            "planned_scenarios": 10,
+            "executed_steps": 10,
+            "assertion_passed_steps": 10
+          },
+          {
+            "operation_id": "makeTray",
+            "candidates": 11,
+            "scenario_denominator": 11,
+            "planned_scenarios": 8,
+            "executed_steps": 8,
+            "assertion_passed_steps": 8
+          },
+          {
+            "operation_id": "placeSpecimen",
+            "candidates": 26,
+            "scenario_denominator": 7,
+            "planned_scenarios": 6,
+            "executed_steps": 6,
+            "assertion_passed_steps": 6
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 36,
+        "required_planning_calls": 20,
+        "planning_token_upper_bound": 481920,
+        "optional_readonly_requests": 28,
+        "optional_model_calls": 0,
+        "executable_groups": [
+          "case_024c18f8d5fc980c5a05c9fb",
+          "case_04b133207d07ac54767a8915",
+          "case_12eea717a0487e40b41f8033",
+          "case_159f2d489e305da1048b6277",
+          "case_1e0492c093f557ec68bb92d4",
+          "case_281fcc02534897789222f9d5",
+          "case_320caea797f628f888df9bdd",
+          "case_529218d1df99f1b64af3fcad",
+          "case_56233d4ac5ade4a6e9260b83",
+          "case_734fe810e01a33d1bf616f23",
+          "case_795334a091553d86b74294c6",
+          "case_896272068ae8303f4e0f185c",
+          "case_8d6be316286ff10ebb5c3be5",
+          "case_adf51446231e6fc2e81d1605",
+          "case_b4e8322ae19ed9881fc99e74",
+          "case_be23e10d9c55a4e479508141",
+          "case_c2839cbf393482f205c919fc",
+          "case_d6c53126d8b2ab8ed1978b82",
+          "case_eaa699f8b8e2b02868e825ff",
+          "case_f9625572ee820e9ce7c643e8"
+        ],
+        "excluded_groups": [],
+        "complete_project_within_budget": true,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "TOOL_ERROR",
+          "reason": "PLAN_REJECTED"
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        }
+      ]
+    },
+    {
+      "position": 36,
+      "round": 3,
+      "case_id": "V212",
+      "attempted": true,
+      "source_report_ids": [
+        "e5eaddd8011b4850828a6159a6074e77",
+        "708177faaae14067af589414d3679d15",
+        "3d66383258434397a489e18b36e8c59e"
+      ],
+      "elapsed_ms": 34253.54379997589,
+      "usage": {
+        "requests": 6,
+        "model_calls": 3,
+        "known_tokens": 3689,
+        "total_tokens": 3689,
+        "usage_known": true
+      },
+      "actual_asgi_requests": 6,
+      "known_input_tokens": 3242,
+      "known_output_tokens": 447,
+      "unknown_usage_calls": 0,
+      "budget_violations": 0,
+      "stop_paid": false,
+      "coverage": {
+        "operation_denominator": 3,
+        "scenario_denominator": 5,
+        "configuration_operations": 2,
+        "candidate_operations": 3,
+        "proposed_operations": 2,
+        "planned_operations": 2,
+        "executed_operations": 2,
+        "assertion_passed_operations": 2,
+        "planned_scenarios": 3,
+        "executed_scenarios": 3,
+        "assertion_passed_scenarios": 3,
+        "not_executed": 2,
+        "assertions_evaluated": 13,
+        "assertions_passed": 13,
+        "by_operation": [
+          {
+            "operation_id": "createCourse",
+            "candidates": 11,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          },
+          {
+            "operation_id": "getCourse",
+            "candidates": 14,
+            "scenario_denominator": 2,
+            "planned_scenarios": 0,
+            "executed_steps": 0,
+            "assertion_passed_steps": 0
+          },
+          {
+            "operation_id": "login",
+            "candidates": 4,
+            "scenario_denominator": 5,
+            "planned_scenarios": 3,
+            "executed_steps": 3,
+            "assertion_passed_steps": 3
+          }
+        ]
+      },
+      "budget_preview": {
+        "required_business_requests": 13,
+        "required_planning_calls": 5,
+        "planning_token_upper_bound": 120480,
+        "optional_readonly_requests": 2,
+        "optional_model_calls": 17,
+        "executable_groups": [
+          "case_b070eca6485fda8716a5fee5",
+          "case_d799bc442d245db1718ace51",
+          "case_e2e62c21e994ce9da02cc97d"
+        ],
+        "excluded_groups": [
+          {
+            "case_id": "case_3bf0485e1c4b9d2c4f4bf42b",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          },
+          {
+            "case_id": "case_faa3b0745ff77df8c7d4b00d",
+            "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+          }
+        ],
+        "complete_project_within_budget": false,
+        "token_rule": "Upper bound uses configured input plus output reservation per plan; actual known usage can be lower. All calls share one ledger."
+      },
+      "outcomes": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "reason": ""
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        },
+        {
+          "status": "NOT_EXECUTED",
+          "outcome": null,
+          "reason": "SUITE_BUDGET_OR_USAGE_STOP"
+        }
+      ]
+    }
+  ],
+  "scores": [
+    {
+      "position": 1,
+      "round": 1,
+      "case_id": "V201",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 10,
+      "generated_plans": 9,
+      "legal_complete_groups": 5,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": false,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 16,
+      "assertions_passed": 16,
+      "approved_negative_scenario_denominator": 7,
+      "approved_negative_planned": 3,
+      "negative_inputs_constructed": 3,
+      "negative_inputs_executed": 3,
+      "negative_rejected_as_expected": 3
+    },
+    {
+      "position": 2,
+      "round": 1,
+      "case_id": "V202",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 2,
+      "assertions_passed": 2,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 3,
+      "round": 1,
+      "case_id": "V203",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 3,
+      "generated_plans": 3,
+      "legal_complete_groups": 3,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 13,
+      "assertions_passed": 13,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 2,
+      "negative_inputs_constructed": 2,
+      "negative_inputs_executed": 2,
+      "negative_rejected_as_expected": 2
+    },
+    {
+      "position": 4,
+      "round": 1,
+      "case_id": "V204",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 11,
+      "generated_plans": 11,
+      "legal_complete_groups": 8,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 22,
+      "assertions_passed": 22,
+      "approved_negative_scenario_denominator": 8,
+      "approved_negative_planned": 5,
+      "negative_inputs_constructed": 5,
+      "negative_inputs_executed": 5,
+      "negative_rejected_as_expected": 5
+    },
+    {
+      "position": 5,
+      "round": 1,
+      "case_id": "V205",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 5,
+      "legal_complete_groups": 3,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 8,
+      "assertions_passed": 8,
+      "approved_negative_scenario_denominator": 3,
+      "approved_negative_planned": 1,
+      "negative_inputs_constructed": 1,
+      "negative_inputs_executed": 1,
+      "negative_rejected_as_expected": 1
+    },
+    {
+      "position": 6,
+      "round": 1,
+      "case_id": "V206",
+      "goal_scope_correct": false,
+      "goal_identification_verified": false,
+      "denominators_correct": true,
+      "expected_groups": 0,
+      "generated_plans": 0,
+      "legal_complete_groups": 0,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 0,
+      "assertions_evaluated": 0,
+      "assertions_passed": 0,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 7,
+      "round": 1,
+      "case_id": "V207",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 19,
+      "assertions_passed": 19,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 8,
+      "round": 1,
+      "case_id": "V208",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": true,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 1,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 1,
+      "rule_supported": 1,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 18,
+      "assertions_passed": 16,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 9,
+      "round": 1,
+      "case_id": "V209",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": true,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 1,
+      "engine_interceptions": 1,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 16,
+      "assertions_passed": 15,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 10,
+      "round": 1,
+      "case_id": "V210",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 17,
+      "generated_plans": 17,
+      "legal_complete_groups": 14,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 81,
+      "assertions_passed": 81,
+      "approved_negative_scenario_denominator": 11,
+      "approved_negative_planned": 8,
+      "negative_inputs_constructed": 8,
+      "negative_inputs_executed": 8,
+      "negative_rejected_as_expected": 8
+    },
+    {
+      "position": 11,
+      "round": 1,
+      "case_id": "V211",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 20,
+      "generated_plans": 18,
+      "legal_complete_groups": 10,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 73,
+      "assertions_passed": 73,
+      "approved_negative_scenario_denominator": 15,
+      "approved_negative_planned": 5,
+      "negative_inputs_constructed": 5,
+      "negative_inputs_executed": 5,
+      "negative_rejected_as_expected": 5
+    },
+    {
+      "position": 12,
+      "round": 1,
+      "case_id": "V212",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 3,
+      "legal_complete_groups": 2,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": true,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 9,
+      "assertions_passed": 9,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 1,
+      "negative_inputs_constructed": 1,
+      "negative_inputs_executed": 1,
+      "negative_rejected_as_expected": 1
+    },
+    {
+      "position": 13,
+      "round": 2,
+      "case_id": "V201",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 10,
+      "generated_plans": 10,
+      "legal_complete_groups": 9,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 27,
+      "assertions_passed": 27,
+      "approved_negative_scenario_denominator": 7,
+      "approved_negative_planned": 6,
+      "negative_inputs_constructed": 6,
+      "negative_inputs_executed": 6,
+      "negative_rejected_as_expected": 6
+    },
+    {
+      "position": 14,
+      "round": 2,
+      "case_id": "V202",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 2,
+      "assertions_passed": 2,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 15,
+      "round": 2,
+      "case_id": "V203",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 3,
+      "generated_plans": 3,
+      "legal_complete_groups": 2,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 9,
+      "assertions_passed": 9,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 1,
+      "negative_inputs_constructed": 1,
+      "negative_inputs_executed": 1,
+      "negative_rejected_as_expected": 1
+    },
+    {
+      "position": 16,
+      "round": 2,
+      "case_id": "V204",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 11,
+      "generated_plans": 10,
+      "legal_complete_groups": 5,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 16,
+      "assertions_passed": 16,
+      "approved_negative_scenario_denominator": 8,
+      "approved_negative_planned": 2,
+      "negative_inputs_constructed": 2,
+      "negative_inputs_executed": 2,
+      "negative_rejected_as_expected": 2
+    },
+    {
+      "position": 17,
+      "round": 2,
+      "case_id": "V205",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 4,
+      "legal_complete_groups": 3,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 8,
+      "assertions_passed": 8,
+      "approved_negative_scenario_denominator": 3,
+      "approved_negative_planned": 1,
+      "negative_inputs_constructed": 1,
+      "negative_inputs_executed": 1,
+      "negative_rejected_as_expected": 1
+    },
+    {
+      "position": 18,
+      "round": 2,
+      "case_id": "V206",
+      "goal_scope_correct": false,
+      "goal_identification_verified": false,
+      "denominators_correct": true,
+      "expected_groups": 0,
+      "generated_plans": 0,
+      "legal_complete_groups": 0,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 0,
+      "assertions_evaluated": 0,
+      "assertions_passed": 0,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 19,
+      "round": 2,
+      "case_id": "V207",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 19,
+      "assertions_passed": 19,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 20,
+      "round": 2,
+      "case_id": "V208",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": true,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 1,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 1,
+      "rule_supported": 1,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 18,
+      "assertions_passed": 16,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 21,
+      "round": 2,
+      "case_id": "V209",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": true,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 1,
+      "engine_interceptions": 1,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 16,
+      "assertions_passed": 15,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 22,
+      "round": 2,
+      "case_id": "V210",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 17,
+      "generated_plans": 17,
+      "legal_complete_groups": 14,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 81,
+      "assertions_passed": 81,
+      "approved_negative_scenario_denominator": 11,
+      "approved_negative_planned": 8,
+      "negative_inputs_constructed": 8,
+      "negative_inputs_executed": 8,
+      "negative_rejected_as_expected": 8
+    },
+    {
+      "position": 23,
+      "round": 2,
+      "case_id": "V211",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 20,
+      "generated_plans": 19,
+      "legal_complete_groups": 11,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 67,
+      "assertions_passed": 67,
+      "approved_negative_scenario_denominator": 15,
+      "approved_negative_planned": 7,
+      "negative_inputs_constructed": 7,
+      "negative_inputs_executed": 7,
+      "negative_rejected_as_expected": 7
+    },
+    {
+      "position": 24,
+      "round": 2,
+      "case_id": "V212",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 3,
+      "legal_complete_groups": 3,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": true,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 13,
+      "assertions_passed": 13,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 2,
+      "negative_inputs_constructed": 2,
+      "negative_inputs_executed": 2,
+      "negative_rejected_as_expected": 2
+    },
+    {
+      "position": 25,
+      "round": 3,
+      "case_id": "V201",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 10,
+      "generated_plans": 10,
+      "legal_complete_groups": 8,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 25,
+      "assertions_passed": 25,
+      "approved_negative_scenario_denominator": 7,
+      "approved_negative_planned": 5,
+      "negative_inputs_constructed": 5,
+      "negative_inputs_executed": 5,
+      "negative_rejected_as_expected": 5
+    },
+    {
+      "position": 26,
+      "round": 3,
+      "case_id": "V202",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 2,
+      "assertions_passed": 2,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 27,
+      "round": 3,
+      "case_id": "V203",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 3,
+      "generated_plans": 3,
+      "legal_complete_groups": 3,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 13,
+      "assertions_passed": 13,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 2,
+      "negative_inputs_constructed": 2,
+      "negative_inputs_executed": 2,
+      "negative_rejected_as_expected": 2
+    },
+    {
+      "position": 28,
+      "round": 3,
+      "case_id": "V204",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 11,
+      "generated_plans": 10,
+      "legal_complete_groups": 7,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 1,
+      "assertions_evaluated": 20,
+      "assertions_passed": 20,
+      "approved_negative_scenario_denominator": 8,
+      "approved_negative_planned": 4,
+      "negative_inputs_constructed": 4,
+      "negative_inputs_executed": 4,
+      "negative_rejected_as_expected": 4
+    },
+    {
+      "position": 29,
+      "round": 3,
+      "case_id": "V205",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 4,
+      "legal_complete_groups": 0,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": false,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 0,
+      "assertions_evaluated": 0,
+      "assertions_passed": 0,
+      "approved_negative_scenario_denominator": 3,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 30,
+      "round": 3,
+      "case_id": "V206",
+      "goal_scope_correct": false,
+      "goal_identification_verified": false,
+      "denominators_correct": true,
+      "expected_groups": 0,
+      "generated_plans": 0,
+      "legal_complete_groups": 0,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 0,
+      "assertions_evaluated": 0,
+      "assertions_passed": 0,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 31,
+      "round": 3,
+      "case_id": "V207",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 19,
+      "assertions_passed": 19,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 32,
+      "round": 3,
+      "case_id": "V208",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": true,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 1,
+      "model_supported": 1,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 18,
+      "assertions_passed": 16,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 33,
+      "round": 3,
+      "case_id": "V209",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 1,
+      "generated_plans": 1,
+      "legal_complete_groups": 1,
+      "plan_complete": true,
+      "actual_execution_complete": true,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": true,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": true,
+      "model_explicit_abstentions": 1,
+      "model_correct_abstentions": 1,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 16,
+      "assertions_passed": 15,
+      "approved_negative_scenario_denominator": 0,
+      "approved_negative_planned": 0,
+      "negative_inputs_constructed": 0,
+      "negative_inputs_executed": 0,
+      "negative_rejected_as_expected": 0
+    },
+    {
+      "position": 34,
+      "round": 3,
+      "case_id": "V210",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 17,
+      "generated_plans": 17,
+      "legal_complete_groups": 15,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 88,
+      "assertions_passed": 88,
+      "approved_negative_scenario_denominator": 11,
+      "approved_negative_planned": 9,
+      "negative_inputs_constructed": 9,
+      "negative_inputs_executed": 9,
+      "negative_rejected_as_expected": 9
+    },
+    {
+      "position": 35,
+      "round": 3,
+      "case_id": "V211",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 20,
+      "generated_plans": 20,
+      "legal_complete_groups": 12,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": false,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 4,
+      "assertions_evaluated": 82,
+      "assertions_passed": 82,
+      "approved_negative_scenario_denominator": 15,
+      "approved_negative_planned": 8,
+      "negative_inputs_constructed": 8,
+      "negative_inputs_executed": 8,
+      "negative_rejected_as_expected": 8
+    },
+    {
+      "position": 36,
+      "round": 3,
+      "case_id": "V212",
+      "goal_scope_correct": true,
+      "goal_identification_verified": true,
+      "denominators_correct": true,
+      "expected_groups": 5,
+      "generated_plans": 3,
+      "legal_complete_groups": 3,
+      "plan_complete": false,
+      "actual_execution_complete": false,
+      "schema_variants_complete": true,
+      "designated_fault_detected": false,
+      "full_task_complete": false,
+      "clarification_correct": false,
+      "budget_exit_correct": true,
+      "evidence_insufficient_exit": false,
+      "model_explicit_abstentions": 0,
+      "model_correct_abstentions": 0,
+      "model_missed_supported_symptoms": 0,
+      "rule_supported": 0,
+      "model_supported": 0,
+      "inappropriate_proposals": 0,
+      "engine_interceptions": 0,
+      "wrong_evidence_adopted": 0,
+      "unauthorized_executions": 0,
+      "executed_operations": 2,
+      "assertions_evaluated": 13,
+      "assertions_passed": 13,
+      "approved_negative_scenario_denominator": 2,
+      "approved_negative_planned": 2,
+      "negative_inputs_constructed": 2,
+      "negative_inputs_executed": 2,
+      "negative_rejected_as_expected": 2
+    }
+  ],
+  "independent_human_reviewed": false,
+  "human_time_saved": null
+}

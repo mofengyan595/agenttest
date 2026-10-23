@@ -1,0 +1,97 @@
+{
+  "name": "Ticket lifecycle test",
+  "steps": [
+    {
+      "id": "open_1",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "subject": {
+          "value": "岑川终验",
+          "from_step": null,
+          "select": "$"
+        },
+        "priority": {
+          "value": "low",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_open_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "close_2",
+      "operation_id": "closeTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_1",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {
+        "state": {
+          "value": "closed",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_close_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "list_3",
+      "operation_id": "listTickets",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_list_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "read_4",
+      "operation_id": "readTicket",
+      "role": "owner",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_1",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_closed_read_v1",
+      "poll": false,
+      "read_retries": 0
+    },
+    {
+      "id": "read_5",
+      "operation_id": "readTicket",
+      "role": "visitor",
+      "path_parameters": {
+        "ticket_key": {
+          "from_step": "open_1",
+          "select": "$.payload.ticket_key"
+        }
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "policy_id": "ticket_denied_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

@@ -1,0 +1,1406 @@
+{
+  "archive_verified": true,
+  "source_commit": "f1c34eb5990287f8aca8fea76372dcac085246fc",
+  "summary": {
+    "classification": "DEVELOPMENT_ONLY",
+    "review_status": "UNREVIEWED",
+    "independent_human_reviewed": false,
+    "human_time_saved": null,
+    "source": "real",
+    "scheduled": 36,
+    "attempted": 36,
+    "full_task_complete": {
+      "numerator": 12,
+      "denominator": 36
+    },
+    "eligible_full_task": {
+      "numerator": 12,
+      "denominator": 30,
+      "target_met": false
+    },
+    "eligible_projects": {
+      "numerator": 0,
+      "denominator": 6,
+      "target_met": false
+    },
+    "safety": {
+      "unauthorized_executions": 0,
+      "wrong_evidence_adopted": 0,
+      "budget_violations": 0
+    },
+    "all_quality_targets_met": false,
+    "correct_exits": {
+      "clarify": {
+        "denominator": 3,
+        "numerator": 0
+      },
+      "budget_exit": {
+        "denominator": 3,
+        "numerator": 3
+      },
+      "evidence_insufficient": {
+        "denominator": 3,
+        "numerator": 3
+      }
+    },
+    "diagnostics": {
+      "model_explicit_abstentions": 3,
+      "rule_supported": 3,
+      "model_supported": 1,
+      "model_correct_abstentions": 1,
+      "model_missed_supported_symptoms": 2,
+      "inappropriate_proposals": 2,
+      "engine_interceptions": 2
+    },
+    "negative": {
+      "approved_negative_scenario_denominator": 144,
+      "approved_negative_planned": 82,
+      "negative_inputs_constructed": 82,
+      "negative_inputs_executed": 82,
+      "negative_rejected_as_expected": 82
+    },
+    "model_calls": 234,
+    "real_model_calls": 234,
+    "simulated_model_calls": 0,
+    "known_tokens": 334946,
+    "total_tokens": 334946,
+    "unknown_usage_calls": 0,
+    "known_input_tokens": 286386,
+    "known_output_tokens": 48560,
+    "asgi_requests": 268,
+    "real_business_http": 0,
+    "real_database_writes": 0,
+    "scope": {
+      "single": {
+        "scheduled": 18,
+        "full_task_complete": 5
+      },
+      "flow": {
+        "scheduled": 9,
+        "full_task_complete": 7
+      },
+      "project": {
+        "scheduled": 9,
+        "full_task_complete": 0
+      }
+    }
+  },
+  "outcomes": {
+    "PASS": 146,
+    "NEEDS_REVIEW": 8,
+    "TOOL_ERROR": 59,
+    "ASSERTION_FAILED": 6
+  },
+  "failure_codes": {
+    "MODEL_NO_APPROVED_PLAN": 4,
+    "OPENAPI_BODY_FIELD_REQUIRED": 13,
+    "OPENAPI_VALUE_TYPE": 9,
+    "OPENAPI_BODY_REQUIRED": 28,
+    "OPENAPI_VALUE_ENUM": 6,
+    "INTENT_TASK_CONTRACT_PLAN_MISMATCH": 3,
+    "MODEL_SCHEMA_GENERIC_REFERENCE": 1,
+    "MODEL_DUPLICATE_ARGUMENT": 1,
+    "POLICY_LITERAL_REQUIRED": 1,
+    "MODEL_SCHEMA_GENERIC_ARGUMENT_SOURCE": 1
+  },
+  "rejected_group_modes": {
+    "approved_negative:MODEL_NO_APPROVED_PLAN": 4,
+    "approved_negative:OPENAPI_BODY_FIELD_REQUIRED": 13,
+    "approved_negative:OPENAPI_VALUE_TYPE": 9,
+    "approved_negative:OPENAPI_BODY_REQUIRED": 23,
+    "other:OPENAPI_BODY_REQUIRED": 5,
+    "approved_negative:OPENAPI_VALUE_ENUM": 6,
+    "approved_negative:INTENT_TASK_CONTRACT_PLAN_MISMATCH": 3,
+    "approved_negative:MODEL_SCHEMA_GENERIC_REFERENCE": 1,
+    "approved_negative:MODEL_DUPLICATE_ARGUMENT": 1,
+    "approved_negative:POLICY_LITERAL_REQUIRED": 1,
+    "approved_negative:MODEL_SCHEMA_GENERIC_ARGUMENT_SOURCE": 1
+  },
+  "coverage": {
+    "proposed_operations": 83,
+    "planned_operations": 83,
+    "executed_operations": 83,
+    "assertion_passed_operations": 80,
+    "planned_scenarios": 152,
+    "executed_scenarios": 152,
+    "assertion_passed_scenarios": 146,
+    "not_executed": 73,
+    "assertions_evaluated": 849,
+    "assertions_passed": 840
+  },
+  "goal_identification_verified": 33,
+  "plan_complete": 14,
+  "actual_execution_complete": 14,
+  "legal_complete_groups": 152,
+  "designated_fault_detected": 3,
+  "business_request_attempts_in_failures": 0,
+  "model_elapsed_ms": 1195355.0,
+  "model_calls_recounted": 234,
+  "wall_elapsed_ms": 2663100.21579999,
+  "drafts": [
+    {
+      "position": 6,
+      "case_id": "V206",
+      "status": [
+        "NEEDS_REVIEW"
+      ],
+      "http_requests": 0,
+      "goal_spec": {
+        "original_request_sha256": "736d81386ddbbb8045a2e812e4f6c8551c3ce66c49865b3160e8213497f9d959",
+        "project_identity": "00dca0d73bf0962b305efda747f7514063398b9ffc06521a1b160c1218346c16",
+        "status": "NEEDS_REVIEW",
+        "semantic_verified": false,
+        "reason": "GOAL_SPEC_DRAFT_REJECTED",
+        "structure_valid": false,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-plus",
+          "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+          "http_status": 200,
+          "elapsed_ms": 1281.0,
+          "request_bytes": 2888,
+          "request_sha256": "93f2d5c109d586f4e7d7ebb44637a03338432225b42ae61627a1eb3e190573fa",
+          "response_bytes": 722,
+          "input_token_upper_bound": 3400,
+          "input_tokens": 334,
+          "output_tokens": 107,
+          "total_tokens": 441,
+          "output_sha256": "a4fab5d3a63db055aaa3fa1ed9a24e020bc6b10c5042c6642d667153694e65da",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        }
+      }
+    },
+    {
+      "position": 18,
+      "case_id": "V206",
+      "status": [
+        "NEEDS_REVIEW"
+      ],
+      "http_requests": 0,
+      "goal_spec": {
+        "original_request_sha256": "736d81386ddbbb8045a2e812e4f6c8551c3ce66c49865b3160e8213497f9d959",
+        "project_identity": "00dca0d73bf0962b305efda747f7514063398b9ffc06521a1b160c1218346c16",
+        "status": "NEEDS_REVIEW",
+        "semantic_verified": false,
+        "scope": "unknown",
+        "proposed_goals": [],
+        "unresolved": [
+          {
+            "start": 0,
+            "end": 7
+          }
+        ],
+        "unaccounted_characters": 9,
+        "source_accounted": false,
+        "structure_valid": true,
+        "reason": "GOAL_SPEC_REQUIREMENTS_UNACCOUNTED",
+        "question": "请明确草案中的接口目标及无法解释的要求；结构校验不能确认新的业务语义。",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-plus",
+          "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+          "http_status": 200,
+          "elapsed_ms": 2922.0,
+          "request_bytes": 2888,
+          "request_sha256": "93f2d5c109d586f4e7d7ebb44637a03338432225b42ae61627a1eb3e190573fa",
+          "response_bytes": 575,
+          "input_token_upper_bound": 3400,
+          "input_tokens": 334,
+          "output_tokens": 50,
+          "total_tokens": 384,
+          "output_sha256": "508581c3aaf9d6a1ad0c4230c27102b69c067f518dc95dfc99d472834e4073f4",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        }
+      }
+    },
+    {
+      "position": 30,
+      "case_id": "V206",
+      "status": [
+        "NEEDS_REVIEW"
+      ],
+      "http_requests": 0,
+      "goal_spec": {
+        "original_request_sha256": "736d81386ddbbb8045a2e812e4f6c8551c3ce66c49865b3160e8213497f9d959",
+        "project_identity": "00dca0d73bf0962b305efda747f7514063398b9ffc06521a1b160c1218346c16",
+        "status": "NEEDS_REVIEW",
+        "semantic_verified": false,
+        "scope": "unknown",
+        "proposed_goals": [
+          {
+            "start": 3,
+            "end": 7,
+            "goal_id": "create"
+          }
+        ],
+        "unresolved": [
+          {
+            "start": 1,
+            "end": 2
+          },
+          {
+            "start": 8,
+            "end": 16
+          }
+        ],
+        "unaccounted_characters": 3,
+        "source_accounted": false,
+        "structure_valid": true,
+        "reason": "GOAL_SPEC_REQUIREMENTS_UNACCOUNTED",
+        "question": "请明确草案中的接口目标及无法解释的要求；结构校验不能确认新的业务语义。",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-plus",
+          "model_sha256": "0b302246a0131b9193571eaf66782f92d42adbddcc1f5786212347504af11f2c",
+          "http_status": 200,
+          "elapsed_ms": 6734.0,
+          "request_bytes": 2888,
+          "request_sha256": "93f2d5c109d586f4e7d7ebb44637a03338432225b42ae61627a1eb3e190573fa",
+          "response_bytes": 720,
+          "input_token_upper_bound": 3400,
+          "input_tokens": 334,
+          "output_tokens": 107,
+          "total_tokens": 441,
+          "output_sha256": "5752fcf402a9e20a9acd7208ce2673832a7278bcad33f28712a35b74b1c5d8bd",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        }
+      }
+    }
+  ],
+  "details": [
+    {
+      "position": 1,
+      "case_id": "V201",
+      "run_id": "326bbfec5e8d4e5294fa3e356e4909bd",
+      "kinds": [
+        "approved_negative:ticket_open_v1__enum_boundary__priority"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "MODEL_NO_APPROVED_PLAN",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_NO_APPROVED_PLAN",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 1,
+      "case_id": "V201",
+      "run_id": "372e72b735904adca6d9ab0f6cd80ef3",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__priority"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 1,
+      "case_id": "V201",
+      "run_id": "40dc94c66ff649658878aa89d3cb95c1",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 1,
+      "case_id": "V201",
+      "run_id": "321d974ea4ef4754a7d788adfac93830",
+      "kinds": [
+        "approved_negative:ticket_open_v1__string_max_length__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 1,
+      "case_id": "V201",
+      "run_id": "493d458077214772bfd153d569fcae5b",
+      "kinds": [
+        "enum_boundary:body:priority:31ddd95d"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 4,
+      "case_id": "V204",
+      "run_id": "8b280805cd724ee2bbe6e666288ddc08",
+      "kinds": [
+        "approved_negative:specimen_aliquots_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 4,
+      "case_id": "V204",
+      "run_id": "fb4666ea85eb4faaafa9f2ffcb2bf7b7",
+      "kinds": [
+        "approved_negative:specimen_missing_aliquots"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 4,
+      "case_id": "V204",
+      "run_id": "333e613993394d6da47c4f5ed511f01e",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 5,
+      "case_id": "V205",
+      "run_id": "c86e662bcd8046cfb6f40920aa8eb758",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 5,
+      "case_id": "V205",
+      "run_id": "1e514083fea44041b5e590edb67f3d70",
+      "kinds": [
+        "approved_negative:tray_zone_enum"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 10,
+      "case_id": "V210",
+      "run_id": "b347323c917a4d5c89abefe007a1b001",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__priority"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 10,
+      "case_id": "V210",
+      "run_id": "f959cd1e919c44b3bb23daddfb74fa7e",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 10,
+      "case_id": "V210",
+      "run_id": "c69ce0e221e24ab49b89a076449f546a",
+      "kinds": [
+        "approved_negative:ticket_close_v1__string_max_length__state"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "8adf4a6d546c4f54b3d9d522d3e6a5ee",
+      "kinds": [
+        "approved_negative:specimen_label_long"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "6307dd50cec5480c972f04d0adeeaea1",
+      "kinds": [
+        "approved_negative:specimen_label_short"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "REVIEW_REQUIRED",
+      "diagnostic": {
+        "layer": "intent",
+        "code": "INTENT_TASK_CONTRACT_PLAN_MISMATCH",
+        "fields": [],
+        "intent": [
+          {
+            "branch": "SOURCE_OR_VALUE",
+            "requirement_index": 0
+          },
+          {
+            "branch": "GOAL_COVERAGE",
+            "requirement_index": null
+          }
+        ]
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "f01fb53734924b64acd34f5c458809ce",
+      "kinds": [
+        "approved_negative:specimen_label_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "MODEL_INVALID_RESPONSE",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_SCHEMA_GENERIC_REFERENCE",
+        "fields": [],
+        "reference": {
+          "branch": "SOURCE_NOT_PREVIOUS",
+          "step_index": 0,
+          "argument_index": 0
+        }
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "a552af0cb3fc4a2a92ab334470bee69f",
+      "kinds": [
+        "approved_negative:specimen_missing_aliquots"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "3e69006d88fe4300ae374167ff572491",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "b83313636c66408a8c9116d125b18dd3",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "8ffcce3cb63f4522a813bcf519c47e68",
+      "kinds": [
+        "approved_negative:tray_zone_enum"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "MODEL_NO_APPROVED_PLAN",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_NO_APPROVED_PLAN",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "31c61d3f4d634d6dbfa232d7cacf08fe",
+      "kinds": [
+        "approved_negative:tray_zone_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "f146b92217d847e8abd711be59fa27f3",
+      "kinds": [
+        "approved_negative:place_missing_position"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 11,
+      "case_id": "V211",
+      "run_id": "bd12434af980492ba7eb3ae94c4497c0",
+      "kinds": [
+        "approved_negative:place_position_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 12,
+      "case_id": "V212",
+      "run_id": "8fc030ae26b44623a80e6ed05ba08326",
+      "kinds": [
+        "approved_negative:nl_create_v1__required_missing__name"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 13,
+      "case_id": "V201",
+      "run_id": "acf85d22f1c24a68833efa4df096a828",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 15,
+      "case_id": "V203",
+      "run_id": "6f6a8589d01f4003b5446e99a9a1133d",
+      "kinds": [
+        "approved_negative:nl_create_v1__required_missing__name"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "688addea758a40e8beecd53971bed35f",
+      "kinds": [
+        "approved_negative:specimen_aliquots_low"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "d49f1c1b727c4ce593caefac63592fce",
+      "kinds": [
+        "approved_negative:specimen_aliquots_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "9f34a8a58a2f41b5acefcaa29dd640b7",
+      "kinds": [
+        "approved_negative:specimen_label_long"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "0e8a886e0a694b82a87553a57d94317b",
+      "kinds": [
+        "approved_negative:specimen_label_short"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "MODEL_NO_APPROVED_PLAN",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_NO_APPROVED_PLAN",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "081f508d815049ef89c0656b27f6f71b",
+      "kinds": [
+        "approved_negative:specimen_missing_aliquots"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 16,
+      "case_id": "V204",
+      "run_id": "28c0081d143449959634923acaedb1e1",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 17,
+      "case_id": "V205",
+      "run_id": "ea0de86c6f064c1ea9203fb7cac29ba6",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 17,
+      "case_id": "V205",
+      "run_id": "d3f796794254459eb22927b58ef9eb69",
+      "kinds": [
+        "approved_negative:tray_zone_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "MODEL_INVALID_RESPONSE",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_DUPLICATE_ARGUMENT",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 22,
+      "case_id": "V210",
+      "run_id": "c3f95a0ef77947abb3b54eca3636cc67",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__priority"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 22,
+      "case_id": "V210",
+      "run_id": "581d35c0c60644bd9d9b36ae078d3856",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 22,
+      "case_id": "V210",
+      "run_id": "cd052211e1d2499a80b37e88559bc2fb",
+      "kinds": [
+        "approved_negative:ticket_close_v1__string_min_length__state"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "424cd5fdde744dc08dc7f41473ff99eb",
+      "kinds": [
+        "approved_negative:specimen_aliquots_high"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "MODEL_REFERENCE_NEEDS_REVIEW",
+      "diagnostic": {
+        "layer": "policy",
+        "code": "POLICY_LITERAL_REQUIRED",
+        "fields": [],
+        "reference": {
+          "branch": "LITERAL_SLOT",
+          "step_index": 1,
+          "argument_index": 0
+        }
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "14a27905a05e45c8815785617f721b53",
+      "kinds": [
+        "approved_negative:specimen_aliquots_low"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "REVIEW_REQUIRED",
+      "diagnostic": {
+        "layer": "intent",
+        "code": "INTENT_TASK_CONTRACT_PLAN_MISMATCH",
+        "fields": [],
+        "intent": [
+          {
+            "branch": "STEP_COUNT",
+            "requirement_index": null
+          },
+          {
+            "branch": "OPERATION_ROLE_POLICY",
+            "requirement_index": 0
+          },
+          {
+            "branch": "STEP_SET",
+            "requirement_index": null
+          },
+          {
+            "branch": "GOAL_COVERAGE",
+            "requirement_index": null
+          }
+        ]
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "605c5f04befd4c02b351d8ce658b78e6",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "c68733e136cb4ab28eab4f8ce55e0f91",
+      "kinds": [
+        "tray:normal"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "caf9477728da4c3d9ce984820fdc5cad",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "dcb27591f8944ccdaa411778ce919e59",
+      "kinds": [
+        "approved_negative:tray_zone_enum"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "aa45f544a38446c58903f41ee82522ed",
+      "kinds": [
+        "approved_negative:place_missing_position"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "b927cb56132f4464bd124caaa5d92687",
+      "kinds": [
+        "approved_negative:place_position_high"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "REVIEW_REQUIRED",
+      "diagnostic": {
+        "layer": "intent",
+        "code": "INTENT_TASK_CONTRACT_PLAN_MISMATCH",
+        "fields": [],
+        "intent": [
+          {
+            "branch": "STEP_COUNT",
+            "requirement_index": null
+          },
+          {
+            "branch": "OPERATION_ROLE_POLICY",
+            "requirement_index": 1
+          },
+          {
+            "branch": "OPERATION_ROLE_POLICY",
+            "requirement_index": 2
+          },
+          {
+            "branch": "GOAL_COVERAGE",
+            "requirement_index": null
+          }
+        ]
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 23,
+      "case_id": "V211",
+      "run_id": "1631b30887f44ccf8ec7d73d951402cf",
+      "kinds": [
+        "approved_negative:place_position_low"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 25,
+      "case_id": "V201",
+      "run_id": "afeceedd2d3845658b19585d31d92676",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__priority"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 25,
+      "case_id": "V201",
+      "run_id": "fd3fe99ab72044918a3ed1cdfde37fc9",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 28,
+      "case_id": "V204",
+      "run_id": "8faed4b0562d4935810ff7672701542e",
+      "kinds": [
+        "approved_negative:specimen_aliquots_low"
+      ],
+      "outcome": "NEEDS_REVIEW",
+      "reason": "MODEL_NO_APPROVED_PLAN",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_NO_APPROVED_PLAN",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 28,
+      "case_id": "V204",
+      "run_id": "a2c5864ce8eb4c288588cf378946a3e1",
+      "kinds": [
+        "approved_negative:specimen_label_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 28,
+      "case_id": "V204",
+      "run_id": "86f53f81b2984196afaa29afdab7e3e2",
+      "kinds": [
+        "approved_negative:specimen_missing_aliquots"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 28,
+      "case_id": "V204",
+      "run_id": "911b247557694a719204509521990d22",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 29,
+      "case_id": "V205",
+      "run_id": "aa7464d67d294f11a635e4f0b983500c",
+      "kinds": [
+        "normal",
+        "enum_boundary:body:zone:aa095a36"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 29,
+      "case_id": "V205",
+      "run_id": "18247c08c1f744fa824b48ef1d68b380",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 29,
+      "case_id": "V205",
+      "run_id": "994595e93fde499b886b7adfb7d7b5fe",
+      "kinds": [
+        "approved_negative:tray_zone_enum"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 29,
+      "case_id": "V205",
+      "run_id": "6e5a5ab695c2491296b7c7dc54963155",
+      "kinds": [
+        "approved_negative:tray_zone_type"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "MODEL_INVALID_RESPONSE",
+      "diagnostic": {
+        "layer": "model",
+        "code": "MODEL_SCHEMA_GENERIC_ARGUMENT_SOURCE",
+        "fields": [
+          "steps.0.arguments.0"
+        ]
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 29,
+      "case_id": "V205",
+      "run_id": "aba0a7894e5142c3b36419ca16611971",
+      "kinds": [
+        "enum_boundary:body:zone:dbe71235"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 34,
+      "case_id": "V210",
+      "run_id": "0d51bcaa26844ab088015e192527d59e",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__priority"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 34,
+      "case_id": "V210",
+      "run_id": "ede68ff7db584f37a3fbd2aee661ff34",
+      "kinds": [
+        "approved_negative:ticket_open_v1__required_missing__subject"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "1fe1553c6c9546f8a09a655861b446f8",
+      "kinds": [
+        "specimen:normal"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "7b77de7b33dd4045bd31917671cd6e10",
+      "kinds": [
+        "approved_negative:specimen_aliquots_high"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "2cf995f7b6844191a4cf84028859fcea",
+      "kinds": [
+        "approved_negative:specimen_label_long"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "3ef5402f0bc24367bfb7e598ae0bff8b",
+      "kinds": [
+        "approved_negative:specimen_missing_aliquots"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_FIELD_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "ccd5578ea6934bbc817be876cd169dc0",
+      "kinds": [
+        "approved_negative:specimen_missing_label"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_TYPE",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "b74001f1f84244a196dcd9aca7776747",
+      "kinds": [
+        "approved_negative:tray_missing_zone"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "ec56e82bb5a348bab2561658ea08ae8c",
+      "kinds": [
+        "approved_negative:tray_zone_enum"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_VALUE_ENUM",
+        "fields": []
+      },
+      "http_attempts": 0
+    },
+    {
+      "position": 35,
+      "case_id": "V211",
+      "run_id": "e0f026563f7a456d9f6f13da8c85b77c",
+      "kinds": [
+        "approved_negative:place_missing_position"
+      ],
+      "outcome": "TOOL_ERROR",
+      "reason": "PLAN_REJECTED",
+      "diagnostic": {
+        "layer": "openapi",
+        "code": "OPENAPI_BODY_REQUIRED",
+        "fields": []
+      },
+      "http_attempts": 0
+    }
+  ]
+}

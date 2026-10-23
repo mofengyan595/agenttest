@@ -17,6 +17,16 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The scoped 2026-10-23 implementation and frozen paid schedules are complete;
+only final delivery checks/documentation and exact-SHA CI remain in scope.
+See docs/trusted-testing-final-results.md: real full tasks12/36, eligible12/30,
+funded projects0/6; quality targets were NOT met. TV_NEW01 passed once and was
+exported to a model-disabled fixed regression. Preserve v1 input-budget failure,
+original v2 reference error/scores, amended archives, all old scores and failures.
+Do not add paid trials, retune used requests, change assertions or expand features
+without a new milestone. Independent human review/time savings remain unverified.
+
+### Operator objective (preserved)
 The 2026-10-23 Goal establishes the incremental milestone in
 docs/trusted-testing-goal.md: approved negative execution, bounded project planning,
 expression adaptation and a third synthetic project, evidence attribution, then a

@@ -1,9 +1,10 @@
 # 可信测试 Goal：已有成果与可复制演示
 
-当前交付为阶段1–4工程和阶段5冻结/失败证据；整个Goal尚未完成。
-[实际结果](trusted-testing-results.md) · [新冻结协议](trusted-testing-validation-protocol.md) ·
+工程与冻结验证已交付，真实质量目标未达到：12/36、明确足额12/30、足额项目0/6。
+[最终结果](trusted-testing-final-results.md) · [原失败](trusted-testing-results.md) · [冻结协议](trusted-testing-reference-amendment.md) ·
 [接入成本](trusted-testing-approved-projects.md) · [第三项目](trusted-testing-laboratory.md) ·
-[简历/面试](trusted-testing-resume-interview.md) · [待批准的新里程碑](trusted-testing-next-milestone.md)。
+[简历/面试](trusted-testing-resume-interview.md) · [已批准里程碑记录](trusted-testing-next-milestone.md)。
+[逐项交付核对](trusted-testing-completion-audit.md)。
 
 以下从仓库根目录执行，沿用项目虚拟环境，不安装依赖。输出目录必须尚不存在；不覆盖历史输出。
 全部使用固定Fake/Mock或既有pytest模板，无真实模型、Docker、外部业务系统或真实数据库写入。
@@ -13,6 +14,7 @@
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_approved_inputs.py --output runs/trusted-inputs-demo
 .\.venv\Scripts\python.exe -m pytest examples/regressions/approved-inputs -q
+.\.venv\Scripts\python.exe -m pytest examples/regressions/TV_NEW01 -q
 ```
 
 第一条实际发送四个ASGI请求：正常PASS、批准非法输入按预期拒绝PASS、错误接受非法输入和错误正文
@@ -43,14 +45,24 @@
 
 该命令不调用模型、不运行目标，只重算已有清单、排期、用量、评分与停止规则。
 36位置仍全部保留；实际尝试8，TT08输入上界超限后28位置未执行。
-真实排期和TT_NEW01均未运行，不能跳过离线门禁。
-公开收据在 `docs/demo-evidence/trusted-testing-preflight.json`，完整原档在私有runs目录。
+这是原v1失败的冷核对，不替换后来的排期。当前真实排期与首次TV_NEW01已完成：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/evaluate_trusted_testing.py --verify runs/ttg-validation-amended-real
+.\.venv\Scripts\python.exe scripts/trusted_first_demand.py --verify runs/ttg-amended-first-demand
+```
+
+这两条只读已有归档，不调用模型或目标。公开逐位置收据和失败明细见最终结果，完整原档在私有runs目录。
 
 ## 工程核对与尚未完成
 
 冻结前85项关联回归+1项付费停止门禁、Ruff/diff通过；阶段4前端36项测试、类型检查、构建和
 5项浏览器交互验收通过。准确提交的远程CI状态另见进度，失败或取消的旧workflow均保留。
+最终本地归档脚手架11项+全部固定回归8项：19 passed/32.47s；提示输入预算1 passed/2.88s。
+Ruff、pip check、diff检查通过；四份排期及首次需求归档冷核对、公开收据/原档一致、模板字节/哈希、
+文档本地链接、私密值排查和核心树未变检查通过，核对新增模型/目标调用均0。
 原归档和固定资产没有覆盖。原15/36、追加1/7、NE_NEW01不改分，也不与本轮跨协议计算提升。
 
-真实36排期、首次新需求真实尝试及其导出、模型质量目标仍未完成；正式独立人审和人工计时未知。
-用户已明确批准新里程碑，当前用旧需求验证通用提示精简，再建立新的验收；不将部分成果称为完整交付。
+真实36排期和首次TV_NEW01均完成，质量目标未达到；正式独立人审和人工计时未知。
+新增需求首次导出成功，原CLI封印失败经仅元数据修正后冷核对通过，未重跑模型/原请求。
+当前固定排期结束，不继续补跑追分；新的质量工程须另立里程碑。
