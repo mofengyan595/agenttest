@@ -1522,6 +1522,18 @@
             "type": "array",
             "title": "Plan Structure"
           },
+          "plan_derivation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Derivation"
+          },
           "validation_issue": {
             "anyOf": [
               {

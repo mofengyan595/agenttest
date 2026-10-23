@@ -133,6 +133,10 @@ test("groups retain excluded denominators and show approved negative outcomes", 
       budget_preview: {
         required_business_requests: 11,
         required_planning_calls: 6,
+        normal_cases: 1,
+        derived_cases: 1,
+        boundary_or_enum_cases: 0,
+        approved_negative_cases: 1,
         optional_readonly_requests: 1,
         optional_model_calls: 0,
         planning_token_upper_bound: 144576,
@@ -152,6 +156,13 @@ test("groups retain excluded denominators and show approved negative outcomes", 
           kinds: ["approved_negative:missing"],
           approved_negative_steps: 1,
           negative_rejections_passed: 1,
+          plan_source: "DETERMINISTIC_RULE",
+          structural_validation_passed: true,
+          task_satisfied: true,
+          plan_derivation: {
+            base_run_id: "a".repeat(32),
+            base_plan_sha256: "b".repeat(64),
+          },
         },
         {
           case_id: "c",
@@ -181,6 +192,12 @@ test("groups retain excluded denominators and show approved negative outcomes", 
     "必需业务请求 11",
   );
   expect(screen.getByText(/按预期拒绝 1\/1 个已构造输入/)).toBeInTheDocument();
+  expect(screen.getByText(/合法基础计划的规则派生/)).toBeInTheDocument();
+  expect(screen.getByText(/结构校验通过/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "查看基础计划" })).toHaveAttribute(
+    "href",
+    `/runs/${"a".repeat(32)}`,
+  );
   expect(screen.getByText(/本组未执行，保留在覆盖分母中/)).toBeInTheDocument();
   expect(screen.getByText(/计划合格场景 1\/3/)).toBeInTheDocument();
   expect(screen.getByText(/预算或待审项限制完整执行/)).toBeInTheDocument();

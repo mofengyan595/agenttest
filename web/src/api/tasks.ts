@@ -27,6 +27,10 @@ export interface GoalTask {
     budget_preview?: {
       required_business_requests: number;
       required_planning_calls: number;
+      derived_cases?: number;
+      normal_cases?: number;
+      approved_negative_cases?: number;
+      boundary_or_enum_cases?: number;
       optional_readonly_requests: number;
       optional_model_calls: number;
       planning_token_upper_bound: number;
@@ -56,6 +60,14 @@ export interface GoalTask {
       kinds?: string[];
       approved_negative_steps?: number;
       negative_rejections_passed?: number;
+      base_structure_id?: string | null;
+      plan_source?: string;
+      structural_validation_passed?: boolean;
+      base_failure?: { run_id: string; diagnostic: string };
+      plan_derivation?: {
+        base_run_id: string;
+        base_plan_sha256: string;
+      } | null;
     }[];
     budget?: {
       max_requests: number;

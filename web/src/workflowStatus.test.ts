@@ -1,6 +1,17 @@
 import { workflowStages } from "./workflowStatus";
 import { runFixture } from "./test/fixtures";
 
+test("derived structure is not presented as another model planning success", () => {
+  const stages = workflowStages(
+    runFixture({
+      workflow_nodes: ["plan", "validate"],
+      plan_derivation: { source: "DETERMINISTIC_RULE" },
+    }),
+  );
+  expect(stages[1].title).toBe("规则派生");
+  expect(stages[1].evidence).toContain("规划模型调用 0 次");
+});
+
 test("node entry and false defaults cannot imply success or failure", () => {
   const stages = workflowStages(
     runFixture({

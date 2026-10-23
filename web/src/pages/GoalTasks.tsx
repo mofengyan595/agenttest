@@ -307,6 +307,21 @@ export function GoalTasks() {
                     {" · "}可选模型额度{" "}
                     {selected.summary.budget_preview.optional_model_calls}
                   </p>
+                  {selected.summary.budget_preview.derived_cases !==
+                    undefined && (
+                    <p>
+                      正常结构{" "}
+                      {selected.summary.budget_preview.normal_cases ?? 0}
+                      {" · "}规则派生{" "}
+                      {selected.summary.budget_preview.derived_cases}
+                      {" · "}边界或枚举{" "}
+                      {selected.summary.budget_preview.boundary_or_enum_cases ??
+                        0}
+                      {" · "}批准负例{" "}
+                      {selected.summary.budget_preview
+                        .approved_negative_cases ?? 0}
+                    </p>
+                  )}
                   <p>
                     可执行{" "}
                     {selected.summary.budget_preview.executable_groups.length}{" "}
@@ -366,6 +381,32 @@ export function GoalTasks() {
                 <div className="task-case" key={item.case_id}>
                   <strong>{item.operation_id || "待澄清目标"}</strong>
                   <span>{item.outcome || item.status}</span>
+                  {item.plan_source === "DETERMINISTIC_RULE" && (
+                    <p>来源：合法基础计划的规则派生，规划模型调用 0 次。</p>
+                  )}
+                  {item.plan_derivation && (
+                    <p>
+                      <Link
+                        className="inline-link"
+                        to={`/runs/${item.plan_derivation.base_run_id}`}
+                      >
+                        查看基础计划
+                      </Link>
+                      {" · "}指纹{" "}
+                      {item.plan_derivation.base_plan_sha256.slice(0, 12)}
+                    </p>
+                  )}
+                  {item.structural_validation_passed !== undefined && (
+                    <p>
+                      结构校验
+                      {item.structural_validation_passed ? "通过" : "未通过"}
+                      {" · "}业务目标
+                      {item.task_satisfied ? "已满足" : "未证实满足"}
+                    </p>
+                  )}
+                  {item.base_failure && (
+                    <p>基础计划失败：{item.base_failure.diagnostic}</p>
+                  )}
                   {(!!item.approved_negative_steps ||
                     item.kinds?.some((kind) =>
                       kind.startsWith("approved_negative:"),

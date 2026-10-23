@@ -48,7 +48,8 @@ async def test_fixed_development_request_uses_adapter_and_independent_negative_d
     assert result["full_task_complete"] and checks
     assert result["approved_negative_scenario_denominator"] == 7
     assert result["negative_inputs_executed"] == result["negative_rejected_as_expected"] == 7
-    assert row["usage"]["model_calls"] == row["actual_asgi_requests"] == 10
+    assert row["usage"]["model_calls"] == 1
+    assert row["actual_asgi_requests"] == 10
     # A product's own complete flag cannot hide a missing independently required proposal.
     incomplete = deepcopy(plans)
     incomplete.pop(next(iter(incomplete)))

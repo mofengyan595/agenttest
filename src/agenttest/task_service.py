@@ -191,18 +191,26 @@ class TaskService:
                     budget = WorkflowBudget(model_timeout=timeout + 1,
                                             workflow_timeout=min(4 * timeout + 30, 300))
 
+                    validated_plans = {}
+
+                    def retain_plan(goal, plan):
+                        validated_plans[fingerprint(goal.task.model_dump())] = plan
+
                     def retain(goal, report):
+                        selected_plan = validated_plans.get(fingerprint(goal.task.model_dump()),
+                                                            planner.scenario)
                         if (report.outcome == Outcome.PASS and report.task_satisfied
-                                and planner.scenario is not None
-                                and fingerprint(planner.scenario.model_dump())
+                                and selected_plan is not None
+                                and fingerprint(selected_plan.model_dump())
                                 == report.scenario_sha256):
                             self._assets[(task_id, report.run_id)] = (
-                                planner.scenario.model_copy(deep=True), goal.task, project)
+                                selected_plan.model_copy(deep=True), goal.task, project)
 
                     if suite:
                         result = await run_suite(project, text, planner, store, environ=env,
                             transport=transport, ledger=shared, budget=budget, analyzer=analyzer,
                             on_report=retain, execution_guard=guard,
+                            on_validated_plan=retain_plan,
                             semantic_model=self.semantic_factory(project)
                                 if (self.semantic_factory
                                     and project.registration.semantic_goal_drafts)

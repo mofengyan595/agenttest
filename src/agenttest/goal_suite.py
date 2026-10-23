@@ -470,8 +470,13 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                 on_validated_plan=lambda plan: captured.append(plan))
             if not case.is_derived:
                 if captured:
-                    structures[case.structure_id] = LegalStructure.capture(project, goal,
-                        captured[0], report, environ)
+                    try:
+                        structures[case.structure_id] = LegalStructure.capture(project, goal,
+                            captured[0], report, environ)
+                    except (NeedsReview, ValueError) as exc:
+                        base_failures[case.structure_id] = dict(run_id=report.run_id,
+                            diagnostic=getattr(getattr(exc, "diagnostic", None), "code",
+                                               "PLAN_REUSE_BINDING_MISMATCH"))
                 else:
                     base_failures[case.structure_id] = dict(run_id=report.run_id,
                         diagnostic=report.diagnostic.code if report.diagnostic else report.reason)

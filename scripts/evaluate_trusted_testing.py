@@ -76,10 +76,13 @@ async def position(folder, request, fault, settings, verify, mock_protocol="chat
     analyzer = PublicTrace(feedback, folder / "feedback-inputs", verify)
     entry = PublicTrace(semantic, folder / "semantic-inputs", verify)
     store = ReportStore(folder / "reports")
-    plans, shapes = {}, {}
+    plans, shapes, validated = {}, {}, {}
+
+    def on_validated(goal, plan):
+        validated[fingerprint(goal.task.model_dump())] = plan
 
     def observed(goal, report):
-        plan = capture.scenario
+        plan = validated.get(fingerprint(goal.task.model_dump()), capture.scenario)
         plans[report.run_id] = capture_plan(plan).model_dump(mode="json") if plan else None
         shapes[report.run_id] = [dict(policy_id=s.policy_id, arguments={
             f"{loc}.{name}": dict(sha256=fingerprint(b.value),
@@ -91,7 +94,8 @@ async def position(folder, request, fault, settings, verify, mock_protocol="chat
     started = time.perf_counter()
     product = await run_suite(project, request["user_task"], capture, store, environ=env,
         transport=transport, analyzer=analyzer, semantic_model=entry, execution_guard=verify,
-        on_report=observed, budget=WorkflowBudget(model_timeout=61, workflow_timeout=300))
+        on_report=observed, on_validated_plan=on_validated,
+        budget=WorkflowBudget(model_timeout=61, workflow_timeout=300))
     save_evaluation(product, folder / "product.json")
     save_evaluation(plans, folder / "plans.json")
     save_evaluation(shapes, folder / "shapes.json")

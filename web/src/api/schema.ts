@@ -666,6 +666,10 @@ export interface components {
       model_call?: components["schemas"]["ModelCallStats"] | null;
       /** Plan Structure */
       plan_structure?: components["schemas"]["PlanStepEvidence"][];
+      /** Plan Derivation */
+      plan_derivation?: {
+        [key: string]: unknown;
+      } | null;
       /** Validation Issue */
       validation_issue?: string | null;
       diagnostic?: components["schemas"]["Diagnostic"] | null;

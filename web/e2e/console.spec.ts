@@ -36,6 +36,36 @@ test("registered goal: session protected submission, progress, evidence and narr
     page.getByText("open / openTicket", { exact: true }),
   ).toBeVisible();
 });
+test("derived suite: source, validation, export and mobile layout", async ({
+  page,
+}) => {
+  await page.goto("/tasks");
+  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await page.getByLabel("测试需求").fill("请测试新建工单接口");
+  await page.getByLabel("包含 Schema 用例候选").check();
+  await page.getByRole("button", { name: "开始测试", exact: true }).click();
+  await expect(page.getByText(/合法基础计划的规则派生/).first()).toBeVisible();
+  await expect(page.getByText(/结构校验通过/).first()).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "查看基础计划" }).first(),
+  ).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出该用例 pytest" }).last().click();
+  expect((await download).suggestedFilename()).toBe("agenttest-regression.zip");
+  await page.screenshot({
+    path: path.join(shots, "derivation-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(391);
+  await page.screenshot({
+    path: path.join(shots, "derivation-mobile.png"),
+    fullPage: true,
+  });
+});
+
 test("display fixture: trusted rule and model abstention stay visibly separate", async ({
   page,
   request,
@@ -113,7 +143,9 @@ test("display fixture: group budgets, excluded coverage and approved rejection r
     path_template: "/validation-records",
     input_validation: "APPROVED_NEGATIVE",
     negative_rejected_as_expected: true,
-    checks: [{ kind: "http_status", expected: [422], actual: 422, passed: true }],
+    checks: [
+      { kind: "http_status", expected: [422], actual: 422, passed: true },
+    ],
     attempts: [{ ...report.steps[0].attempts[0], status_code: 422 }],
   };
   await page.route(`**/api/runs/${selected.run_id}`, (route) =>
@@ -200,7 +232,9 @@ test("display fixture: group budgets, excluded coverage and approved rejection r
     fullPage: true,
   });
   await page.getByRole("link", { name: "查看分层证据" }).click();
-  await page.getByText("approved_missing / validateRecord", { exact: true }).click();
+  await page
+    .getByText("approved_missing / validateRecord", { exact: true })
+    .click();
   await expect(page.getByText("目标拒绝符合批准预期。")).toBeVisible();
   await page.screenshot({
     path: path.join(shots, "approved-negative-390.png"),

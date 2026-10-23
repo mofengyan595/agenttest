@@ -52,7 +52,7 @@ export function workflowStages(run: RunReport) {
           : "未记录目标",
     ),
     stage(
-      "Planner",
+      run.plan_derivation ? "规则派生" : "Planner",
       plannerFailed
         ? "failed"
         : nodes.includes("validate")
@@ -60,11 +60,13 @@ export function workflowStages(run: RunReport) {
           : nodes.includes("plan")
             ? "observed"
             : "unknown",
-      plannerFailed
-        ? "报告记录模型层失败，未进入校验"
-        : nodes.includes("validate")
-          ? "规划已返回并交给校验；不代表计划合法"
-          : "仅依据实际节点记录",
+      run.plan_derivation
+        ? "从合法基础结构派生；规划模型调用 0 次，仍须通过校验"
+        : plannerFailed
+          ? "报告记录模型层失败，未进入校验"
+          : nodes.includes("validate")
+            ? "规划已返回并交给校验；不代表计划合法"
+            : "仅依据实际节点记录",
     ),
     stage(
       "Validator",

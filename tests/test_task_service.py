@@ -61,6 +61,51 @@ async def test_persisted_tasks_and_duplicate_submission_do_not_execute_twice(tmp
     await svc.close()
 
 
+@pytest.mark.asyncio
+async def test_suite_exports_derived_normal_and_negative_without_model_calls(tmp_path, monkeypatch):
+    pytest.importorskip("langgraph")
+    from agenttest.nl_entry_fixture import CatalogFixturePlanner
+    from agenttest.regression import RegressionRuntime, assert_regression_passed, run_regression
+
+    path = Path(__file__).resolve().parents[1] / (
+        "examples/trusted-testing/projects/tickets/registered.project.json")
+    svc = TaskService({"tickets": path}, TaskStore(tmp_path / "tasks.sqlite3"),
+        ReportStore(tmp_path / "reports"), lambda project: CatalogFixturePlanner(),
+        synthetic=True, environ={})
+    try:
+        first = await svc.submit("owner", "tickets", "请验证创建工单接口", uuid4().hex, suite=True)
+        finished = await settle(svc, first["id"], "owner")
+        assert finished["status"] == "FINISHED"
+        summary = finished["summary"]
+        assert summary["complete"] and summary["context_usage"]["model_calls"] == 1
+        derived = [c for c in summary["cases"] if c.get("plan_derivation")]
+        assert len(derived) == 9
+        chosen = [next(c for c in derived if c["approved_negative_steps"]),
+                  next(c for c in derived if not c["approved_negative_steps"])]
+        exports = [svc.export_regression(first["id"], "owner", c["run_id"]) for c in chosen]
+
+        def forbidden(*args, **kwargs):
+            raise AssertionError("Fixed regressions must not call any model")
+
+        monkeypatch.setattr(CatalogFixturePlanner, "generate", forbidden)
+        from agenttest.llm_planner import OpenAICompatiblePlanner
+
+        monkeypatch.setattr(OpenAICompatiblePlanner, "generate", forbidden)
+        from agenttest.portability_demo import project_inputs
+
+        project = svc.project("tickets")
+        for case, exported in zip(chosen, exports):
+            _, task, _ = svc._assets[(first["id"], case["run_id"])]
+            app, _, _, _, env = project_inputs("tickets")
+            report = await run_regression(exported, RegressionRuntime(project.document,
+                project.target, project.registry, task, env, httpx.ASGITransport(app=app),
+                ReportStore(tmp_path / "replayed")))
+            assert_regression_passed(report)
+            assert report.task_mode == "operator_plan" and report.task_satisfied is None
+    finally:
+        await svc.close()
+
+
 def test_restart_marks_unfinished_interrupted_and_never_reconstructs_requests(tmp_path):
     db = TaskStore(tmp_path / "tasks.sqlite3")
     for state in ("QUEUED", "RUNNING", "WAITING_REVIEW"):
