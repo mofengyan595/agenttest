@@ -4,6 +4,11 @@
 
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
+2026-10-23增量：[批准负例、分组预算与第三项目复用](docs/trusted-testing-delivery.md)。
+阶段1–4工程及新12×3冻结脚手架已实现；离线门禁在第8位置触发输入预算限制，真实排期尚未启动，
+整个Goal未完成。[完整失败与分母](docs/trusted-testing-results.md) · [接入成本](docs/trusted-testing-approved-projects.md) ·
+[简历/面试边界](docs/trusted-testing-resume-interview.md)。
+
 2026-10-20新里程碑：[自然语言入口与项目配置复用](docs/nl-entry.md)。
 阶段1–5新增`goal --project ... --user-task ... --preview`、三层套件、工具协议适配、有界上下文、
 SQLite任务服务及`/tasks`工作台。受支持需求的约束从原文与批准关系派生，无需逐题手写完整TaskContract；

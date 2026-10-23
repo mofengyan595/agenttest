@@ -1,0 +1,40 @@
+{
+  "base_url": "http://127.0.0.1:8080",
+  "environment": "isolated",
+  "authorized_ips": [],
+  "allow_mutations": true,
+  "allowed_operations": [
+    "login",
+    "createCourse",
+    "getCourse"
+  ],
+  "roles": {
+    "alice": {
+      "username_env": "DEMO_ALICE_USERNAME",
+      "password_env": "DEMO_ALICE_PASSWORD",
+      "bearer_env": null,
+      "login_operation": "login",
+      "username_field": "username",
+      "password_field": "password",
+      "token_selector": "$.access_token"
+    },
+    "bob": {
+      "username_env": "DEMO_BOB_USERNAME",
+      "password_env": "DEMO_BOB_PASSWORD",
+      "bearer_env": null,
+      "login_operation": "login",
+      "username_field": "username",
+      "password_field": "password",
+      "token_selector": "$.access_token"
+    }
+  },
+  "business_scenario": "portable_courses_v1",
+  "sensitive_fields": [],
+  "max_steps": 20,
+  "max_requests": 8,
+  "max_body_bytes": 100000,
+  "connect_timeout": 2.0,
+  "read_timeout": 5.0,
+  "run_timeout": 60.0,
+  "min_request_interval": 0.01
+}

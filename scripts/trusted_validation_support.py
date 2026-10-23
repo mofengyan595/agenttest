@@ -20,6 +20,7 @@ PROFILES = {
     "courses": PROJECT_ROOT / "examples/trusted-testing/projects/courses",
     "tickets": PROJECT_ROOT / "examples/trusted-testing/projects/tickets",
     "tickets_limited": PROJECT_ROOT / "examples/trusted-testing/projects/tickets_limited",
+    "courses_limited": PROJECT_ROOT / "examples/trusted-testing/projects/courses_limited",
     "laboratory": PROJECT_ROOT / "examples/trusted-testing/laboratory",
 }
 CONFIG_FILES = ("openapi.json", "target.json", "policies.json", "goals.json",

@@ -13,7 +13,8 @@ jobs:
   checks:
     name: ${{ matrix.os }} / ${{ matrix.profile }} / Python 3.11
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    # Windows 6031212: 1785 offline tests took 13m28s before the remaining checks.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:

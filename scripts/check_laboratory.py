@@ -18,8 +18,12 @@ from agenttest.report import ReportStore
 ROOT = PROJECT_ROOT / "examples/trusted-testing/laboratory"
 
 
-def core_identity():
+def core_identity(core_sha=None):
     frozen = json.loads((ROOT / "core-freeze.json").read_bytes())
+    if core_sha is not None:
+        frozen = dict(core_sha=core_sha, core_tree=subprocess.check_output(
+            ["git", "rev-parse", core_sha + ":src/agenttest"], cwd=PROJECT_ROOT,
+            text=True).strip())
     actual_tree = subprocess.check_output(["git", "rev-parse",
         frozen["core_sha"] + ":src/agenttest"], cwd=PROJECT_ROOT, text=True).strip()
     if actual_tree != frozen["core_tree"]:
@@ -37,8 +41,8 @@ def runtime(fault="none"):
     return runpy.run_path(str(ROOT / "fixture.py"))["runtime"](fault)
 
 
-async def check(output):
-    identity = core_identity()
+async def check(output, core_sha=None):
+    identity = core_identity(core_sha)
     if not identity["core_unchanged"]:
         raise ValueError("CORE_CHANGED_AFTER_PORTABILITY_FREEZE")
     project = load_goal_project(ROOT / "registered.project.json")
@@ -60,7 +64,7 @@ async def check(output):
         (output / (scope + ".json")).write_text(json.dumps(result, indent=2) + "\n",
                                                encoding="utf-8")
         results.append(row)
-    final = core_identity()
+    final = core_identity(core_sha)
     if final != identity:
         raise ValueError("CORE_CHANGED_DURING_PORTABILITY_CHECK")
     receipt = dict(identity, classification="DEVELOPMENT_ONLY", review_status="UNREVIEWED",
@@ -75,6 +79,8 @@ async def check(output):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--core-sha",
+                        help="Explicit later frozen core; original freeze is preserved")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
-    print(json.dumps(asyncio.run(check(args.output)), ensure_ascii=False))
+    print(json.dumps(asyncio.run(check(args.output, args.core_sha)), ensure_ascii=False))

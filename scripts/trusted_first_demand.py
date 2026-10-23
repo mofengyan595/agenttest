@@ -61,7 +61,7 @@ def verify(output):
     return dict(archive_verified=True, new_model_calls=0, result=result)
 
 
-async def run(output, model_env, prior):
+async def run(output, model_env, prior, data_dir=None):
     previous = verify_archive(prior)
     source = checkout_identity(PROJECT_ROOT)
     if (source["worktree_status"] or read_json(prior / "freeze.json")["source"] != source
@@ -71,7 +71,7 @@ async def run(output, model_env, prior):
             or previous["summary"]["unknown_usage_calls"]
             or any(previous["summary"]["safety"].values())):
         raise ValueError("FIRST_DEMAND_SOURCE_OR_PRIOR_USAGE_GATE_FAILED")
-    request = read_json(DATA / "first-demand.json")
+    request = read_json((data_dir or DATA) / "first-demand.json")
     settings = settings_for(model_env)
     if public_model_config(settings) != read_json(prior / "freeze.json")["model_config"]:
         raise ValueError("FIRST_DEMAND_MODEL_CONFIG_CHANGED")
@@ -129,7 +129,9 @@ if __name__ == "__main__":
     mode.add_argument("--verify", type=Path)
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--prior", type=Path)
+    parser.add_argument("--dataset", choices=("v1", "v2"), default="v1")
     args = parser.parse_args()
     result = verify(args.verify) if args.verify else asyncio.run(
-        run(args.output, args.model_env, args.prior))
+        run(args.output, args.model_env, args.prior,
+            DATA if args.dataset == "v1" else DATA.with_name("evaluation-v2")))
     print(json.dumps(result, ensure_ascii=False, indent=2))

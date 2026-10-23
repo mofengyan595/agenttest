@@ -232,12 +232,13 @@ def verify_archive(output):
     return dict(archive_verified=True, new_model_calls=0, summary=summary)
 
 
-async def run(output, model_env=None, mock_archive=None):
+async def run(output, model_env=None, mock_archive=None, data_dir=None):
     source = checkout_identity(PROJECT_ROOT)
     if source["worktree_status"]:
         raise ValueError("FROZEN_RUN_REQUIRES_CLEAN_COMMIT")
-    requests, labels = [read_json(DATA / name) for name in ("requests.json", "labels.json")]
-    protocol = read_json(DATA / "protocol.json")
+    data_dir = data_dir or DATA
+    requests, labels = [read_json(data_dir / name) for name in ("requests.json", "labels.json")]
+    protocol = read_json(data_dir / "protocol.json")
     if (len(requests) != 12 or len({q["id"] for q in requests}) != 12
             or {q["id"] for q in requests} != {label["id"] for label in labels}
             or Counter(label["scope"] for label in labels)
@@ -327,7 +328,9 @@ if __name__ == "__main__":
     mode.add_argument("--verify", type=Path)
     parser.add_argument("--model-env", type=Path)
     parser.add_argument("--mock-archive", type=Path)
+    parser.add_argument("--dataset", choices=("v1", "v2"), default="v1")
     args = parser.parse_args()
     result = (verify_archive(args.verify) if args.verify else
-              asyncio.run(run(args.output, args.model_env, args.mock_archive)))
+              asyncio.run(run(args.output, args.model_env, args.mock_archive,
+                  DATA if args.dataset == "v1" else DATA.with_name("evaluation-v2"))))
     print(json.dumps(result, ensure_ascii=False, indent=2))
