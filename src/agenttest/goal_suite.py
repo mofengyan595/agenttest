@@ -49,15 +49,18 @@ class GoalSuite:
     operation_ids: list[str]
     budgets: dict
 
-    def allocated_cases(self, max_requests=None):
-        used, allowed = 0, set()
+    def allocated_cases(self, max_requests=None, max_model_calls=None):
+        used, calls, allowed = 0, 0, set()
         for case in self.cases:
             if case.goal and case.goal.task and not case.reason:
                 required = len(case.goal.task.requirements.steps)
                 if used + required <= (self.budgets["max_requests"]
-                                       if max_requests is None else max_requests):
+                        if max_requests is None else max_requests) and calls < (
+                        self.budgets["max_model_calls"]
+                        if max_model_calls is None else max_model_calls):
                     allowed.add(case.id)
                     used += required
+                    calls += 1
         return allowed
 
     def preview(self):
@@ -66,10 +69,26 @@ class GoalSuite:
         for case in cases:
             if case["status"] == "READY" and case["case_id"] not in allowed:
                 case.update(status="NOT_EXECUTED", reason="SUITE_BUDGET_OR_USAGE_STOP")
+        ready = [c for c in self.cases if c.goal and c.goal.task and not c.reason]
+        required = sum(len(c.goal.task.requirements.steps) for c in ready)
+        assigned = sum(len(c.goal.task.requirements.steps) for c in ready if c.id in allowed)
+        reservation = self.budgets["plan_token_reservation"]
+        allocation = dict(required_business_requests=required,
+            required_planning_calls=len(ready),
+            planning_token_upper_bound=reservation * len(ready),
+            optional_readonly_requests=max(0, self.budgets["max_requests"] - assigned),
+            optional_model_calls=max(0, self.budgets["max_model_calls"] - len(allowed)),
+            executable_groups=sorted(allowed),
+            excluded_groups=[dict(case_id=c["case_id"], reason=c["reason"])
+                             for c in cases if c["status"] != "READY"],
+            complete_project_within_budget=(len(allowed) == len(self.cases)
+                and reservation * len(ready) <= self.budgets["max_total_tokens"]),
+            token_rule="Upper bound uses configured input plus output reservation per plan; "
+                "actual known usage can be lower. All calls share one ledger.")
         return dict(schema_version="agenttest.goal-suite.v1",
             project_identity=self.project_identity,
             user_task_sha256=self.user_task_sha256, scope=self.scope,
-            cases=cases, budget=self.budgets,
+            cases=cases, budget=self.budgets, budget_preview=allocation,
             side_effects="AUTHORIZED_ISOLATED_WRITES_POSSIBLE",
             candidate_generation=self.discovery, http_requests=0, model_calls=0,
             coverage=dict(operation_denominator=len(self.operation_ids),
@@ -107,6 +126,9 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
                     goal.reason = "INTENT_GOAL_CONFIGURATION_UNSUPPORTED"
                 add(goal, policies[template.policy_id].operation_id,
                     template.id + ":" + kind, goal.reason)
+                if goal.task and not prerequisites:
+                    _approved_negatives(project, goal,
+                        policies[template.policy_id].operation_id, add)
         represented = {c.operation_id for c in cases}
         represented.update(s.operation_id for c in cases if c.goal and c.goal.task
                            for s in c.goal.task.requirements.steps)
@@ -138,10 +160,14 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
              negative=sum(c.polarity == "negative" for c in selected),
              review=sum(c.polarity == "review" for c in selected),
              configuration_operations=len(scope_ops), candidate_operations=len({
-                 c.operation_id for c in selected}), execution_count=0), sorted(scope_ops),
+                 c.operation_id for c in selected}), execution_count=0,
+             by_operation={op: sum(c.operation_id == op for c in selected)
+                           for op in sorted(scope_ops)}), sorted(scope_ops),
         dict(max_requests=project.target.max_requests,
              max_model_calls=project.registration.budget.suite_max_model_calls,
              max_total_tokens=project.registration.budget.suite_max_total_tokens,
+             plan_token_reservation=(project.registration.budget.max_input_tokens
+                                     + project.registration.budget.max_output_tokens),
              per_run_model_calls=project.registration.budget.max_model_calls,
              per_run_readonly_investigations=project.registration.budget.max_readonly_investigations))
 
@@ -154,30 +180,7 @@ def _single_candidates(project, base, operation_id, add):
         add(None, operation_id, "unsupported_schema", "SCHEMA_SUBSET_UNSUPPORTED")
         return
     definitions = {p.id: p for p in project.registry.definitions()}
-    approved_mutations = []
-    for policy in definitions.values():
-        approval = policy.negative
-        if approval is None or policy.operation_id != operation_id:
-            continue
-        goal = deepcopy(base)
-        steps = [s for s in goal.task.requirements.steps
-                 if s.policy_id == approval.base_policy_id]
-        if len(steps) != 1:
-            continue
-        from agenttest.negative import validate_approval
-
-        try:
-            validate_approval(approval, operation)
-        except (NeedsReview, ValueError):
-            add(None, operation_id, "approved_negative:" + policy.id,
-                "NEGATIVE_APPROVAL_CONFIGURATION_INVALID")
-            continue
-        steps[0].policy_id = policy.id
-        for default in goal.input_defaults:
-            if default["policy_id"] == approval.base_policy_id:
-                default["policy_id"] = policy.id
-        add(goal, operation_id, "approved_negative:" + policy.id)
-        approved_mutations.append(approval)
+    approved_mutations = _approved_negatives(project, base, operation_id, add)
     for spec in specs:
         for kind, polarity, description, value in variations(spec):
             name = f"{kind}:{spec.location}:{spec.name}:{fingerprint(description.model_dump())[:8]}"
@@ -229,6 +232,36 @@ def _single_candidates(project, base, operation_id, add):
             add(goal, operation_id, name)
 
 
+def _approved_negatives(project, base, operation_id, add):
+    operation = next(o for o in project.contract.operations if o.operation_id == operation_id)
+    definitions = {p.id: p for p in project.registry.definitions()}
+    approved_mutations = []
+    for policy in definitions.values():
+        approval = policy.negative
+        if approval is None or policy.operation_id != operation_id:
+            continue
+        goal = deepcopy(base)
+        steps = [s for s in goal.task.requirements.steps
+                 if s.policy_id == approval.base_policy_id]
+        if len(steps) != 1:
+            continue
+        from agenttest.negative import validate_approval
+
+        try:
+            validate_approval(approval, operation)
+        except (NeedsReview, ValueError):
+            add(None, operation_id, "approved_negative:" + policy.id,
+                "NEGATIVE_APPROVAL_CONFIGURATION_INVALID")
+            continue
+        steps[0].policy_id = policy.id
+        for default in goal.input_defaults:
+            if default["policy_id"] == approval.base_policy_id:
+                default["policy_id"] = policy.id
+        add(goal, operation_id, "approved_negative:" + policy.id)
+        approved_mutations.append(approval)
+    return approved_mutations
+
+
 @dataclass
 class SuiteLedger:
     max_requests: int
@@ -264,10 +297,11 @@ class BudgetTransport(httpx.AsyncBaseTransport):
 
 
 class BudgetPlanner:
-    def __init__(self, inner, ledger, guard=None):
+    def __init__(self, inner, ledger, guard=None, *, reserve_calls=0, reserve_tokens=0):
         self.inner, self.ledger = inner, ledger
         self.guard = guard
         self.stats = ModelCallStats()
+        self.reserve_calls, self.reserve_tokens = reserve_calls, reserve_tokens
 
     @property
     def token_reservation(self):
@@ -285,8 +319,9 @@ class BudgetPlanner:
         self.stats = ModelCallStats()
         if self.guard is not None:
             self.guard()
-        if (self.ledger.usage_unknown or self.ledger.model_calls >= self.ledger.max_model_calls
-                or self.ledger.known_tokens + self.token_reservation
+        if (self.ledger.usage_unknown or self.ledger.model_calls + self.reserve_calls
+                >= self.ledger.max_model_calls
+                or self.ledger.known_tokens + self.token_reservation + self.reserve_tokens
                 > self.ledger.max_total_tokens):
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "SUITE_MODEL_BUDGET_EXHAUSTED")
         try:
@@ -313,14 +348,17 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
     suite = build_suite(project, user_task, environ=environ)
     ledger = ledger or SuiteLedger(**{key: suite.budgets[key] for key in (
         "max_requests", "max_model_calls", "max_total_tokens")})
+    for key in ("max_requests", "max_model_calls", "max_total_tokens"):
+        setattr(ledger, key, min(getattr(ledger, key), suite.budgets[key]))
     own_transport = transport is None
     inner = transport or httpx.AsyncHTTPTransport(retries=0, trust_env=False)
     bounded_transport = BudgetTransport(inner, ledger)
     bounded_planner = BudgetPlanner(planner, ledger)
     rows = []
-    allocated = suite.allocated_cases(max(0, ledger.max_requests - ledger.requests))
+    allocated = suite.allocated_cases(max(0, ledger.max_requests - ledger.requests),
+                                      max(0, ledger.max_model_calls - ledger.model_calls))
     try:
-        for case in suite.cases:
+        for case_index, case in enumerate(suite.cases):
             row = case.preview()
             goal = case.goal
             if goal is None or goal.task is None:
@@ -348,17 +386,39 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
                 row.update(status="NOT_EXECUTED", reason="SUITE_BUDGET_OR_USAGE_STOP")
                 rows.append(row)
                 continue
+            future = [c for c in suite.cases[case_index + 1:] if c.id in allocated
+                      and c.goal and c.goal.task and not c.reason]
+            required = len(goal.task.requirements.steps)
+            reserved_requests = required + sum(len(c.goal.task.requirements.steps) for c in future)
+            optional_requests = max(0, ledger.max_requests - ledger.requests - reserved_requests)
+            optional_calls = max(0, ledger.max_model_calls - ledger.model_calls - 1 - len(future))
             _, report = await run_goal(project, user_task, bounded_planner, store,
                 environ=environ, transport=bounded_transport, budget=budget,
                 execution_guard=execution_guard, derived=goal,
-                analyzer=BudgetPlanner(analyzer, ledger) if analyzer else None)
+                analyzer=BudgetPlanner(analyzer, ledger, reserve_calls=len(future),
+                    reserve_tokens=len(future) * bounded_planner.token_reservation)
+                    if analyzer else None,
+                readonly_allowance=optional_requests, feedback_model_allowance=optional_calls)
             row.update(status="FINISHED", outcome=report.outcome.value, run_id=report.run_id,
                 intent_verified=report.intent_verified, task_satisfied=report.task_satisfied,
-                planned_operations=[s.operation_id for s in report.plan_structure],
+                plan_authorized_complete=bool(report.dsl_valid and report.policy_authorized
+                                              and report.intent_verified),
+                proposed_operations=[s.operation_id for s in report.plan_structure],
+                planned_operations=([s.operation_id for s in report.plan_structure]
+                    if report.dsl_valid and report.policy_authorized and report.intent_verified
+                    else []),
                 executed_operations=[s.operation_id for s in report.steps if s.attempts],
                 passed_operations=[s.operation_id for s in report.steps
                                    if s.attempts and s.outcome == Outcome.PASS],
                 http_requests=sum(len(s.attempts) for s in report.steps),
+                normal_validated_steps=sum(s.input_validation == "NORMAL_VALIDATED"
+                                           for s in report.steps),
+                approved_negative_steps=sum(s.input_validation == "APPROVED_NEGATIVE"
+                                            for s in report.steps),
+                negative_rejections_passed=sum(s.negative_rejected_as_expected is True
+                                              for s in report.steps),
+                assertion_count=sum(len(s.checks) for s in report.steps),
+                assertions_passed=sum(c.passed for s in report.steps for c in s.checks),
                 reason=report.reason)
             if on_report is not None:
                 on_report(goal, report)
@@ -371,15 +431,27 @@ async def run_suite(project, user_task, planner, store, *, environ, transport=No
     passed = [r for r in finished if r["task_satisfied"]]
     configured = {r["operation_id"] for r in rows if r["status"] != "NEEDS_REVIEW"}
     result = suite.preview()
+    details = [dict(operation_id=op, candidates=suite.discovery["by_operation"].get(op, 0),
+        scenario_denominator=sum(any(s["operation_id"] == op for s in r["required_plan"])
+                                 or r["operation_id"] == op for r in rows),
+        planned_scenarios=sum(op in r["planned_operations"] for r in finished),
+        executed_steps=sum(r["executed_operations"].count(op) for r in finished),
+        assertion_passed_steps=sum(r["passed_operations"].count(op) for r in finished))
+        for op in suite.operation_ids]
     result.update(cases=rows, usage=ledger.summary(), coverage=dict(
         operation_denominator=len(suite.operation_ids), scenario_denominator=len(rows),
         configuration_operations=len(configured - {None}),
         candidate_operations=suite.discovery["candidate_operations"],
+        proposed_operations=len({o for r in finished for o in r["proposed_operations"]}),
         planned_operations=len({o for r in finished for o in r["planned_operations"]}),
         executed_operations=len({o for r in finished for o in r["executed_operations"]}),
         assertion_passed_operations=len({o for r in finished for o in r["passed_operations"]}),
+        planned_scenarios=sum(r["plan_authorized_complete"] for r in finished),
         executed_scenarios=len(executed), assertion_passed_scenarios=len(passed),
-        not_executed=len(rows) - len(executed)),
+        not_executed=len(rows) - len(executed),
+        assertions_evaluated=sum(r["assertion_count"] for r in finished),
+        assertions_passed=sum(r["assertions_passed"] for r in finished),
+        by_operation=details),
         complete=len(passed) == len(rows), http_requests=ledger.requests,
         model_calls=ledger.model_calls)
     return result

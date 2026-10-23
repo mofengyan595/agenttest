@@ -180,7 +180,7 @@ def test_missing_expectations_stay_pending_and_approved_suite_has_no_guessed_err
                                              for k in c.kinds)]) == 8
     pending = [c for c in suite.cases if c.reason == "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"]
     assert pending and all(c.goal is None for c in pending)
-    data = json.loads((ROOT / "policies.json").read_text())
+    data = json.loads((ROOT / "policies.json").read_bytes())
     assert not load_openapi(project().document).operations[0].security
     assert all(x["assertions"]["source"] for x in data)
     p = project()
