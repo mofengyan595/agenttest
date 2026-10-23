@@ -863,6 +863,50 @@
             "type": "array",
             "title": "Attempts"
           },
+          "input_validation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "NORMAL_VALIDATED",
+                  "APPROVED_NEGATIVE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Validation"
+          },
+          "negative_test": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Test"
+          },
+          "approved_violation_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Approved Violation Codes"
+          },
+          "negative_rejected_as_expected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Rejected As Expected"
+          },
           "parent_step_id": {
             "type": "string",
             "title": "Parent Step Id"
@@ -1706,6 +1750,50 @@
             },
             "type": "array",
             "title": "Attempts"
+          },
+          "input_validation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "NORMAL_VALIDATED",
+                  "APPROVED_NEGATIVE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Validation"
+          },
+          "negative_test": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Test"
+          },
+          "approved_violation_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Approved Violation Codes"
+          },
+          "negative_rejected_as_expected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Rejected As Expected"
           }
         },
         "type": "object",

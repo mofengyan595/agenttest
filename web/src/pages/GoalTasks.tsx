@@ -291,6 +291,62 @@ export function GoalTasks() {
                   {selected.summary.budget.max_total_tokens} Token
                 </p>
               )}
+              {selected.summary.budget_preview && (
+                <div className="task-case" aria-label="分组预算预览">
+                  <strong>分组预算</strong>
+                  <p>
+                    必需业务请求{" "}
+                    {selected.summary.budget_preview.required_business_requests}
+                    {" · "}至少{" "}
+                    {selected.summary.budget_preview.required_planning_calls}{" "}
+                    次规划
+                  </p>
+                  <p>
+                    可选只读额度{" "}
+                    {selected.summary.budget_preview.optional_readonly_requests}
+                    {" · "}可选模型额度{" "}
+                    {selected.summary.budget_preview.optional_model_calls}
+                  </p>
+                  <p>
+                    可执行{" "}
+                    {selected.summary.budget_preview.executable_groups.length}{" "}
+                    组{" · "}排除{" "}
+                    {selected.summary.budget_preview.excluded_groups.length} 组
+                  </p>
+                  <p>
+                    {selected.summary.budget_preview
+                      .complete_project_within_budget
+                      ? "完整范围在预算上界内。"
+                      : "预算或待审项限制完整执行。"}
+                  </p>
+                  <small>
+                    规划 Token 保留上界{" "}
+                    {selected.summary.budget_preview.planning_token_upper_bound}
+                    ； 实际用量另计，可选调查不占用后续业务组的必需额度。
+                  </small>
+                </div>
+              )}
+              {selected.summary.goal_spec && (
+                <Notice>
+                  <strong>模型目标草案：语义待核验</strong>
+                  <p>结构校验不代表业务语义已经确认；当前没有据此执行接口。</p>
+                  {selected.summary.goal_spec.proposed_goals?.map((goal, i) => (
+                    <p key={i}>
+                      建议目标 {goal.goal_id} · 原文位置 {goal.start}–{goal.end}
+                    </p>
+                  ))}
+                  {!!selected.summary.goal_spec.unaccounted_characters && (
+                    <p>
+                      仍有 {selected.summary.goal_spec.unaccounted_characters}{" "}
+                      个非空白字符未被解释。
+                    </p>
+                  )}
+                  <p>
+                    {selected.summary.goal_spec.question ||
+                      "请补充明确的接口行为和已批准预期。"}
+                  </p>
+                </Notice>
+              )}
               {selected.summary.question && (
                 <Notice>{selected.summary.question}</Notice>
               )}
@@ -310,6 +366,19 @@ export function GoalTasks() {
                 <div className="task-case" key={item.case_id}>
                   <strong>{item.operation_id || "待澄清目标"}</strong>
                   <span>{item.outcome || item.status}</span>
+                  {(!!item.approved_negative_steps ||
+                    item.kinds?.some((kind) =>
+                      kind.startsWith("approved_negative:"),
+                    )) && (
+                    <p>
+                      {item.approved_negative_steps
+                        ? `批准负例 · 按预期拒绝 ${item.negative_rejections_passed ?? 0}/${item.approved_negative_steps} 个已构造输入`
+                        : "批准负例 · 尚无负例验证结果"}
+                    </p>
+                  )}
+                  {item.status === "NOT_EXECUTED" && (
+                    <p>本组未执行，保留在覆盖分母中。</p>
+                  )}
                   {item.reason && <small>{item.reason}</small>}
                   {item.question && <p>{item.question}</p>}
                   {item.run_id && (
@@ -328,13 +397,36 @@ export function GoalTasks() {
                 </div>
               ))}
               {selected.summary.coverage && (
-                <p>
-                  已执行接口{" "}
-                  {selected.summary.coverage.executed_operations || 0}/{" "}
-                  {selected.summary.coverage.operation_denominator} · 已执行场景{" "}
-                  {selected.summary.coverage.executed_scenarios || 0}/{" "}
-                  {selected.summary.coverage.scenario_denominator}
-                </p>
+                <div>
+                  <p>
+                    已执行接口{" "}
+                    {selected.summary.coverage.executed_operations || 0}/{" "}
+                    {selected.summary.coverage.operation_denominator} ·
+                    已执行场景{" "}
+                    {selected.summary.coverage.executed_scenarios || 0}/{" "}
+                    {selected.summary.coverage.scenario_denominator}
+                  </p>
+                  {selected.summary.coverage.planned_scenarios !==
+                    undefined && (
+                    <p>
+                      计划合格场景 {selected.summary.coverage.planned_scenarios}
+                      /{selected.summary.coverage.scenario_denominator} ·
+                      断言通过场景{" "}
+                      {selected.summary.coverage.assertion_passed_scenarios ??
+                        0}
+                      /{selected.summary.coverage.scenario_denominator} · 未执行{" "}
+                      {selected.summary.coverage.not_executed ?? 0}
+                    </p>
+                  )}
+                  {selected.summary.coverage.assertions_evaluated !==
+                    undefined && (
+                    <p>
+                      实际断言通过{" "}
+                      {selected.summary.coverage.assertions_passed ?? 0}/
+                      {selected.summary.coverage.assertions_evaluated}
+                    </p>
+                  )}
+                </div>
               )}
               {selected.summary.context_usage && (
                 <p>

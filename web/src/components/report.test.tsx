@@ -8,6 +8,37 @@ import { StepEvidence } from "./StepEvidence";
 import { runFixture } from "../test/fixtures";
 import type { Outcome } from "../api/types";
 
+test.each([
+  [true, "目标拒绝符合批准预期。"],
+  [false, "目标响应违反批准预期。"],
+  [null, "尚无完整负例断言结果。"],
+] as const)(
+  "approved negative verdict %s stays distinct from infrastructure failure",
+  async (value, label) => {
+    render(
+      <StepEvidence
+        index={0}
+        step={{
+          step_id: "reject",
+          operation_id: "validateRecord",
+          method: "POST",
+          path_template: "/validation-records",
+          outcome: "PASS",
+          reason: "POLICY_EVALUATED",
+          policy_sha256: "hash",
+          checks: [],
+          attempts: [],
+          input_validation: "APPROVED_NEGATIVE",
+          negative_rejected_as_expected: value,
+        }}
+      />,
+    );
+    await userEvent.click(screen.getByText("证据 ↓"));
+    expect(screen.getByText("已批准的非法输入")).toBeVisible();
+    expect(screen.getByText(label)).toBeVisible();
+  },
+);
+
 test("rule symptoms and model abstention remain separate from business failure", () => {
   render(
     <MemoryRouter>

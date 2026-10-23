@@ -405,6 +405,14 @@ export interface components {
       checks?: components["schemas"]["CheckResult"][];
       /** Attempts */
       attempts?: components["schemas"]["AttemptEvidence"][];
+      /** Input Validation */
+      input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
+      /** Negative Test */
+      negative_test?: string | null;
+      /** Approved Violation Codes */
+      approved_violation_codes?: string[];
+      /** Negative Rejected As Expected */
+      negative_rejected_as_expected?: boolean | null;
       /** Parent Step Id */
       parent_step_id: string;
       /** Capability Id */
@@ -719,6 +727,14 @@ export interface components {
       checks?: components["schemas"]["CheckResult"][];
       /** Attempts */
       attempts?: components["schemas"]["AttemptEvidence"][];
+      /** Input Validation */
+      input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
+      /** Negative Test */
+      negative_test?: string | null;
+      /** Approved Violation Codes */
+      approved_violation_codes?: string[];
+      /** Negative Rejected As Expected */
+      negative_rejected_as_expected?: boolean | null;
     };
     /** TrustedSymptomResult */
     TrustedSymptomResult: {

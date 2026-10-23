@@ -46,6 +46,24 @@ export function StepEvidence({
       </summary>
       <div className="step-body">
         <p className="mono muted">{step.reason || "未记录原因"}</p>
+        {step.input_validation === "NORMAL_VALIDATED" && (
+          <p>正常输入已通过完整校验。</p>
+        )}
+        {step.input_validation === "APPROVED_NEGATIVE" && (
+          <div className="task-case">
+            <strong>已批准的非法输入</strong>
+            <p>
+              {step.negative_rejected_as_expected === true
+                ? "目标拒绝符合批准预期。"
+                : step.negative_rejected_as_expected === false
+                  ? "目标响应违反批准预期。"
+                  : "尚无完整负例断言结果。"}
+            </p>
+            <small>
+              执行器从完整校验后的正常请求构造指定变异，其他门禁继续生效。
+            </small>
+          </div>
+        )}
         <div className="evidence-meta">
           <span>
             Step Run ID <code>{step.step_run_id || "未记录"}</code>

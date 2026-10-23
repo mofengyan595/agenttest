@@ -23,6 +23,26 @@ export interface GoalTask {
     outcome?: string;
     task_satisfied?: boolean;
     model_source?: string;
+    complete?: boolean;
+    budget_preview?: {
+      required_business_requests: number;
+      required_planning_calls: number;
+      optional_readonly_requests: number;
+      optional_model_calls: number;
+      planning_token_upper_bound: number;
+      complete_project_within_budget: boolean;
+      executable_groups: string[];
+      excluded_groups: { case_id: string; reason: string | null }[];
+    };
+    goal_spec?: {
+      semantic_verified: false;
+      structure_valid?: boolean;
+      source_accounted?: boolean;
+      proposed_goals?: { goal_id: string; start: number; end: number }[];
+      unaccounted_characters?: number;
+      reason?: string;
+      question?: string;
+    };
     cases?: {
       case_id: string;
       operation_id: string | null;
@@ -33,6 +53,9 @@ export interface GoalTask {
       run_id?: string;
       outcome?: string;
       task_satisfied?: boolean;
+      kinds?: string[];
+      approved_negative_steps?: number;
+      negative_rejections_passed?: number;
     }[];
     budget?: {
       max_requests: number;
@@ -45,6 +68,10 @@ export interface GoalTask {
       executed_operations?: number;
       executed_scenarios?: number;
       not_executed?: number;
+      planned_scenarios?: number;
+      assertion_passed_scenarios?: number;
+      assertions_evaluated?: number;
+      assertions_passed?: number;
     };
     context_usage?: {
       requests: number;

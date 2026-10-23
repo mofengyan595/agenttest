@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { GoalTasks } from "./GoalTasks";
+import type { GoalTask } from "../api/tasks";
 
 const response = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status });
@@ -29,7 +30,7 @@ const task = {
   },
 };
 
-function setup(status = "FINISHED") {
+function setup(status = "FINISHED", result: GoalTask = task) {
   const fetcher = vi
     .fn()
     .mockImplementation(async (url: string, init?: RequestInit) => {
@@ -41,7 +42,7 @@ function setup(status = "FINISHED") {
         });
       if (url === "/api/tasks" && init?.method === "GET")
         return response({ tasks: [] });
-      return response({ ...task, status });
+      return response({ ...result, status });
     });
   vi.stubGlobal("fetch", fetcher);
   render(
@@ -123,4 +124,90 @@ test("unconfigured task service does not offer an enabled execution button", asy
   expect(await screen.findByRole("alert")).toHaveTextContent("任务服务未启用");
   expect(screen.getByRole("button", { name: "开始测试" })).toBeDisabled();
   expect(screen.queryByText(/hidden-secret/)).not.toBeInTheDocument();
+});
+
+test("groups retain excluded denominators and show approved negative outcomes", async () => {
+  setup("FINISHED", {
+    ...task,
+    summary: {
+      budget_preview: {
+        required_business_requests: 11,
+        required_planning_calls: 6,
+        optional_readonly_requests: 1,
+        optional_model_calls: 0,
+        planning_token_upper_bound: 144576,
+        complete_project_within_budget: false,
+        executable_groups: ["a", "b"],
+        excluded_groups: [
+          { case_id: "c", reason: "SUITE_BUDGET_OR_USAGE_STOP" },
+        ],
+      },
+      cases: [
+        {
+          case_id: "a",
+          operation_id: "validateRecord",
+          status: "FINISHED",
+          outcome: "PASS",
+          max_business_requests: 1,
+          kinds: ["approved_negative:missing"],
+          approved_negative_steps: 1,
+          negative_rejections_passed: 1,
+        },
+        {
+          case_id: "c",
+          operation_id: "listTickets",
+          status: "NOT_EXECUTED",
+          max_business_requests: 1,
+          reason: "SUITE_BUDGET_OR_USAGE_STOP",
+        },
+      ],
+      coverage: {
+        operation_denominator: 2,
+        scenario_denominator: 3,
+        planned_scenarios: 1,
+        executed_scenarios: 1,
+        executed_operations: 1,
+        assertion_passed_scenarios: 1,
+        not_executed: 2,
+        assertions_evaluated: 2,
+        assertions_passed: 2,
+      },
+    },
+  });
+  await screen.findByRole("option", { name: "tickets" });
+  await userEvent.type(screen.getByLabelText("测试需求"), "测试项目核心接口");
+  await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
+  expect(await screen.findByLabelText("分组预算预览")).toHaveTextContent(
+    "必需业务请求 11",
+  );
+  expect(screen.getByText(/按预期拒绝 1\/1 个已构造输入/)).toBeInTheDocument();
+  expect(screen.getByText(/本组未执行，保留在覆盖分母中/)).toBeInTheDocument();
+  expect(screen.getByText(/计划合格场景 1\/3/)).toBeInTheDocument();
+  expect(screen.getByText(/预算或待审项限制完整执行/)).toBeInTheDocument();
+});
+
+test("structured goal drafts remain visibly unverified with unexplained requirements", async () => {
+  setup("NEEDS_REVIEW", {
+    ...task,
+    status: "NEEDS_REVIEW",
+    summary: {
+      goal_spec: {
+        semantic_verified: false,
+        structure_valid: true,
+        source_accounted: false,
+        unaccounted_characters: 5,
+        proposed_goals: [{ goal_id: "create", start: 0, end: 4 }],
+        question: "请明确退款预期。",
+      },
+    },
+  });
+  await screen.findByRole("option", { name: "tickets" });
+  await userEvent.type(screen.getByLabelText("测试需求"), "受理工单并核对退款");
+  await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
+  expect(
+    await screen.findByText("模型目标草案：语义待核验"),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/5 个非空白字符未被解释/)).toBeInTheDocument();
+  expect(screen.getByText("请明确退款预期。")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "补充澄清" })).toBeInTheDocument();
 });

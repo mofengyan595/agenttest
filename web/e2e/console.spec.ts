@@ -92,6 +92,122 @@ test("display fixture: trusted rule and model abstention stay visibly separate",
   });
 });
 
+test("display fixture: group budgets, excluded coverage and approved rejection remain explicit", async ({
+  page,
+  request,
+}) => {
+  const catalog = await (await request.get("/api/runs?limit=100")).json();
+  const selected = catalog.items.find(
+    (row: { outcome: string }) => row.outcome === "PASS",
+  );
+  expect(selected).toBeTruthy();
+  const report = await (
+    await request.get(`/api/runs/${selected.run_id}`)
+  ).json();
+  // Display fixture only; actual negative requests and assertions are verified in Python/ASGI.
+  report.steps[0] = {
+    ...report.steps[0],
+    step_id: "approved_missing",
+    operation_id: "validateRecord",
+    method: "POST",
+    path_template: "/validation-records",
+    input_validation: "APPROVED_NEGATIVE",
+    negative_rejected_as_expected: true,
+    checks: [{ kind: "http_status", expected: [422], actual: 422, passed: true }],
+    attempts: [{ ...report.steps[0].attempts[0], status_code: 422 }],
+  };
+  await page.route(`**/api/runs/${selected.run_id}`, (route) =>
+    route.fulfill({ json: report }),
+  );
+  const task = {
+    id: "f".repeat(32),
+    project_id: "tickets",
+    project_identity: "b".repeat(64),
+    request_sha256: "c".repeat(64),
+    status: "FINISHED",
+    plan_version: 1,
+    created_at: 1,
+    summary: {
+      budget_preview: {
+        required_business_requests: 11,
+        required_planning_calls: 6,
+        optional_readonly_requests: 1,
+        optional_model_calls: 0,
+        planning_token_upper_bound: 144576,
+        complete_project_within_budget: false,
+        executable_groups: ["negative"],
+        excluded_groups: [
+          { case_id: "excluded", reason: "SUITE_BUDGET_OR_USAGE_STOP" },
+        ],
+      },
+      cases: [
+        {
+          case_id: "negative",
+          operation_id: "validateRecord",
+          status: "FINISHED",
+          outcome: "PASS",
+          run_id: selected.run_id,
+          kinds: ["approved_negative:missing"],
+          max_business_requests: 1,
+          approved_negative_steps: 1,
+          negative_rejections_passed: 1,
+        },
+        {
+          case_id: "excluded",
+          operation_id: "listTickets",
+          status: "NOT_EXECUTED",
+          max_business_requests: 1,
+          reason: "SUITE_BUDGET_OR_USAGE_STOP",
+        },
+      ],
+      coverage: {
+        operation_denominator: 2,
+        scenario_denominator: 2,
+        executed_operations: 1,
+        executed_scenarios: 1,
+        planned_scenarios: 1,
+        assertion_passed_scenarios: 1,
+        not_executed: 1,
+        assertions_evaluated: 2,
+        assertions_passed: 2,
+      },
+    },
+  };
+  await page.route("**/api/tasks", (route) =>
+    route.fulfill({
+      json: route.request().method() === "GET" ? { tasks: [] } : task,
+    }),
+  );
+  await page.goto("/tasks");
+  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await page.getByLabel("测试需求").fill("测试项目核心接口");
+  await page.getByRole("button", { name: "开始测试", exact: true }).click();
+  await expect(page.getByLabel("分组预算预览")).toContainText(
+    "必需业务请求 11",
+  );
+  await expect(page.getByText(/本组未执行，保留在覆盖分母中/)).toBeVisible();
+  await expect(page.getByText(/按预期拒绝 1\/1/)).toBeVisible();
+  await page.screenshot({
+    path: path.join(shots, "trusted-budget-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(391);
+  await page.screenshot({
+    path: path.join(shots, "trusted-budget-390.png"),
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "查看分层证据" }).click();
+  await page.getByText("approved_missing / validateRecord", { exact: true }).click();
+  await expect(page.getByText("目标拒绝符合批准预期。")).toBeVisible();
+  await page.screenshot({
+    path: path.join(shots, "approved-negative-390.png"),
+    fullPage: true,
+  });
+});
+
 test("real API: draft, import, history, evidence and responsive layouts", async ({
   page,
   request,
