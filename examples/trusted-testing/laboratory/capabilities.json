@@ -1,0 +1,16 @@
+[
+  {
+    "id": "lab_observe_placement",
+    "operation_id": "getPlacement",
+    "roles": [
+      "tech"
+    ],
+    "policy_id": "lab_lookup_v1",
+    "business_scenario": "laboratory_storage_v1",
+    "source_policy_id": "lab_place_v1",
+    "source_selector": "$.placement.key",
+    "path_parameter": "placement_key",
+    "effect": "read_only",
+    "no_side_effect_basis": "Reviewed disposable placement lookup, no mutation, repair, asynchronous advancement or external access."
+  }
+]

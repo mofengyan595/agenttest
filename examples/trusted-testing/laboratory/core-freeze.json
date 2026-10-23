@@ -1,0 +1,8 @@
+{
+  "core_sha": "88c9a3b4ff14454c3711b5bbea7f0d28b94d9d75",
+  "core_tree": "371bc2dc910b4a63b80a9f5956453713239a9bd1",
+  "scope": "src/agenttest",
+  "classification": "DEVELOPMENT_ONLY",
+  "independent_human_reviewed": false,
+  "configuration_only_claim": "Subject to actual three-path execution and unchanged-core verification; not yet a result."
+}

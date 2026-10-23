@@ -1,0 +1,208 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Disposable laboratory storage",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/lab/specimens": {
+      "post": {
+        "operationId": "makeSpecimen",
+        "parameters": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Reviewed success"
+          },
+          "403": {
+            "description": "Denied"
+          },
+          "422": {
+            "description": "Rejected invalid input"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 8
+                  },
+                  "aliquots": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4
+                  }
+                },
+                "required": [
+                  "label",
+                  "aliquots"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lab/trays": {
+      "post": {
+        "operationId": "makeTray",
+        "parameters": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Reviewed success"
+          },
+          "403": {
+            "description": "Denied"
+          },
+          "422": {
+            "description": "Rejected invalid input"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "zone": {
+                    "type": "string",
+                    "enum": [
+                      "cold",
+                      "ambient"
+                    ]
+                  }
+                },
+                "required": [
+                  "zone"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lab/trays/{tray_key}/specimens/{specimen_key}": {
+      "post": {
+        "operationId": "placeSpecimen",
+        "parameters": [
+          {
+            "name": "tray_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "specimen_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Reviewed success"
+          },
+          "403": {
+            "description": "Denied"
+          },
+          "422": {
+            "description": "Rejected invalid input"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "position": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  }
+                },
+                "required": [
+                  "position"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lab/placements/{placement_key}": {
+      "get": {
+        "operationId": "getPlacement",
+        "parameters": [
+          {
+            "name": "placement_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviewed success"
+          },
+          "403": {
+            "description": "Denied"
+          },
+          "422": {
+            "description": "Rejected invalid input"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

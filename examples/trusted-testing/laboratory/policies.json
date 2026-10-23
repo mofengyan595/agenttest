@@ -1,0 +1,1089 @@
+[
+  {
+    "id": "lab_specimen_v1",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.sample.key",
+          "operator": "exists",
+          "expected": null
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "lab_specimen_v1 in reviewed disposable laboratory storage"
+  },
+  {
+    "id": "lab_tray_v1",
+    "operation_id": "makeTray",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.tray.key",
+          "operator": "exists",
+          "expected": null
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "zone",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "cold",
+            "ambient"
+          ]
+        },
+        "response_selector": "$.tray.zone"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "lab_tray_v1 in reviewed disposable laboratory storage"
+  },
+  {
+    "id": "lab_place_v1",
+    "operation_id": "placeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          201
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.placement.status",
+          "operator": "equals",
+          "expected": "stored"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "tray_key",
+        "source_policy_id": "lab_tray_v1",
+        "source_selector": "$.tray.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.tray_key"
+      },
+      {
+        "location": "path_parameters",
+        "name": "specimen_key",
+        "source_policy_id": "lab_specimen_v1",
+        "source_selector": "$.sample.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.specimen_key"
+      },
+      {
+        "location": "body",
+        "name": "position",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "response_selector": "$.placement.position"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "lab_place_v1 in reviewed disposable laboratory storage"
+  },
+  {
+    "id": "lab_lookup_v1",
+    "operation_id": "getPlacement",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          200
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.placement.status",
+          "operator": "equals",
+          "expected": "stored"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "placement_key",
+        "source_policy_id": "lab_place_v1",
+        "source_selector": "$.placement.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.key",
+        "source_body_equalities": {
+          "$.placement.position": "position"
+        }
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "lab_lookup_v1 in reviewed disposable laboratory storage"
+  },
+  {
+    "id": "lab_denied_v1",
+    "operation_id": "getPlacement",
+    "roles": [
+      "auditor"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          403
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "ACCESS_DENIED"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "placement_key",
+        "source_policy_id": "lab_place_v1",
+        "source_selector": "$.placement.key",
+        "role_relation": "different"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "lab_denied_v1 in reviewed disposable laboratory storage"
+  },
+  {
+    "id": "specimen_missing_label",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved required_missing on label using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "label",
+      "kind": "required_missing",
+      "value": null,
+      "violation_codes": [
+        "OPENAPI_BODY_FIELD_REQUIRED"
+      ]
+    }
+  },
+  {
+    "id": "specimen_label_type",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved type_mismatch on label using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "label",
+      "kind": "type_mismatch",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE"
+      ]
+    }
+  },
+  {
+    "id": "specimen_label_short",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on label using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "label",
+      "kind": "boundary_outside",
+      "value": "aa",
+      "violation_codes": [
+        "OPENAPI_VALUE_LENGTH"
+      ]
+    }
+  },
+  {
+    "id": "specimen_label_long",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on label using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "label",
+      "kind": "boundary_outside",
+      "value": "aaaaaaaaa",
+      "violation_codes": [
+        "OPENAPI_VALUE_LENGTH"
+      ]
+    }
+  },
+  {
+    "id": "specimen_missing_aliquots",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved required_missing on aliquots using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "aliquots",
+      "kind": "required_missing",
+      "value": null,
+      "violation_codes": [
+        "OPENAPI_BODY_FIELD_REQUIRED"
+      ]
+    }
+  },
+  {
+    "id": "specimen_aliquots_type",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved type_mismatch on aliquots using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "aliquots",
+      "kind": "type_mismatch",
+      "value": "invalid",
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE"
+      ]
+    }
+  },
+  {
+    "id": "specimen_aliquots_low",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on aliquots using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "aliquots",
+      "kind": "boundary_outside",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  },
+  {
+    "id": "specimen_aliquots_high",
+    "operation_id": "makeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "label",
+        "literal_schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 8
+        },
+        "response_selector": "$.sample.label"
+      },
+      {
+        "location": "body",
+        "name": "aliquots",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "response_selector": "$.sample.aliquots"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on aliquots using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_specimen_v1",
+      "location": "body",
+      "name": "aliquots",
+      "kind": "boundary_outside",
+      "value": 5,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  },
+  {
+    "id": "tray_missing_zone",
+    "operation_id": "makeTray",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "zone",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "cold",
+            "ambient"
+          ]
+        },
+        "response_selector": "$.tray.zone"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved required_missing on zone using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_tray_v1",
+      "location": "body",
+      "name": "zone",
+      "kind": "required_missing",
+      "value": null,
+      "violation_codes": [
+        "OPENAPI_BODY_FIELD_REQUIRED"
+      ]
+    }
+  },
+  {
+    "id": "tray_zone_type",
+    "operation_id": "makeTray",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "zone",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "cold",
+            "ambient"
+          ]
+        },
+        "response_selector": "$.tray.zone"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved type_mismatch on zone using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_tray_v1",
+      "location": "body",
+      "name": "zone",
+      "kind": "type_mismatch",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE",
+        "OPENAPI_VALUE_ENUM"
+      ]
+    }
+  },
+  {
+    "id": "tray_zone_enum",
+    "operation_id": "makeTray",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "body",
+        "name": "zone",
+        "literal_schema": {
+          "type": "string",
+          "enum": [
+            "cold",
+            "ambient"
+          ]
+        },
+        "response_selector": "$.tray.zone"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved enum_outside on zone using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_tray_v1",
+      "location": "body",
+      "name": "zone",
+      "kind": "enum_outside",
+      "value": "heated",
+      "violation_codes": [
+        "OPENAPI_VALUE_ENUM"
+      ]
+    }
+  },
+  {
+    "id": "place_missing_position",
+    "operation_id": "placeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "tray_key",
+        "source_policy_id": "lab_tray_v1",
+        "source_selector": "$.tray.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.tray_key"
+      },
+      {
+        "location": "path_parameters",
+        "name": "specimen_key",
+        "source_policy_id": "lab_specimen_v1",
+        "source_selector": "$.sample.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.specimen_key"
+      },
+      {
+        "location": "body",
+        "name": "position",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "response_selector": "$.placement.position"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved required_missing on position using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_place_v1",
+      "location": "body",
+      "name": "position",
+      "kind": "required_missing",
+      "value": null,
+      "violation_codes": [
+        "OPENAPI_BODY_FIELD_REQUIRED"
+      ]
+    }
+  },
+  {
+    "id": "place_position_type",
+    "operation_id": "placeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "tray_key",
+        "source_policy_id": "lab_tray_v1",
+        "source_selector": "$.tray.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.tray_key"
+      },
+      {
+        "location": "path_parameters",
+        "name": "specimen_key",
+        "source_policy_id": "lab_specimen_v1",
+        "source_selector": "$.sample.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.specimen_key"
+      },
+      {
+        "location": "body",
+        "name": "position",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "response_selector": "$.placement.position"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved type_mismatch on position using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_place_v1",
+      "location": "body",
+      "name": "position",
+      "kind": "type_mismatch",
+      "value": "invalid",
+      "violation_codes": [
+        "OPENAPI_VALUE_TYPE"
+      ]
+    }
+  },
+  {
+    "id": "place_position_low",
+    "operation_id": "placeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "tray_key",
+        "source_policy_id": "lab_tray_v1",
+        "source_selector": "$.tray.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.tray_key"
+      },
+      {
+        "location": "path_parameters",
+        "name": "specimen_key",
+        "source_policy_id": "lab_specimen_v1",
+        "source_selector": "$.sample.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.specimen_key"
+      },
+      {
+        "location": "body",
+        "name": "position",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "response_selector": "$.placement.position"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on position using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_place_v1",
+      "location": "body",
+      "name": "position",
+      "kind": "boundary_outside",
+      "value": 0,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  },
+  {
+    "id": "place_position_high",
+    "operation_id": "placeSpecimen",
+    "roles": [
+      "tech"
+    ],
+    "business_scenario": "laboratory_storage_v1",
+    "assertions": {
+      "reviewed": true,
+      "source": "docs/trusted-testing-laboratory.md#批准规则",
+      "status": {
+        "codes": [
+          422
+        ]
+      },
+      "fields": [
+        {
+          "select": "$.code",
+          "operator": "equals",
+          "expected": "INVALID_INPUT"
+        }
+      ]
+    },
+    "binding_rules": [
+      {
+        "location": "path_parameters",
+        "name": "tray_key",
+        "source_policy_id": "lab_tray_v1",
+        "source_selector": "$.tray.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.tray_key"
+      },
+      {
+        "location": "path_parameters",
+        "name": "specimen_key",
+        "source_policy_id": "lab_specimen_v1",
+        "source_selector": "$.sample.key",
+        "role_relation": "same",
+        "response_selector": "$.placement.specimen_key"
+      },
+      {
+        "location": "body",
+        "name": "position",
+        "literal_schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "response_selector": "$.placement.position"
+      }
+    ],
+    "closed_arguments": true,
+    "planning_purpose": "Reject approved boundary_outside on position using reviewed 422 error",
+    "negative": {
+      "base_policy_id": "lab_place_v1",
+      "location": "body",
+      "name": "position",
+      "kind": "boundary_outside",
+      "value": 9,
+      "violation_codes": [
+        "OPENAPI_VALUE_BOUND"
+      ]
+    }
+  }
+]

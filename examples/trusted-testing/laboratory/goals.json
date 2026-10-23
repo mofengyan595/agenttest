@@ -1,0 +1,56 @@
+{
+  "schema_version": "agenttest.goal-catalog.v1",
+  "resource_aliases": [
+    "实验室",
+    "样本",
+    "容器",
+    "存储记录"
+  ],
+  "goals": [
+    {
+      "id": "specimen",
+      "aliases": [
+        "登记样本",
+        "录入样本"
+      ],
+      "policy_id": "lab_specimen_v1",
+      "role": "tech"
+    },
+    {
+      "id": "tray",
+      "aliases": [
+        "登记容器",
+        "录入容器"
+      ],
+      "policy_id": "lab_tray_v1",
+      "role": "tech"
+    },
+    {
+      "id": "place",
+      "aliases": [
+        "装载",
+        "放入容器"
+      ],
+      "policy_id": "lab_place_v1",
+      "role": "tech"
+    },
+    {
+      "id": "lookup",
+      "aliases": [
+        "查验",
+        "查看存储记录"
+      ],
+      "policy_id": "lab_lookup_v1",
+      "role": "tech"
+    },
+    {
+      "id": "ownership",
+      "aliases": [
+        "跨角色拒绝",
+        "其他角色不能查验"
+      ],
+      "policy_id": "lab_denied_v1",
+      "role": "auditor"
+    }
+  ]
+}

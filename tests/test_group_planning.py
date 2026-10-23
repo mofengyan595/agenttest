@@ -31,11 +31,17 @@ class ObservedPlanner(SyntheticPlanner):
 @pytest.mark.asyncio
 async def test_group_context_contains_only_selected_policies_roles_and_dependencies():
     from agenttest.dsl import Scenario
-    from agenttest.workflow import FakeLLM
+
+    class CaptureOnly:
+        contexts = []
+
+        async def generate(self, context):
+            self.contexts.append(deepcopy(context))
+            return "{}"
 
     p = deepcopy(_project())
     goal = derive_goal(p, "关闭、查询工单流程")
-    inner = FakeLLM("{}")
+    inner = CaptureOnly()
     context = planning_context(p.contract, p.target, p.registry, goal.task.user_task,
                                Scenario.model_json_schema())
     await GoalPlanner(inner, p, goal).generate(context)

@@ -1,0 +1,23 @@
+{
+  "base_url": "http://127.0.0.1:8098",
+  "environment": "isolated",
+  "allow_mutations": true,
+  "allowed_operations": [
+    "makeSpecimen",
+    "makeTray",
+    "placeSpecimen",
+    "getPlacement"
+  ],
+  "business_scenario": "laboratory_storage_v1",
+  "roles": {
+    "tech": {
+      "bearer_env": "LAB_TECH_BEARER"
+    },
+    "auditor": {
+      "bearer_env": "LAB_AUDITOR_BEARER"
+    }
+  },
+  "max_requests": 64,
+  "max_steps": 20,
+  "min_request_interval": 0.0
+}
