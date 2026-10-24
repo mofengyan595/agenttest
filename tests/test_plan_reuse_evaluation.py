@@ -24,7 +24,7 @@ def test_frozen_metadata_and_original_scoring_are_separate(harness, monkeypatch,
     requests, labels, protocol = [json.loads((data / name).read_text(encoding="utf-8"))
         for name in ("requests.json", "labels.json", "protocol.json")]
     # CI may use shallow history; metadata tests do not download Git history.
-    registry = (ROOT / "examples/eval-v2/goal-used-task-identities.json").read_bytes()
+    registry = (ROOT / "examples/plan-reuse-v2/baseline-exclusions.json").read_bytes()
     monkeypatch.setattr(harness, "git", lambda *args: registry)
     harness.validate_protocol(requests, labels, protocol)
     assert protocol["quality_denominator_per_arm"] == 15
@@ -35,6 +35,16 @@ def test_frozen_metadata_and_original_scoring_are_separate(harness, monkeypatch,
     label = labels[-1]
     span = label["unknown_requirement_span"]
     assert requests[-1]["user_task"][span["start"]:span["end"]] == "核验退款期限"
+
+
+def test_used_requests_are_excluded_from_future_independent_holdouts():
+    from agenttest.eval_v2.review import task_identity
+
+    registry = json.loads((ROOT / "examples/eval-v2/goal-used-task-identities.json").read_text())
+    excluded = {r["task_identity"] for r in registry["tasks"]}
+    requests = json.loads((ROOT / "examples/plan-reuse-v2/requests.json").read_text(
+        encoding="utf-8"))
+    assert all(task_identity(r["user_task"]) in excluded for r in requests)
 
 
 def test_v2_keeps_requests_budgets_and_diagnosis_and_adds_project_positive_coverage():

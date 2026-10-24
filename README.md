@@ -4,8 +4,10 @@
 
 **受控的 AI API 测试平台：LLM 规划，人工策略授权，确定性执行与断言。**
 
-新增量进行中：[合法计划复用Goal](docs/plan-reuse-goal.md)；
-[阶段1成熟工具对照与选型](docs/plan-reuse-stage1.md)。保留下列所有历史结果。
+2026-10-24：[合法计划复用Goal](docs/plan-reuse-goal.md)工程及唯一36位置首次排期已完成，质量目标未达到：
+候选完整9/18、明确足额9/15、项目3/6、批准负例85/105；总调用旧版162/候选50，实际覆盖不同。
+[完整结果/失败/成本](docs/plan-reuse-final-results.md) · [成熟工具与价值](docs/plan-reuse-value-report.md) ·
+[三层体验及待审包](docs/plan-reuse-user-trial.md) · [简历/面试](docs/plan-reuse-resume-interview.md)。独立人审及人工节时未验证，保留下列全部历史结果。
 
 2026-10-23增量：[批准负例、分组预算与第三项目复用](docs/trusted-testing-delivery.md)。
 工程与冻结验证已交付，真实质量目标未达到：完整任务12/36，明确足额分母12/30，足额项目0/6；

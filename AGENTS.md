@@ -17,6 +17,18 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-10-23 plan-reuse Goal engineering and its only frozen 36-position real
+schedule are complete. See docs/plan-reuse-final-results.md: baseline2/18,
+candidate9/18 (eligible9/15), candidate projects3/6, approved negatives85/105;
+all three quality targets were NOT met. Safety counters0, all usage known.
+Baseline86d6822 / candidateedf3d3f products remain frozen; parent11e4697 only adds
+scored safety-stop handling. Preserve v1/v2 Mock archives, real failures, original
+full-task/diagnosis criteria, and every older result below. No more paid calls,
+used-task tuning, assertion changes or feature expansion without a new milestone.
+User review package is ready; independent human review/time savings remain unverified.
+At handoff verify final delivery checks and exact-HEAD CI; do not reopen the paid schedule.
+
+### Plan-reuse operator objective (preserved)
 The new 2026-10-23 plan-reuse Goal in docs/plan-reuse-goal.md authorizes five
 incremental stages: bounded mature-tool comparison, validated immutable plan reuse
 and deterministic variants, shared entry integration/attribution, a NEW frozen

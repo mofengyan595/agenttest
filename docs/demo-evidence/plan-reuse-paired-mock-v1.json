@@ -1,0 +1,153 @@
+{
+  "schema_version": "agenttest.plan-reuse.public-receipt.v1",
+  "source": "mock",
+  "summary": {
+    "classification": "DEVELOPMENT_ONLY/UNREVIEWED",
+    "independent_human_review": false,
+    "human_time_saved": null,
+    "scheduled": 36,
+    "arms": {
+      "baseline": {
+        "scheduled": 18,
+        "attempted": 18,
+        "full_task_complete": {
+          "numerator": 15,
+          "denominator": 18
+        },
+        "eligible_full_task": {
+          "numerator": 15,
+          "denominator": 15,
+          "target_met": true
+        },
+        "funded_projects": {
+          "numerator": 6,
+          "denominator": 6,
+          "target_met": true
+        },
+        "approved_negative": {
+          "denominator": 105,
+          "executed": 105,
+          "correctly_rejected": 105,
+          "target_met": true
+        },
+        "correct_clarification": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "diagnostic_quality": {
+          "model_correct_abstentions": 3,
+          "model_missed_supported_symptoms": 0,
+          "model_supported": 0,
+          "inappropriate_proposals": 0,
+          "engine_interceptions": 0
+        },
+        "safety": {
+          "unauthorized_executions": 0,
+          "wrong_evidence_adopted": 0,
+          "budget_violations": 0
+        },
+        "model_calls": 162,
+        "known_model_calls": 162,
+        "known_tokens": 24300,
+        "input_tokens": 16200,
+        "output_tokens": 8100,
+        "total_tokens": 24300,
+        "unknown_usage_calls": 0,
+        "unconfirmed_positions": 0,
+        "safety_evidence_complete": true,
+        "actual_requests": 249,
+        "known_actual_requests": 249,
+        "partial_recorded_attempts": 0,
+        "elapsed_ms": 469709.8825001158,
+        "attribution": {
+          "model_plan_calls": 153,
+          "legal_model_proposals": 153,
+          "derived_cases": 0,
+          "derived_validation_passed": 0,
+          "derived_executed": 0,
+          "missing_plan_evidence": 0,
+          "unparseable_proposals": 0,
+          "base_rejected_variants": 0,
+          "unknown_expectation_cases": 3,
+          "budget_excluded_cases": 0,
+          "reused_execution_state": 0
+        }
+      },
+      "candidate": {
+        "scheduled": 18,
+        "attempted": 18,
+        "full_task_complete": {
+          "numerator": 15,
+          "denominator": 18
+        },
+        "eligible_full_task": {
+          "numerator": 15,
+          "denominator": 15,
+          "target_met": true
+        },
+        "funded_projects": {
+          "numerator": 6,
+          "denominator": 6,
+          "target_met": true
+        },
+        "approved_negative": {
+          "denominator": 105,
+          "executed": 105,
+          "correctly_rejected": 105,
+          "target_met": true
+        },
+        "correct_clarification": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "diagnostic_quality": {
+          "model_correct_abstentions": 3,
+          "model_missed_supported_symptoms": 0,
+          "model_supported": 0,
+          "inappropriate_proposals": 0,
+          "engine_interceptions": 0
+        },
+        "safety": {
+          "unauthorized_executions": 0,
+          "wrong_evidence_adopted": 0,
+          "budget_violations": 0
+        },
+        "model_calls": 51,
+        "known_model_calls": 51,
+        "known_tokens": 7650,
+        "input_tokens": 5100,
+        "output_tokens": 2550,
+        "total_tokens": 7650,
+        "unknown_usage_calls": 0,
+        "unconfirmed_positions": 0,
+        "safety_evidence_complete": true,
+        "actual_requests": 249,
+        "known_actual_requests": 249,
+        "partial_recorded_attempts": 0,
+        "elapsed_ms": 395877.6132001076,
+        "attribution": {
+          "model_plan_calls": 42,
+          "legal_model_proposals": 42,
+          "derived_cases": 111,
+          "derived_validation_passed": 111,
+          "derived_executed": 111,
+          "missing_plan_evidence": 0,
+          "unparseable_proposals": 0,
+          "base_rejected_variants": 0,
+          "unknown_expectation_cases": 3,
+          "budget_excluded_cases": 0,
+          "reused_execution_state": 0
+        }
+      }
+    },
+    "real_business_http": 0,
+    "real_database_writes": 0
+  },
+  "archive": "runs/plan-reuse-paired-mock",
+  "results_sha256": "5e3810ce22293886d514a64acc35d19de95fed7c4a98c9a02e38c7ff865ecf1b",
+  "source_commits": {
+    "baseline": "86d68225ab39c6f31d950298e51d0c77d1f2cac0",
+    "candidate": "4a37f04266409a4cce0e83199118de037a273290"
+  },
+  "note": "Preserved v1 Mock-only reference; no paid calls; v2 adds missing project positive coverage"
+}

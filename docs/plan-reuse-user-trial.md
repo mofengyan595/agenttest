@@ -39,7 +39,11 @@ npm.cmd --prefix web run dev
 .\.venv\Scripts\python.exe -m pytest examples/regressions/plan-reuse -q
 ```
 
-实际模拟演示：单接口1次规划/10请求、流程1/4、项目6/26，完整业务范围均满足，真实模型0。
+原阶段模拟记录为单接口1次规划/10请求、流程1/4、项目6/26。补齐项目正常边界后，
+当前三条命令再次运行：单接口1/10、流程1/4、项目6/28，完整业务范围均满足，真实模型0；
+新记录在`runs/plan-reuse-delivery-{single,flow,project}-v2/summary.json`。
+此流程演示以权限读接口结束，没有可派生的字面量输入；在上述工作台输入“请验证创建、关闭工单流程”，
+则可查看1个业务结构与4个批准负例、共10请求。该路径的模型调用陷阱测试已验证只规划一次。
 单接口导出两份派生正常/负例资产，原模板逐字节复制；模型与真实HTTP禁用回归2 passed/1.86s。
 回归报告operator_plan/task_satisfied=null，每次重新生成资源，不冒充第二次自然语言成功。
 

@@ -1,5 +1,8 @@
 # 阶段2：合法结构与确定性派生
 
+以下为阶段完成时记录，旧数据保留。后续补齐项目/流程批准变体后，实验室为24场景/42请求；
+唯一真实排期、失败和限制见[最终结果](plan-reuse-final-results.md)。
+
 保留原报告分类和分数，未调旧题。核查`ttg-validation-amended-real/position-001/plans.json`及对应报告：
 `372e72b735904adca6d9ab0f6cd80ef3`的缺priority提案仅有subject，原错误OPENAPI_BODY_FIELD_REQUIRED；
 `40dc94c66ff649658878aa89d3cb95c1`的缺subject提案却把subject设为null，原错误OPENAPI_VALUE_TYPE。

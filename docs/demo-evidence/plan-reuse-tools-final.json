@@ -1,0 +1,408 @@
+{
+  "schema_version": "agenttest.plan-reuse.tools.v1",
+  "classification": "DEVELOPMENT_ONLY/UNREVIEWED",
+  "real_model_calls": 0,
+  "generator_version": "4.32.4",
+  "native_negative_requests": 0,
+  "labels_or_fault_implementation_read": false,
+  "mutation_contribution": "Existing approved deterministic rules in both arms",
+  "generation_constraints": "Public OpenAPI intersected with the SAME approved literal schemas and closed-argument rules; no labels, assertions or implementation in generator input",
+  "subset": "PR01..PR04 create-operation normal and approved negative inputs only",
+  "excluded_capabilities": "PR05 flow diagnosis and PR06 NL clarification are not graded here",
+  "repetition": "Three repeated rounds; same schema/seed and structures, not new samples",
+  "human_time_seconds": null,
+  "fixture_file": "examples/plan-reuse/tool-fixtures.json",
+  "fixture_maintenance": "Explicit body/auth fixture per project plus approved-rule adapter",
+  "profile_inventory": {
+    "courses/capabilities.json": "5f2f25c3a8f6a6a194519b6ba475195b8106be62c291381dfcda55fb1a5614e3",
+    "courses/goals.json": "0fe00a9432e5c70f8633b732f0acb7f33815fdc9a5df8945a8cbcd84376570ce",
+    "courses/openapi.json": "d3612a562422271daf97256e11c73b526ecba25b159dc1c78f43bfb2602635dd",
+    "courses/policies.json": "3960443844a59105676cf84270d7cde968f5da408b4d96a6d84228aed95d2fcd",
+    "courses/registered.project.json": "4b5eeef41af41a461d3db8ce81cfc30420cdcf475c9ab4abe1ccbffdf982114e",
+    "courses/target.json": "3f9606f6acfba4390c04111df48f99394739c307268c11a9873210502fadfe89",
+    "courses_limited/capabilities.json": "5f2f25c3a8f6a6a194519b6ba475195b8106be62c291381dfcda55fb1a5614e3",
+    "courses_limited/goals.json": "0fe00a9432e5c70f8633b732f0acb7f33815fdc9a5df8945a8cbcd84376570ce",
+    "courses_limited/openapi.json": "d3612a562422271daf97256e11c73b526ecba25b159dc1c78f43bfb2602635dd",
+    "courses_limited/policies.json": "3960443844a59105676cf84270d7cde968f5da408b4d96a6d84228aed95d2fcd",
+    "courses_limited/registered.project.json": "4b5eeef41af41a461d3db8ce81cfc30420cdcf475c9ab4abe1ccbffdf982114e",
+    "courses_limited/target.json": "5e7055840114b59d61738a0558828a104bbac50dfefbaef0604e045a9bd2d94e",
+    "laboratory/capabilities.json": "71293114bb0fc5e45713913ca892f66962146a7d902e28784ae9b1cf22e939ca",
+    "laboratory/goals.json": "991c3c3108f80125c5c252e68c15c67d9777942c1d784571b7dd0f8e3e0997e4",
+    "laboratory/openapi.json": "275a50aec27685379ed6652e98bbeb851c7da5e50fe2bfb14c48d0e82d21a665",
+    "laboratory/policies.json": "082c6760dc341e154bb5d26733577a43b88b71d8d87808da19106127be336d83",
+    "laboratory/registered.project.json": "5422336e40de0056c25b97a93c87597c8cc2a83c31c95b27209b8505ecdeb79b",
+    "laboratory/target.json": "d1589ef2a93d568730a3a9f806511210dc7123e73ac8d855e8f38abe873b3246",
+    "tickets/capabilities.json": "2868a232b76901d1c1ad1a44075b12cdf4bdf1f2d33ad1d9ad400b4d89f388ec",
+    "tickets/goals.json": "9fc742658a88e369615612c12a3540a7896c514e954fdcf35d5db5e858b85810",
+    "tickets/openapi.json": "0f310018f32f71a32052f7513ea4e4a223ffb142585bff980f148d9d6e4e50d9",
+    "tickets/policies.json": "3410547c2ac38310c522f9bd4d61cbc5415618b758d415afc972ccec0df9e3b9",
+    "tickets/registered.project.json": "61cad4276ea6fbf76dc18a90848a891609e8e4d05b01dc7afa13a302471b567b",
+    "tickets/target.json": "73aaf79878051fc790f0efb8fcbc5e12da10c99404e25050776877b06d75e3b1",
+    "tickets_limited/capabilities.json": "2868a232b76901d1c1ad1a44075b12cdf4bdf1f2d33ad1d9ad400b4d89f388ec",
+    "tickets_limited/goals.json": "9fc742658a88e369615612c12a3540a7896c514e954fdcf35d5db5e858b85810",
+    "tickets_limited/openapi.json": "0f310018f32f71a32052f7513ea4e4a223ffb142585bff980f148d9d6e4e50d9",
+    "tickets_limited/policies.json": "3410547c2ac38310c522f9bd4d61cbc5415618b758d415afc972ccec0df9e3b9",
+    "tickets_limited/registered.project.json": "61cad4276ea6fbf76dc18a90848a891609e8e4d05b01dc7afa13a302471b567b",
+    "tickets_limited/target.json": "94b400470cb29bee8e936d56cec37275df45e43ee30a37359ead4e24d4312518"
+  },
+  "source_archive": "runs/plan-reuse-tools-final",
+  "source_sha256": "3b99aab0cae99deac4f739bec0d0fea8d6421ccf6861e83e500246fe8b01bf05",
+  "rows": [
+    {
+      "round": 1,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 1,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 1,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "fixed_pytest",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 1,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "schemathesis",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 1,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 1,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "fixed_pytest",
+      "request_budget": 9,
+      "actual_requests": 9,
+      "common_denominator": 9,
+      "schema_passed": 9,
+      "business_passed": 9
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "schemathesis",
+      "request_budget": 9,
+      "actual_requests": 4,
+      "common_denominator": 9,
+      "schema_passed": 4,
+      "business_passed": 4
+    },
+    {
+      "round": 2,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 2,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 2,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "fixed_pytest",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 2,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "schemathesis",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 2,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 2,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "fixed_pytest",
+      "request_budget": 9,
+      "actual_requests": 9,
+      "common_denominator": 9,
+      "schema_passed": 9,
+      "business_passed": 9
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "schemathesis",
+      "request_budget": 9,
+      "actual_requests": 4,
+      "common_denominator": 9,
+      "schema_passed": 4,
+      "business_passed": 4
+    },
+    {
+      "round": 3,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 3,
+      "case_id": "PR01",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 3,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "fixed_pytest",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 3,
+      "case_id": "PR02",
+      "project": "courses",
+      "arm": "schemathesis",
+      "request_budget": 6,
+      "actual_requests": 6,
+      "common_denominator": 3,
+      "schema_passed": 3,
+      "business_passed": 3
+    },
+    {
+      "round": 3,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "fixed_pytest",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 3,
+      "case_id": "PR03",
+      "project": "tickets",
+      "arm": "schemathesis",
+      "request_budget": 8,
+      "actual_requests": 8,
+      "common_denominator": 8,
+      "schema_passed": 8,
+      "business_passed": 8
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "fixed_pytest",
+      "request_budget": 9,
+      "actual_requests": 9,
+      "common_denominator": 9,
+      "schema_passed": 9,
+      "business_passed": 9
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "project": "laboratory",
+      "arm": "schemathesis",
+      "request_budget": 9,
+      "actual_requests": 4,
+      "common_denominator": 9,
+      "schema_passed": 4,
+      "business_passed": 4
+    }
+  ],
+  "compatibility_rejections": [
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_high",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_low",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "policy": "specimen_label_long",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "policy": "specimen_label_type",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 1,
+      "case_id": "PR04",
+      "policy": "specimen_missing_aliquots",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_high",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_low",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "policy": "specimen_label_long",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "policy": "specimen_label_type",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 2,
+      "case_id": "PR04",
+      "policy": "specimen_missing_aliquots",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_high",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "policy": "specimen_aliquots_low",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "policy": "specimen_label_long",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "policy": "specimen_label_type",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    },
+    {
+      "round": 3,
+      "case_id": "PR04",
+      "policy": "specimen_missing_aliquots",
+      "diagnostic": "OPENAPI_VALUE_TYPE"
+    }
+  ]
+}

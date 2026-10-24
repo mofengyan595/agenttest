@@ -1,5 +1,7 @@
 # 阶段1：成熟工具开发对照与选型
 
+以下为阶段完成时的冻结记录；后续实现与唯一真实排期见[最终结果](plan-reuse-final-results.md)。
+
 起点 `86d68225ab39c6f31d950298e51d0c77d1f2cac0` 工作区干净、远端 master 相同。
 准确 SHA 的 Python 工作流39965588196四组合、Web39965588041双平台六项全部success。
 本阶段真实模型0、外部业务HTTP0、真实数据库写入0，全部DEVELOPMENT_ONLY/UNREVIEWED。
