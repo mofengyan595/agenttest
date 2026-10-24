@@ -228,6 +228,12 @@ def verify(output):
         raise ValueError("PAIRED_ARCHIVE_CHANGED")
     if len(result["rows"]) != 36:
         raise ValueError("PAIRED_DENOMINATOR_CHANGED")
+    if result.get("parent_runner"):
+        runner = result["parent_runner"]
+        if (read_json(output / "parent-runner.json") != runner
+                or hashlib.sha256((output / "evaluation-runner.py").read_bytes()).hexdigest()
+                != runner["sha256"]):
+            raise ValueError("PARENT_RUNNER_CHANGED")
     seen, stopped = set(), False
     for slot, row in zip(frozen["schedule"], result["rows"]):
         if (any(row[k] != v for k, v in slot.items())
@@ -253,11 +259,35 @@ def verify(output):
         elif not row["attempted"] and (not stopped or row.get("reason")
                                       != "NOT_ATTEMPTED_AFTER_FROZEN_STOP"):
             raise ValueError("UNEXPECTED_UNATTEMPTED_SLOT")
-        stopped = stopped or row.get("stop_paid", False)
+        stopped = stopped or stop_schedule(row)
     computed = summarize(result["rows"], frozen)
     if computed != result["summary"]:
         raise ValueError("PAIRED_SUMMARY_CHANGED")
     return dict(archive_verified=True, new_model_calls=0, source=result["source"], summary=computed)
+
+
+def stop_schedule(row):
+    """Scoring safety evidence must stop the parent even if the worker did not flag it."""
+    scored = row.get("score", {})
+    return bool(row.get("stop_paid") or scored.get("unauthorized_executions")
+                or scored.get("wrong_evidence_adopted"))
+
+
+def freeze_parent_runner(output, frozen):
+    """Freeze a scheduling-only amendment separately from the compared product sources."""
+    current = source_files(PROJECT_ROOT)
+    changed = {key for key in current.keys() | frozen["harness_files"].keys()
+               if current.get(key) != frozen["harness_files"].get(key)}
+    if changed - {"scripts/evaluate_plan_reuse.py"}:
+        raise ValueError("PARENT_AMENDMENT_CHANGED_PRODUCT_OR_WORKER")
+    if git("diff", "HEAD", "--", "scripts/evaluate_plan_reuse.py").strip():
+        raise ValueError("PARENT_RUNNER_REQUIRES_COMMIT")
+    content = Path(__file__).read_bytes()
+    (output / "evaluation-runner.py").write_bytes(content)
+    return dict(sha256=hashlib.sha256(content).hexdigest(),
+        commit=git("rev-parse", "HEAD").decode().strip(), source_files=current,
+        changed_files=sorted(changed), scope="Scheduling safety-stop only; original scoring, "
+            "model payloads, products, workers, labels and budgets unchanged")
 
 
 def claim_paid_schedule(preparation, output, frozen):
@@ -322,6 +352,9 @@ def execute(preparation, output, *, model_env=None, mock_archive=None):
     if inventory(output / "projects") != frozen["profile_inventory"]:
         raise ValueError("PROJECT_CHANGED_SINCE_PREFLIGHT")
     save_evaluation(frozen, output / "freeze.json")
+    parent_runner = freeze_parent_runner(output, frozen) if model_env else None
+    if parent_runner:
+        save_evaluation(parent_runner, output / "parent-runner.json")
     if model_env:
         claim_paid_schedule(preparation, output, frozen)
     rows, stopped = [], False
@@ -340,6 +373,8 @@ def execute(preparation, output, *, model_env=None, mock_archive=None):
             job["job_path"] = str(folder / "job.json")
             save_evaluation(job, Path(job["job_path"]))
             try:
+                if parent_runner and source_files(PROJECT_ROOT) != parent_runner["source_files"]:
+                    raise ValueError("PARENT_SOURCE_CHANGED")
                 metrics = worker(frozen, job, folder, folder / "worker-result.json",
                                  model_env=model_env)
                 product, reports = recount(folder, metrics, load_goal_project(output / "projects" /
@@ -354,7 +389,7 @@ def execute(preparation, output, *, model_env=None, mock_archive=None):
                 row = dict(**slot, attempted=True, stop_paid=True,
                     reason="WORKER_INFRA_ERROR_USAGE_UNCONFIRMED",
                     exception_type=type(exc).__name__, partial=partial_usage(folder))
-            stopped = row["stop_paid"]
+            stopped = stop_schedule(row)
         rows.append(row)
         save_evaluation(row, output / f"row-{slot['position']:03}.json")
         print(json.dumps(dict(position=slot["position"], arm=slot["arm"], case_id=slot["case_id"],
@@ -362,6 +397,8 @@ def execute(preparation, output, *, model_env=None, mock_archive=None):
             stopped=stopped)), flush=True)
     result = dict(source="real" if model_env else "mock", rows=rows,
                   summary=summarize(rows, frozen))
+    if parent_runner:
+        result["parent_runner"] = parent_runner
     save_evaluation(result, output / "results.json")
     (output / "summary.md").write_text(json.dumps(result["summary"], indent=2) + "\n",
                                       encoding="utf-8")

@@ -75,6 +75,33 @@ def test_paid_schedule_claim_cannot_be_reused_after_failure(tmp_path, harness):
     assert record["output"].endswith("first")
 
 
+@pytest.mark.parametrize("cause", ["worker", "unauthorized_executions", "wrong_evidence_adopted"])
+def test_parent_stops_on_worker_or_scored_safety_evidence(harness, cause):
+    row = dict(stop_paid=cause == "worker", score={cause: 1} if cause != "worker" else {})
+    assert harness.stop_schedule(row)
+    assert not harness.stop_schedule(dict(stop_paid=False, score={}))
+
+
+def test_parent_amendment_cannot_change_product_or_worker(tmp_path, harness, monkeypatch):
+    monkeypatch.setattr(harness, "source_files", lambda root: {"src/engine.py": "changed"})
+    with pytest.raises(ValueError, match="PARENT_AMENDMENT_CHANGED_PRODUCT_OR_WORKER"):
+        harness.freeze_parent_runner(tmp_path, dict(harness_files={"src/engine.py": "frozen"}))
+
+
+def test_committed_scheduling_only_parent_is_frozen_separately(tmp_path, harness, monkeypatch):
+    import hashlib
+
+    files = {"src/engine.py": "same", "scripts/evaluate_plan_reuse.py": "new"}
+    monkeypatch.setattr(harness, "source_files", lambda root: files)
+    monkeypatch.setattr(harness, "git", lambda *args: b"" if args[0] == "diff" else b"commit")
+    runner = harness.freeze_parent_runner(tmp_path, dict(harness_files={
+        **files, "scripts/evaluate_plan_reuse.py": "old"}))
+    assert runner["changed_files"] == ["scripts/evaluate_plan_reuse.py"]
+    assert runner["sha256"] == hashlib.sha256((tmp_path / "evaluation-runner.py").read_bytes()
+                                             ).hexdigest()
+    assert runner["commit"] == "commit" and runner["source_files"] == files
+
+
 def test_worker_preflight_uses_selected_source_without_model_or_http(
     tmp_path, harness, monkeypatch,
 ):
