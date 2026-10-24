@@ -1,0 +1,28 @@
+{
+  "name": "offline protocol fixture",
+  "steps": [
+    {
+      "id": "fixture_1",
+      "operation_id": "openTicket",
+      "role": "owner",
+      "path_parameters": {},
+      "query": {},
+      "body": {
+        "subject": {
+          "value": "a",
+          "from_step": null,
+          "select": "$"
+        },
+        "priority": {
+          "value": "high",
+          "from_step": null,
+          "select": "$"
+        }
+      },
+      "upload": null,
+      "policy_id": "ticket_open_v1",
+      "poll": false,
+      "read_retries": 0
+    }
+  ]
+}

@@ -306,10 +306,13 @@ async def _position(folder, request, fault, settings, verify):
     capture = RegressionCapture(TraceModel(raw, folder / "planning-inputs", verify))
     analyzer = TraceModel(feedback, folder / "feedback-inputs", verify)
     store = ReportStore(folder / "reports")
-    plans, shapes = {}, {}
+    plans, shapes, validated = {}, {}, {}
+
+    def on_validated(goal, plan):
+        validated[fingerprint(goal.task.model_dump())] = plan
 
     def observed(goal, report):
-        plan = capture.scenario
+        plan = validated.get(fingerprint(goal.task.model_dump()), capture.scenario)
         vault = CredentialVault(project.target, environ)
         try:
             if plan and vault.contains_secret(plan.model_dump()):
@@ -347,7 +350,7 @@ async def _position(folder, request, fault, settings, verify):
         transport=transport,
         analyzer=analyzer,
         execution_guard=verify,
-        on_report=observed,
+        on_report=observed, on_validated_plan=on_validated,
         budget=WorkflowBudget(model_timeout=61, workflow_timeout=300),
     )
     save_evaluation(result, folder / "product.json")

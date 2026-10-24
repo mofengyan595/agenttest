@@ -50,14 +50,14 @@ def fixed_plan(policy, body=None):
         body={k: dict(value=v) for k, v in body.items()})]))
 
 
-def generated_data(document, count=9):
+def generated_data(document, count=9, *, operation_path="/validation-records", method="POST"):
     """Pure bounded generation: no calls, feedback, shrinking, state machine or replay."""
     import schemathesis
     from hypothesis import Phase, given, settings
     from schemathesis import GenerationMode
 
     schema = schemathesis.openapi.from_dict(json.loads(document))
-    operation = schema["/validation-records"]["POST"]
+    operation = schema[operation_path][method]
     collected = {}
     for label, mode in (("positive", GenerationMode.POSITIVE),
                         ("negative", GenerationMode.NEGATIVE)):

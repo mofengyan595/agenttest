@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import inspect
 import json
 import math
 import time
@@ -92,9 +93,11 @@ async def position(folder, request, fault, settings, verify, mock_protocol="chat
             for s in plan.steps] if plan else []
 
     started = time.perf_counter()
+    callbacks = ({"on_validated_plan": on_validated}
+                 if "on_validated_plan" in inspect.signature(run_suite).parameters else {})
     product = await run_suite(project, request["user_task"], capture, store, environ=env,
         transport=transport, analyzer=analyzer, semantic_model=entry, execution_guard=verify,
-        on_report=observed, on_validated_plan=on_validated,
+        on_report=observed, **callbacks,
         budget=WorkflowBudget(model_timeout=61, workflow_timeout=300))
     save_evaluation(product, folder / "product.json")
     save_evaluation(plans, folder / "plans.json")

@@ -48,7 +48,8 @@ async def test_three_paths_without_new_core_branches_or_task_specific_steps(tmp_
         assert [s.operation_id for s in report.steps] == [
             "makeTray", "makeSpecimen", "placeSpecimen", "getPlacement", "getPlacement"]
     elif scope == "project":
-        assert result["model_calls"] == 20 and result["http_requests"] == 36
+        assert result["model_calls"] == 5 and result["http_requests"] == 36
+        assert result["coverage"]["derived_executed"] == 15
         assert sum(r["negative_rejections_passed"] for r in result["cases"]) == 15
         assert result["coverage"]["executed_operations"] == 4
 

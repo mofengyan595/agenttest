@@ -1,0 +1,17 @@
+{
+  "tickets": {
+    "base_policy": "ticket_open_v1",
+    "steps": [{"id": "create", "operation_id": "openTicket", "role": "owner", "policy_id": "ticket_open_v1", "body": {"subject": {"value": "a"}, "priority": {"value": "low"}}}]
+  },
+  "courses": {
+    "base_policy": "nl_create_v1",
+    "steps": [
+      {"id": "auth", "operation_id": "login", "role": "alice", "policy_id": "nl_login_v1"},
+      {"id": "create", "operation_id": "createCourse", "role": "alice", "policy_id": "nl_create_v1", "body": {"name": {"value": "a"}}}
+    ]
+  },
+  "laboratory": {
+    "base_policy": "lab_specimen_v1",
+    "steps": [{"id": "create", "operation_id": "makeSpecimen", "role": "tech", "policy_id": "lab_specimen_v1", "body": {"label": {"value": "aaa"}, "aliquots": {"value": 1}}}]
+  }
+}

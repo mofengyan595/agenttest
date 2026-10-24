@@ -1,0 +1,8 @@
+[
+  {"id": "PR01", "project": "tickets", "user_task": "请补测openTicket接口"},
+  {"id": "PR02", "project": "courses", "user_task": "请补充测试createCourse接口"},
+  {"id": "PR03", "project": "tickets", "user_task": "帮我补测工单项目全部接口"},
+  {"id": "PR04", "project": "laboratory", "user_task": "请补充验证实验室所有已授权接口"},
+  {"id": "PR05", "project": "laboratory", "user_task": "请录入容器、录入样本、放入容器，随后查验"},
+  {"id": "PR06", "project": "courses", "user_task": "请补测新建课程并核验退款期限"}
+]
