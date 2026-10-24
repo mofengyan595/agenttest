@@ -1,5 +1,6 @@
 """Task-local immutable legal structures, never old IDs or rejected-plan repair."""
 
+import re
 from dataclasses import dataclass
 
 from agenttest.credentials import CredentialVault
@@ -16,6 +17,11 @@ from agenttest.task_contract import task_validator
 def structure_id(goal):
     return fingerprint(dict(project=goal.project_identity,
         task=goal.user_task_sha256, requirements=goal.task.requirements.model_dump(mode="json")))
+
+
+def explicit_literal_fixed(text, value):
+    return type(value) is str and any(value == (left or right)
+        for left, right in re.findall(r'“([^“”]+)”|"([^"\n]+)"', text))
 
 
 def validate_structure(project, goal, scenario, environ):
@@ -85,6 +91,10 @@ class LegalStructure:
             if original.policy_id != target.policy_id:
                 if not policy.negative or policy.negative.base_policy_id != original.policy_id:
                     raise NeedsReview("PLAN_REUSE_POLICY_NOT_DERIVABLE")
+                mutated = next(a for a in original.arguments if (a.location, a.name) == (
+                    policy.negative.location, policy.negative.name))
+                if explicit_literal_fixed(goal.task.user_task, mutated.value):
+                    raise NeedsReview("PLAN_REUSE_LITERAL_OR_SOURCE_FIXED")
                 step.policy_id = target.policy_id
                 negative_rules.append(dict(policy_id=policy.id,
                     approval=policy.negative.model_dump(mode="json"),
@@ -103,7 +113,7 @@ class LegalStructure:
                     continue
                 if (arg.source is not None or other.source is not None
                         or arg.selector != other.selector or policy.negative
-                        or any(q in goal.task.user_task for q in ('"', '“', '”'))):
+                        or explicit_literal_fixed(goal.task.user_task, arg.value)):
                     raise NeedsReview("PLAN_REUSE_LITERAL_OR_SOURCE_FIXED")
                 rules = [r for r in policy.binding_rules if (r.location, r.name) == slot]
                 if len(rules) != 1 or rules[0].literal_schema is None:

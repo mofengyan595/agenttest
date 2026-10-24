@@ -25,7 +25,7 @@ from agenttest.evaluation_freeze import public_model_config
 from agenttest.project_goals import load_goal_project
 from agenttest.report import ReportStore, fingerprint
 
-DATA = PROJECT_ROOT / "examples/plan-reuse"
+DATA = PROJECT_ROOT / "examples/plan-reuse-v2"
 BASELINE = "86d68225ab39c6f31d950298e51d0c77d1f2cac0"
 ATTRIBUTION_VERSION = "plan_reuse_attribution_v1"
 

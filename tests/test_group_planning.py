@@ -62,12 +62,12 @@ async def test_group_context_contains_only_selected_policies_roles_and_dependenc
 async def test_sufficient_frozen_budget_covers_all_groups_without_inserting_model_steps(tmp_path):
     pytest.importorskip("langgraph")
     p = deepcopy(_project())
-    p.target.max_requests = 12
+    p.target.max_requests = 14
     p.registration.budget.suite_max_model_calls = 6
     p.registration.budget.suite_max_total_tokens = 500_000
     suite = build_suite(p, "测试这个项目已授权的核心接口")
     preview = suite.preview()["budget_preview"]
-    assert preview["required_business_requests"] == 11
+    assert preview["required_business_requests"] == 13
     assert preview["required_planning_calls"] == 6
     assert preview["complete_project_within_budget"]
     assert preview["optional_readonly_requests"] == 1
@@ -75,10 +75,10 @@ async def test_sufficient_frozen_budget_covers_all_groups_without_inserting_mode
     planner = ObservedPlanner()
     result = await run_suite(p, "测试这个项目已授权的核心接口", planner, ReportStore(tmp_path),
         environ=env, transport=httpx.ASGITransport(app=app))
-    assert result["complete"] and result["http_requests"] == 11
+    assert result["complete"] and result["http_requests"] == 13
     assert result["model_calls"] == 6 and len(planner.contexts) == 6
-    assert result["coverage"]["planned_scenarios"] == 6
-    assert result["coverage"]["executed_scenarios"] == 6
+    assert result["coverage"]["planned_scenarios"] == 8
+    assert result["coverage"]["executed_scenarios"] == 8
     assert result["coverage"]["executed_operations"] == 4
 
 
@@ -107,7 +107,7 @@ async def test_insufficient_shared_budget_keeps_full_denominators(tmp_path, cons
     result = await run_suite(p, "测试这个项目已授权的核心接口", planner, ReportStore(tmp_path),
         environ=env, transport=httpx.ASGITransport(app=app), ledger=ledger)
     assert not result["complete"]
-    assert result["coverage"]["scenario_denominator"] == 6
+    assert result["coverage"]["scenario_denominator"] == 8
     assert result["coverage"]["operation_denominator"] == 4
     assert result["usage"]["requests"] <= p.target.max_requests
     assert result["usage"]["model_calls"] <= p.registration.budget.suite_max_model_calls
@@ -123,7 +123,7 @@ async def test_optional_feedback_cannot_consume_later_required_group_budget(tmp_
     pytest.importorskip("langgraph")
     prepare_profiles(tmp_path / "projects")
     p = load_goal_project(tmp_path / "projects/tickets/registered.project.json")
-    p.target.max_requests = 12
+    p.target.max_requests = 14
     p.registration.budget.suite_max_model_calls = 9
     p.registration.budget.suite_max_total_tokens = 500_000
     app, _, _, _, env = project_inputs("tickets", "owner_leak")
@@ -131,8 +131,8 @@ async def test_optional_feedback_cannot_consume_later_required_group_budget(tmp_
         ReportStore(tmp_path / "reports"), environ=env,
         transport=httpx.ASGITransport(app=app), analyzer=FakeFeedback())
     assert result["cases"][-1]["task_satisfied"] is True
-    assert result["coverage"]["executed_scenarios"] == 6
-    assert result["http_requests"] == 12 and result["model_calls"] <= 9
+    assert result["coverage"]["executed_scenarios"] == 8
+    assert result["http_requests"] == 14 and result["model_calls"] <= 9
     failed = [c for c in result["cases"] if c.get("outcome") == "ASSERTION_FAILED"]
     assert len(failed) == 1 and not result["complete"]
 
@@ -155,7 +155,7 @@ async def test_extra_model_step_is_retained_rejected_and_excluded_from_valid_cov
                            policy_id="ticket_list_v1"))
     app, _, _, _, env = project_inputs("tickets")
     store = ReportStore(tmp_path)
-    # Flow scope has one group and no automatic Schema variations.
+    # This read-only endpoint has no approved literal input variations.
     result = await run_suite(p, "创建、查询工单流程", FakeLLM(plan.model_dump_json()), store,
         environ=env, transport=httpx.ASGITransport(app=app))
     assert result["model_calls"] == 1 and result["http_requests"] == 0

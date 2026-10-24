@@ -100,7 +100,9 @@ def test_explicit_literals_are_not_mutation_capabilities():
     p = load_goal_project(PROJECT)
     suite = build_suite(p, '请测试新建记录“限定输入”接口')
     ready = [c for c in suite.cases if c.goal and c.goal.task]
-    assert len(ready) == 1 and not ready[0].is_derived
+    assert len(ready) == 7 and not ready[0].is_derived
+    assert all(next(a.value for a in c.goal.task.requirements.steps[0].arguments
+                    if a.name == "message") == "限定输入" for c in ready)
     assert all(c.reason in {"EXPLICIT_INPUT_VALUE_FIXED", "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED"}
                for c in suite.cases if not c.goal)
 
@@ -158,7 +160,7 @@ async def test_multi_producer_negatives_produce_fresh_resources_for_each_run(tmp
     result = await run_suite(p, "请测试所有已授权接口", CatalogFixturePlanner(),
         ReportStore(tmp_path), environ=env, transport=Observed(app=app), on_report=report)
     assert result["complete"] and result["model_calls"] == 5
-    assert result["http_requests"] == 36
+    assert result["http_requests"] == 42
     producers = []
     for policy, requests, report in observations:
         if policy == "lab_place_v1" or policy.startswith("place_"):
@@ -169,7 +171,45 @@ async def test_multi_producer_negatives_produce_fresh_resources_for_each_run(tmp
             assert requests[-1][1] == f"/lab/trays/{tray}/specimens/{sample}"
             producers.append((sample, tray))
             assert report.outcome == Outcome.PASS
-    assert len(producers) == len(set(producers)) == 5
+    assert len(producers) == len(set(producers)) == 6
+
+
+@pytest.mark.asyncio
+async def test_flow_endpoint_derives_approved_negatives_without_replanning(tmp_path):
+    from agenttest.portability_demo import project_inputs
+
+    folder = ROOT / "examples/trusted-testing/projects/tickets"
+    p = load_goal_project(folder / "registered.project.json")
+    app, _, _, _, env = project_inputs("tickets")
+    model = OnePlan()
+    result = await run_suite(p, "请验证创建、关闭工单流程", model, ReportStore(tmp_path),
+        environ=env, transport=httpx.ASGITransport(app=app))
+    assert result["complete"] and model.calls == 1
+    assert result["scope"] == "flow" and result["http_requests"] == 10
+    assert len(result["cases"]) == 5
+    assert result["coverage"]["derived_executed"] == 4
+    assert sum(c["negative_rejections_passed"] for c in result["cases"]) == 4
+
+
+@pytest.mark.asyncio
+async def test_quoted_producer_value_is_kept_when_another_flow_field_varies(tmp_path):
+    from agenttest.portability_demo import project_inputs
+
+    folder = ROOT / "examples/trusted-testing/projects/tickets"
+    p = load_goal_project(folder / "registered.project.json")
+    app, _, _, _, env = project_inputs("tickets")
+    bodies = []
+
+    class Observed(httpx.ASGITransport):
+        async def handle_async_request(self, request):
+            if request.url.path == "/v2/tickets":
+                bodies.append(json.loads(await request.aread()))
+            return await super().handle_async_request(request)
+
+    result = await run_suite(p, '请创建工单“固定工单”，然后关闭', OnePlan(), ReportStore(tmp_path),
+        environ=env, transport=Observed(app=app))
+    assert result["complete"] and result["coverage"]["derived_executed"] == 4
+    assert len(bodies) == 5 and all(b["subject"] == "固定工单" for b in bodies)
 
 
 @pytest.mark.asyncio

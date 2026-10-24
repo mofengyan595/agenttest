@@ -75,9 +75,9 @@ def test_single_generates_schema_candidates_and_never_guesses_error_status():
 
 def test_project_groups_are_catalog_derived_and_do_not_include_task_answers():
     suite = build_suite(_project(), "测试这个项目已授权的核心接口")
-    assert suite.scope == "project" and len(suite.cases) == 6
+    assert suite.scope == "project" and len(suite.cases) == 8
     assert suite.operation_ids == ["closeTicket", "listTickets", "openTicket", "readTicket"]
-    assert len({c.id for c in suite.cases}) == 6
+    assert len({c.id for c in suite.cases}) == 8
     assert all(c.goal.task.user_task == "测试这个项目已授权的核心接口" for c in suite.cases)
     assert "requirements" not in json.dumps(suite.preview())
 
@@ -119,7 +119,7 @@ async def test_all_three_scopes_use_workflow_and_aggregate_budget(tmp_path, scop
         assert result["coverage"]["executed_scenarios"] == 3 and not result["complete"]
     elif scope == "project":
         assert result["http_requests"] == 10
-        assert result["coverage"]["executed_scenarios"] == 5
+        assert result["coverage"]["executed_scenarios"] == 6
         assert result["cases"][-1]["reason"] == "SUITE_BUDGET_OR_USAGE_STOP"
         assert result["coverage"]["executed_operations"] == 3
     else:
@@ -135,7 +135,7 @@ async def test_unknown_usage_stops_later_independent_children(tmp_path):
         ReportStore(tmp_path), environ=env, transport=httpx.ASGITransport(app=app))
     assert planner.calls == 1 and result["usage"]["total_tokens"] is None
     assert result["usage"]["usage_known"] is False
-    assert sum(c["status"] == "NOT_EXECUTED" for c in result["cases"]) == 5
+    assert sum(c["status"] == "NOT_EXECUTED" for c in result["cases"]) == 7
 
 
 @pytest.mark.asyncio
@@ -147,8 +147,8 @@ async def test_request_budget_and_model_budget_do_not_refresh_per_child(tmp_path
     planner = SyntheticPlanner()
     result = await run_suite(p, "测试这个项目已授权的核心接口", planner,
         ReportStore(tmp_path), environ=env, transport=httpx.ASGITransport(app=app))
-    assert planner.calls == 1 and result["http_requests"] == 1
-    assert result["coverage"]["executed_scenarios"] == 1
+    assert planner.calls == 1 and result["http_requests"] == 3
+    assert result["coverage"]["executed_scenarios"] == 3
 
 
 @pytest.mark.asyncio

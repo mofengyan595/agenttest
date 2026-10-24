@@ -21,9 +21,9 @@ def runtime(fault="none"):
 def test_resource_graph_has_two_independent_producers_and_an_indirect_consumer():
     project = load_goal_project(ROOT / "registered.project.json")
     suite = build_suite(project, "测试这个项目已授权的核心接口")
-    assert len(suite.cases) == 20
+    assert len(suite.cases) == 24
     assert suite.preview()["budget_preview"]["complete_project_within_budget"]
-    assert suite.preview()["budget_preview"]["required_business_requests"] == 36
+    assert suite.preview()["budget_preview"]["required_business_requests"] == 42
     placement = next(p for p in project.registry.definitions() if p.id == "lab_place_v1")
     assert {b.source_policy_id for b in placement.binding_rules if b.source_policy_id} == {
         "lab_tray_v1", "lab_specimen_v1"}
@@ -48,8 +48,8 @@ async def test_three_paths_without_new_core_branches_or_task_specific_steps(tmp_
         assert [s.operation_id for s in report.steps] == [
             "makeTray", "makeSpecimen", "placeSpecimen", "getPlacement", "getPlacement"]
     elif scope == "project":
-        assert result["model_calls"] == 5 and result["http_requests"] == 36
-        assert result["coverage"]["derived_executed"] == 15
+        assert result["model_calls"] == 5 and result["http_requests"] == 42
+        assert result["coverage"]["derived_executed"] == 19
         assert sum(r["negative_rejections_passed"] for r in result["cases"]) == 15
         assert result["coverage"]["executed_operations"] == 4
 

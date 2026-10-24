@@ -14,7 +14,7 @@ from agenttest.goal_derivation import (
     public_goal_plan,
 )
 from agenttest.llm_planner import PlannerFailure
-from agenttest.plan_reuse import LegalStructure, structure_id
+from agenttest.plan_reuse import LegalStructure, explicit_literal_fixed, structure_id
 from agenttest.policies import NeedsReview
 from agenttest.project_goals import check_goal_credentials
 from agenttest.report import ModelCallStats, Outcome, fingerprint
@@ -151,9 +151,9 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
                     goal.reason = "INTENT_GOAL_CONFIGURATION_UNSUPPORTED"
                 add(goal, policies[template.policy_id].operation_id,
                     template.id + ":" + kind, goal.reason)
-                if goal.task and not prerequisites:
-                    _approved_negatives(project, goal,
-                        policies[template.policy_id].operation_id, add)
+                if goal.task:
+                    _single_candidates(project, goal,
+                        policies[template.policy_id].operation_id, add, approved_only=True)
         represented = {c.operation_id for c in cases}
         represented.update(s.operation_id for c in cases if c.goal and c.goal.task
                            for s in c.goal.task.requirements.steps)
@@ -164,8 +164,8 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
         template = next(g for g in project.catalog.goals if g.id == base.requested_goals[-1])
         operation_id = policies[template.policy_id].operation_id
         add(base, operation_id, "normal" if base.scope == "single" else "resource_flow")
-        if base.scope == "single":
-            _single_candidates(project, base, operation_id, add)
+        _single_candidates(project, base, operation_id, add,
+                           approved_only=base.scope != "single")
     else:
         add(base, None, "unverified_goal", base.reason)
     if environ is not None:
@@ -197,7 +197,7 @@ def build_suite(project, user_task, *, environ=None) -> GoalSuite:
              per_run_readonly_investigations=project.registration.budget.max_readonly_investigations))
 
 
-def _single_candidates(project, base, operation_id, add):
+def _single_candidates(project, base, operation_id, add, *, approved_only=False):
     operation = next(o for o in project.contract.operations if o.operation_id == operation_id)
     try:
         specs, _ = fields(operation, project.contract.version, "#/operations")
@@ -223,21 +223,25 @@ def _single_candidates(project, base, operation_id, add):
                             and len(a.value) == description.string_length))
                         for a in approved_mutations):
                     continue
-                add(None, operation_id, name, "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED")
-                continue
-            # An explicit literal restricts this task; do not silently replace user data.
-            if any(q in base.task.user_task for q in ('"', "“", "”")):
-                add(None, operation_id, name, "EXPLICIT_INPUT_VALUE_FIXED")
+                if not approved_only:
+                    add(None, operation_id, name, "EXPECTED_ERROR_BEHAVIOR_NOT_APPROVED")
                 continue
             goal = deepcopy(base)
-            steps = [s for s in goal.task.requirements.steps if s.operation_id == operation_id]
+            requested = "requested:" + base.requested_goals[-1]
+            steps = [s for s in goal.task.requirements.steps
+                     if s.operation_id == operation_id and requested in s.goals]
             if len(steps) != 1:
                 add(None, operation_id, name, "VARIATION_TARGET_AMBIGUOUS")
                 continue
             step = steps[0]
             args = [a for a in step.arguments if (a.location, a.name) == (spec.location, spec.name)]
             if len(args) != 1 or args[0].source is not None:
-                add(None, operation_id, name, "DYNAMIC_RESOURCE_VARIATION_REQUIRES_REVIEW")
+                if not approved_only:
+                    add(None, operation_id, name, "DYNAMIC_RESOURCE_VARIATION_REQUIRES_REVIEW")
+                continue
+            if explicit_literal_fixed(base.task.user_task, args[0].value):
+                if not approved_only:
+                    add(None, operation_id, name, "EXPLICIT_INPUT_VALUE_FIXED")
                 continue
             rule = next((r for r in definitions[step.policy_id].binding_rules
                          if (r.location, r.name) == (spec.location, spec.name)), None)
@@ -247,7 +251,8 @@ def _single_candidates(project, base, operation_id, add):
                 validate_value(value, spec.schema)
                 validate_value(value, rule.literal_schema)
             except (ValueError, NeedsReview):
-                add(None, operation_id, name, "VARIATION_OUTSIDE_APPROVED_POLICY")
+                if not approved_only:
+                    add(None, operation_id, name, "VARIATION_OUTSIDE_APPROVED_POLICY")
                 continue
             args[0].value = value
             for default in goal.input_defaults:
@@ -267,7 +272,8 @@ def _approved_negatives(project, base, operation_id, add):
             continue
         goal = deepcopy(base)
         steps = [s for s in goal.task.requirements.steps
-                 if s.policy_id == approval.base_policy_id]
+                 if s.policy_id == approval.base_policy_id
+                 and "requested:" + base.requested_goals[-1] in s.goals]
         if len(steps) != 1:
             continue
         from agenttest.negative import validate_approval
@@ -283,7 +289,9 @@ def _approved_negatives(project, base, operation_id, add):
             if default["policy_id"] == approval.base_policy_id:
                 default["policy_id"] = policy.id
         # Explicit user literals restrict input intent even when mutation is approved globally.
-        if any(q in base.task.user_task for q in ('"', '“', '”')):
+        argument = next(a for a in steps[0].arguments if (a.location, a.name) == (
+            approval.location, approval.name))
+        if explicit_literal_fixed(base.task.user_task, argument.value):
             add(None, operation_id, "approved_negative:" + policy.id,
                 "EXPLICIT_INPUT_VALUE_FIXED")
             continue

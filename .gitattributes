@@ -1,5 +1,6 @@
 # Regression manifests hash file bytes on both Windows and Linux.
 examples/regressions/** text eol=lf
 examples/plan-reuse/** text eol=lf
+examples/plan-reuse-v2/** text eol=lf
 examples/portability/pocketbase/** text eol=lf
 docs/demo-evidence/pocketbase-live-summary.json text eol=lf

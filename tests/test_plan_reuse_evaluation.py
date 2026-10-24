@@ -18,8 +18,9 @@ def harness(monkeypatch):
     return importlib.import_module("evaluate_plan_reuse")
 
 
-def test_frozen_metadata_and_original_scoring_are_separate(harness, monkeypatch):
-    data = ROOT / "examples/plan-reuse"
+@pytest.mark.parametrize("version", ["plan-reuse", "plan-reuse-v2"])
+def test_frozen_metadata_and_original_scoring_are_separate(harness, monkeypatch, version):
+    data = ROOT / "examples" / version
     requests, labels, protocol = [json.loads((data / name).read_text(encoding="utf-8"))
         for name in ("requests.json", "labels.json", "protocol.json")]
     # CI may use shallow history; metadata tests do not download Git history.
@@ -34,6 +35,21 @@ def test_frozen_metadata_and_original_scoring_are_separate(harness, monkeypatch)
     label = labels[-1]
     span = label["unknown_requirement_span"]
     assert requests[-1]["user_task"][span["start"]:span["end"]] == "核验退款期限"
+
+
+def test_v2_keeps_requests_budgets_and_diagnosis_and_adds_project_positive_coverage():
+    old, new = [ROOT / "examples" / name for name in ("plan-reuse", "plan-reuse-v2")]
+    assert (old / "requests.json").read_bytes() == (new / "requests.json").read_bytes()
+    protocols = [json.loads((p / "protocol.json").read_text()) for p in (old, new)]
+    for key in ("per_run", "per_position", "retries", "additional_attempts", "quality_targets"):
+        assert protocols[0][key] == protocols[1][key]
+    labels = [json.loads((p / "labels.json").read_text()) for p in (old, new)]
+    for index in (0, 1, 4, 5):
+        assert labels[0][index] == labels[1][index]
+    for index, denominator in ((2, 19), (3, 24)):
+        assert labels[1][index]["scenario_denominator"] == denominator
+        assert sum(g["count"] for g in labels[1][index]["expected_groups"]) == denominator
+        assert labels[1][index]["schema_variants"]
 
 
 def test_unattempted_and_unconfirmed_slots_keep_denominators(harness):
