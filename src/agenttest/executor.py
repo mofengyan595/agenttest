@@ -144,7 +144,8 @@ class Executor:
 
             try:
                 lifecycle = LifecycleJournal(lifecycle_plan(
-                    self.contract, self.config, scenario, self.registry), report)
+                    self.contract, self.config, scenario, self.registry,
+                    require_fresh_reads=False), report)
             except ValueError:
                 report.cleanup = "此场景缺少完整且已授权的数据生命周期，不能保存为写回归。"
         timeout = httpx.Timeout(

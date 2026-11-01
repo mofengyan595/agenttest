@@ -407,7 +407,7 @@ class TaskService:
                 scenario, _, project = asset
                 if (summary.get("mode") == "MODEL_DESIGNED"
                         and not self.saved.executable(project, scenario)):
-                    reason = "此写场景缺少已确认的新数据准备、同轮资源绑定或清理，请先补齐。"
+                    reason = self.saved.lifecycle_reason(project, scenario)
                 elif any(s.upload or s.poll or s.read_retries for s in scenario.steps):
                     reason = "此场景含上传、轮询或读取重试，暂不支持固定回归导出。"
                 else:

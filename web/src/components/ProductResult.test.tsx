@@ -192,3 +192,16 @@ test("project capability coverage stays separate from this task and pages every 
   expect(screen.getByText(/field23：参数类型/)).toBeVisible();
   expect(screen.getByRole("button", {name: "下一组检查"})).toBeDisabled();
 });
+
+test("a rejected independent scenario explains missing login while keeping its original code", () => {
+  const task: GoalTask = {id: "a".repeat(32), project_id: "web_new", project_identity: "v1",
+    request_sha256: "b".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {mode: "MODEL_DESIGNED", complete: false, cases: [{case_id: "rejected",
+      operation_id: "create", title: "独立异常检查", status: "REJECTED",
+      reason: "DSL_AUTHENTICATION_ORDER", max_business_requests: 1}]}};
+  render(<MemoryRouter><ProductResult task={task} busy={false} save={vi.fn()}
+    answer={vi.fn()} /></MemoryRouter>);
+  expect(screen.getByText(/本场景没有单独登录，相关请求未发送/)).toBeVisible();
+  expect(screen.queryByText("DSL_AUTHENTICATION_ORDER", {exact: true})).not.toBeInTheDocument();
+  expect(task.summary.cases![0].reason).toBe("DSL_AUTHENTICATION_ORDER");
+});

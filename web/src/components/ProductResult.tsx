@@ -16,6 +16,15 @@ const negativeKinds: Record<string, string> = {
   required_missing: "必填项缺失", type_mismatch: "参数类型",
   boundary_outside: "参数边界", enum_outside: "枚举范围",
 };
+const caseReasons: Record<string, string> = {
+  DSL_AUTHENTICATION_ORDER: "本场景没有单独登录，相关请求未发送。请安排新的测试，为每个独立场景准备身份。",
+  DSL_MISSING_AUTHENTICATION_CREDENTIALS: "本场景缺少可用身份，相关请求未发送。请先补充项目中的测试身份。",
+  POLICY_DEPENDENCY_MISMATCH: "资源来源与已确认规则不一致，相关请求未发送。请先补充本轮数据的准备方式。",
+};
+function caseReason(reason: string) {
+  return caseReasons[reason] || (/^[A-Z][A-Z0-9_]+$/.test(reason)
+    ? "场景未通过执行校验，相关请求未发送。请查看详细记录并补充所需信息。" : reason);
+}
 
 export function ProductResult({
   task,
@@ -239,7 +248,7 @@ export function ProductResult({
               </li>
             ))}
           </ul>
-          {c.reason && <p>{c.reason}</p>}
+          {c.reason && <p>{caseReason(c.reason)}</p>}
           <LifecycleStatus resources={c.resource_lifecycle} />
           {c.failure_explanation && <div className="finding-card" aria-label="调查结论">
             <strong>调查结论</strong>

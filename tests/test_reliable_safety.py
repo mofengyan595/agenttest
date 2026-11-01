@@ -9,9 +9,13 @@ from test_product_probe import SelectRead
 from test_product_tasks import finished, response, service
 from test_resource_lifecycle import executor, lifecycle_project, plan
 
+from agenttest.dsl import ArgumentBinding
+from agenttest.fixed_plan import replay_scope
 from agenttest.generic_intake import GenericSetup, IntakeOperation
+from agenttest.policies import BindingRule, PolicyRegistry
 from agenttest.project_intake import IntakeInput
 from agenttest.report import Outcome
+from agenttest.saved_tests import SavedTests
 
 
 @pytest.mark.asyncio
@@ -49,6 +53,22 @@ async def test_cleanup_rejected_before_send_is_recorded_as_not_sent(tmp_path):
     assert report.resource_lifecycle[0]["status"] == "CLEANUP_PENDING"
     assert report.resource_lifecycle[0]["cleanup_result"] == "NOT_SENT_PRECHECK_REJECTED"
     assert report.lifecycle_cleanup[0].attempts == []
+
+
+def test_write_regression_cannot_depend_on_an_approved_but_historical_read(tmp_path):
+    project, _ = lifecycle_project()
+    definitions = project.registry.definitions()
+    read = next(p for p in definitions if p.operation_id == "readJob")
+    read.binding_rules = [BindingRule(location="path_parameters", name="jobId",
+        literal_schema=dict(type="string", enum=["historical"]))]
+    project.registry = PolicyRegistry(definitions)
+    scenario = plan()
+    scenario.steps[1].path_parameters["jobId"] = ArgumentBinding(value="historical")
+    run = executor(tmp_path, lambda _: pytest.fail("Eligibility sends no HTTP"), project)
+    run.validate(scenario)  # Operator approval alone does not prove fresh test preparation.
+    assert replay_scope(project.contract, project.target, scenario,
+                        project.registry) == "MUTATION_LIFECYCLE_REQUIRED"
+    assert "未在本轮准备" in SavedTests.lifecycle_reason(project, scenario)
 
 
 @pytest.mark.asyncio

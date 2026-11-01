@@ -28,7 +28,7 @@ def validate_lifecycle_authority(contract, target):
         seen.add(rule.create_operation)
 
 
-def lifecycle_plan(contract, target, scenario, registry):
+def lifecycle_plan(contract, target, scenario, registry, *, require_fresh_reads=True):
     """Reject unsupported lifecycles; never infer ownership from an operation's name."""
     validate_lifecycle_authority(contract, target)
     operations = {op.operation_id: op for op in contract.operations}
@@ -37,7 +37,17 @@ def lifecycle_plan(contract, target, scenario, registry):
     for step in scenario.steps:
         op = operations[step.operation_id]
         role = target.roles.get(step.role)
-        if op.method in READS or role and role.login_operation == step.operation_id:
+        if op.method in READS:
+            if require_fresh_reads:
+                for binding in step.path_parameters.values():
+                    owned = creates.get(binding.from_step)
+                    if not owned or binding.select != owned[1].id_selector:
+                        raise ValueError("LIFECYCLE_READ_PREPARATION_REQUIRED")
+                if any(b.from_step and b.from_step not in creates
+                       for b in [*step.query.values(), *step.body.values()]):
+                    raise ValueError("LIFECYCLE_READ_PREPARATION_REQUIRED")
+            continue
+        if role and role.login_operation == step.operation_id:
             continue
         policy = policies[step.policy_id]
         rules = [r for r in target.resource_lifecycles
@@ -48,6 +58,9 @@ def lifecycle_plan(contract, target, scenario, registry):
                     or policy.assertions.status.codes != [201]):
                 raise ValueError("LIFECYCLE_FRESH_CREATE_REQUIRED")
             rule = rules[0]
+            if require_fresh_reads and any(b.from_step and b.from_step not in creates
+                    for b in [*step.body.values(), *step.query.values()]):
+                raise ValueError("LIFECYCLE_READ_PREPARATION_REQUIRED")
             validate_selector(rule.id_selector)
             creates[step.id] = (step, rule)
             continue

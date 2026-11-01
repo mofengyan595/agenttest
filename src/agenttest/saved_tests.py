@@ -39,6 +39,17 @@ class SavedTests:
                 != "MUTATION_LIFECYCLE_REQUIRED")
 
     @staticmethod
+    def lifecycle_reason(project, scenario):
+        from agenttest.lifecycle import lifecycle_plan
+
+        try:
+            lifecycle_plan(project.contract, project.target, scenario, project.registry)
+        except ValueError as exc:
+            if str(exc) == "LIFECYCLE_READ_PREPARATION_REQUIRED":
+                return "此场景仍读取未在本轮准备的资源，请改用本轮创建结果或单独保存只读检查。"
+        return "此写场景缺少已确认的新数据准备、同轮资源绑定或清理，请先补齐。"
+
+    @staticmethod
     def missing_negative(row, run_id):
         return any(c.get("run_id") == run_id and "negative" in c.get("kinds", [])
                    and c.get("approved_negative_steps") == 0
@@ -100,7 +111,7 @@ class SavedTests:
                               == "AUTHENTICATED_READONLY" else
                               "独立执行已确认的只读接口与原断言；模型禁用，不恢复原请求。")
                 elif self.service.generic_intake:
-                    reason = "写入场景尚缺完整的数据准备与清理控制，当前不开放固定复测。"
+                    reason = self.lifecycle_reason(project, scenario)
             except (ValueError, OSError, KeyError):
                 reason = "项目配置或回归文件已变化，请重新测试并保存。"
             if self.missing_negative(row, saved["run_id"]):
