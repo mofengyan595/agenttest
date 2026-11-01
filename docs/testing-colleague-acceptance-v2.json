@@ -1,0 +1,29 @@
+{
+  "version": "testing-colleague-final-v2",
+  "evidence_folder": "acceptance-v2",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_version": "testing-colleague-final-v1: 5/9, unchanged and archived with source",
+  "new_tasks_unused_for_debugging": true,
+  "order": ["1:parcels", "1:reservations", "1:directory", "2:parcels", "2:reservations", "2:directory", "3:parcels", "3:reservations", "3:directory"],
+  "first_attempts": "One first attempt per position; preserve every failure and unexecuted followup. No retries or source changes during the schedule. Oracles remain outside model context.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "建一个初冬样品包裹：数量1，标签只有amber，不开启跟踪。先读一次，再局部改名为名称已更新，然后完整替换为整件已替换、数量2、标签依次blue和amber、开启跟踪，再读一次，最后删掉这一个新包裹。另外分别检查创建时缺少数量、数量类型不对、名称超过24字三种情况是否按文档拒绝。别检查服务状态。",
+      "oracle": "6-operation denominator. Exactly one successful creation, literal nested inputs retained. One self-contained same-resource flow GET/PATCH/PUT/GET/DELETE, PATCH before PUT. Three approved422 negatives: missing quantity, quantity wrong type, name length25. All proposed cases execute and PASS; complete=true; no unrelated status request; target records empty."
+    },
+    {
+      "project": "reservations",
+      "request": "用创建者owner的账号登录，建周一的设备借用预约，座位依次3和6，读回后清理这条新预约。也想验证只读账号reader查看别人的预约时的权限；403还是404我还没定，你具体问我。已能独立检查的先跑，不要测服务状态。",
+      "answer": 403,
+      "followup": "拒绝规则已经确认。这回owner建周二的归还核验预约，座位依次2和4，再让reader读同一条新预约，按已保存的403规则检查，最后owner删除。直接沿用确认过的信息，不再重复提问，也不测服务状态。",
+      "oracle": "5-operation denominator. Real owner login, create exact Monday/设备借用/[3,6], owner read and cleanup. Unknown reader permission has a concrete403/404 question and0reader requests before approval. UI confirmation persists. Followup exact Tuesday/归还核验/[2,4], same-resource reader403, owner cleanup, no repeated question, complete=true."
+    },
+    {
+      "project": "directory",
+      "request": "正常读第7个目录：数量3、active为false、order为asc；再读第31个：数量1、active为true、order为desc。第7个还要分别试active类型错误和order枚举之外的值，第31个试数量0和4，按文档看是否拒绝。也检查服务状态。受限配置的账号还没有准备好，请具体问我接下来该补什么，先做能做的。不要碰其他目录、上传或导出。",
+      "oracle": "48-operation denominator:45ready/1missing/2unsupported. Exactly three ready focus interfaces. Normal queries retain all explicit values. Section7 active type and orderenum422; section31 limit0/4 both422. One availability HTTP200 wrong-state assertion failure plus bounded readonly probe. Concrete account question with no private request. Accurate partial completion. Save a PASS readonly case, restart product, replay0model, then disable stale asset after configuration change."
+    }
+  ]
+}

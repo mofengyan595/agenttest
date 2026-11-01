@@ -76,6 +76,11 @@ def witness(schema: dict, extra: dict | None = None) -> Any:
                 if value is not None:
                     choices.append(value)
     elif kind == "string":
+        formatted = {"uuid": "00000000-0000-4000-8000-000000000001",
+            "email": "tester@example.invalid", "date": "2027-01-02",
+            "date-time": "2027-01-02T03:04:05Z"}.get(schema.get("format"))
+        if formatted:
+            choices.append(formatted)
         lengths = {1, 0}
         for item in schemas:
             lengths.update([item.get("minLength", 0), item.get("maxLength", 1)])
@@ -116,6 +121,8 @@ def fields(operation: Operation, version: str, basis: str) -> tuple[list[FieldSp
     for location, entries in parameters.items():
         for name, schema in sorted(entries.items()):
             versioned_schema(schema, version)
+            if schema.get("format") not in {None, "binary", "password", "int32", "int64"}:
+                raise NeedsReview("UNSUPPORTED_DISCOVERY_FORMAT")
             index = next(
                 i
                 for i, p in enumerate(operation.parameters)
@@ -144,6 +151,8 @@ def fields(operation: Operation, version: str, basis: str) -> tuple[list[FieldSp
                 continue
             if schema.get("type") not in SCALARS:
                 raise NeedsReview("UNSUPPORTED_DISCOVERY_NESTED_VALUE")
+            if schema.get("format") not in {None, "binary", "password", "int32", "int64"}:
+                raise NeedsReview("UNSUPPORTED_DISCOVERY_FORMAT")
             escaped = name.replace("~", "~0").replace("/", "~1")
             result.append(
                 FieldSpec(

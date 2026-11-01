@@ -1,0 +1,292 @@
+{
+  "version": "testing-colleague-final-v10",
+  "evidence_folder": "acceptance-v10",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring. v9:7/9,23 calls,143568 known tokens; unnecessary negative setup and partial-scope interruption retained. No rescoring.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "请检查一件名称明确为“冬晨样箱”的包裹：数量1，标签依次blue、green，开启跟踪；创建后读回，完整替换为名称“样箱再装”、数量2、标签依次amber、blue、关闭跟踪；再局部改名为“样箱验清”，读回并删除本轮新包裹。另分别验证创建时quantity缺失、quantity原样使用字符串“teal_units”、名称超过24字，按文档422检查。服务状态这轮不查。",
+      "oracle": "One create冬晨样箱/1/[blue,green]/true; GET,PUT样箱再装/2/[amber,blue]/false,PATCH样箱验清,GET,DELETE same resource. Three422 incl exact teal_units; no unrelated negative preparation writes, allPASS complete targetempty.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "冬晨样箱"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ],
+          "invalid_values": [
+            "teal_units"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "green"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "样箱再装"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            2
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber",
+                "blue"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "样箱验清"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "teal_units"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "以owner登录，创建标题明确为“周间排程”的周二预约，座位依次1、4，owner读回并删除这个新预约。reader读别人的预约该返回403还是404还没有确认，请具体问我，先执行独立owner部分。不查服务状态。",
+      "answer": 403,
+      "followup": "按照已确认403的规则：owner登录，新建标题明确为“排程交验”的周一预约，座位依次6、5，owner先读取，再由reader读取同一个新预约检查拒绝，最后owner删除。已确认的信息不再询问，不查服务状态。",
+      "oracle": "Tuesday周间排程/[1,4] ownerlogin/create/read/delete, concrete403/404 question reader0HTTP. UIconfirm403 then Monday排程交验/[6,5] ownerlogin/create/read/reader403/cleanup same resource, no repeatedquestion emptytarget.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "周间排程",
+            "排程交验"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Tuesday",
+            "Monday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              1,
+              4
+            ],
+            [
+              6,
+              5
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ]
+    },
+    {
+      "project": "directory",
+      "request": "读取第7个目录，正常参数limit=1、active=true、order=desc；读取第31个目录，正常参数limit=2、active=false、order=asc。第7个另分别原样使用active字符串“fog_enabled”和order枚举外字符串“orbit_sort”；第31个另分别使用limit=-2、limit=8，各自验证文档422。也检查服务可用状态。受限配置缺测试账号，请具体指出补充内容，独立部分先执行。其他目录、附件上传和长时间导出这轮不测。",
+      "oracle": "48denominator45ready1missing2unsupported. Only7,31,availability. Exactnormal7:1,true,desc;31:2,false,asc. Four exact422 fog_enabled/orbit_sort/-2/8 executed4/4; HTTP200wrongstate fault+boundedprobe. Private0HTTP concreteaccountquestion. Save exactnegative,restart0modelcorrectsourceid,configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            1
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ],
+          "invalid_values": [
+            "fog_enabled"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ],
+          "invalid_values": [
+            "orbit_sort"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            2
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -2,
+            8
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "fog_enabled"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "orbit_sort"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -2
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 8
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

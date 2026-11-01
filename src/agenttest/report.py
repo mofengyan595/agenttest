@@ -1,4 +1,4 @@
-"""Typed, allowlisted evidence: never persist request/response bodies or headers."""
+"""Typed evidence; product request previews are bounded and scrubbed, headers never persist."""
 
 import hashlib
 import json
@@ -62,6 +62,7 @@ class StepResult(BaseModel):
     negative_test: str | None = None
     approved_violation_codes: list[str] = Field(default_factory=list)
     negative_rejected_as_expected: bool | None = None
+    request_evidence: dict | None = None
 
     @model_serializer(mode="wrap")
     def serialize_template_identity(self, handler):
@@ -73,6 +74,8 @@ class StepResult(BaseModel):
                 data.pop(key, None)
         if not self.approved_violation_codes:
             data.pop("approved_violation_codes", None)
+        if self.request_evidence is None:
+            data.pop("request_evidence", None)
         return data
 
 
@@ -189,7 +192,7 @@ class RunReport(BaseModel):
     diagnostic: Diagnostic | None = None
     intent_verified: bool = False
     # None preserves unknown semantics in legacy reports; manual PASS is not an NL claim.
-    task_mode: Literal["natural_language", "operator_plan"] | None = None
+    task_mode: Literal["natural_language", "operator_plan", "model_designed"] | None = None
     task_satisfied: bool | None = None
     investigations: list[InvestigationResult] = Field(default_factory=list)
     investigation_error: str | None = None

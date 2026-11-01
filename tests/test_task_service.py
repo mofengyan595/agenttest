@@ -32,6 +32,36 @@ async def settle(svc, task_id, owner):
 
 
 @pytest.mark.asyncio
+async def test_running_task_view_defers_export_inspection_but_finished_view_revalidates(
+        tmp_path, monkeypatch):
+    svc = service(tmp_path)
+    checks = []
+    original = svc.project
+
+    def project(key):
+        checks.append("project")
+        return original(key)
+
+    def asset(*args, **kwargs):
+        checks.append("asset")
+        return None
+
+    monkeypatch.setattr(svc, "project", project)
+    monkeypatch.setattr(svc.saved, "asset", asset)
+    try:
+        row = dict(status="RUNNING", project_id="tickets", summary=dict(run_id="a" * 32))
+        visible = svc.task_view(row)
+        assert not checks
+        assert visible["summary"]["exports"]["a" * 32]["available"] is False
+        row["status"] = "FINISHED"
+        visible = svc.task_view(row)
+        assert checks == ["project", "asset"]
+        assert visible["summary"]["exports"]["a" * 32]["available"] is False
+    finally:
+        await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_persisted_tasks_and_duplicate_submission_do_not_execute_twice(tmp_path):
     pytest.importorskip("langgraph")
     planners = []
@@ -57,6 +87,7 @@ async def test_persisted_tasks_and_duplicate_submission_do_not_execute_twice(tmp
     assert "测试创建工单接口".encode() not in svc.db.path.read_bytes()
     exported = svc.export_regression(first["id"], "owner-hash", finished["summary"]["run_id"])
     assert (exported / "manifest.json").is_file()
+    assert svc.saved.list("owner-hash")[0]["project_name"] == "工单"
     assert len(list(exported.glob("test_agenttest_*.py"))) == 1
     await svc.close()
 

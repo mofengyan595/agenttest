@@ -3,7 +3,7 @@
 from copy import deepcopy
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from agenttest.diagnostics import ValidationFailure
 from agenttest.json_values import json_equal
@@ -11,7 +11,7 @@ from agenttest.safety import StrictModel
 
 
 class ApprovedNegative(StrictModel):
-    """A policy reference selects one fixed capability; no planner-supplied bad values."""
+    """One approved field and deviation set, optionally with checked literal variants."""
 
     base_policy_id: str
     location: Literal["body", "query"]
@@ -19,6 +19,14 @@ class ApprovedNegative(StrictModel):
     kind: Literal["required_missing", "type_mismatch", "enum_outside", "boundary_outside"]
     value: Any = None
     violation_codes: list[str] = Field(min_length=1, max_length=5)
+    allow_value_variants: bool = False
+
+    @model_serializer(mode="wrap")
+    def preserve_fixed_approval(self, handler):
+        data = handler(self)
+        if not self.allow_value_variants:
+            data.pop("allow_value_variants", None)
+        return data
 
     @model_validator(mode="after")
     def bounded(self):
@@ -98,3 +106,61 @@ def mutate_request(approval, operation, path, query, payload, media):
             raise NeedsReview("NEGATIVE_BASE_MUST_BE_VALID")
         values[approval.name] = deepcopy(approval.value)
     return ((query, values) if approval.location == "body" else (values, payload))
+
+
+def boundary_side(value, schema):
+    """A lower-bound capability cannot be relabelled as an upper-bound check."""
+    sides = []
+    if type(value) in {int, float}:
+        for key, lower in (("minimum", True), ("maximum", False),
+                           ("exclusiveMinimum", True), ("exclusiveMaximum", False)):
+            boundary = schema.get(key)
+            if type(boundary) not in {int, float}:
+                continue
+            exclusive = key.startswith("exclusive") or schema.get(
+                "exclusiveMinimum" if lower else "exclusiveMaximum") is True
+            outside = (value < boundary or exclusive and value == boundary) if lower else (
+                value > boundary or exclusive and value == boundary)
+            if outside:
+                sides.append("lower" if lower else "upper")
+    if isinstance(value, (str, list)):
+        minimum, maximum = (("minLength", "maxLength") if isinstance(value, str)
+                            else ("minItems", "maxItems"))
+        if minimum in schema and len(value) < schema[minimum]:
+            sides.append("shorter")
+        if maximum in schema and len(value) > schema[maximum]:
+            sides.append("longer")
+    return tuple(sides)
+
+
+def select_negative_approval(approval, operation, value=None, *, override=False):
+    """Use exact data only within an explicitly approved, unchanged deviation capability."""
+    import json
+
+    from agenttest.policies import NeedsReview
+
+    if not override:
+        return approval
+    if approval is None:
+        raise NeedsReview("NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED")
+    if approval.kind == "required_missing":
+        raise NeedsReview("NEGATIVE_MISSING_FIELD_HAS_NO_REPLACEMENT_VALUE")
+    if json_equal(value, approval.value):
+        return approval
+    if not approval.allow_value_variants:
+        raise NeedsReview("NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED")
+    if approval.location == "query" and type(value) not in {str, int, float, bool}:
+        raise NeedsReview("NEGATIVE_QUERY_VARIANT_UNREPRESENTABLE")
+    try:
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False).encode()
+    except (TypeError, ValueError):
+        raise NeedsReview("NEGATIVE_VALUE_NOT_JSON_DATA") from None
+    if len(encoded) > 1800:
+        raise NeedsReview("NEGATIVE_VALUE_TOO_LARGE")
+    changed = ApprovedNegative.model_validate(dict(approval.model_dump(), value=value))
+    validate_approval(changed, operation)
+    schema, _ = approval_schema(approval, operation)
+    if (approval.kind == "boundary_outside" and
+            boundary_side(approval.value, schema) != boundary_side(value, schema)):
+        raise NeedsReview("NEGATIVE_VALUE_BOUNDARY_DIRECTION_CHANGED")
+    return changed

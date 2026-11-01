@@ -70,16 +70,28 @@ class Executor:
         operations = validate_plan(scenario, self.contract, self.config, self.environ)
         if report is not None:
             report.dsl_valid = True
+        if any(step.negative_value is not None for step in scenario.steps):
+            vault = CredentialVault(self.config, self.environ)
+            try:
+                if vault.contains_secret([step.negative_value.value for step in scenario.steps
+                                          if step.negative_value is not None]):
+                    raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
+            finally:
+                vault.close()
         policies, previous = {}, {}
         for step in scenario.steps:
             policies[step.id] = self.registry.resolve(
                 step, self.config.business_scenario, previous)
-            if policies[step.id].negative:
-                from agenttest.negative import validate_approval
+            if policies[step.id].negative or step.negative_value is not None:
+                from agenttest.negative import select_negative_approval, validate_approval
 
                 if any(step.operation_id == r.login_operation for r in self.config.roles.values()):
                     raise NeedsReview("NEGATIVE_AUTHENTICATION_FORBIDDEN")
-                validate_approval(policies[step.id].negative, operations[step.operation_id])
+                approval = select_negative_approval(policies[step.id].negative,
+                    operations[step.operation_id],
+                    step.negative_value.value if step.negative_value is not None else None,
+                    override=step.negative_value is not None)
+                validate_approval(approval, operations[step.operation_id])
             previous[step.id] = step
         if report is not None:
             report.policy_authorized = True
@@ -187,10 +199,18 @@ class Executor:
                 report.completed = True
                 self.store.save(report)
                 if self.investigation.enabled:
-                    from agenttest.readonly_runtime import investigate
+                    if (self.investigation.product_read_probe
+                            and report.task_mode == "model_designed"):
+                        from agenttest.product_investigation import recheck_read
 
-                    await investigate(self, client, scenario, report, state, vault, authenticated,
-                                      last_request=budget["last_request"])
+                        await recheck_read(self, client, scenario, report, state, budget,
+                                           policies, vault)
+                    else:
+                        from agenttest.readonly_runtime import investigate
+
+                        await investigate(self, client, scenario, report, state, vault,
+                                          authenticated,
+                                          last_request=budget["last_request"])
         except asyncio.CancelledError:
             if report.investigations or report.feedback is not None:
                 report.investigation_error = "RUN_CANCELLED"
@@ -262,7 +282,7 @@ class Executor:
         headers = {}
         role = self.config.roles.get(step.role)
         is_login = role and step.operation_id == role.login_operation
-        if role and operation.security and {} not in operation.security:
+        if role and operation.security:
             headers = vault.header(step.role)
         query = {key: self._binding(value, step, state) for key, value in step.query.items()}
         payload = {key: self._binding(value, step, state) for key, value in step.body.items()}
@@ -277,10 +297,20 @@ class Executor:
         validate_request(operation, path_values, query, request_payload, media)
         result.input_validation = "NORMAL_VALIDATED"
         if policy.negative:
-            from agenttest.negative import mutate_request
+            from agenttest.negative import mutate_request, select_negative_approval
 
-            query, payload = mutate_request(policy.negative, operation,
+            approval = select_negative_approval(policy.negative, operation,
+                step.negative_value.value if step.negative_value is not None else None,
+                override=step.negative_value is not None)
+            query, payload = mutate_request(approval, operation,
                 path_values, query, request_payload, media)
+            if step.negative_value is not None:
+                from agenttest.json_values import json_equal
+
+                actual = payload if approval.location == "body" else query
+                if not json_equal(actual.get(approval.name), step.negative_value.value):
+                    raise ValidationFailure(Layer.DEPENDENCY,
+                        "DEPENDENCY_EXACT_NEGATIVE_VALUE_CHANGED")
             if vault.contains_secret([query, payload]):
                 raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
             result.input_validation = "APPROVED_NEGATIVE"
@@ -291,6 +321,16 @@ class Executor:
             "path_parameters": path_values, "query": query, "body": request_payload,
         })
         result.policy_sha256 = fingerprint(policy.model_dump())
+        if report.task_mode == "model_designed":
+            public_request = vault.public_response(dict(path_parameters=path_values, query=query,
+                body={} if is_login or step.upload else payload))
+            if len(json.dumps(public_request, ensure_ascii=False).encode()) <= 4096:
+                result.request_evidence = dict(role=step.role, values=public_request,
+                    credentials="由执行器管理，未记录", source=policy.assertions.source)
+            else:
+                result.request_evidence = dict(role=step.role,
+                    omitted="脱敏后的请求超过 4 KB，未保存参数正文。",
+                    sha256=fingerprint(public_request), source=policy.assertions.source)
         kwargs: dict[str, Any] = {"headers": headers, "params": query}
         if step.upload:
             kwargs["files"] = {step.upload.field: (
@@ -326,7 +366,9 @@ class Executor:
                         raise ExecutionLimit("POLL_EXHAUSTED")
                     await asyncio.sleep(poll.interval)
                     continue
-            result.outcome, result.checks = self._verify(policy.assertions, status, body, vault)
+            result.outcome, result.checks = self._verify(policy.assertions, status, body, vault,
+                public_enums=report.task_mode == "model_designed"
+                    or self.config.business_scenario == "web_contract_v2")
             result.reason = "POLICY_EVALUATED"
             if policy.negative:
                 result.negative_rejected_as_expected = result.outcome == Outcome.PASS
@@ -338,8 +380,10 @@ class Executor:
 
     def _verify(
         self, policy: AssertionPolicy, status: int, body: Any, vault: CredentialVault,
+        *, public_enums: bool = False,
     ) -> tuple[Outcome, list[CheckResult]]:
-        outcome, checks = verify(policy, status, body, self.config.sensitive_fields)
+        outcome, checks = verify(policy, status, body, self.config.sensitive_fields,
+                                 public_enums=public_enums)
         for check in checks:
             for field in ("expected", "actual"):
                 if vault.contains_secret(getattr(check, field)):

@@ -1,0 +1,26 @@
+{
+  "version": "testing-colleague-final-v1",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "order": ["1:parcels", "1:reservations", "1:directory", "2:parcels", "2:reservations", "2:directory", "3:parcels", "3:reservations", "3:directory"],
+  "first_attempts": "All first attempts, failures and unexecuted positions are retained. No retries within a position. Source changes require a new acceptance version.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "帮我建一个名为秋日样品的包裹，数量2，标签依次green、blue，开启跟踪。读回后用完整替换把名称改为补充样品、数量改为3，再用局部更新把名称改为准备移除，最后删除这个新包裹。另检查创建时缺少名称、数量0和4均按文档拒绝。只用本轮新建数据，不检查服务状态。",
+      "oracle": "6-operation denominator; normal nested creation exact inputs; dynamic same-case ID; GET, PUT exact name/quantity, PATCH exact name, DELETE; three approved 422 negatives; all proposed cases executed and PASS; complete=true; no unrelated status request; target records empty after completion."
+    },
+    {
+      "project": "reservations",
+      "request": "用owner登录后预约周二，标题材料交接，座位依次2和5。读回这条新预约，再看看reader是否能读到它；我还没确认他人查看时该返回403还是404，请具体问我。已经能独立检查的部分先做，最后清理新预约，不检查服务状态。",
+      "answer": 403,
+      "followup": "权限规则确认好了。这次用owner建一条标题周一交接的周一预约，座位依次1和6，让reader读取同一条新预约核验拒绝，最后由owner删除。沿用已确认规则，不再问同一个问题，不检查服务状态。",
+      "oracle": "5-operation denominator; real login and protected nested CRUD exact supplied inputs; unknown permission not executed before answer; permission question for reader; UI answer403 persisted; followup same-resource403, cleanup, no repeated question, complete=true."
+    },
+    {
+      "project": "directory",
+      "request": "请只正常读取第7和第31个目录分区，第31个按desc排序。第31个还要检查数量参数为0、为4及类型错误，排序参数超出枚举时都应按文档拒绝。再核对服务可用状态。也想查看受限配置，但当前还没有它的账号，请列出缺什么，其余可做的先完成。不要请求其他目录、上传附件或启动导出。",
+      "oracle": "48-operation denominator:45ready/1missing/2unsupported; only3readyfocus ops selected; GET normal7&31; approved limit0/4/type and orderenum422; availabilityHTTP200 with wrong documented state causes one assertion failure+at most one readonly probe; blocked profile questioned without request; complete=false accurately; save readonly PASS and rerun after process restart0model; configuration change disables stale asset."
+    }
+  ]
+}

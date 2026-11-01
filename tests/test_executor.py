@@ -32,6 +32,31 @@ def plan(**step_overrides) -> Scenario:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("selected_role", [None, "tester"])
+async def test_optional_bearer_preserves_anonymous_and_explicit_identity(tmp_path, selected_role):
+    from agenttest.safety import RoleCredential
+
+    calls = []
+
+    def target(request):
+        calls.append(request.headers.get("authorization"))
+        return httpx.Response(200, json={})
+
+    executor = setup(tmp_path, target, roles={"tester": RoleCredential(
+        bearer_env="AGENTTEST_TARGET_TEST_BEARER")})
+    executor.contract.operations[0].security = [{"bearer": []}, {}]
+    policy = executor.registry.definitions()[0].model_copy(update={"roles": [None, "tester"]})
+    from agenttest.policies import PolicyRegistry
+
+    executor.registry = PolicyRegistry([policy])
+    executor.environ = {"AGENTTEST_TARGET_TEST_BEARER": "private-unit-optional-token"}
+    result = await executor.run(plan(role=selected_role))
+    assert result.outcome == Outcome.PASS, result
+    assert calls == [None if selected_role is None else "Bearer private-unit-optional-token"]
+    assert "private-unit-optional-token" not in result.model_dump_json()
+
+
+@pytest.mark.asyncio
 async def test_pass_and_audit_evidence(tmp_path: Path) -> None:
     executor = setup(tmp_path, lambda req: httpx.Response(200, json={"token": "private-token"}))
     report = await executor.run(plan())

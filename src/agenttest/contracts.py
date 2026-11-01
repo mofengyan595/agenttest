@@ -2,6 +2,7 @@
 
 import json
 import re
+from functools import lru_cache
 from typing import Any
 
 import yaml
@@ -51,11 +52,18 @@ UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _ma
 
 
 def load_openapi(raw: bytes | str, *, unwrap: bool = False) -> ContractSummary:
+    """Reuse validated document bytes, returning detached data to every caller."""
     encoded = raw.encode("utf-8") if isinstance(raw, str) else raw
     if len(encoded) > MAX_DOCUMENT_BYTES:
         raise ValidationFailure(
             Layer.OPENAPI, "OPENAPI_CONTRACT_EXCEEDS_SIZE_LIMIT",
             "Contract exceeds size limit")
+    return _validated_openapi(encoded, unwrap).model_copy(deep=True)
+
+
+@lru_cache(maxsize=16)
+def _validated_openapi(encoded: bytes, unwrap: bool) -> ContractSummary:
+    # Only successful parsing is cached; authority and credentials are checked separately.
     try:
         document = yaml.load(encoded.decode("utf-8"), Loader=UniqueLoader)
     except (yaml.YAMLError, UnicodeError, RecursionError) as exc:

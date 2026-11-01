@@ -12,6 +12,7 @@ from agenttest.selectors import select
 def verify(
     policy: AssertionPolicy, status: int, body: Any,
     sensitive_fields: list[str] = (),
+    *, public_enums: bool = False,
 ) -> tuple[Outcome, list[CheckResult]]:
     if (not policy.reviewed or not policy.source.strip()
             or (policy.status is None and not policy.fields)):
@@ -45,5 +46,18 @@ def verify(
             expected="[REDACTED]" if sensitive else safe_value(assertion.expected, public_numeric),
             actual="[REDACTED]" if sensitive else safe_value(actual, public_numeric),
         ))
+        if (public_enums and not sensitive and assertion.operator == "in"
+                and assertion.expected and all(public_enum_label(v) for v in assertion.expected)):
+            # Product intake confirms categorical checks from the document. Never publish
+            # arbitrary response strings, identifiers, sensitive fields or credential-like text.
+            checks[-1].expected = assertion.expected
+            if public_enum_label(actual):
+                checks[-1].actual = actual
     outcome = Outcome.PASS if all(check.passed for check in checks) else Outcome.ASSERTION_FAILED
     return outcome, checks
+
+
+def public_enum_label(value):
+    return (isinstance(value, str) and 0 < len(value) <= 32
+            and value.replace("_", "").replace("-", "").isalpha()
+            and not sensitive_field(value))

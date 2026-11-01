@@ -184,7 +184,7 @@ test("unknown model usage stays unknown and actual investigations retain origina
   );
   expect(screen.getByText("未知 / 未知")).toBeInTheDocument();
   expect(screen.getByText("approved-read")).toBeInTheDocument();
-  expect(screen.getByText("ASSERTION_FAILED · 断言失败")).toBeInTheDocument();
+  expect(screen.getByText("ASSERTION_FAILED · 结果不符合预期")).toBeInTheDocument();
 });
 
 test("missing legacy counters never become recorded zeros", () => {
@@ -258,5 +258,5 @@ test("supported investigation keeps original failure and exposes evidence refere
   expect(
     screen.getByText(/证据引用：original · inspection_1/),
   ).toBeInTheDocument();
-  expect(screen.getByText("ASSERTION_FAILED · 断言失败")).toBeInTheDocument();
+  expect(screen.getByText("ASSERTION_FAILED · 结果不符合预期")).toBeInTheDocument();
 });

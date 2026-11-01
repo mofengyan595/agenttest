@@ -34,7 +34,7 @@ class GoalTemplate(StrictModel):
 class GoalCatalog(StrictModel):
     schema_version: Literal["agenttest.goal-catalog.v1"] = "agenttest.goal-catalog.v1"
     resource_aliases: list[str] = Field(min_length=1, max_length=12)
-    goals: list[GoalTemplate] = Field(min_length=1, max_length=30)
+    goals: list[GoalTemplate] = Field(min_length=1, max_length=1000)
 
     @model_validator(mode="after")
     def unambiguous(self):
@@ -98,12 +98,16 @@ class GoalProject:
     registry: PolicyRegistry
     catalog: GoalCatalog
     capabilities: ReadOnlyCapabilityRegistry = field(default_factory=ReadOnlyCapabilityRegistry)
+    intake_revision: str | None = None
 
     def identity(self) -> str:
-        return fingerprint(dict(project=self.registration.model_dump(),
+        data = dict(project=self.registration.model_dump(),
             contract=self.contract.model_dump(), target=self.target.model_dump(),
             policies=self.registry.digest(), goals=self.catalog.model_dump(),
-            capabilities=[c.model_dump() for c in self.capabilities.entries()]))
+            capabilities=[c.model_dump() for c in self.capabilities.entries()])
+        if self.intake_revision is not None:
+            data["intake_revision"] = self.intake_revision
+        return fingerprint(data)
 
 
 def load_goal_project(path: Path) -> GoalProject:

@@ -6,10 +6,15 @@ test("registered goal: session protected submission, progress, evidence and narr
   page,
 }) => {
   await page.goto("/tasks");
-  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await expect(
+    page.getByRole("option", { name: "工单", exact: true }),
+  ).toBeAttached();
+  await page.getByLabel("选择项目", { exact: true }).selectOption("tickets");
   await page.getByLabel("测试需求").fill("测试创建工单接口");
   await page.getByRole("button", { name: "开始测试", exact: true }).click();
-  await expect(page.getByText("PASS", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "本次需求已完成", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("已满足", { exact: false })).toBeVisible();
   const archive = page.waitForEvent("download");
   await page.getByRole("button", { name: "导出 pytest 回归包" }).click();
@@ -20,9 +25,9 @@ test("registered goal: session protected submission, progress, evidence and narr
   });
   await page.reload();
   await expect(
-    page.getByRole("button", { name: /tickets.*已结束/ }),
+    page.getByRole("button", { name: /工单.*已结束/ }),
   ).toBeVisible();
-  await page.getByRole("button", { name: /tickets.*已结束/ }).click();
+  await page.getByRole("button", { name: /工单.*已结束/ }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({
     path: path.join(shots, "goals-mobile.png"),
@@ -33,17 +38,26 @@ test("registered goal: session protected submission, progress, evidence and narr
   ).toBeLessThanOrEqual(391);
   await page.getByRole("link", { name: "查看业务、模型与规则证据" }).click();
   await expect(
-    page.getByText("open / openTicket", { exact: true }),
+    page.getByText("fixture_1 / openTicket", { exact: true }),
   ).toBeVisible();
 });
 test("derived suite: source, validation, export and mobile layout", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.goto("/tasks");
-  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await expect(
+    page.getByRole("option", { name: "工单", exact: true }),
+  ).toBeAttached();
+  await page.getByLabel("选择项目", { exact: true }).selectOption("tickets");
   await page.getByLabel("测试需求").fill("请测试新建工单接口");
-  await page.getByLabel("包含 Schema 用例候选").check();
+  await page.getByText("更多测试范围", { exact: true }).click();
+  await page.getByLabel("同时检查已支持的参数边界与批准负例").check();
   await page.getByRole("button", { name: "开始测试", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "本次需求已完成", exact: true }),
+  ).toBeVisible({ timeout: 60_000 });
+  await page.getByText(/逐项检查与未完成原因/).click();
   await expect(page.getByText(/合法基础计划的规则派生/).first()).toBeVisible();
   await expect(page.getByText(/结构校验通过/).first()).toBeVisible();
   await expect(
@@ -69,7 +83,10 @@ test("derived suite: source, validation, export and mobile layout", async ({
 test("display fixture: trusted rule and model abstention stay visibly separate", async ({
   page,
   request,
-}) => {
+}, testInfo) => {
+  const pageErrors: string[] = [];
+  let reportRouteHits = 0;
+  page.on("pageerror", (error) => pageErrors.push(error.message.slice(0, 300)));
   const catalog = await (await request.get("/api/runs?limit=100")).json();
   const selected = catalog.items.find(
     (row: { outcome: string }) => row.outcome === "ASSERTION_FAILED",
@@ -93,33 +110,42 @@ test("display fixture: trusted rule and model abstention stay visibly separate",
     reason: "FEEDBACK_EVIDENCE_INSUFFICIENT",
     basis: "证据不足，需人工复核。",
   };
-  await page.route(`**/api/runs/${selected.run_id}`, (route) =>
-    route.fulfill({ json: report }),
-  );
+  await page.route(`**/api/runs/${selected.run_id}`, async (route) => {
+    reportRouteHits++;
+    await route.fulfill({ json: report });
+  });
   await page.goto(`/runs/${selected.run_id}`);
-  await expect(
-    page.getByRole("heading", { name: "规则支持的可信症状" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "模型行动与结论建议" }),
-  ).toBeVisible();
-  await expect(
-    page.locator(".run-overview").getByText(/ASSERTION_FAILED ·/),
-  ).toBeVisible();
-  await page.screenshot({
-    path: path.join(shots, "rule-model-desktop.png"),
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBeTruthy();
-  await page.screenshot({
-    path: path.join(shots, "rule-model-390.png"),
-    fullPage: true,
-  });
+  try {
+    await expect(
+      page.getByRole("heading", { name: "规则支持的可信症状" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "模型行动与结论建议" }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".run-overview").getByText(/ASSERTION_FAILED ·/),
+    ).toBeVisible();
+    await page.screenshot({
+      path: path.join(shots, "rule-model-desktop.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy();
+    await page.screenshot({
+      path: path.join(shots, "rule-model-390.png"),
+      fullPage: true,
+    });
+  } finally {
+    await testInfo.attach("report-view-observation", {contentType: "application/json",
+      body: JSON.stringify({reportRouteHits, pageErrors,
+        headings: await page.getByRole("heading", {includeHidden: true}).allTextContents(),
+        notices: await page.locator(".notice").allTextContents()})});
+    await page.screenshot({path: testInfo.outputPath("report-observed.png"), fullPage: true});
+  }
 });
 
 test("display fixture: group budgets, excluded coverage and approved rejection remain explicit", async ({
@@ -211,12 +237,17 @@ test("display fixture: group budgets, excluded coverage and approved rejection r
     }),
   );
   await page.goto("/tasks");
-  await expect(page.getByRole("option", { name: "tickets" })).toBeAttached();
+  await expect(
+    page.getByRole("option", { name: "工单", exact: true }),
+  ).toBeAttached();
+  await page.getByLabel("选择项目", { exact: true }).selectOption("tickets");
   await page.getByLabel("测试需求").fill("测试项目核心接口");
   await page.getByRole("button", { name: "开始测试", exact: true }).click();
+  await page.getByText("本次测试范围与预算", { exact: true }).click();
   await expect(page.getByLabel("分组预算预览")).toContainText(
     "必需业务请求 11",
   );
+  await page.getByText(/逐项检查与未完成原因/).click();
   await expect(page.getByText(/本组未执行，保留在覆盖分母中/)).toBeVisible();
   await expect(page.getByText(/按预期拒绝 1\/1/)).toBeVisible();
   await page.screenshot({
@@ -242,7 +273,7 @@ test("display fixture: group budgets, excluded coverage and approved rejection r
   });
 });
 
-test("real API: draft, import, history, evidence and responsive layouts", async ({
+test("real API: project entry, history, evidence and responsive layouts", async ({
   page,
   request,
 }) => {
@@ -255,27 +286,15 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
   expect(catalog.skipped).toBe(2);
   await page.goto("/");
   await expect(page.getByText("API 已连接")).toBeVisible();
-  await page
-    .getByLabel("自然语言测试目标")
-    .fill("使用管理员账号创建一个资源，再查询并验证其属性一致性。");
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "保存本地草稿" }).click();
-  expect((await download).suggestedFilename()).toBe("agenttest-task-draft.txt");
-  await page
-    .getByLabel("上传 OpenAPI 契约")
-    .setInputFiles(path.resolve("../tests/fixtures/contract.yaml"));
-  await page.getByRole("button", { name: "解析契约" }).click();
-  await expect(page.getByText("解析完成")).toBeVisible();
-  await page.keyboard.press("Control+Home");
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(
+    page.getByRole("heading", { name: "项目", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
-    path: path.join(shots, "workbench-desktop.png"),
+    path: path.join(shots, "projects-desktop.png"),
     fullPage: true,
   });
-  await page.getByLabel("或粘贴契约文本").fill("password: not-an-openapi");
-  await page.getByRole("button", { name: "解析契约" }).click();
-  await expect(page.getByRole("alert")).toContainText("输入格式无效");
-  await page.getByRole("link", { name: "历史测试报告", exact: true }).click();
+  await page.getByRole("link", { name: "结果", exact: true }).click();
+  await page.getByText("全部执行报告与问题筛选", { exact: true }).click();
   await expect(page.getByRole("heading", { name: "运行记录" })).toBeVisible();
   await expect(page.locator("tbody tr")).toHaveCount(12);
   await expect(page.getByLabel("上一页", { exact: true })).toBeDisabled();
@@ -405,7 +424,7 @@ test("real API: draft, import, history, evidence and responsive layouts", async 
     });
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "你想验证什么？" }),
+      page.getByRole("heading", { name: "项目", exact: true }),
     ).toBeVisible();
     expect(
       await page.evaluate(

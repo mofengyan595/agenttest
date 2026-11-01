@@ -25,14 +25,15 @@ import { WorkflowEvidence } from "../components/WorkflowEvidence";
 import { StepEvidence } from "../components/StepEvidence";
 import { RunLookup } from "./History";
 import type { RunReport } from "../api/types";
+import { EvidenceBrief } from "../components/ResultBrief";
 
 export function Inspect() {
   return (
     <>
       <PageTitle
-        eyebrow="TRACE / 运行详情"
-        title="沿着证据，理解一次测试。"
-        description="输入真实 Run ID 查看校验、执行步骤和失败调查。"
+        eyebrow="运行记录"
+        title="查找运行记录"
+        description="填写记录编号，查看校验、请求和调查证据。"
       />
       <Panel title="打开运行报告">
         <RunLookup />
@@ -101,8 +102,8 @@ export function ReportView({
         历史测试报告
       </Link>
       <PageTitle
-        eyebrow="TRACE / 运行详情"
-        title="一次运行，一条证据链。"
+        eyebrow="详细记录"
+        title="运行记录"
         description="业务结果、工作流完成与任务满足分别呈现。"
       >
         <button onClick={refresh}>
@@ -137,10 +138,15 @@ export function ReportView({
               ? "操作员固定计划"
               : run.task_mode === "natural_language"
                 ? "自然语言任务"
-                : "未记录"}
+                : run.task_mode === "model_designed"
+                  ? "模型设计与受控执行"
+                  : "未记录"}
           </span>
         </div>
       </section>
+      <Panel title="先看测试结论">
+        <EvidenceBrief run={run} />
+      </Panel>
       {run.task_mode === "operator_plan" && (
         <Notice>
           operator_plan 的 PASS

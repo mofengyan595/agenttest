@@ -73,7 +73,8 @@ class Workflow:
         transport: httpx.AsyncBaseTransport | None = None, environ: dict[str, str] | None = None,
         budget: WorkflowBudget | None = None,
         *, user_task: str = "执行操作员提供的测试计划",
-        task_mode: Literal["natural_language", "operator_plan"] = "natural_language",
+        task_mode: Literal["natural_language", "operator_plan", "model_designed"]
+            = "natural_language",
         investigation: InvestigationConfig | None = None,
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
         intent_validator: Callable[[str, Scenario], None] | None = None,
@@ -82,10 +83,12 @@ class Workflow:
         plan_derivation: dict | None = None,
         on_validated_plan: Callable[[Scenario], None] | None = None,
     ) -> None:
-        if task_mode not in {"natural_language", "operator_plan"}:
+        if task_mode not in {"natural_language", "operator_plan", "model_designed"}:
             raise ValueError("TASK_MODE_INVALID")
         if task_mode == "operator_plan" and type(planner) is not FakeLLM:
             raise ValueError("OPERATOR_PLAN_REQUIRES_FIXED_PLANNER")
+        if task_mode == "model_designed" and prepared_plan is None:
+            raise ValueError("MODEL_DESIGNED_REQUIRES_PREPARED_PLAN")
         self._document = bytes(contract_document)
         self._config = TargetConfig.model_validate(config.model_dump())
         self._registry = registry.snapshot()

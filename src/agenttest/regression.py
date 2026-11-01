@@ -16,6 +16,7 @@ from agenttest.credentials import CredentialVault, sensitive_field
 from agenttest.dsl import Scenario
 from agenttest.eval_v2.scoring import capture_plan
 from agenttest.executor import Executor
+from agenttest.fixed_plan import FixedPlanSnapshot, replay_scope
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import PRIVATE_LITERAL
 from agenttest.policies import PolicyRegistry
@@ -77,7 +78,7 @@ class RegressionRuntime:
     contract_document: bytes
     target: TargetConfig
     registry: PolicyRegistry
-    task_contract: TaskContract
+    task_contract: TaskContract | FixedPlanSnapshot
     environ: dict[str, str]
     transport: httpx.AsyncBaseTransport | None
     store: ReportStore
@@ -119,10 +120,15 @@ def validate_destination(output: Path) -> Path:
 
 def _validated(runtime: RegressionRuntime, scenario: Scenario):
     target = TargetConfig.model_validate(runtime.target.model_dump())
-    task = TaskContract.model_validate_json(runtime.task_contract.model_dump_json())
+    from agenttest.fixed_plan import load_saved_contract
+
+    task = load_saved_contract(runtime.task_contract.model_dump_json())
     contract = load_openapi(bytes(runtime.contract_document))
     registry = runtime.registry.snapshot()
-    task_validator(task, contract, target, registry)(task.user_task, scenario)
+    if isinstance(task, FixedPlanSnapshot):
+        task.validate_plan(contract, target, registry, scenario)
+    else:
+        task_validator(task, contract, target, registry)(task.user_task, scenario)
     vault = CredentialVault(target, runtime.environ)
     raw = json.dumps(scenario.model_dump(), ensure_ascii=False)
     contains_secret = vault.contains_secret(scenario.model_dump()) or any(
@@ -161,14 +167,24 @@ def export_regression(output: Path, runtime: RegressionRuntime, scenario: Scenar
     """Export data only after exact plan, policy, intent and complete execution checks."""
     scenario = Scenario.model_validate_json(scenario.model_dump_json())
     executor, identity = _validated(runtime, scenario)
+    if (isinstance(runtime.task_contract, FixedPlanSnapshot)
+            and replay_scope(executor.contract, executor.config, scenario)
+            == "MUTATION_LIFECYCLE_REQUIRED"):
+        raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     proof = capture_plan(scenario)
     structure = [{key: getattr(step, key) for key in (
         "step_id", "operation_id", "role", "policy_id", "argument_sha256", "dependencies")}
         for step in proof.steps]
+    task = runtime.task_contract
+    natural_source = (isinstance(task, TaskContract) and source.task_mode == "natural_language"
+                      and source.task_satisfied is True and source.intent_verified)
+    designed_source = (isinstance(task, FixedPlanSnapshot)
+        and task.source_run_id == source.run_id and source.task_mode == "model_designed"
+        and source.task_satisfied is None and not source.intent_verified)
     if not (source.outcome == Outcome.PASS and source.completed and source.workflow_completed
-            and source.task_mode == "natural_language" and source.task_satisfied is True
+            and (natural_source or designed_source)
             and source.plan_valid and source.dsl_valid and source.policy_authorized
-            and source.intent_verified and source.scenario_sha256 == identity["scenario_sha256"]
+            and source.scenario_sha256 == identity["scenario_sha256"]
             and source.contract_sha256 == identity["contract_sha256"]
             and source.target_config_sha256 == identity["target_config_sha256"]
             and source.policy_registry_sha256 == identity["policy_sha256"]
@@ -241,6 +257,10 @@ async def run_regression(directory: Path, runtime: RegressionRuntime) -> RunRepo
         raise ValueError("REGRESSION_EXPLICIT_TRANSPORT_REQUIRED")
     manifest, scenario = load_regression(directory)
     executor, identity = _validated(runtime, scenario)
+    if (isinstance(runtime.task_contract, FixedPlanSnapshot)
+            and replay_scope(executor.contract, executor.config, scenario)
+            == "MUTATION_LIFECYCLE_REQUIRED"):
+        raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     if any(getattr(manifest, key) != value for key, value in identity.items()):
         raise ValueError("REGRESSION_AUTHORITY_CHANGED")
     return await executor.run(scenario)

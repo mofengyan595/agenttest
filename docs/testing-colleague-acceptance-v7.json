@@ -1,0 +1,257 @@
+{
+  "version": "testing-colleague-final-v7",
+  "evidence_folder": "acceptance-v7",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with invalid directory reference; v5:4/9; v6:1/9. Preserve every first attempt and unknown; no rescoring.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "请建一个名称明确为“秋日验存”的新包裹，数量1，标签依次green、amber，开启跟踪。读回后先局部改名为“验存初检”，再完整替换为名称“验存终检”、数量3、标签blue、关闭跟踪，再读回，最后删除这个新包裹。另对创建分别检查数量缺失、数量类型错误、名称超过24字，按已批准的422验证。不检查服务状态。",
+      "oracle": "Exact create 秋日验存/1/[green,amber]/true; same resource GET/PATCH验存初检/PUT验存终检,3,[blue],false/GET/DELETE. Three exact approved422 variants3/3; allPASS, complete, targetempty, noavailability.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "秋日验存"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ],
+          "invalid_values": [
+            "wrong-type"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "green",
+                "amber"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "验存终检"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            3
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "验存初检"
+          ]
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "owner先登录，建标题明确为“工具交班”的周二预约，座位依次4、1，读回并删除本轮新预约。reader看他人预约该403还是404还没定，请具体问我，owner能独立做的先完成。不测服务状态。",
+      "answer": 403,
+      "followup": "按刚确认的403执行：owner登录后建标题明确为“交班回验”的周一预约，座位依次6、3，owner读回后让reader读取同一个新预约，最后owner删除。不要再问已确认的权限规则，也不测服务状态。",
+      "oracle": "Exact Tuesday工具交班/[4,1] ownerlogin/create/read/delete; concrete reader403/404 question, no readerHTTP. UI403 then Monday交班回验/[6,3] login/create/ownerread/reader403/ownercleanup; no repeatedquestion, targetempty.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "工具交班",
+            "交班回验"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Tuesday",
+            "Monday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              4,
+              1
+            ],
+            [
+              6,
+              3
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ]
+    },
+    {
+      "project": "directory",
+      "request": "第7个目录用limit=3、active=false、order=desc正常读取，第31个用limit=2、active=true、order=asc。第7个分别检查limit=0和limit=4；第31个分别检查active类型错误和order超出枚举，按文档422核对。也查服务可用状态。受限配置没测试账号，具体告诉我该补什么，其他已授权部分先执行。其余目录、附件上传和长时间导出这轮不测。",
+      "oracle": "48 denominator45ready1missing2unsupported; only7,31,availability. Normal7:3,false,desc and31:2,true,asc. Four422variants:7limit0/4,31activetype/orderenum. HTTP200wrongstate failure plus boundedreadonlyprobe; missingaccountquestion/private0HTTP; partial. Save/restart/fixed0model sourceid matches/config staledisables.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            0,
+            4
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            2
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ],
+          "invalid_values": [
+            "wrong-type"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ],
+          "invalid_values": [
+            "__outside_enum__"
+          ]
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

@@ -37,6 +37,89 @@
         }
       }
     },
+    "/api/project-intake": {
+      "get": {
+        "summary": "Intake",
+        "operationId": "intake_api_project_intake_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Save Project",
+        "operationId": "save_project_api_project_intake_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/project-intake/analyze": {
+      "post": {
+        "summary": "Analyze Project",
+        "operationId": "analyze_project_api_project_intake_analyze_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/project-intake/{project_id}": {
+      "post": {
+        "summary": "Update Project",
+        "operationId": "update_project_api_project_intake__project_id__post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tasks": {
       "get": {
         "summary": "Tasks",
@@ -55,6 +138,38 @@
       "post": {
         "summary": "Submit",
         "operationId": "submit_api_tasks_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saved-tests": {
+      "get": {
+        "summary": "Saved Tests",
+        "operationId": "saved_tests_api_saved_tests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saved-tests/run": {
+      "post": {
+        "summary": "Fixed Run",
+        "operationId": "fixed_run_api_saved_tests_run_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -104,10 +219,84 @@
         }
       }
     },
+    "/api/tasks/{task_id}/timeline": {
+      "get": {
+        "summary": "Timeline",
+        "operationId": "timeline_api_tasks__task_id__timeline_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tasks/{task_id}/start": {
       "post": {
         "summary": "Start",
         "operationId": "start_api_tasks__task_id__start_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/permission-answer": {
+      "post": {
+        "summary": "Answer Permission",
+        "operationId": "answer_permission_api_tasks__task_id__permission_answer_post",
         "parameters": [
           {
             "name": "task_id",
@@ -907,6 +1096,18 @@
             ],
             "title": "Negative Rejected As Expected"
           },
+          "request_evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Evidence"
+          },
           "parent_step_id": {
             "type": "string",
             "title": "Parent Step Id"
@@ -1566,7 +1767,8 @@
                 "type": "string",
                 "enum": [
                   "natural_language",
-                  "operator_plan"
+                  "operator_plan",
+                  "model_designed"
                 ]
               },
               {
@@ -1806,6 +2008,18 @@
               }
             ],
             "title": "Negative Rejected As Expected"
+          },
+          "request_evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Evidence"
           }
         },
         "type": "object",

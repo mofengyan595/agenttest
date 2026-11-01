@@ -1,0 +1,305 @@
+{
+  "version": "testing-colleague-final-v16",
+  "evidence_folder": "acceptance-v16",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring. v9:7/9,23 calls,143568 known tokens; unnecessary negative setup and partial-scope interruption retained. No rescoring. v10:7/9,24 calls,132658 known tokens; source-question ownership and typed exact-value failures preserved. Full offline interrupted at1185 reports of1978, not a pass. No rescoring. v11:5/9,22 calls,136207 known tokens; omitted literal/normal reads, duplicate facts and old unextracted source failures preserved. Full1971PASS/15SKIP/1 workflow-timeout; no rescoring. v12:original9/9,30calls197025known; later separate audit found4 ordinary200 cases mislabeled negative in one position. Original score preserved; no rescoring. Full1978PASS15SKIP,1993exactIDs,sourceb398f58f. V13 enforces actual negative steps and evidence-aligned classifications. v13:8/9,28calls255421known0unknown; full1992PASS15SKIP2007exactIDs,source777e448c. Auth round2 added6 authorized but unrequested negative writes after the title choice; followup not reached. Original score and unexecuted items preserved. V14 narrows selected-flow negative policies to explicit requested checks; whole-project suggestions remain available. v14:5/9,30calls262092known0unknown; all3parcel positions useddefaultlength25 insteadrequested26. Directory round3 fabricatedqueryarray[-11], omittedupper15; safelyheld2checks. No rescoring. Full1995PASS15SKIP2010exactIDs139files,sourcefd2e2608/907files,bothZIPverifiedafterbothterminals. V15 adds source-backed exact string length within original negative authority and representable query scalar wire. V15 original schedule and full run must finish and remain unchanged. Parcel-specific oracles passed but generic literal_checks retained v13 maroon_units_1407, causing separate reference failures; no rescoring. V16 adds opt-in literal/source/choice preflight and entirely fresh tasks; runtime changes are not justified by a reference defect. V15 terminal:6/9,30calls265173known0unknown; all3parcel generic-reference failures preserved without rescoring. Full2004PASS15SKIP2019exactIDs140files; sourcedd34df2f/910files and bothZIP verified afterbothterminals. V16 application runtime src remains byteidentical to v15.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "新建名称“晴川待检”、数量3、标签依次green、amber、开启跟踪的一件包裹，先读取。局部改名“晴川改签”后读取，再完整替换为名称“晴川入库”、数量1、标签依次blue、green、关闭跟踪，再读取后删除同一件新包裹。另分别检查创建时缺quantity、quantity原样为字符串“saffron_units_1713”、名称长度31，三项按文档422检查。只创建这一件成功包裹，不查服务状态。",
+      "oracle": "Onecreate晴川待检/3/[green,amber]/true;GET,PATCH晴川改签,GET,PUT晴川入库/1/[blue,green]/false,GET,DELETE sameID. Threeactualnegative422 missingquantity/exactsaffron_units_1713/exactnamelength31. AllPASScomplete,emptytarget. Genericliteralcheck must agree with source and declaredinvalidvalue.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "晴川待检"
+          ],
+          "invalid_lengths": [
+            31
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            3
+          ],
+          "invalid_values": [
+            "saffron_units_1713"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "green",
+                "amber"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "晴川入库"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "green"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "晴川改签"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "saffron_units_1713"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "owner登录后，我想建周一、座位依次4和6的预约。标题在“竹影联检”和“江湾联检”中待选，请具体问我，不要代选。选定后owner创建、读回并删除这份新预约。reader读取他人的预约应该403还是404还未确认，请单独补问；不受影响的owner部分先执行，服务状态不测。",
+      "answer": 403,
+      "followup": "按已经确认的403继续：owner登录，新建标题“江湾回验”的周二预约，座位依次2、5；owner先读取，reader读取同一份新预约确认拒绝，owner再读回，然后owner删除。沿用已确认信息，不重复询问，不检查服务状态。",
+      "oracle": "Initialchoice0reservationPOST;UI江湾联检 retainsMonday/[4,6];ownerlogin/create/read/delete,reader0HTTP,concrete403/404question. UI403confirmation0HTTP. Followup江湾回验/Tuesday/[2,5],ownerlogin/create/read/reader403/ownerread/delete sameID,zeroextra parameternegative,emptytarget.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "竹影联检",
+            "江湾联检",
+            "江湾回验"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Monday",
+            "Tuesday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              4,
+              6
+            ],
+            [
+              2,
+              5
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ],
+      "input_choice": "江湾联检",
+      "initial_body": {
+        "title": "江湾联检",
+        "slot": {
+          "day": "Monday",
+          "seats": [
+            4,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=1、active=true、order=asc；正常读取第31个目录，limit=3、active=false、order=desc。第7个另分别原样测试active字符串“breeze_switch_1713”和order枚举外字符串“diagonal_sort_1713”；第31个另分别用limit=-14与limit=18，四项逐个按文档422检查。第7个items是否应提供稳定分页顺序还缺业务依据，请具体问我；已具备依据的正常和异常检查先做。检查服务可用状态；受限配置缺测试身份，请指出要补什么。其他目录、附件上传和长导出不测。",
+      "oracle": "48denominator45ready1missing2unsupported. Normal7:1,true,asc;31:3,false,desc. Fouractualnegative422 breeze_switch_1713/diagonal_sort_1713/-14/18,JSONscalar preserved. Twoquestionsprivateidentity+readSection7itemsstablepagination,neverguessedassertion. Availability200wrongstate+boundedreadonlyprobe;exactnegative save/restart0models/sourceidentity/configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            1
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ],
+          "invalid_values": [
+            "breeze_switch_1713"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ],
+          "invalid_values": [
+            "diagonal_sort_1713"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -14,
+            18
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "breeze_switch_1713"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "diagonal_sort_1713"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -14
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 18
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true,
+  "require_literal_preflight": true
+}

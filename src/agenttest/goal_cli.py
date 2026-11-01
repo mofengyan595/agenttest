@@ -130,7 +130,9 @@ def synthetic_runtime(project, fault="none"):
     from agenttest.contracts import load_openapi
     from agenttest.portability_demo import project_inputs
 
-    app, document, _, _, environ = project_inputs(project.registration.id, fault)
+    domain = {"portable_tickets_v1": "tickets", "portable_courses_v1": "courses"}.get(
+        project.target.business_scenario, project.registration.id)
+    app, document, _, _, environ = project_inputs(domain, fault)
     if load_openapi(document).model_dump() != project.contract.model_dump():
         raise ValueError("SYNTHETIC_CONTRACT_MISMATCH")
     return environ, httpx.ASGITransport(app=app)

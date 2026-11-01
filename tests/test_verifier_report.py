@@ -42,6 +42,21 @@ def test_assertions_do_not_coerce_or_mutate() -> None:
     assert assertions.model_dump_json() == before
 
 
+def test_product_categorical_failure_explains_http_200_without_exposing_arbitrary_strings():
+    assertion = policy(fields=[dict(select="$.state", operator="in", expected=["ready"])])
+    outcome, checks = verify(assertion, 200, {"state": "unavailable"}, public_enums=True)
+    assert outcome == Outcome.ASSERTION_FAILED
+    assert checks[0].passed and checks[0].actual == 200
+    assert checks[1].expected == ["ready"] and checks[1].actual == "unavailable"
+    assert verify(assertion, 200, {"state": "unavailable"})[1][1].actual == "[REDACTED]"
+    for private in ["private-secret", "bearer_token", "user@example.invalid", "a" * 40, "123456"]:
+        actual = verify(assertion, 200, {"state": private}, public_enums=True)[1][1].actual
+        assert actual == "[REDACTED]"
+    secret = policy(fields=[dict(select="$.password", operator="in", expected=["ready"])])
+    private = verify(secret, 200, {"password": "ready"}, public_enums=True)[1][1]
+    assert private.actual == "[REDACTED]"
+
+
 def test_report_persistence_and_path_traversal(tmp_path: Path) -> None:
     report = RunReport(scenario_sha256="a", contract_sha256="b", environment="isolated",
                        target_origin="http://127.0.0.1")

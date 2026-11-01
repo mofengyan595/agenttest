@@ -1,0 +1,304 @@
+{
+  "version": "testing-colleague-final-v15",
+  "evidence_folder": "acceptance-v15",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring. v9:7/9,23 calls,143568 known tokens; unnecessary negative setup and partial-scope interruption retained. No rescoring. v10:7/9,24 calls,132658 known tokens; source-question ownership and typed exact-value failures preserved. Full offline interrupted at1185 reports of1978, not a pass. No rescoring. v11:5/9,22 calls,136207 known tokens; omitted literal/normal reads, duplicate facts and old unextracted source failures preserved. Full1971PASS/15SKIP/1 workflow-timeout; no rescoring. v12:original9/9,30calls197025known; later separate audit found4 ordinary200 cases mislabeled negative in one position. Original score preserved; no rescoring. Full1978PASS15SKIP,1993exactIDs,sourceb398f58f. V13 enforces actual negative steps and evidence-aligned classifications. v13:8/9,28calls255421known0unknown; full1992PASS15SKIP2007exactIDs,source777e448c. Auth round2 added6 authorized but unrequested negative writes after the title choice; followup not reached. Original score and unexecuted items preserved. V14 narrows selected-flow negative policies to explicit requested checks; whole-project suggestions remain available. v14:5/9,30calls262092known0unknown; all3parcel positions useddefaultlength25 insteadrequested26. Directory round3 fabricatedqueryarray[-11], omittedupper15; safelyheld2checks. No rescoring. Full1995PASS15SKIP2010exactIDs139files,sourcefd2e2608/907files,bothZIPverifiedafterbothterminals. V15 adds source-backed exact string length within original negative authority and representable query scalar wire.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "创建名称“雨杉试件”、数量1、标签依次blue和green、关闭跟踪的一件包裹，先读回。完整替换为名称“雨杉重排”、数量2、标签依次amber和blue、开启跟踪，再读回；随后局部改名“雨杉归档”，再次读回后删除同一件新包裹。另分别测试创建时缺quantity、quantity原样为字符串“jasper_units_1609”、名称长度28，逐项按文档422检查。只允许这一件成功创建，不查服务状态。",
+      "oracle": "Exactlyonecreate雨杉试件/1/[blue,green]/false,GET,PUT雨杉重排/2/[amber,blue]/true,GET,PATCH雨杉归档,GET,DELETEsameID. Threeactualnegative422 missingquantity,exactjasper_units_1609,exactnamelength28. Source-backedlengthandvariationguard;default25cannotreplace28. AllPASScompleteemptytarget.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "雨杉试件"
+          ],
+          "invalid_lengths": [
+            28
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ],
+          "invalid_values": [
+            "jasper_units_1609"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "green"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "雨杉重排"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            2
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber",
+                "blue"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "雨杉归档"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "maroon_units_1407"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "owner登录后，我要新建周二、座位依次5和3的预约，标题有“荷塘联调”与“星河联调”两个候选，请先让我选择，不能代选。选定后owner创建、读取、删除同一新预约。reader查看他人预约应当403还是404没有确认，请具体问我；独立owner部分可以先执行。不查服务状态。",
+      "answer": 403,
+      "followup": "按刚确认的403继续：owner登录，新建名称“荷塘回看”的周一预约，座位依次6、1；owner读回，reader读取同一新预约确认拒绝，owner再次读回，再由owner删除。沿用已确认信息，不重复提问，不检查服务状态。",
+      "oracle": "Initialtitlechoice0reservationPOST; UI荷塘联调 retainsTuesday/[5,3],ownerlogin/create/read/delete reader0HTTP; concrete403/404question. UI403confirmation0HTTP. Followup荷塘回看/Monday/[6,1],ownerlogin/create/read/reader403/ownerread/delete sameID;noextra parameternegative,emptytarget.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "荷塘联调",
+            "星河联调",
+            "荷塘回看"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Tuesday",
+            "Monday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              5,
+              3
+            ],
+            [
+              6,
+              1
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ],
+      "input_choice": "荷塘联调",
+      "initial_body": {
+        "title": "荷塘联调",
+        "slot": {
+          "day": "Tuesday",
+          "seats": [
+            5,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=3、active=false、order=asc；正常读取第31个目录，limit=2、active=true、order=desc。第7个另分别原样测试active字符串“quartz_switch_1609”和order枚举外字符串“reverse_sort_1609”；第31个另分别测试limit=-12和limit=16，四项逐个按文档422检查。第31个items是否需要提供稳定分页顺序没有业务依据，请具体补问；有依据的正常和异常检查先执行。检查服务可用状态；受限配置缺测试身份，请指出要补什么。其他目录、附件上传、长导出均不测。",
+      "oracle": "48denominator45ready1missing2unsupported. Normal7:3,false,asc;31:2,true,desc. Fouractualnegative422 quartz_switch_1609/reverse_sort_1609/-12/16,typespreserved;notarray. Twoquestionsprivateidentity+readSection31itemsstablepaginationrule,noguessedassertion. Availability200wrongstate+readonlyprobe;exactnegative saved/restart0models/sourceidentity/configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ],
+          "invalid_values": [
+            "quartz_switch_1609"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ],
+          "invalid_values": [
+            "reverse_sort_1609"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            2
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -12,
+            16
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "quartz_switch_1609"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "reverse_sort_1609"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -12
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 16
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

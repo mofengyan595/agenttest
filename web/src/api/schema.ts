@@ -4,1141 +4,1418 @@
  */
 
 export interface paths {
-  "/api/task-session": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/task-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session */
+        get: operations["session_api_task_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Session */
-    get: operations["session_api_task_session_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/projects": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Projects */
+        get: operations["projects_api_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Projects */
-    get: operations["projects_api_projects_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/project-intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Intake */
+        get: operations["intake_api_project_intake_get"];
+        put?: never;
+        /** Save Project */
+        post: operations["save_project_api_project_intake_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Tasks */
-    get: operations["tasks_api_tasks_get"];
-    put?: never;
-    /** Submit */
-    post: operations["submit_api_tasks_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks/{task_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/project-intake/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze Project */
+        post: operations["analyze_project_api_project_intake_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Task */
-    get: operations["task_api_tasks__task_id__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks/{task_id}/start": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/project-intake/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Project */
+        post: operations["update_project_api_project_intake__project_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Start */
-    post: operations["start_api_tasks__task_id__start_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks/{task_id}/cancel": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tasks */
+        get: operations["tasks_api_tasks_get"];
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Cancel */
-    post: operations["cancel_api_tasks__task_id__cancel_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks/{task_id}/regression": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/saved-tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved Tests */
+        get: operations["saved_tests_api_saved_tests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Regression */
-    post: operations["regression_api_tasks__task_id__regression_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/tasks/{task_id}/events": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/saved-tests/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fixed Run */
+        post: operations["fixed_run_api_saved_tests_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Events */
-    get: operations["events_api_tasks__task_id__events_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/health": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Task */
+        get: operations["task_api_tasks__task_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Health */
-    get: operations["health_health_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/spec/summary": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/tasks/{task_id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Timeline */
+        get: operations["timeline_api_tasks__task_id__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Spec Summary */
-    post: operations["spec_summary_api_spec_summary_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/runs": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/tasks/{task_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_tasks__task_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Run List */
-    get: operations["run_list_api_runs_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/runs/{run_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/tasks/{task_id}/permission-answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Permission */
+        post: operations["answer_permission_api_tasks__task_id__permission_answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Run Result */
-    get: operations["run_result_api_runs__run_id__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/api/tasks/{task_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_api_tasks__task_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/regression": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regression */
+        post: operations["regression_api_tasks__task_id__regression_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events */
+        get: operations["events_api_tasks__task_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spec/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Spec Summary */
+        post: operations["spec_summary_api_spec_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run List */
+        get: operations["run_list_api_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Result */
+        get: operations["run_result_api_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** AttemptEvidence */
-    AttemptEvidence: {
-      /** Attempt */
-      attempt: number;
-      /** Attempt Id */
-      attempt_id?: string;
-      /** Status Code */
-      status_code?: number | null;
-      /** Elapsed Ms */
-      elapsed_ms: number;
-      /**
-       * Response Bytes
-       * @default 0
-       */
-      response_bytes?: number;
-      /** Response Sha256 */
-      response_sha256?: string | null;
-      /** Error Code */
-      error_code?: string | null;
-    };
-    /** CheckResult */
-    CheckResult: {
-      /** Kind */
-      kind: string;
-      /** Selector */
-      selector?: string | null;
-      /** Passed */
-      passed: boolean;
-      /** Expected */
-      expected?: unknown;
-      /** Actual */
-      actual?: unknown;
-    };
-    /** ContractSummary */
-    ContractSummary: {
-      /** Version */
-      version: string;
-      /** Operations */
-      operations?: components["schemas"]["Operation"][];
-      /** Security Schemes */
-      security_schemes?: {
-        [key: string]: {
-          [key: string]: unknown;
+    schemas: {
+        /** AttemptEvidence */
+        AttemptEvidence: {
+            /** Attempt */
+            attempt: number;
+            /** Attempt Id */
+            attempt_id?: string;
+            /** Status Code */
+            status_code?: number | null;
+            /** Elapsed Ms */
+            elapsed_ms: number;
+            /**
+             * Response Bytes
+             * @default 0
+             */
+            response_bytes?: number;
+            /** Response Sha256 */
+            response_sha256?: string | null;
+            /** Error Code */
+            error_code?: string | null;
         };
-      };
+        /** CheckResult */
+        CheckResult: {
+            /** Kind */
+            kind: string;
+            /** Selector */
+            selector?: string | null;
+            /** Passed */
+            passed: boolean;
+            /** Expected */
+            expected?: unknown;
+            /** Actual */
+            actual?: unknown;
+        };
+        /** ContractSummary */
+        ContractSummary: {
+            /** Version */
+            version: string;
+            /** Operations */
+            operations?: components["schemas"]["Operation"][];
+            /** Security Schemes */
+            security_schemes?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** Diagnostic */
+        Diagnostic: {
+            layer: components["schemas"]["Layer"];
+            /** Code */
+            code: string;
+            /** Fields */
+            fields?: string[];
+            reference?: components["schemas"]["ReferenceDiagnostic"] | null;
+            /** Intent */
+            intent?: components["schemas"]["IntentDiagnostic"][] | null;
+        };
+        /** FeedbackDecisionEvidence */
+        FeedbackDecisionEvidence: {
+            /** Index */
+            index: number;
+            /**
+             * Action
+             * @default pending
+             * @enum {string}
+             */
+            action?: "pending" | "investigate" | "finish" | "rejected";
+            /**
+             * Reason
+             * @default FEEDBACK_PENDING
+             */
+            reason?: string;
+            model_call?: components["schemas"]["ModelCallStats"] | null;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms?: number;
+            /** Public Context */
+            public_context?: {
+                [key: string]: unknown;
+            } | null;
+            /** Proposal */
+            proposal?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** FeedbackResult */
+        FeedbackResult: {
+            /**
+             * State
+             * @default PENDING
+             * @enum {string}
+             */
+            state?: "PENDING" | "SUPPORTED" | "NEEDS_REVIEW" | "BUDGET_EXHAUSTED" | "TOOL_ERROR" | "TEST_INFRA_ERROR" | "TIMEOUT" | "CANCELLED";
+            /**
+             * Reason
+             * @default FEEDBACK_PENDING
+             */
+            reason?: string;
+            /**
+             * Finding
+             * @default EVIDENCE_INSUFFICIENT
+             * @enum {string}
+             */
+            finding?: "ACCESS_BOUNDARY_VIOLATION" | "PERSISTENT_READBACK_MISMATCH" | "EVIDENCE_INSUFFICIENT";
+            /**
+             * Basis
+             * @default 证据不足，需人工复核。
+             * @enum {string}
+             */
+            basis?: "证据不足，需人工复核。" | "受限角色读取成功，同资源的所有者读取通过。" | "同角色对同一资源的复核重复出现字段断言失败。";
+            /** Evidence Refs */
+            evidence_refs?: string[];
+            /** Decisions */
+            decisions?: components["schemas"]["FeedbackDecisionEvidence"][];
+            /**
+             * Requests Used
+             * @default 0
+             */
+            requests_used?: number;
+            /**
+             * Model Calls Used
+             * @default 0
+             */
+            model_calls_used?: number;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms?: number;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IntentDiagnostic */
+        IntentDiagnostic: {
+            /**
+             * Branch
+             * @enum {string}
+             */
+            branch: "STEP_COUNT" | "OPERATION_ROLE_POLICY" | "PARAMETERS" | "SOURCE_OR_VALUE" | "ORDER" | "EXECUTION_OPTION" | "GOAL_COVERAGE" | "STEP_SET";
+            /** Requirement Index */
+            requirement_index?: number | null;
+        };
+        /** InvestigationResult */
+        InvestigationResult: {
+            /** Step Id */
+            step_id: string;
+            /** Step Run Id */
+            step_run_id?: string;
+            /** Operation Id */
+            operation_id: string;
+            /** Method */
+            method: string;
+            /** Path Template */
+            path_template: string;
+            outcome: components["schemas"]["Outcome"];
+            /** Reason */
+            reason: string;
+            /** Policy Sha256 */
+            policy_sha256: string;
+            /** Policy Template Sha256 */
+            policy_template_sha256?: string | null;
+            /** Checks */
+            checks?: components["schemas"]["CheckResult"][];
+            /** Attempts */
+            attempts?: components["schemas"]["AttemptEvidence"][];
+            /** Input Validation */
+            input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
+            /** Negative Test */
+            negative_test?: string | null;
+            /** Approved Violation Codes */
+            approved_violation_codes?: string[];
+            /** Negative Rejected As Expected */
+            negative_rejected_as_expected?: boolean | null;
+            /** Request Evidence */
+            request_evidence?: {
+                [key: string]: unknown;
+            } | null;
+            /** Parent Step Id */
+            parent_step_id: string;
+            /** Capability Id */
+            capability_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Source Step Id */
+            source_step_id?: string | null;
+            /** Resource Ref Sha256 */
+            resource_ref_sha256?: string | null;
+            /**
+             * Requests Used
+             * @default 0
+             */
+            requests_used?: number;
+            /**
+             * Rounds Used
+             * @default 0
+             */
+            rounds_used?: number;
+            /**
+             * Model Calls Used
+             * @default 0
+             */
+            model_calls_used?: number;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms?: number;
+        };
+        /**
+         * Layer
+         * @enum {string}
+         */
+        Layer: "json" | "model" | "dsl" | "openapi" | "policy" | "dependency" | "intent";
+        /** ModelCallStats */
+        ModelCallStats: {
+            diagnostic?: components["schemas"]["Diagnostic"] | null;
+            /**
+             * Calls
+             * @default 0
+             */
+            calls?: number;
+            /** Model Name */
+            model_name?: string | null;
+            /** Model Sha256 */
+            model_sha256?: string | null;
+            /** Http Status */
+            http_status?: number | null;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms?: number;
+            /**
+             * Request Bytes
+             * @default 0
+             */
+            request_bytes?: number;
+            /** Request Sha256 */
+            request_sha256?: string | null;
+            /**
+             * Response Bytes
+             * @default 0
+             */
+            response_bytes?: number;
+            /**
+             * Input Token Upper Bound
+             * @default 0
+             */
+            input_token_upper_bound?: number;
+            /** Input Tokens */
+            input_tokens?: number | null;
+            /** Output Tokens */
+            output_tokens?: number | null;
+            /** Total Tokens */
+            total_tokens?: number | null;
+            /** Output Sha256 */
+            output_sha256?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** Operation */
+        Operation: {
+            /** Method */
+            method: string;
+            /** Path */
+            path: string;
+            /** Operation Id */
+            operation_id?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Parameters */
+            parameters?: {
+                [key: string]: unknown;
+            }[];
+            /** Request Body */
+            request_body?: {
+                [key: string]: unknown;
+            } | null;
+            /** Responses */
+            responses?: {
+                [key: string]: unknown;
+            };
+            /** Security */
+            security?: {
+                [key: string]: string[];
+            }[];
+        };
+        /**
+         * Outcome
+         * @enum {string}
+         */
+        Outcome: "PASS" | "ASSERTION_FAILED" | "TEST_INFRA_ERROR" | "TOOL_ERROR" | "NEEDS_REVIEW";
+        /** PlanStepEvidence */
+        PlanStepEvidence: {
+            /** Step Id */
+            step_id: string;
+            /** Operation Id */
+            operation_id: string;
+            /** Role */
+            role: string | null;
+            /** Policy Id */
+            policy_id: string;
+            /** Argument Sha256 */
+            argument_sha256?: {
+                [key: string]: string;
+            };
+            /** Dependencies */
+            dependencies?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReferenceDiagnostic
+         * @description Closed branch and numeric locations only; no model-provided identifiers or values.
+         */
+        ReferenceDiagnostic: {
+            /**
+             * Branch
+             * @enum {string}
+             */
+            branch: "SELECTOR_SYNTAX" | "SOURCE_NOT_PREVIOUS" | "SOURCE_UNKNOWN" | "SOURCE_POLICY" | "SOURCE_OPERATION" | "SELECTOR_POLICY" | "CONSUMER_POLICY" | "CONSUMER_OPERATION" | "ARGUMENT_SLOT" | "LITERAL_SLOT";
+            /** Step Index */
+            step_index: number;
+            /** Argument Index */
+            argument_index: number;
+        };
+        /** RunPage */
+        RunPage: {
+            /** Items */
+            items: components["schemas"]["RunSummary"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Skipped */
+            skipped: number;
+        };
+        /** RunReport */
+        RunReport: {
+            /** Run Id */
+            run_id?: string;
+            /**
+             * Revision
+             * @default 0
+             */
+            revision?: number;
+            /** Started At */
+            started_at?: string;
+            /** Scenario Sha256 */
+            scenario_sha256: string;
+            /** Contract Sha256 */
+            contract_sha256: string;
+            /** @default NEEDS_REVIEW */
+            outcome?: components["schemas"]["Outcome"];
+            /** Steps */
+            steps?: components["schemas"]["StepResult"][];
+            /**
+             * Completed
+             * @default false
+             */
+            completed?: boolean;
+            /**
+             * Reason
+             * @default
+             */
+            reason?: string;
+            /** Environment */
+            environment: string;
+            /** Target Origin */
+            target_origin: string;
+            /** Target Config Sha256 */
+            target_config_sha256?: string | null;
+            /** Policy Registry Sha256 */
+            policy_registry_sha256?: string | null;
+            /** Workflow Nodes */
+            workflow_nodes?: string[];
+            /**
+             * Planner Calls
+             * @default 0
+             */
+            planner_calls?: number;
+            /**
+             * Tool Calls
+             * @default 0
+             */
+            tool_calls?: number;
+            /** Analysis Code */
+            analysis_code?: string | null;
+            /** Workflow Completed */
+            workflow_completed?: boolean | null;
+            /** User Task Sha256 */
+            user_task_sha256?: string | null;
+            /**
+             * Plan Valid
+             * @default false
+             */
+            plan_valid?: boolean;
+            /**
+             * Dsl Valid
+             * @default false
+             */
+            dsl_valid?: boolean;
+            /**
+             * Policy Authorized
+             * @default false
+             */
+            policy_authorized?: boolean;
+            /** Selected Policy Ids */
+            selected_policy_ids?: string[];
+            model_call?: components["schemas"]["ModelCallStats"] | null;
+            /** Plan Structure */
+            plan_structure?: components["schemas"]["PlanStepEvidence"][];
+            /** Plan Derivation */
+            plan_derivation?: {
+                [key: string]: unknown;
+            } | null;
+            /** Validation Issue */
+            validation_issue?: string | null;
+            diagnostic?: components["schemas"]["Diagnostic"] | null;
+            /**
+             * Intent Verified
+             * @default false
+             */
+            intent_verified?: boolean;
+            /** Task Mode */
+            task_mode?: ("natural_language" | "operator_plan" | "model_designed") | null;
+            /** Task Satisfied */
+            task_satisfied?: boolean | null;
+            /** Investigations */
+            investigations?: components["schemas"]["InvestigationResult"][];
+            /** Investigation Error */
+            investigation_error?: string | null;
+            feedback?: components["schemas"]["FeedbackResult"] | null;
+            trusted_symptom?: components["schemas"]["TrustedSymptomResult"] | null;
+            /**
+             * Cleanup
+             * @default In-memory demo state discarded; external target cleanup is operator-owned
+             */
+            cleanup?: string;
+        };
+        /** RunSummary */
+        RunSummary: {
+            /** Run Id */
+            run_id: string;
+            /** Started At */
+            started_at: string | null;
+            /** Environment */
+            environment: string;
+            outcome: components["schemas"]["Outcome"] | null;
+            /** Steps */
+            steps: number | null;
+            /** Workflow Completed */
+            workflow_completed: boolean | null;
+        };
+        /** StepResult */
+        StepResult: {
+            /** Step Id */
+            step_id: string;
+            /** Step Run Id */
+            step_run_id?: string;
+            /** Operation Id */
+            operation_id: string;
+            /** Method */
+            method: string;
+            /** Path Template */
+            path_template: string;
+            outcome: components["schemas"]["Outcome"];
+            /** Reason */
+            reason: string;
+            /** Policy Sha256 */
+            policy_sha256: string;
+            /** Policy Template Sha256 */
+            policy_template_sha256?: string | null;
+            /** Checks */
+            checks?: components["schemas"]["CheckResult"][];
+            /** Attempts */
+            attempts?: components["schemas"]["AttemptEvidence"][];
+            /** Input Validation */
+            input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
+            /** Negative Test */
+            negative_test?: string | null;
+            /** Approved Violation Codes */
+            approved_violation_codes?: string[];
+            /** Negative Rejected As Expected */
+            negative_rejected_as_expected?: boolean | null;
+            /** Request Evidence */
+            request_evidence?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** TrustedSymptomResult */
+        TrustedSymptomResult: {
+            /**
+             * Rule Version
+             * @default observable_symptoms_v1
+             * @constant
+             */
+            rule_version?: "observable_symptoms_v1";
+            /**
+             * State
+             * @default NEEDS_REVIEW
+             * @enum {string}
+             */
+            state?: "SUPPORTED" | "NEEDS_REVIEW";
+            /**
+             * Finding
+             * @default EVIDENCE_INSUFFICIENT
+             * @enum {string}
+             */
+            finding?: "ACCESS_BOUNDARY_VIOLATION" | "PERSISTENT_READBACK_MISMATCH" | "EVIDENCE_INSUFFICIENT";
+            /** Evidence Refs */
+            evidence_refs?: string[];
+            /**
+             * Reason
+             * @default RULE_EVIDENCE_INSUFFICIENT
+             * @enum {string}
+             */
+            reason?: "RULE_SUPPORTED" | "RULE_EVIDENCE_INSUFFICIENT" | "RULE_AUTHORITY_CHANGED";
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
     };
-    /** Diagnostic */
-    Diagnostic: {
-      layer: components["schemas"]["Layer"];
-      /** Code */
-      code: string;
-      /** Fields */
-      fields?: string[];
-      reference?: components["schemas"]["ReferenceDiagnostic"] | null;
-      /** Intent */
-      intent?: components["schemas"]["IntentDiagnostic"][] | null;
-    };
-    /** FeedbackDecisionEvidence */
-    FeedbackDecisionEvidence: {
-      /** Index */
-      index: number;
-      /**
-       * Action
-       * @default pending
-       * @enum {string}
-       */
-      action?: "pending" | "investigate" | "finish" | "rejected";
-      /**
-       * Reason
-       * @default FEEDBACK_PENDING
-       */
-      reason?: string;
-      model_call?: components["schemas"]["ModelCallStats"] | null;
-      /**
-       * Elapsed Ms
-       * @default 0
-       */
-      elapsed_ms?: number;
-      /** Public Context */
-      public_context?: {
-        [key: string]: unknown;
-      } | null;
-      /** Proposal */
-      proposal?: {
-        [key: string]: unknown;
-      } | null;
-    };
-    /** FeedbackResult */
-    FeedbackResult: {
-      /**
-       * State
-       * @default PENDING
-       * @enum {string}
-       */
-      state?:
-        | "PENDING"
-        | "SUPPORTED"
-        | "NEEDS_REVIEW"
-        | "BUDGET_EXHAUSTED"
-        | "TOOL_ERROR"
-        | "TEST_INFRA_ERROR"
-        | "TIMEOUT"
-        | "CANCELLED";
-      /**
-       * Reason
-       * @default FEEDBACK_PENDING
-       */
-      reason?: string;
-      /**
-       * Finding
-       * @default EVIDENCE_INSUFFICIENT
-       * @enum {string}
-       */
-      finding?:
-        | "ACCESS_BOUNDARY_VIOLATION"
-        | "PERSISTENT_READBACK_MISMATCH"
-        | "EVIDENCE_INSUFFICIENT";
-      /**
-       * Basis
-       * @default 证据不足，需人工复核。
-       * @enum {string}
-       */
-      basis?:
-        | "证据不足，需人工复核。"
-        | "受限角色读取成功，同资源的所有者读取通过。"
-        | "同角色对同一资源的复核重复出现字段断言失败。";
-      /** Evidence Refs */
-      evidence_refs?: string[];
-      /** Decisions */
-      decisions?: components["schemas"]["FeedbackDecisionEvidence"][];
-      /**
-       * Requests Used
-       * @default 0
-       */
-      requests_used?: number;
-      /**
-       * Model Calls Used
-       * @default 0
-       */
-      model_calls_used?: number;
-      /**
-       * Elapsed Ms
-       * @default 0
-       */
-      elapsed_ms?: number;
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** IntentDiagnostic */
-    IntentDiagnostic: {
-      /**
-       * Branch
-       * @enum {string}
-       */
-      branch:
-        | "STEP_COUNT"
-        | "OPERATION_ROLE_POLICY"
-        | "PARAMETERS"
-        | "SOURCE_OR_VALUE"
-        | "ORDER"
-        | "EXECUTION_OPTION"
-        | "GOAL_COVERAGE"
-        | "STEP_SET";
-      /** Requirement Index */
-      requirement_index?: number | null;
-    };
-    /** InvestigationResult */
-    InvestigationResult: {
-      /** Step Id */
-      step_id: string;
-      /** Step Run Id */
-      step_run_id?: string;
-      /** Operation Id */
-      operation_id: string;
-      /** Method */
-      method: string;
-      /** Path Template */
-      path_template: string;
-      outcome: components["schemas"]["Outcome"];
-      /** Reason */
-      reason: string;
-      /** Policy Sha256 */
-      policy_sha256: string;
-      /** Policy Template Sha256 */
-      policy_template_sha256?: string | null;
-      /** Checks */
-      checks?: components["schemas"]["CheckResult"][];
-      /** Attempts */
-      attempts?: components["schemas"]["AttemptEvidence"][];
-      /** Input Validation */
-      input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
-      /** Negative Test */
-      negative_test?: string | null;
-      /** Approved Violation Codes */
-      approved_violation_codes?: string[];
-      /** Negative Rejected As Expected */
-      negative_rejected_as_expected?: boolean | null;
-      /** Parent Step Id */
-      parent_step_id: string;
-      /** Capability Id */
-      capability_id?: string | null;
-      /** Role */
-      role?: string | null;
-      /** Source Step Id */
-      source_step_id?: string | null;
-      /** Resource Ref Sha256 */
-      resource_ref_sha256?: string | null;
-      /**
-       * Requests Used
-       * @default 0
-       */
-      requests_used?: number;
-      /**
-       * Rounds Used
-       * @default 0
-       */
-      rounds_used?: number;
-      /**
-       * Model Calls Used
-       * @default 0
-       */
-      model_calls_used?: number;
-      /**
-       * Elapsed Ms
-       * @default 0
-       */
-      elapsed_ms?: number;
-    };
-    /**
-     * Layer
-     * @enum {string}
-     */
-    Layer:
-      "json" | "model" | "dsl" | "openapi" | "policy" | "dependency" | "intent";
-    /** ModelCallStats */
-    ModelCallStats: {
-      diagnostic?: components["schemas"]["Diagnostic"] | null;
-      /**
-       * Calls
-       * @default 0
-       */
-      calls?: number;
-      /** Model Name */
-      model_name?: string | null;
-      /** Model Sha256 */
-      model_sha256?: string | null;
-      /** Http Status */
-      http_status?: number | null;
-      /**
-       * Elapsed Ms
-       * @default 0
-       */
-      elapsed_ms?: number;
-      /**
-       * Request Bytes
-       * @default 0
-       */
-      request_bytes?: number;
-      /** Request Sha256 */
-      request_sha256?: string | null;
-      /**
-       * Response Bytes
-       * @default 0
-       */
-      response_bytes?: number;
-      /**
-       * Input Token Upper Bound
-       * @default 0
-       */
-      input_token_upper_bound?: number;
-      /** Input Tokens */
-      input_tokens?: number | null;
-      /** Output Tokens */
-      output_tokens?: number | null;
-      /** Total Tokens */
-      total_tokens?: number | null;
-      /** Output Sha256 */
-      output_sha256?: string | null;
-      /** Reason */
-      reason?: string | null;
-    };
-    /** Operation */
-    Operation: {
-      /** Method */
-      method: string;
-      /** Path */
-      path: string;
-      /** Operation Id */
-      operation_id?: string | null;
-      /** Summary */
-      summary?: string | null;
-      /** Parameters */
-      parameters?: {
-        [key: string]: unknown;
-      }[];
-      /** Request Body */
-      request_body?: {
-        [key: string]: unknown;
-      } | null;
-      /** Responses */
-      responses?: {
-        [key: string]: unknown;
-      };
-      /** Security */
-      security?: {
-        [key: string]: string[];
-      }[];
-    };
-    /**
-     * Outcome
-     * @enum {string}
-     */
-    Outcome:
-      | "PASS"
-      | "ASSERTION_FAILED"
-      | "TEST_INFRA_ERROR"
-      | "TOOL_ERROR"
-      | "NEEDS_REVIEW";
-    /** PlanStepEvidence */
-    PlanStepEvidence: {
-      /** Step Id */
-      step_id: string;
-      /** Operation Id */
-      operation_id: string;
-      /** Role */
-      role: string | null;
-      /** Policy Id */
-      policy_id: string;
-      /** Argument Sha256 */
-      argument_sha256?: {
-        [key: string]: string;
-      };
-      /** Dependencies */
-      dependencies?: {
-        [key: string]: string;
-      };
-    };
-    /**
-     * ReferenceDiagnostic
-     * @description Closed branch and numeric locations only; no model-provided identifiers or values.
-     */
-    ReferenceDiagnostic: {
-      /**
-       * Branch
-       * @enum {string}
-       */
-      branch:
-        | "SELECTOR_SYNTAX"
-        | "SOURCE_NOT_PREVIOUS"
-        | "SOURCE_UNKNOWN"
-        | "SOURCE_POLICY"
-        | "SOURCE_OPERATION"
-        | "SELECTOR_POLICY"
-        | "CONSUMER_POLICY"
-        | "CONSUMER_OPERATION"
-        | "ARGUMENT_SLOT"
-        | "LITERAL_SLOT";
-      /** Step Index */
-      step_index: number;
-      /** Argument Index */
-      argument_index: number;
-    };
-    /** RunPage */
-    RunPage: {
-      /** Items */
-      items: components["schemas"]["RunSummary"][];
-      /** Total */
-      total: number;
-      /** Offset */
-      offset: number;
-      /** Limit */
-      limit: number;
-      /** Skipped */
-      skipped: number;
-    };
-    /** RunReport */
-    RunReport: {
-      /** Run Id */
-      run_id?: string;
-      /**
-       * Revision
-       * @default 0
-       */
-      revision?: number;
-      /** Started At */
-      started_at?: string;
-      /** Scenario Sha256 */
-      scenario_sha256: string;
-      /** Contract Sha256 */
-      contract_sha256: string;
-      /** @default NEEDS_REVIEW */
-      outcome?: components["schemas"]["Outcome"];
-      /** Steps */
-      steps?: components["schemas"]["StepResult"][];
-      /**
-       * Completed
-       * @default false
-       */
-      completed?: boolean;
-      /**
-       * Reason
-       * @default
-       */
-      reason?: string;
-      /** Environment */
-      environment: string;
-      /** Target Origin */
-      target_origin: string;
-      /** Target Config Sha256 */
-      target_config_sha256?: string | null;
-      /** Policy Registry Sha256 */
-      policy_registry_sha256?: string | null;
-      /** Workflow Nodes */
-      workflow_nodes?: string[];
-      /**
-       * Planner Calls
-       * @default 0
-       */
-      planner_calls?: number;
-      /**
-       * Tool Calls
-       * @default 0
-       */
-      tool_calls?: number;
-      /** Analysis Code */
-      analysis_code?: string | null;
-      /** Workflow Completed */
-      workflow_completed?: boolean | null;
-      /** User Task Sha256 */
-      user_task_sha256?: string | null;
-      /**
-       * Plan Valid
-       * @default false
-       */
-      plan_valid?: boolean;
-      /**
-       * Dsl Valid
-       * @default false
-       */
-      dsl_valid?: boolean;
-      /**
-       * Policy Authorized
-       * @default false
-       */
-      policy_authorized?: boolean;
-      /** Selected Policy Ids */
-      selected_policy_ids?: string[];
-      model_call?: components["schemas"]["ModelCallStats"] | null;
-      /** Plan Structure */
-      plan_structure?: components["schemas"]["PlanStepEvidence"][];
-      /** Plan Derivation */
-      plan_derivation?: {
-        [key: string]: unknown;
-      } | null;
-      /** Validation Issue */
-      validation_issue?: string | null;
-      diagnostic?: components["schemas"]["Diagnostic"] | null;
-      /**
-       * Intent Verified
-       * @default false
-       */
-      intent_verified?: boolean;
-      /** Task Mode */
-      task_mode?: ("natural_language" | "operator_plan") | null;
-      /** Task Satisfied */
-      task_satisfied?: boolean | null;
-      /** Investigations */
-      investigations?: components["schemas"]["InvestigationResult"][];
-      /** Investigation Error */
-      investigation_error?: string | null;
-      feedback?: components["schemas"]["FeedbackResult"] | null;
-      trusted_symptom?: components["schemas"]["TrustedSymptomResult"] | null;
-      /**
-       * Cleanup
-       * @default In-memory demo state discarded; external target cleanup is operator-owned
-       */
-      cleanup?: string;
-    };
-    /** RunSummary */
-    RunSummary: {
-      /** Run Id */
-      run_id: string;
-      /** Started At */
-      started_at: string | null;
-      /** Environment */
-      environment: string;
-      outcome: components["schemas"]["Outcome"] | null;
-      /** Steps */
-      steps: number | null;
-      /** Workflow Completed */
-      workflow_completed: boolean | null;
-    };
-    /** StepResult */
-    StepResult: {
-      /** Step Id */
-      step_id: string;
-      /** Step Run Id */
-      step_run_id?: string;
-      /** Operation Id */
-      operation_id: string;
-      /** Method */
-      method: string;
-      /** Path Template */
-      path_template: string;
-      outcome: components["schemas"]["Outcome"];
-      /** Reason */
-      reason: string;
-      /** Policy Sha256 */
-      policy_sha256: string;
-      /** Policy Template Sha256 */
-      policy_template_sha256?: string | null;
-      /** Checks */
-      checks?: components["schemas"]["CheckResult"][];
-      /** Attempts */
-      attempts?: components["schemas"]["AttemptEvidence"][];
-      /** Input Validation */
-      input_validation?: ("NORMAL_VALIDATED" | "APPROVED_NEGATIVE") | null;
-      /** Negative Test */
-      negative_test?: string | null;
-      /** Approved Violation Codes */
-      approved_violation_codes?: string[];
-      /** Negative Rejected As Expected */
-      negative_rejected_as_expected?: boolean | null;
-    };
-    /** TrustedSymptomResult */
-    TrustedSymptomResult: {
-      /**
-       * Rule Version
-       * @default observable_symptoms_v1
-       * @constant
-       */
-      rule_version?: "observable_symptoms_v1";
-      /**
-       * State
-       * @default NEEDS_REVIEW
-       * @enum {string}
-       */
-      state?: "SUPPORTED" | "NEEDS_REVIEW";
-      /**
-       * Finding
-       * @default EVIDENCE_INSUFFICIENT
-       * @enum {string}
-       */
-      finding?:
-        | "ACCESS_BOUNDARY_VIOLATION"
-        | "PERSISTENT_READBACK_MISMATCH"
-        | "EVIDENCE_INSUFFICIENT";
-      /** Evidence Refs */
-      evidence_refs?: string[];
-      /**
-       * Reason
-       * @default RULE_EVIDENCE_INSUFFICIENT
-       * @enum {string}
-       */
-      reason?:
-        | "RULE_SUPPORTED"
-        | "RULE_EVIDENCE_INSUFFICIENT"
-        | "RULE_AUTHORITY_CHANGED";
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-      /** Input */
-      input?: unknown;
-      /** Context */
-      ctx?: Record<string, never>;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  session_api_task_session_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    session_api_task_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    projects_api_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
         };
-      };
     };
-  };
-  projects_api_projects_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    intake_api_project_intake_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    save_project_api_project_intake_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
         };
-      };
     };
-  };
-  tasks_api_tasks_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    analyze_project_api_project_intake_analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    update_project_api_project_intake__project_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  submit_api_tasks_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    tasks_api_tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      202: {
-        headers: {
-          [name: string]: unknown;
+    submit_api_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
         };
-      };
     };
-  };
-  task_api_tasks__task_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        task_id: string;
-      };
-      cookie?: never;
+    saved_tests_api_saved_tests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    fixed_run_api_saved_tests_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  start_api_tasks__task_id__start_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        task_id: string;
-      };
-      cookie?: never;
+    task_api_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    timeline_api_tasks__task_id__timeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  cancel_api_tasks__task_id__cancel_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        task_id: string;
-      };
-      cookie?: never;
+    start_api_tasks__task_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    answer_permission_api_tasks__task_id__permission_answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  regression_api_tasks__task_id__regression_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        task_id: string;
-      };
-      cookie?: never;
+    cancel_api_tasks__task_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    regression_api_tasks__task_id__regression_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  events_api_tasks__task_id__events_get: {
-    parameters: {
-      query?: {
-        after?: number;
-      };
-      header?: never;
-      path: {
-        task_id: string;
-      };
-      cookie?: never;
+    events_api_tasks__task_id__events_get: {
+        parameters: {
+            query?: {
+                after?: number;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": unknown;
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  health_health_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    spec_summary_api_spec_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractSummary"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    run_list_api_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                outcome?: components["schemas"]["Outcome"] | null;
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": {
-            [key: string]: string;
-          };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  spec_summary_api_spec_summary_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    run_result_api_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ContractSummary"];
-        };
-      };
-    };
-  };
-  run_list_api_runs_get: {
-    parameters: {
-      query?: {
-        limit?: number;
-        offset?: number;
-        outcome?: components["schemas"]["Outcome"] | null;
-        order?: "asc" | "desc";
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["RunPage"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  run_result_api_runs__run_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        run_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["RunReport"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
 }

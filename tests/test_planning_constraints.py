@@ -54,13 +54,14 @@ def test_unknown_goal_does_not_guess_roles_or_add_policies():
         p["id"] for p in registry.catalog(config.business_scenario)}
 
 
-def test_catalog_never_adds_mutation_authorization():
+def test_catalog_never_adds_business_mutation_authorization():
     contract, config, registry = inputs()
     config.allow_mutations = False
     context = planning_context(contract, config, registry, 'alice 创建“甲”并查询', {})
-    assert {op["id"] for op in context["operations"]} == {"getCourse"}
-    assert {p["id"] for p in context["policies"]} == {"nl_read_v1"}
-    assert context["authentication"] == []
+    assert {op["id"] for op in context["operations"]} == {"getCourse", "login"}
+    assert {p["id"] for p in context["policies"]} == {"nl_login_v1", "nl_read_v1"}
+    assert context["authentication"] == [{"role": "alice", "login_operation_id": "login",
+                                            "before_operation_ids": ["getCourse"]}]
 
 
 @pytest.mark.asyncio

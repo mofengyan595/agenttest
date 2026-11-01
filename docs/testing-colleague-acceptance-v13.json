@@ -1,0 +1,304 @@
+{
+  "version": "testing-colleague-final-v13",
+  "evidence_folder": "acceptance-v13",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring. v9:7/9,23 calls,143568 known tokens; unnecessary negative setup and partial-scope interruption retained. No rescoring. v10:7/9,24 calls,132658 known tokens; source-question ownership and typed exact-value failures preserved. Full offline interrupted at1185 reports of1978, not a pass. No rescoring. v11:5/9,22 calls,136207 known tokens; omitted literal/normal reads, duplicate facts and old unextracted source failures preserved. Full1971PASS/15SKIP/1 workflow-timeout; no rescoring. v12:original9/9,30calls197025known; later separate audit found4 ordinary200 cases mislabeled negative in one position. Original score preserved; no rescoring. Full1978PASS15SKIP,1993exactIDs,sourceb398f58f. V13 enforces actual negative steps and evidence-aligned classifications.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "新建名称“河湾样件”、数量3、标签依次green和blue、开启跟踪的一件包裹，先读回。随后完整替换成名称“河湾重排”、数量1、标签依次amber和green、关闭跟踪，再局部改名“河湾封箱”，读回后删除这件新包裹。另分别验证创建时缺quantity、quantity原样使用字符串“maroon_units_1407”、名称长度25，各按文档422检查。只创建这一件成功包裹，服务状态不查。",
+      "oracle": "Exactly one create河湾样件/3/[green,blue]/true; GET,PUT河湾重排/1/[amber,green]/false,PATCH河湾封箱,GET,DELETE same resource. Three actual approved negative steps422 missingquantity/exact maroon_units_1407/name25. No ordinary200 labeled negative. AllPASS complete emptytarget.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "河湾样件"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            3
+          ],
+          "invalid_values": [
+            "maroon_units_1407"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "green",
+                "blue"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "河湾重排"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber",
+                "green"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "河湾封箱"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "maroon_units_1407"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "请owner登录，安排周二预约，座位依次1、6。标题有“杉桥议程”和“榕桥议程”两个选项，请先让我选择，不能代选；选定后owner创建、读回、删除本轮新预约。reader读取别人的预约应当403还是404尚未确认，请具体问我，独立owner部分先做。不查服务状态。",
+      "answer": 403,
+      "followup": "按已确认的403继续：owner登录，新建标题“榕桥复测”的周一预约，座位依次5、2；owner先读回，reader读取同一新预约检查拒绝，owner再读一次确认仍能访问，最后owner删除。沿用已确认规则，不再询问，服务状态不测。",
+      "oracle": "Initial ambiguity kept, no reservationPOST; UIchoice榕桥议程, retainTuesday/[1,6]. Ownerlogin/create/read/delete; reader0HTTP, actionable reader403/404. UIconfirm403 noHTTP. FollowupMonday榕桥复测/[5,2], onecreate,ownerread/reader403/ownerread/delete same resource, noquestions emptytarget. Access denial is permission, not parameter-negative.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "杉桥议程",
+            "榕桥议程",
+            "榕桥复测"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Tuesday",
+            "Monday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              1,
+              6
+            ],
+            [
+              5,
+              2
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ],
+      "input_choice": "榕桥议程",
+      "initial_body": {
+        "title": "榕桥议程",
+        "slot": {
+          "day": "Tuesday",
+          "seats": [
+            1,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=1、active=false、order=desc；正常读取第31个目录，limit=3、active=true、order=asc。第7个另分别原样使用active字符串“fern_switch_1407”和order枚举外字符串“lateral_sort_1407”；第31个另分别用limit=-9与limit=13，逐项按文档422检查。第7个items更新后多久能在读取接口看到还没有业务依据，请具体问我，已有正常与异常部分先执行。也检查服务可用状态。受限配置缺测试身份，请指出要补什么。其他目录、附件上传和长导出不测。",
+      "oracle": "48denominator45ready1missing2unsupported. Normal7:1,false,desc;31:3,true,asc. Four actual approved negative422 fern_switch_1407/lateral_sort_1407/-9/13,4/4; zero ordinary requests mislabeled negative. Two questions privateidentity and readSection7 update-visibility business timing with operator source. Availability200wrongstate+boundedprobe. Exactnegative saved/restart0model/sourceid/configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            1
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ],
+          "invalid_values": [
+            "fern_switch_1407"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ],
+          "invalid_values": [
+            "lateral_sort_1407"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -9,
+            13
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "fern_switch_1407"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "lateral_sort_1407"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -9
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 13
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

@@ -1,0 +1,30 @@
+{
+  "version": "testing-colleague-final-v3",
+  "evidence_folder": "acceptance-v3",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9 including infrastructure interruption/startup failure. Both unchanged with source archives.",
+  "new_tasks_unused_for_debugging": true,
+  "startup_timeout_seconds": 90,
+  "order": ["1:parcels", "1:reservations", "1:directory", "2:parcels", "2:reservations", "2:directory", "3:parcels", "3:reservations", "3:directory"],
+  "first_attempts": "One first attempt per position, no retry. Preserve failures, interrupted positions and unexecuted followups. No source/document changes during schedule. Only task request/followup enters product context; oracles stay outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "建一个名叫秋季归档的测试包裹，数量3，标签依次green和blue，开启跟踪。读回来后把名称局部改成归档已核验，再完整替换成归档终稿、数量1、标签依次amber和green、关闭跟踪。替换后再读一次，最后删掉本次这一个包裹。创建时另试缺少数量、数量类型错误、名称超过24字三种情况，按已确认的文档拒绝规则检查。服务状态不用查。",
+      "oracle": "6-operation denominator. Exactly one successful creation with 秋季归档/3/[green,blue]/tracked true. One self-contained same-resource GET/PATCH归档已核验/PUT归档终稿,1,[amber,green],tracked false/GET/DELETE in order. Three approved422 negatives: quantity missing, wrong type, name length25. All proposed cases finish PASS, complete=true, no service-state request, target records empty."
+    },
+    {
+      "project": "reservations",
+      "request": "请owner先登录，创建标题为周中盘点的周二预约，座位顺序是6、1，读取后删除这个新预约。reader读取别人预约时应该报403还是404目前未确认，请具体问我，同时先跑owner可以独立完成的部分。服务状态不在这次范围。",
+      "answer": 403,
+      "followup": "现在拒绝规则已保存，请直接沿用。owner新建周一的返库核验预约，座位依次4、5，reader读取同一条新预约时按已确认的403检查，再由owner删除它。不再问已经确认的问题，不检查服务状态。",
+      "oracle": "5-operation denominator. Real owner login then exact Tuesday/周中盘点/[6,1], owner read/cleanup. Concrete403/404 reader permission question and0reader requests before UI confirmation. Followup exact Monday/返库核验/[4,5], same-resource reader403, owner cleanup, no repeated question, complete=true, target records empty."
+    },
+    {
+      "project": "directory",
+      "request": "这轮先正常查第7个目录，limit=2、active=true、order=desc；再正常查第31个，limit=3、active=false、order=asc。第7个分别验证active类型不对和order枚举外值，第31个分别用limit=0和limit=4检查文档拒绝规则。顺便核验服务状态。受限配置还没测试账号，请问我具体要补什么，其他能做的先做。其他目录、文件上传和异步导出不测。",
+      "oracle": "48-operation denominator:45ready/1missing/2unsupported. Focus exactly sections7,31 and service state. Normal exact7:2,true,desc and31:3,false,asc. Section7 active type/orderenum422; section31 limit0/4 both422. One service-state HTTP200 wrong-state assertion failure with bounded readonly probe. Concrete account question,0private requests, accurate partial completion. Save PASS readonly, restart, replay0model, disable stale asset after configuration change."
+    }
+  ]
+}

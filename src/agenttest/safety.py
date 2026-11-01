@@ -69,5 +69,8 @@ class TargetConfig(StrictModel):
             raise ValueError("Operation is not authorized")
         if method not in {"GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"}:
             raise ValueError("HTTP method is not allowlisted")
-        if method not in {"GET", "HEAD", "OPTIONS"} and not self.allow_mutations:
+        authentication = (self.environment == "isolated" and method == "POST" and any(
+            r.login_operation == operation_id for r in self.roles.values()))
+        if (method not in {"GET", "HEAD", "OPTIONS"}
+                and not self.allow_mutations and not authentication):
             raise ValueError("Mutating operation is not authorized")

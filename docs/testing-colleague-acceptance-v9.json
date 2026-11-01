@@ -1,0 +1,292 @@
+{
+  "version": "testing-colleague-final-v9",
+  "evidence_folder": "acceptance-v9",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "仓储流程请检查：创建名称明确为“星河暂存”的包裹，数量2，标签依次amber、green，开启跟踪；读回后完整替换成名称“暂存换箱”、数量1、标签依次blue、amber、关闭跟踪；局部改名为“暂存复核”，再读回并删除这个新包裹。另外分别检查创建时quantity缺失、quantity原样使用字符串“silver_amount”、名称超过24字，预期文档422。服务状态这轮不查。",
+      "oracle": "One exact create星河暂存/2/[amber,green]/true; GET,PUT暂存换箱/1/[blue,amber]/false,PATCH暂存复核,GET,DELETE same resource. Three422 including exact silver_amount; allPASS complete empty target, noavailability.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "星河暂存"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            2
+          ],
+          "invalid_values": [
+            "silver_amount"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber",
+                "green"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "暂存换箱"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "amber"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "暂存复核"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "silver_amount"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "先以owner登录，创建标题明确为“午后交接”的周一预约，座位依次5、1，owner读回后删除本轮预约。reader看别人的预约该返回403还是404尚未确认，请具体询问，先完成独立的owner流程。不检查服务状态。",
+      "answer": 403,
+      "followup": "按刚确认的403规则继续：owner登录，新建标题明确为“交接回查”的周二预约，座位依次3、6，owner先读回，再以reader读取同一个新预约验证拒绝，最后由owner删除。不要再问已经确认的权限，不查服务状态。",
+      "oracle": "Monday午后交接/[5,1] ownerlogin/create/read/delete; concrete403/404 question reader0HTTP. UI403 then Tuesday交接回查/[3,6] ownerlogin/create/read,reader403,cleanup same resource; no repeatedquestion empty target.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "午后交接",
+            "交接回查"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Monday",
+            "Tuesday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              5,
+              1
+            ],
+            [
+              3,
+              6
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ]
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=3、active=false、order=desc；第31个目录，limit=1、active=true、order=asc。第7个另分别原样使用active字符串“cloud_flag”和order枚举外字符串“around_order”；第31个另分别使用limit=-3、limit=7，各自检查文档422。再检查服务可用状态。受限配置仍缺测试账号，请明确补问并先执行独立部分。其他目录、附件上传、长导出这轮不测。",
+      "oracle": "48denominator45ready1missing2unsupported; only7,31,availability. Exact normal7:3,false,desc;31:1,true,asc. Four exact422 variants7active cloud_flag/order around_order;31limit -3/7. HTTP200wrongstate failure+probe. Missingaccount/private0HTTP partial. Save exact negative,restart0modelcorrectsourceid/configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ],
+          "invalid_values": [
+            "cloud_flag"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ],
+          "invalid_values": [
+            "around_order"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            1
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -3,
+            7
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "cloud_flag"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "around_order"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -3
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 7
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

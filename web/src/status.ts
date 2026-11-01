@@ -4,13 +4,13 @@ export const outcomes: Record<
   { label: string; tone: string; description: string }
 > = {
   PASS: {
-    label: "策略通过",
+    label: "检查通过",
     tone: "success",
     description:
-      "批准策略的断言通过；自然语言任务是否完成，另看 Task Satisfaction。",
+      "本次已执行的确定性检查通过；整个需求是否完成，需结合完整范围和未执行项判断。",
   },
   ASSERTION_FAILED: {
-    label: "断言失败",
+    label: "结果不符合预期",
     tone: "danger",
     description: "可信断言与业务响应不一致，请查看步骤证据。",
   },
@@ -43,6 +43,8 @@ export function triState(value: boolean | null | undefined, task = false) {
 export function taskState(run: RunReport) {
   if (run.task_mode === "operator_plan")
     return { label: "不适用 · 固定计划", tone: "neutral" };
+  if (run.task_mode === "model_designed")
+    return { label: "按模型方案检查，语义未独立核验", tone: "neutral" };
   return triState(run.task_satisfied, true);
 }
 export const workflowLabel = (value?: boolean | null) =>

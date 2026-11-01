@@ -59,8 +59,8 @@ export function History() {
   return (
     <>
       <PageTitle
-        eyebrow="EVIDENCE / 历史测试报告"
-        title="每一次运行，都有据可查。"
+        eyebrow="详细报告"
+        title="执行记录"
         description="查看批准策略的执行结果，追溯步骤、失败诊断与脱敏证据。"
       >
         <button onClick={result.retry}>

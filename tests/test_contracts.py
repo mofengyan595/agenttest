@@ -43,3 +43,29 @@ def test_invalid_openapi_version() -> None:
         "/api/spec/summary", json={"document": {"openapi": "2.0", "paths": {}}}
     )
     assert response.status_code == 422
+def test_identical_documents_reuse_validation_but_mutations_do_not_cross_callers(monkeypatch):
+    import json
+
+    import agenttest.contracts as contracts
+
+    raw = json.dumps(dict(openapi="3.0.3", info=dict(title="Cache isolation probe", version="1"),
+        paths={"/unique-cache-probe": {"get": dict(operationId="uniqueCacheProbe",
+            responses={"200": dict(description="ok")})}}))
+    original = contracts.validate
+    observed = []
+
+    def validate(document):
+        observed.append(1)
+        return original(document)
+
+    monkeypatch.setattr(contracts, "validate", validate)
+    first = contracts.load_openapi(raw)
+    first.operations[0].responses["200"]["description"] = "caller change"
+    first.operations.clear()
+    second = contracts.load_openapi(raw.encode())
+    assert len(second.operations) == 1
+    assert second.operations[0].responses["200"]["description"] == "ok"
+    assert len(observed) == 1
+    changed = raw.replace("uniqueCacheProbe", "changedCacheProbe")
+    assert contracts.load_openapi(changed).operations[0].operation_id == "changedCacheProbe"
+    assert len(observed) == 2

@@ -32,7 +32,9 @@ class ProgressStore(ReportStore):
 class TaskService:
     def __init__(self, projects: dict[str, Path], db: TaskStore, reports: ReportStore,
                  planner_factory, *, synthetic=False, environ=None, analyzer_factory=None,
-                 semantic_factory=None):
+                 semantic_factory=None, expose_registered=True, model_status=None,
+                 generic_intake=False, intake_authorized_ips=(), designer_factory=None,
+                 focus_factory=None, private_input_guard=None):
         self.projects = dict(projects)
         for key, path in self.projects.items():
             if load_goal_project(path).registration.id != key:
@@ -43,34 +45,63 @@ class TaskService:
         self.synthetic = synthetic
         self.analyzer_factory = analyzer_factory
         self.semantic_factory = semantic_factory
+        self.designer_factory = designer_factory
+        self.focus_factory = focus_factory
+        self.private_input_guard = private_input_guard or (lambda _: False)
         self.environ = dict(os.environ if environ is None else environ)
         self._inputs, self._workers = {}, {}
         self._owners = {}
         self._assets = {}
         self._shutting_down = False
         self._serial = asyncio.Semaphore(1)
+        self.expose_registered = expose_registered
+        self.model_status = model_status or (lambda: "UNKNOWN")
+        self.generic_intake = generic_intake and not synthetic
+        self.intake_authorized_ips = tuple(intake_authorized_ips)
+        from agenttest.project_intake import ProjectIntake
+
+        self.intake = ProjectIntake(self)
+        from agenttest.saved_tests import SavedTests
+
+        self.saved = SavedTests(self)
+        from agenttest.product_tasks import ProductTasks
+
+        self.product = ProductTasks(self)
 
     def project(self, project_id):
-        if project_id not in self.projects:
-            raise ValueError("PROJECT_NOT_REGISTERED")
-        return load_goal_project(self.projects[project_id])
+        if project_id in self.projects:
+            return self.intake.profile(project_id)
+        if project_id.startswith("web_"):
+            return self.intake.project(project_id)
+        raise ValueError("PROJECT_NOT_REGISTERED")
 
     def project_list(self):
-        return [dict(id=key, identity=self.project(key).identity())
-                for key in sorted(self.projects)]
+        return self.intake.registered() + self.intake.list()
 
     async def submit(self, owner, project_id, text, submission, *, suite=False, parent=None,
                      replace_pending=False):
         if self._shutting_down or len(self._workers) >= 8:
             raise TaskConflict("TASK_QUEUE_FULL")
         project = self.project(project_id)
+        if self.db.model_usage_blocked():
+            raise TaskConflict("MODEL_USAGE_REQUIRES_RECONCILIATION")
+        if self.model_status() == "UNAVAILABLE":
+            raise ValueError("MODEL_NOT_CONFIGURED")
+        if project.target.business_scenario == "web_contract_v2" and not text.strip():
+            from agenttest.product_tasks import DEFAULT_FOLLOWUP, DEFAULT_ROUND
+
+            text = DEFAULT_FOLLOWUP if parent else DEFAULT_ROUND
         validate_user_task(text)
+        if self.private_input_guard(text):
+            raise ValueError("TASK_SECRET_REJECTED")
         vault = CredentialVault(project.target, self.environ)
         try:
             if vault.contains_secret(text):
                 raise ValueError("TASK_SECRET_REJECTED")
         finally:
             vault.close()
+        if project.target.business_scenario == "web_contract_v2":
+            return await self.product.submit(owner, project, text, submission, parent)
         shared = None
         if parent:
             previous = self.db.get(parent, owner)
@@ -92,6 +123,14 @@ class TaskService:
         is_suite = suite or goal.scope == "project" or draft_allowed
         summary = (build_suite(project, text, environ=None if self.synthetic else self.environ)
                    .preview() if is_suite else goal.summary())
+        labels = {g.id: g.aliases[0] for g in project.catalog.goals}
+        summary["display_title"] = ("项目已授权核心接口" if goal.scope == "project" else
+            "、".join(labels[k] for k in goal.requested_goals if k in labels)
+            or "待补充的测试需求")
+        if goal.reason == "INTENT_UNVERIFIED_BUSINESS_REQUIREMENT" and not is_suite:
+            from agenttest.project_intake import clarification_question
+
+            summary["question"] = clarification_question(project, text)
         summary["budget"] = dict(max_requests=project.target.max_requests,
             max_model_calls=project.registration.budget.suite_max_model_calls,
             max_total_tokens=project.registration.budget.suite_max_total_tokens)
@@ -131,7 +170,10 @@ class TaskService:
         return row
 
     def _enqueue(self, task_id, owner):
-        worker = asyncio.create_task(self._run(task_id, owner))
+        operation = (self.product.run(task_id, owner) if task_id in self.product.inputs else
+                     self.saved.run(task_id, owner) if task_id in self.saved.inputs
+                     else self._run(task_id, owner))
+        worker = asyncio.create_task(operation)
         self._workers[task_id] = worker
         worker.add_done_callback(lambda _: self._workers.pop(task_id, None))
 
@@ -180,8 +222,10 @@ class TaskService:
                     from agenttest.regression import RegressionCapture
 
                     raw_planner = self.planner_factory(project)
-                    model_source = ("CONFIGURED_MODEL" if isinstance(raw_planner,
-                                    OpenAICompatiblePlanner) else "SIMULATED")
+                    model_source = self.model_status()
+                    if model_source == "UNKNOWN":
+                        model_source = ("CONFIGURED_MODEL" if isinstance(raw_planner,
+                                        OpenAICompatiblePlanner) else "SIMULATED")
                     planner = RegressionCapture(raw_planner)
                     analyzer = (self.analyzer_factory(project) if self.analyzer_factory
                                 and project.capabilities.entries() else None)
@@ -231,7 +275,10 @@ class TaskService:
                         retain(goal, report)
                     result["context_usage"] = shared.summary()
                     result["budget"] = row["summary"]["budget"]
+                    result["display_title"] = row["summary"].get("display_title")
                     result["model_source"] = model_source
+                    result["execution_target"] = ("SYNTHETIC_MEMORY" if self.synthetic
+                                                   else "AUTHORIZED_TEST_ENVIRONMENT")
                     terminal = "NEEDS_REVIEW" if result.get("goal_spec") else "FINISHED"
                     self.db.transition(task_id, owner, "RUNNING", terminal, summary=result)
                     self.db.event(task_id, terminal)
@@ -268,8 +315,14 @@ class TaskService:
         # A just-created task can be cancelled before its coroutine first enters try.
         row = self.db.get(task_id, owner)
         if row["status"] not in TERMINAL:
+            summary = {**row["summary"], "reason": "CANCELLED_NO_ROLLBACK_OR_REPLAY",
+                       "complete": False}
+            if task_id in self._inputs:
+                summary["context_usage"] = self._inputs[task_id][3].summary()
+            if summary.get("mode") == "MODEL_DESIGNED":
+                self.product.coverage(summary)
             row = self.db.transition(task_id, owner, row["status"], "CANCELLED",
-                                    summary=dict(reason="CANCELLED_NO_ROLLBACK_OR_REPLAY"))
+                                     summary=summary)
             self.db.event(task_id, "CANCELLED")
         return row
 
@@ -278,21 +331,85 @@ class TaskService:
         from agenttest.regression import RegressionRuntime, export_regression
 
         row = self.db.get(task_id, owner)
-        if row["status"] != "FINISHED" or (task_id, run_id) not in self._assets:
+        if row["status"] != "FINISHED":
             raise TaskConflict("REGRESSION_SOURCE_NOT_AVAILABLE")
-        scenario, task, project = self._assets[(task_id, run_id)]
+        scenario, task, project = self.saved.asset(row, run_id)
+        if (row["summary"].get("mode") == "MODEL_DESIGNED"
+                and not self.saved.executable(project, scenario)):
+            raise TaskConflict("FIXED_WRITE_LIFECYCLE_REQUIRED")
         if self.project(row["project_id"]).identity() != project.identity():
             raise TaskConflict("REGRESSION_PROJECT_VERSION_CHANGED")
         output = self.reports.root / "exports" / task_id / ("run_" + run_id)
         if output.exists():
-            raise TaskConflict("REGRESSION_ALREADY_EXPORTED")
+            from agenttest.regression import load_regression
+
+            manifest, _ = load_regression(output)
+            if manifest.source_report_sha256 != fingerprint(
+                    self.reports.read(run_id).model_dump(mode="json")):
+                raise TaskConflict("REGRESSION_SOURCE_CHANGED")
+            self.db.save_test(run_id, task_id, owner, row["project_id"], project.identity(),
+                              task.model_dump_json())
+            return output
         env = synthetic_runtime(project)[0] if self.synthetic else dict(self.environ)
         runtime = RegressionRuntime(project.document, project.target, project.registry,
                                     task, env, None, self.reports)
         with pinned_directory(self.reports.root, "exports", create=True) as exports:
             with pinned_directory(exports.path, task_id, create=True):
                 export_regression(output, runtime, scenario, self.reports.read(run_id))
+        self.db.save_test(run_id, task_id, owner, row["project_id"], project.identity(),
+                          task.model_dump_json())
         return output
+
+    def task_view(self, row):
+        """Publish export eligibility without producing files or running requests."""
+        summary = row["summary"]
+        runs = [summary["run_id"]] if summary.get("run_id") else []
+        runs += [c["run_id"] for c in summary.get("cases", []) if c.get("run_id")]
+        exports = {}
+        try:
+            current_project = (self.project(row["project_id"])
+                               if row["status"] == "FINISHED" else None)
+        except (ValueError, OSError, KeyError):
+            current_project = None
+        for run_id in runs:
+            try:
+                asset = (self.saved.asset(row, run_id, current_project=current_project)
+                         if row["status"] == "FINISHED" and current_project else None)
+            except (KeyError, ValueError, OSError):
+                asset = None
+            reason = "仅完整通过且满足固定复测条件的场景可以保存。"
+            available = False
+            if row["status"] == "FINISHED" and asset:
+                scenario, _, project = asset
+                if (summary.get("mode") == "MODEL_DESIGNED"
+                        and not self.saved.executable(project, scenario)):
+                    reason = "写入场景尚缺完整的数据准备与清理控制，当前不开放固定复测。"
+                elif any(s.upload or s.poll or s.read_retries for s in scenario.steps):
+                    reason = "此场景含上传、轮询或读取重试，暂不支持固定回归导出。"
+                else:
+                    try:
+                        available = current_project.identity() == project.identity()
+                    except (ValueError, OSError, KeyError):
+                        available = False
+                    reason = "" if available else "项目配置已变化，请重新执行独立测试后导出。"
+            if self.saved.missing_negative(row, run_id):
+                available = False
+                reason = "此场景没有实际受控异常检查，不能保存为异常测试。"
+            exports[run_id] = dict(available=available, reason=reason)
+        summary["exports"] = exports
+        if summary.get("mode") == "MODEL_DESIGNED":
+            try:
+                record = self.intake.record(row["project_id"])
+                answers = {a.get("source_question"): a for op in
+                    record.get("generic", {}).get("operations", [])
+                    for a in op.get("access_checks", []) if a.get("source_question")}
+                for question in summary.get("questions", []):
+                    answer = answers.get(question["id"])
+                    if answer and answer["role"] == question.get("role"):
+                        question["confirmed_statuses"] = answer["statuses"]
+            except (ValueError, KeyError, OSError):
+                pass
+        return row
 
     async def close(self):
         self._shutting_down = True

@@ -1,7 +1,10 @@
 """Strict, explicit OpenAPI request-schema subset; no silent partial validation."""
 
 import math
+import re
+from datetime import date, datetime
 from typing import Any
+from uuid import UUID
 
 from agenttest.contracts import Operation
 from agenttest.diagnostics import Layer, ValidationFailure
@@ -23,13 +26,15 @@ def supported_schema(schema: Any, depth: int = 0) -> None:
         "object", "array", "string", "integer", "number", "boolean", "null",
     }:
         raise NeedsReview("UNSUPPORTED_REQUEST_TYPE")
-    if schema.get("format") not in {None, "binary", "password", "int32", "int64"}:
+    text_formats = {"binary", "password", "uuid", "email", "date", "date-time"}
+    if schema.get("format") not in {None, *text_formats, "int32", "int64", "float", "double"}:
         raise NeedsReview("UNSUPPORTED_REQUEST_FORMAT")
     if ("contentMediaType" in schema
             and (kind != "string" or schema["contentMediaType"] != "application/octet-stream")):
         raise NeedsReview("UNSUPPORTED_CONTENT_MEDIA_TYPE")
     if ((schema.get("format") in {"int32", "int64"} and kind != "integer")
-            or (schema.get("format") in {"binary", "password"} and kind != "string")):
+            or (schema.get("format") in text_formats and kind != "string")
+            or (schema.get("format") in {"float", "double"} and kind != "number")):
         raise NeedsReview("UNSUPPORTED_REQUEST_FORMAT_TYPE")
     applicability = {
         "properties": {"object"}, "required": {"object"}, "additionalProperties": {"object"},
@@ -109,6 +114,8 @@ def validate_value(value: Any, schema: dict) -> None:
             raise ValidationFailure(
                 Layer.OPENAPI, "OPENAPI_VALUE_LENGTH",
                 "Request length outside bounds")
+    if kind == "string":
+        validate_string_format(value, schema.get("format"))
     if kind in {"number", "integer"}:
         for bound, direction in (("minimum", -1), ("maximum", 1)):
             limit = schema.get(bound)
@@ -130,6 +137,27 @@ def validate_value(value: Any, schema: dict) -> None:
                 raise ValidationFailure(
                     Layer.OPENAPI, "OPENAPI_VALUE_FORMAT_BOUND",
                     "Request integer outside format bounds")
+
+
+def validate_string_format(value: str, format_name: str | None) -> None:
+    """Validate common scalar formats locally; never resolve a host or load content."""
+    valid = True
+    try:
+        if format_name == "uuid":
+            valid = str(UUID(value)) == value.lower()
+        elif format_name == "email":
+            valid = bool(re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value))
+        elif format_name == "date":
+            valid = bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", value))
+            date.fromisoformat(value)
+        elif format_name == "date-time":
+            valid = bool(re.fullmatch(
+                r"\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})", value))
+            datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
+    except ValueError:
+        valid = False
+    if not valid:
+        raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_FORMAT", "Invalid request format")
 
 
 def request_schemas(operation: Operation, media: str | None) -> tuple[dict, dict | None]:

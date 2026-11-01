@@ -1,0 +1,304 @@
+{
+  "version": "testing-colleague-final-v12",
+  "evidence_folder": "acceptance-v12",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9 with directory reference error; v5:4/9; v6:1/9; v7:3 passed,2 failed,1 interrupted,3 not started. Preserve originals; no rescoring or replay. v8:8/9,24 calls,187181 known tokens; later explicit-literal gap recorded separately. No rescoring. v9:7/9,23 calls,143568 known tokens; unnecessary negative setup and partial-scope interruption retained. No rescoring. v10:7/9,24 calls,132658 known tokens; source-question ownership and typed exact-value failures preserved. Full offline interrupted at1185 reports of1978, not a pass. No rescoring. v11:5/9,22 calls,136207 known tokens; omitted literal/normal reads, duplicate facts and old unextracted source failures preserved. Full1971PASS/15SKIP/1 workflow-timeout; no rescoring.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "新建一件名称“鹿鸣收件”、数量1、标签依次amber和green、关闭跟踪的包裹，读回。先局部改名为“鹿鸣暂记”并读回，再完整替换成名称“鹿鸣定稿”、数量3、标签依次blue和amber、开启跟踪，读回后删除这件新包裹。另分别检查创建时漏quantity、quantity原样使用字符串“umber_units_731”、名称长度25，依据文档422。只创建这一件成功包裹，不检查服务状态。",
+      "oracle": "Exactly one positivecreate鹿鸣收件/1/[amber,green]/false,GET,PATCH鹿鸣暂记,GET,PUT鹿鸣定稿/3/[blue,amber]/true,GET,DELETE same resource. Three422 missingquantity/exact umber_units_731/name25. No unrelated setup. AllPASS complete emptytarget.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "鹿鸣收件"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            1
+          ],
+          "invalid_values": [
+            "umber_units_731"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber",
+                "green"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "鹿鸣定稿"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            3
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "amber"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "鹿鸣暂记"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "createParcel",
+          "slot": "body",
+          "name": "quantity",
+          "value": "umber_units_731"
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "owner登录后安排周一预约，座位依次2、5。标题暂有“清泉会谈”和“云泉会谈”两个选项，请先让我选择，不要替我定；选定后owner创建、读回、删除本轮新预约。reader查看别人预约应该403还是404尚未确认，也请具体提问，独立owner部分先测。不检查服务状态。",
+      "answer": 403,
+      "followup": "按已确认的403继续：owner登录，新建标题“清泉回访”的周二预约，座位依次4、6；owner先读回，reader读取同一新预约检查拒绝，owner再读一次确认自己仍能访问，最后owner删除。不要重复询问已确认规则，服务状态不测。",
+      "oracle": "Initial ambiguity retained, zero reservationPOST, UIchooses清泉会谈. Supplement preservesMonday/[2,5], ownerlogin/create/read/delete, reader0HTTP, actionable403/404 question. UIconfirm403 noHTTP. FollowupTuesday清泉回访/[4,6]:ownerlogin/create/ownerread/reader403/ownerread/delete same resource. No repeatedquestion, exactonecreate, emptytarget.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "清泉会谈",
+            "云泉会谈",
+            "清泉回访"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Monday",
+            "Tuesday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              2,
+              5
+            ],
+            [
+              4,
+              6
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ],
+      "input_choice": "清泉会谈",
+      "initial_body": {
+        "title": "清泉会谈",
+        "slot": {
+          "day": "Monday",
+          "seats": [
+            2,
+            5
+          ]
+        }
+      }
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=3、active=false、order=desc；正常读取第31个目录，limit=2、active=true、order=asc。第7个另分别原样用active字符串“mist_toggle_731”和order枚举外字符串“spiral_sort_731”；第31个另分别用limit=-7与limit=11，逐项核验文档422。第31个返回items至少该有几项还没有业务依据，请具体问我，已有正常和异常检查继续。也查服务可用状态。受限配置缺测试身份，请指出需要补什么。其他目录、附件上传和长导出不测。",
+      "oracle": "48denominator45ready1missing2unsupported. Positive7:3,false,desc;31:2,true,asc;availabilityfault. Four exact422 mist_toggle_731/spiral_sort_731/-7/11,4/4, no default substitute. Two questions privateidentity and readSection31 itemsminimum source. All knownnormal checks execute, fault200wrongstate+boundedprobe. Save exactnegative/restart0model/sourceid/configstale.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            3
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ],
+          "invalid_values": [
+            "mist_toggle_731"
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ],
+          "invalid_values": [
+            "spiral_sort_731"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            2
+          ],
+          "statuses": [
+            200,
+            422
+          ],
+          "invalid_values": [
+            -7,
+            11
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ]
+        }
+      ],
+      "literal_checks": [
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "active",
+          "value": "mist_toggle_731"
+        },
+        {
+          "operation_id": "readSection7",
+          "slot": "query",
+          "name": "order",
+          "value": "spiral_sort_731"
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": -7
+        },
+        {
+          "operation_id": "readSection31",
+          "slot": "query",
+          "name": "limit",
+          "value": 11
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

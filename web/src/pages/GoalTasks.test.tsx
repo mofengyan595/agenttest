@@ -7,6 +7,112 @@ import type { GoalTask } from "../api/tasks";
 
 const response = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status });
+
+test("cancelled result appears after reload while the full project catalog is still loading", async () => {
+  const cancelled: GoalTask = {
+    id: "c".repeat(32), project_id: "web_cancelled", project_identity: "v1",
+    request_sha256: "d".repeat(64), status: "CANCELLED", plan_version: 1, created_at: 1,
+    summary: {mode: "MODEL_DESIGNED", complete: false, reason: "已停止后续动作；证据保留。",
+      cases: [], questions: []},
+  };
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({csrf_token: "local"});
+    if (url === "/api/projects" || url === "/api/project-intake") return new Promise<Response>(() => {});
+    if (url === "/api/tasks") return response({tasks: [cancelled]});
+    if (url === `/api/tasks/${cancelled.id}`) return response(cancelled);
+    if (url === "/api/saved-tests") return response({tests: []});
+    if (url.endsWith("/timeline")) return response({events: []});
+    throw new Error("Unexpected request");
+  }));
+  render(<MemoryRouter initialEntries={[`/tasks?task=${cancelled.id}`]}><GoalTasks /></MemoryRouter>);
+  expect(await screen.findByRole("region", {name: "本轮测试结果"}))
+    .toHaveTextContent("本轮停止原因：已停止后续动作；证据保留。");
+  expect(screen.queryByText(/当前本地会话无法读取此任务/)).not.toBeInTheDocument();
+  expect(screen.getByText("接口测试记录")).toBeVisible();
+  expect(screen.queryByText("web_cancelled")).not.toBeInTheDocument();
+});
+
+test("saved tests load independently of a slow project intake catalog", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({ csrf_token: "local" });
+    if (url === "/api/projects") return new Promise<Response>(() => {});
+    if (url === "/api/tasks") return response({ tasks: [] });
+    if (url === "/api/project-intake") return new Promise<Response>(() => {});
+    if (url === "/api/saved-tests") return response({ tests: [{
+      task_id: "a".repeat(32), run_id: "b".repeat(32), project_id: "web_new",
+      project_name: "新项目", available: true, reason: "独立只读检查",
+    }] });
+    throw new Error("Unexpected request");
+  }));
+  render(<MemoryRouter><GoalTasks savedOnly /></MemoryRouter>);
+  expect(await screen.findByRole("button", {name: "再次运行固定测试"})).toBeEnabled();
+  expect(screen.getByText("新项目")).toBeVisible();
+  expect(screen.queryByText(/还没有可选项目/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/尚未保存固定测试/)).not.toBeInTheDocument();
+});
+
+test("a new product project starts without a memorized sentence and prevents repeat clicks while running", async () => {
+  const pending = {
+    id: "a".repeat(32),
+    project_id: "web_new",
+    project_identity: "v1",
+    request_sha256: "b".repeat(64),
+    status: "QUEUED",
+    plan_version: 1,
+    created_at: 1,
+    summary: {
+      mode: "MODEL_DESIGNED",
+      cases: [],
+      questions: [],
+      complete: false,
+    },
+  };
+  const fetcher = vi
+    .fn()
+    .mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/task-session") return response({ csrf_token: "local" });
+      if (url === "/api/projects")
+        return response({
+          projects: [
+            {
+              id: "web_new",
+              identity: "v1",
+              name: "新项目",
+              ready: true,
+              testing_mode: "MODEL_DESIGNED",
+            },
+          ],
+        });
+      if (url === "/api/project-intake")
+        return response({
+          projects: [],
+          profiles: [],
+          model_source: "CONFIGURED_MODEL",
+          execution_target: "AUTHORIZED_TEST_ENVIRONMENT",
+        });
+      if (url === "/api/tasks" && init?.method === "GET")
+        return response({ tasks: [] });
+      if (url.endsWith("/timeline")) return response({ events: [] });
+      if (url === "/api/saved-tests") return response({ tests: [] });
+      return response(pending);
+    });
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <MemoryRouter>
+      <GoalTasks />
+    </MemoryRouter>,
+  );
+  await screen.findByLabelText("测试重点（可选）");
+  const start = screen.getByRole("button", { name: "开始一轮测试" });
+  expect(start).toBeEnabled();
+  await userEvent.click(start);
+  await waitFor(() => expect(start).toBeDisabled());
+  const submits = fetcher.mock.calls.filter(
+    ([url, init]) => url === "/api/tasks" && init?.method === "POST",
+  );
+  expect(submits).toHaveLength(1);
+  expect(JSON.parse(submits[0][1].body as string).user_task).toBe("");
+});
 const task = {
   id: "a".repeat(32),
   project_id: "tickets",
@@ -63,7 +169,8 @@ test("registered project text submits session protected and shows actual evidenc
   ).toHaveLength(1);
   await userEvent.type(screen.getByLabelText("测试需求"), "测试创建工单接口");
   await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
-  expect(await screen.findByText("PASS")).toBeInTheDocument();
+  expect(await screen.findByText("本次需求已完成")).toBeInTheDocument();
+  expect(screen.getByText("检查通过")).toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: "查看业务、模型与规则证据" }),
   ).toHaveAttribute("href", `/runs/${"d".repeat(32)}`);
@@ -121,7 +228,7 @@ test("unconfigured task service does not offer an enabled execution button", asy
       <GoalTasks />
     </MemoryRouter>,
   );
-  expect(await screen.findByRole("alert")).toHaveTextContent("任务服务未启用");
+  expect(await screen.findByRole("alert")).toHaveTextContent("测试服务未启用");
   expect(screen.getByRole("button", { name: "开始测试" })).toBeDisabled();
   expect(screen.queryByText(/hidden-secret/)).not.toBeInTheDocument();
 });
@@ -227,4 +334,79 @@ test("structured goal drafts remain visibly unverified with unexplained requirem
   expect(screen.getByText(/5 个非空白字符未被解释/)).toBeInTheDocument();
   expect(screen.getByText("请明确退款预期。")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "补充澄清" })).toBeInTheDocument();
+});
+
+test("new demand after a fixed regression starts an independent task", async () => {
+  const fetcher = setup("FINISHED", {
+    ...task,
+    summary: {
+      mode: "FIXED_REGRESSION",
+      fixed_regression_passed: true,
+      model_source: "DISABLED",
+    },
+  });
+  await screen.findByRole("option", { name: "tickets" });
+  await userEvent.type(screen.getByLabelText("测试需求"), "创建工单");
+  await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
+  expect(await screen.findByText("固定回归检查通过")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "新建测试需求" }));
+  expect(screen.getByLabelText("测试需求")).toHaveValue("");
+  await userEvent.type(screen.getByLabelText("测试需求"), "查询工单");
+  await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
+  const requests = fetcher.mock.calls.filter(
+    ([url, init]) => url === "/api/tasks" && init?.method === "POST",
+  );
+  expect(JSON.parse(requests.at(-1)?.[1].body)).toMatchObject({
+    parent_task_id: null,
+    user_task: "查询工单",
+  });
+});
+
+test("requested result does not wait for complete history or a cold project catalog", async () => {
+  const task: GoalTask = {
+    id: "e".repeat(32), project_id: "web_large", project_identity: "v1",
+    request_sha256: "f".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {mode: "MODEL_DESIGNED", complete: false, cases: [],
+      questions: [{id: "missing", operation_id: "private", question: "请补充测试身份。",
+        requested_behavior: "需要测试身份", kind: "clarification", role: null, status_choices: []}]},
+  };
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({csrf_token: "local"});
+    if (url === `/api/tasks/${task.id}`) return response(task);
+    if (url.endsWith("/timeline")) return response({events: []});
+    if (url === "/api/saved-tests") return response({tests: []});
+    if (["/api/tasks", "/api/projects", "/api/project-intake"].includes(url))
+      return new Promise<Response>(() => {});
+    throw new Error("Unexpected request");
+  }));
+  render(<MemoryRouter initialEntries={[`/tasks?task=${task.id}`]}><GoalTasks /></MemoryRouter>);
+  expect(await screen.findByRole("region", {name: "本轮测试结果"}))
+    .toHaveTextContent("请补充测试身份。");
+  expect(screen.queryByText("提交或选择任务后查看执行范围与结果。"))
+    .not.toBeInTheDocument();
+});
+
+
+test("an old complete flag cannot hide a known unexecuted negative scenario", async () => {
+  const old: GoalTask = {
+    id: "e".repeat(32), project_id: "web_old", project_identity: "v1",
+    request_sha256: "f".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {mode: "MODEL_DESIGNED", complete: true, checks_passed: true, cases: [{
+      case_id: "one", title: "错误参数检查", operation_id: "read", status: "FINISHED",
+      outcome: "PASS", max_business_requests: 1, kinds: ["negative"], approved_negative_steps: 0}]},
+  };
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({csrf_token: "local"});
+    if (url === "/api/projects") return response({projects: []});
+    if (url === "/api/project-intake") return response({projects: [], profiles: []});
+    if (url === "/api/tasks") return response({tasks: [old]});
+    if (url === `/api/tasks/${old.id}`) return response(old);
+    if (url === "/api/saved-tests") return response({tests: []});
+    if (url.endsWith("/timeline")) return response({events: []});
+    throw new Error("Unexpected request");
+  }));
+  render(<MemoryRouter initialEntries={[`/tasks?task=${old.id}`]}><GoalTasks /></MemoryRouter>);
+  expect(await screen.findByRole("heading", {name: "本次未全部完成"})).toBeVisible();
+  expect(screen.queryByRole("heading", {name: "本轮方案执行完成"})).not.toBeInTheDocument();
+  expect(screen.getByText(/1 项方案标为异常场景/)).toBeVisible();
 });

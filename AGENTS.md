@@ -17,6 +17,34 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-10-26 testing-colleague Goal supersedes related product freezes. Follow
+docs/testing-colleague-goal.md: complete five stages and fresh three-round real-model
+acceptance through the normal web UI on three new documented loopback projects,
+including 40+ operations. All necessary configured-model calls and isolated self-built
+target CRUD are authorized; no Goal-wide call/token ceiling. Keep per-task budgets,
+historical evidence and existing uncommitted work. The operator later explicitly allowed
+future unknown-usage continuation for this Goal; preserve UNKNOWN and each timeout,
+record the authority separately, and never estimate or replace missing usage. Product
+defaults still stop unknown usage for other operators. No multi-agent,
+RAG, branches/worktrees, commit/push, CourseInsight changes or real business writes.
+
+### Prior product milestone (preserved)
+The 2026-10-26 operator requests an actual product and authorizes completing generic
+intake first; the operator will supply the real target environment later. Use real
+configured model planning in the normal web workspace; keep simulation explicit and
+separate. Implement contract-driven, operator-reviewed operations, inputs, credentials
+aliases, dependencies and assertions without matching built-in business profiles.
+Necessary product source/configuration and bounded real-model acceptance calls are
+authorized by this request; do not reopen any historical paid evaluation schedule.
+The user then explicitly said "批准所有真实模型调用" on 2026-10-26. Model calls
+within the authorized product work do not need repeated approval; retain per-task
+budgets and stop on unknown usage. The first live product task passed with one
+ecnu-plus call / 1197 reported tokens / two actual loopback HTTP requests.
+No branch/worktree, commit/push, production access, real Java/PocketBase writes,
+generated runtime code, weakened assertions, rejected-plan repair or write replay.
+Preserve the existing uncommitted web-intake work. See docs/product-intake-goal.md.
+
+### Previous milestone (frozen)
 The 2026-10-23 plan-reuse Goal engineering and its only frozen 36-position real
 schedule are complete. See docs/plan-reuse-final-results.md: baseline2/18,
 candidate9/18 (eligible9/15), candidate projects3/6, approved negatives85/105;

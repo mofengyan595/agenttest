@@ -105,10 +105,21 @@ test("OpenAPI file import handles selection and oversize without sending a reque
   expect(screen.getByRole("alert")).toHaveTextContent("超过 1 MB");
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
-test("workbench has no execute button and draft does not write browser storage", async () => {
+test("first visit guides project intake and exposes three destinations", async () => {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(json({ status: "ok", items: [], total: 0 })),
+    vi.fn().mockImplementation(async (url: string) =>
+      json(
+        url === "/api/project-intake"
+          ? {
+              projects: [],
+              profiles: [],
+              model_source: "SIMULATED",
+              execution_target: "SYNTHETIC_MEMORY",
+            }
+          : { status: "ok", csrf_token: "local" },
+      ),
+    ),
   );
   const store = vi.spyOn(Storage.prototype, "setItem");
   render(
@@ -116,13 +127,20 @@ test("workbench has no execute button and draft does not write browser storage",
       <App />
     </MemoryRouter>,
   );
-  await userEvent.type(
-    screen.getByLabelText("自然语言测试目标"),
-    "验证资源属性",
+  expect(await screen.findByText(/还没有接入项目/)).toBeInTheDocument();
+  expect(screen.getByLabelText("项目名称")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "项目" })).toHaveAttribute(
+    "href",
+    "/",
   );
-  await userEvent.click(screen.getByRole("link", { name: "历史测试报告" }));
-  await userEvent.click(screen.getByRole("link", { name: "测试工作台" }));
-  expect(screen.getByLabelText("自然语言测试目标")).toHaveValue("验证资源属性");
+  expect(screen.getByRole("link", { name: "当前测试" })).toHaveAttribute(
+    "href",
+    "/tasks",
+  );
+  expect(screen.getByRole("link", { name: "结果" })).toHaveAttribute(
+    "href",
+    "/runs",
+  );
   expect(store).not.toHaveBeenCalled();
   expect(
     screen.queryByRole("button", { name: "开始测试" }),

@@ -33,6 +33,23 @@ class TaskStore:
                 CREATE TABLE IF NOT EXISTS task_events (
                     sequence INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT NOT NULL,
                     phase TEXT NOT NULL, run_id TEXT, requests INTEGER NOT NULL);
+                CREATE INDEX IF NOT EXISTS task_events_by_task
+                    ON task_events(task_id, sequence);
+                CREATE TABLE IF NOT EXISTS saved_tests (
+                    run_id TEXT PRIMARY KEY, task_id TEXT NOT NULL, owner TEXT NOT NULL,
+                    project_id TEXT NOT NULL, identity TEXT NOT NULL, contract TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS task_context (
+                    task_id TEXT PRIMARY KEY, owner TEXT NOT NULL, payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS model_usage_journal (
+                    id TEXT PRIMARY KEY, task_id TEXT NOT NULL, state TEXT NOT NULL,
+                    stats TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS model_usage_reconciliations (
+                    call_id TEXT PRIMARY KEY, at REAL NOT NULL, evidence TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS model_usage_exceptions (
+                    call_id TEXT PRIMARY KEY, at REAL NOT NULL, authorization TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS product_assets (
+                    run_id TEXT PRIMARY KEY, task_id TEXT NOT NULL, identity TEXT NOT NULL,
+                    payload TEXT NOT NULL);
             """)
 
     def interrupt_unfinished(self):
@@ -80,11 +97,16 @@ class TaskStore:
 
     def get(self, task_id, owner):
         with self.connect() as db:
-            row = db.execute("SELECT * FROM tasks WHERE id=? AND owner=?",
-                             (task_id, owner)).fetchone()
+            row = self._owned_row(db, task_id, owner)
+        return self.public(row)
+
+    @staticmethod
+    def _owned_row(db, task_id, owner):
+        row = db.execute("SELECT * FROM tasks WHERE id=? AND owner=?",
+                         (task_id, owner)).fetchone()
         if row is None:
             raise KeyError("TASK_NOT_FOUND")
-        return self.public(row)
+        return row
 
     def list(self, owner):
         with self.connect() as db:
@@ -105,7 +127,8 @@ class TaskStore:
                 " WHERE id=? AND owner=? AND state=? AND version=?", values)
             if result.rowcount != 1:
                 raise TaskConflict("TASK_STATE_OR_VERSION_CONFLICT")
-        return self.get(task_id, owner)
+            row = self._owned_row(db, task_id, owner)
+        return self.public(row)
 
     def event(self, task_id, phase, *, run_id=None, requests=0):
         if phase not in STATES | {"PLANNING", "VALIDATING", "EXECUTING", "REPORT"}:
@@ -118,12 +141,142 @@ class TaskStore:
                            (task_id, phase, run_id, requests))
 
     def events(self, task_id, owner, after=0):
-        self.get(task_id, owner)
         with self.connect() as db:
+            self._owned_row(db, task_id, owner)
             rows = db.execute("SELECT sequence,phase,run_id,requests FROM task_events "
                 "WHERE task_id=? AND sequence>? ORDER BY sequence LIMIT 100",
                 (task_id, after)).fetchall()
         return [dict(row) for row in rows]
+
+    def save_test(self, run_id, task_id, owner, project_id, identity, contract):
+        with self.connect() as db:
+            self._owned_row(db, task_id, owner)
+            db.execute("INSERT OR IGNORE INTO saved_tests VALUES (?,?,?,?,?,?)",
+                       (run_id, task_id, owner, project_id, identity, contract))
+
+    def saved_tests(self, owner):
+        with self.connect() as db:
+            rows = db.execute("SELECT run_id,task_id,project_id,identity FROM saved_tests "
+                              "WHERE owner=? ORDER BY rowid DESC LIMIT 100", (owner,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def saved_test(self, task_id, run_id):
+        with self.connect() as db:
+            row = db.execute("SELECT * FROM saved_tests WHERE task_id=? AND run_id=?",
+                             (task_id, run_id)).fetchone()
+        if row is None:
+            raise KeyError("SAVED_TEST_NOT_FOUND")
+        return dict(row)
+
+    def save_context(self, task_id, owner, payload):
+        """Only caller-validated, secret-free product context; never HTTP bodies or credentials."""
+        with self.connect() as db:
+            self._owned_row(db, task_id, owner)
+            db.execute("INSERT INTO task_context VALUES (?,?,?) ON CONFLICT(task_id) "
+                       "DO UPDATE SET payload=excluded.payload", (
+                           task_id, owner, json.dumps(payload, ensure_ascii=False)))
+
+    def context(self, task_id, owner):
+        with self.connect() as db:
+            self._owned_row(db, task_id, owner)
+            row = db.execute("SELECT payload FROM task_context WHERE task_id=? AND owner=?",
+                             (task_id, owner)).fetchone()
+        if row is None:
+            raise TaskConflict("TASK_CONTEXT_UNAVAILABLE")
+        return json.loads(row[0])
+
+    def model_usage_blocked(self):
+        with self.connect() as db:
+            return self._usage_blocked(db)
+
+    @staticmethod
+    def _usage_blocked(db):
+        return db.execute("SELECT 1 FROM model_usage_journal j WHERE state IN "
+            "('PENDING','UNKNOWN') AND NOT EXISTS (SELECT 1 FROM model_usage_reconciliations r "
+            "WHERE r.call_id=j.id) AND NOT EXISTS (SELECT 1 FROM model_usage_exceptions e "
+            "WHERE e.call_id=j.id) LIMIT 1").fetchone() is not None
+
+    def begin_model_call(self, call_id, task_id):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if self._usage_blocked(db):
+                raise TaskConflict("MODEL_USAGE_REQUIRES_RECONCILIATION")
+            db.execute("INSERT INTO model_usage_journal VALUES (?,?,?,?)",
+                       (call_id, task_id, "PENDING", "{}"))
+
+    def finish_model_call(self, call_id, stats):
+        state = ("NOT_SENT" if stats.calls == 0 else
+                 "KNOWN" if stats.total_tokens is not None else "UNKNOWN")
+        with self.connect() as db:
+            db.execute("UPDATE model_usage_journal SET state=?,stats=? WHERE id=?",
+                       (state, stats.model_dump_json(), call_id))
+
+    def reconcile_model_usage(self, evidence):
+        """Operator-only receipt reconciliation; original unknown evidence stays immutable."""
+        from agenttest.usage_reconciliation import ProviderUsageReceipt
+
+        receipt = ProviderUsageReceipt.model_validate(evidence)
+        public = receipt.model_dump()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            call = db.execute("SELECT * FROM model_usage_journal WHERE id=?",
+                              (receipt.call_id,)).fetchone()
+            if (call is None or call["state"] != "UNKNOWN"
+                    or call["task_id"] != receipt.task_id
+                    or json.loads(call["stats"]).get("request_sha256") != receipt.request_sha256):
+                raise TaskConflict("USAGE_RECEIPT_CALL_MISMATCH")
+            task = db.execute("SELECT state FROM tasks WHERE id=?", (receipt.task_id,)).fetchone()
+            if task is None or task["state"] not in TERMINAL:
+                raise TaskConflict("USAGE_RECEIPT_TASK_STILL_ACTIVE")
+            old = db.execute("SELECT evidence FROM model_usage_reconciliations WHERE call_id=?",
+                             (receipt.call_id,)).fetchone()
+            if old:
+                if json.loads(old[0]) != public:
+                    raise TaskConflict("USAGE_RECEIPT_ALREADY_RECORDED")
+                return public
+            db.execute("INSERT INTO model_usage_reconciliations VALUES (?,?,?)",
+                       (receipt.call_id, time.time(), json.dumps(public, ensure_ascii=False)))
+        return public
+
+    def record_usage_exception(self, authorization):
+        """A new explicit human exception is separate from evidence of known usage."""
+        from agenttest.usage_reconciliation import UnknownUsageException
+
+        approved = UnknownUsageException.model_validate(authorization)
+        public = approved.model_dump()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            call = db.execute("SELECT * FROM model_usage_journal WHERE id=?",
+                              (approved.call_id,)).fetchone()
+            if (call is None or call["state"] != "UNKNOWN"
+                    or call["task_id"] != approved.task_id
+                    or json.loads(call["stats"]).get("request_sha256") != approved.request_sha256):
+                raise TaskConflict("USAGE_EXCEPTION_CALL_MISMATCH")
+            task = db.execute("SELECT state FROM tasks WHERE id=?", (approved.task_id,)).fetchone()
+            if task is None or task["state"] not in TERMINAL:
+                raise TaskConflict("USAGE_EXCEPTION_TASK_STILL_ACTIVE")
+            old = db.execute("SELECT authorization FROM model_usage_exceptions WHERE call_id=?",
+                             (approved.call_id,)).fetchone()
+            if old:
+                if json.loads(old[0]) != public:
+                    raise TaskConflict("USAGE_EXCEPTION_ALREADY_RECORDED")
+                return public
+            db.execute("INSERT INTO model_usage_exceptions VALUES (?,?,?)",
+                       (approved.call_id, time.time(), json.dumps(public, ensure_ascii=False)))
+        return public
+
+    def save_product_asset(self, run_id, task_id, identity, payload):
+        with self.connect() as db:
+            db.execute("INSERT INTO product_assets VALUES (?,?,?,?)", (
+                run_id, task_id, identity, json.dumps(payload, ensure_ascii=False)))
+
+    def product_asset(self, task_id, run_id):
+        with self.connect() as db:
+            row = db.execute("SELECT identity,payload FROM product_assets "
+                             "WHERE run_id=? AND task_id=?", (run_id, task_id)).fetchone()
+        if row is None:
+            raise KeyError("PRODUCT_ASSET_NOT_FOUND")
+        return row["identity"], json.loads(row["payload"])
 
 
 class ServiceLease:

@@ -28,6 +28,10 @@ from agenttest.safety import TargetConfig
     ({"type": "array", "items": {"type": "integer"}, "minItems": 1}, []),
     ({"type": "array", "items": {"type": "integer"}}, ["a"]),
     ({"type": "string", "nullable": True, "enum": ["a"]}, None),
+    ({"type": "string", "format": "uuid"}, "arbitrary-id"),
+    ({"type": "string", "format": "email"}, "not-an-address"),
+    ({"type": "string", "format": "date"}, "2027-02-30"),
+    ({"type": "string", "format": "date-time"}, "2027-01-02T12:00:00"),
 ])
 def test_common_constraints_reject_invalid_values(schema, value):
     with pytest.raises(ValueError):
@@ -39,6 +43,10 @@ def test_common_constraints_reject_invalid_values(schema, value):
     ({"type": "number", "exclusiveMinimum": 1, "exclusiveMaximum": 2}, 1.5),
     ({"type": "string", "minLength": 1, "maxLength": 2, "enum": ["中"]}, "中"),
     ({"type": "boolean"}, False), ({"type": "string", "nullable": True}, None),
+    ({"type": "string", "format": "uuid"}, "00000000-0000-4000-8000-000000000001"),
+    ({"type": "string", "format": "email"}, "tester@example.invalid"),
+    ({"type": "string", "format": "date"}, "2027-01-02"),
+    ({"type": "string", "format": "date-time"}, "2027-01-02T12:00:00+08:00"),
     ({"type": "object", "properties": {"x": {"type": "array", "items": {"type": "integer"}}},
       "required": ["x"], "additionalProperties": False}, {"x": [1, 2]}),
 ])
@@ -48,7 +56,7 @@ def test_valid_boundaries_and_nested_values(schema, value):
 
 @pytest.mark.parametrize("schema", [
     {}, {"type": ["string", "null"]}, {"oneOf": [{"type": "string"}]},
-    {"type": "string", "pattern": "a+"}, {"type": "string", "format": "email"},
+    {"type": "string", "pattern": "a+"}, {"type": "string", "format": "unknown-format"},
     {"type": "object", "additionalProperties": True},
     {"type": "object", "properties": {"nested": {"anyOf": []}}},
     {"type": "string", "minimum": 1},

@@ -109,6 +109,12 @@ class CSVUpload(StrictModel):
     content: str = Field(max_length=100_000)
 
 
+class NegativeValue(StrictModel):
+    """Ordinary JSON data; an override never supplies a field, policy or assertion."""
+
+    value: Any
+
+
 class Step(StrictModel):
     id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
     operation_id: str
@@ -120,6 +126,14 @@ class Step(StrictModel):
     policy_id: str | None = None
     poll: bool = False
     read_retries: int = Field(default=0, ge=0, le=2)
+    negative_value: NegativeValue | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_ordinary_plan(self, handler):
+        data = handler(self)
+        if self.negative_value is None:
+            data.pop("negative_value", None)
+        return data
 
 
 class Scenario(StrictModel):

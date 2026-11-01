@@ -1,0 +1,257 @@
+{
+  "version": "testing-colleague-final-v5",
+  "evidence_folder": "acceptance-v5",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9; v4:5/9, including invalid directory reference preconditions. No rescoring.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": [
+    "1:parcels",
+    "1:reservations",
+    "1:directory",
+    "2:parcels",
+    "2:reservations",
+    "2:directory",
+    "3:parcels",
+    "3:reservations",
+    "3:directory"
+  ],
+  "first_attempts": "One first attempt per position; no retries or source changes during schedule. Preserve failures and unexecuted steps. Contract preflight before model calls. Only current request/followup enters the product; oracles and reference preconditions remain outside.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "新建一个名称明确为“夏季转存”的包裹，数量2，标签按blue、green排列，开启跟踪。先读取，然后先完整替换为名称“转存定稿”、数量3、标签amber、关闭跟踪；接着局部更新名称为“转存已检”，再读取，最后删除本轮新包裹。创建时另外分别测试缺少数量、数量类型错误、名称超过24字，核对已批准的422。不检查服务状态。",
+      "oracle": "One same-resource create/read/PUT/read-after-PATCH/delete lifecycle. Exact create 夏季转存/2/[blue,green]/true; PUT 转存定稿/3/[amber]/false BEFORE PATCH 转存已检; final GET after PATCH. Three explicit approved422 checks execute 3/3, complete=true, no availability, records empty.",
+      "operation_denominator": 6,
+      "contract_requirements": [
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "夏季转存"
+          ],
+          "invalid_lengths": [
+            25
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            2
+          ],
+          "invalid_values": [
+            "wrong-type"
+          ],
+          "statuses": [
+            201,
+            422
+          ]
+        },
+        {
+          "operation_id": "createParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "blue",
+                "green"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "转存定稿"
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "quantity",
+          "valid_values": [
+            3
+          ]
+        },
+        {
+          "operation_id": "replaceParcel",
+          "location": "body",
+          "name": "meta",
+          "valid_values": [
+            {
+              "labels": [
+                "amber"
+              ],
+              "options": {
+                "tracked": false
+              }
+            }
+          ]
+        },
+        {
+          "operation_id": "changeParcel",
+          "location": "body",
+          "name": "name",
+          "valid_values": [
+            "转存已检"
+          ]
+        }
+      ]
+    },
+    {
+      "project": "reservations",
+      "request": "owner先登录，再创建标题明确为“验收交还”的周二预约，座位依次1、5。读取刚建的预约后删除。reader能不能读取他人预约还不知道，请问我应当403还是404；owner能独立完成的流程先执行。不测服务状态。",
+      "answer": 403,
+      "followup": "用刚确认的403规则继续：owner登录后创建标题明确为“交还核对”的周一预约，座位按4、6排列。reader读取同一个新预约验证拒绝，然后owner删除。不重复问已确认的问题，不检查服务状态。",
+      "oracle": "Owner login and exact Tuesday/验收交还/[1,5] create/read/delete. reader403/404 concrete question, zero reader HTTP before confirmation. Followup exact Monday/交还核对/[4,6], same-resource reader403 and owner cleanup, no repeated question, complete=true, records empty.",
+      "operation_denominator": 5,
+      "contract_requirements": [
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "title",
+          "valid_values": [
+            "验收交还",
+            "交还核对"
+          ],
+          "statuses": [
+            201
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            "Tuesday",
+            "Monday"
+          ],
+          "path": [
+            "day"
+          ]
+        },
+        {
+          "operation_id": "createReservation",
+          "location": "body",
+          "name": "slot",
+          "valid_values": [
+            [
+              1,
+              5
+            ],
+            [
+              4,
+              6
+            ]
+          ],
+          "path": [
+            "seats"
+          ]
+        },
+        {
+          "operation_id": "readReservation",
+          "location": "path_parameters",
+          "name": "reservationId",
+          "valid_values": [
+            "preflight-placeholder"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ]
+    },
+    {
+      "project": "directory",
+      "request": "正常读取第7个目录，limit=1、active=true、order=desc，再读取第31个目录，limit=2、active=false、order=asc。第7个另外测order枚举外的值；第31个分别测active类型错误、limit=0、limit=4，核对文档422。还要核验服务可用状态。受限配置还没有测试账号，请具体问我补什么，独立部分先执行。不测其他目录、上传和长时间导出。",
+      "oracle": "48 denominator45ready/1missing/2unsupported. Only sections7,31 and availability. Exact normal7:1,true,desc;31:2,false,asc. Four422 checks execute4/4:7orderenum,31activetype+limit0+4. One HTTP200 wrong-state assertion failure plus bounded read-only investigation. Concrete account question, zero private HTTP. Partial completion. Save readonly PASS, restart/replay0model, config change disables asset.",
+      "operation_denominator": 48,
+      "contract_requirements": [
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            1
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            true
+          ]
+        },
+        {
+          "operation_id": "readSection7",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "desc"
+          ],
+          "invalid_values": [
+            "__outside_enum__"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "limit",
+          "valid_values": [
+            2
+          ],
+          "invalid_values": [
+            0,
+            4
+          ],
+          "statuses": [
+            200,
+            422
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "active",
+          "valid_values": [
+            false
+          ],
+          "invalid_values": [
+            "wrong-type"
+          ]
+        },
+        {
+          "operation_id": "readSection31",
+          "location": "query",
+          "name": "order",
+          "valid_values": [
+            "asc"
+          ]
+        }
+      ]
+    }
+  ],
+  "require_contract_preflight": true
+}

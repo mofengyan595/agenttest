@@ -1,0 +1,31 @@
+{
+  "version": "testing-colleague-final-v4",
+  "evidence_folder": "acceptance-v4",
+  "classification": "FROZEN_ACCEPTANCE_UNREVIEWED",
+  "independent_human_review": false,
+  "prior_versions": "v1:5/9; v2:1/9; v3:1/9. Original requests, failures, unknown usage, source archives and scores remain unchanged.",
+  "new_tasks_unused_for_debugging": true,
+  "configured_model": "ecnu-max",
+  "startup_timeout_seconds": 90,
+  "order": ["1:parcels", "1:reservations", "1:directory", "2:parcels", "2:reservations", "2:directory", "3:parcels", "3:reservations", "3:directory"],
+  "first_attempts": "One first attempt per position, no retry. Preserve failures and unexecuted followups. No source/document changes during schedule. Only request/followup enters product context; oracles remain outside. This version explicitly quotes titles to remove the unlabelled title-boundary ambiguity in v3; it does not rescore v3 or claim to have solved every ambiguous expression.",
+  "tasks": [
+    {
+      "project": "parcels",
+      "request": "创建一个名称为“冬季盘库”的包裹，数量1，标签依次amber、blue，关闭跟踪。先读取，然后局部更新名称为“盘库已查”；再完整替换为名称“盘库终稿”、数量2、标签依次blue、green、开启跟踪。替换后再读一次，最后删除本轮这个新包裹。创建接口还要检查缺少数量、数量类型错误、名称超过24字三种情况，按已批准的422规则判断。服务状态不在本轮范围。",
+      "oracle": "6-operation denominator. Exactly one successful create 冬季盘库/1/[amber,blue]/false, same-resource GET/PATCH盘库已查/PUT盘库终稿,2,[blue,green],true/GET/DELETE in one case. Approved422 negatives quantity missing, wrong type, name length25. All cases finish PASS, complete=true, no availability call, target records empty."
+    },
+    {
+      "project": "reservations",
+      "request": "先由owner登录，创建标题明确为“冬季交班”的周二预约，座位按3、1排列，读取后删除本轮新预约。reader看别人预约应该返回403还是404还未确定，请具体问我；owner可以独立验证的先做。服务状态不用检查。",
+      "answer": 403,
+      "followup": "沿用刚确认的403规则。owner登录后新建标题明确为“春日复核”的周一预约，座位顺序5、2，reader读取同一条新预约检查拒绝，再由owner删除它。不要重复询问已确认的问题，也不要检查服务状态。",
+      "oracle": "5-operation denominator. Actual owner login, exact Tuesday/冬季交班/[3,1], owner read/delete. Concrete reader403/404 question, zero reader HTTP before UI confirmation. Followup exact Monday/春日复核/[5,2], same-resource reader403, owner delete, no repeated question, complete=true, target empty."
+    },
+    {
+      "project": "directory",
+      "request": "先正常读取第12个目录，limit=1、active=true、order=asc；再正常读取第38个，limit=2、active=false、order=desc。第12个还要分别测试active类型错误和order取枚举外的值；第38个分别传limit=0、limit=4，核对文档的422拒绝规则。再核验服务可用状态。受限配置没有测试账号，请具体问我补什么，其他部分先完成。不测其他目录、文件上传和异步导出。",
+      "oracle": "48-operation denominator:45ready/1missing/2unsupported. Exactly section12,38 and availability. Exact normal12:1,true,asc;38:2,false,desc. Section12 active type/order enum422; section38 limit0/4 both422. One HTTP200 wrong-state assertion failure plus bounded read-only probe. Concrete missing account question, zero private HTTP, accurate partial completion. Save PASS readonly, restart/replay0model, disable stale asset after config change."
+    }
+  ]
+}
