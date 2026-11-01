@@ -168,8 +168,14 @@ class SavedTests:
                 if svc.synthetic and not isinstance(transport, httpx.ASGITransport):
                     raise ValueError("IN_MEMORY_TARGET_REQUIRED")
                 bounded = GuardedSyntheticTransport(BudgetTransport(transport, ledger), guard)
-                store = ProgressStore(svc.reports.root, lambda phase, run, requests:
-                    svc.db.event(task_id, phase, run_id=run, requests=requests))
+                def progress(phase, run, requests):
+                    current = svc.db.get(task_id, owner)
+                    if current["summary"].get("run_id") != run:
+                        svc.db.transition(task_id, owner, "RUNNING", "RUNNING",
+                            summary=dict(current["summary"], run_id=run, model_source="DISABLED"))
+                    svc.db.event(task_id, phase, run_id=run, requests=requests)
+
+                store = ProgressStore(svc.reports.root, progress)
                 try:
                     report = await run_regression(directory, RegressionRuntime(project.document,
                         project.target, project.registry, contract, env, bounded, store))
@@ -194,6 +200,7 @@ class SavedTests:
         row = svc.db.get(task_id, owner)
         if row["status"] not in TERMINAL:
             svc.db.transition(task_id, owner, row["status"], status,
-                summary=dict(mode="FIXED_REGRESSION", reason="FIXED_RUN_STOPPED_NO_REPLAY",
+                summary=dict(row["summary"], mode="FIXED_REGRESSION",
+                             reason="FIXED_RUN_STOPPED_NO_REPLAY", model_source="DISABLED",
                              context_usage=svc._inputs[task_id][3].summary()))
             svc.db.event(task_id, status)

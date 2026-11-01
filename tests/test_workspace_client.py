@@ -1,5 +1,6 @@
 """Headless adapters use the actual task API with ASGI, no keys, sockets or Docker."""
 
+import asyncio
 import json
 from types import SimpleNamespace
 from uuid import uuid4
@@ -136,3 +137,60 @@ def test_workspace_origin_cannot_expand_targets(url):
     ("FINISHED", dict(complete=False, checks_passed=True), 2)])
 def test_ci_exit_code_preserves_failure_review_and_infrastructure(status, summary, code):
     assert task_exit_code(dict(status=status, summary=summary)) == code
+
+
+@pytest.mark.asyncio
+async def test_fixed_cancel_restart_keeps_owned_resource_without_replay(tmp_path, monkeypatch):
+    pytest.importorskip("langgraph")
+    entered, requests, blocked = asyncio.Event(), [], False
+
+    async def target(request):
+        requests.append(request.method)
+        if request.method == "POST":
+            return httpx.Response(201, json=dict(id="fresh_" + str(requests.count("POST"))))
+        if request.method == "DELETE":
+            return httpx.Response(204)
+        if blocked:
+            entered.set()
+            await asyncio.Event().wait()
+        return httpx.Response(200, json=dict(state="ready"))
+
+    monkeypatch.setattr(httpx, "AsyncHTTPTransport", lambda **_: httpx.MockTransport(target))
+    root = tmp_path / "workspace"
+    svc = service(root, lambda _: response(design()))
+    origin, session = "http://127.0.0.1:18120", tmp_path / "client/session.json"
+
+    def client(current):
+        return WorkspaceClient(origin, session, allow_model=True,
+            transport=httpx.ASGITransport(app=create_app(current.reports.root, task_service=current,
+                                                       allowed_origins=frozenset({origin}))))
+
+    try:
+        proj, setup = lifecycle_project()
+        saved = svc.intake.save(IntakeInput(name="固定取消", document=proj.document.decode(),
+            generic=setup, confirmed=True), "operator")
+        api = client(svc)
+        initial = await api.call("submit_test", dict(project_id=saved["id"], user_task="",
+                                                    submission_id=uuid4().hex))
+        done = (await api.wait(initial["data"]["id"], 30))["data"]
+        source, run = done["id"], done["summary"]["cases"][0]["run_id"]
+        assert (await api.call("save_test", dict(task_id=source, run_id=run)))["ok"]
+        blocked = True
+        repeated = await api.call("run_saved_test", dict(task_id=source, run_id=run,
+                                                        submission_id=uuid4().hex))
+        task = repeated["data"]["id"]
+        await asyncio.wait_for(entered.wait(), 10)
+        assert (await api.call("cancel_test", dict(task_id=task)))["ok"]
+        cancelled = (await api.call("task_status", dict(task_id=task)))["data"]
+        assert cancelled["status"] == "CANCELLED" and cancelled["summary"]["run_id"]
+        assert cancelled["summary"]["resource_lifecycle"][0]["resource_id"] == "fresh_2"
+        assert cancelled["summary"]["resource_lifecycle"][0]["status"] == "OWNED"
+        before = list(requests)
+        await svc.close()
+        svc = service(root, lambda _: pytest.fail("Restart cannot plan or replay"))
+        restarted = await client(svc).call("task_status", dict(task_id=task))
+        assert restarted["ok"] and restarted["data"]["status"] == "CANCELLED"
+        assert restarted["data"]["summary"]["resource_lifecycle"][0]["resource_id"] == "fresh_2"
+        assert not svc._workers and requests == before
+    finally:
+        await svc.close()

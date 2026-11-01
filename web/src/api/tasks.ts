@@ -1,4 +1,12 @@
 /** Task requests are same-origin, session-bound, and never accept target or credential fields. */
+export interface ResourceLifecycle {
+  create_step: string; cleanup_step: string; owner_run_id: string;
+  status: string; resource_id: string | number | null; cleanup_result: string;
+}
+export interface FailureExplanation {
+  mismatch: string; basis?: string; confirmed_observation: string;
+  cause_confirmed: boolean; uncertainty: string; next_action: string;
+}
 export interface GoalTask {
   id: string;
   project_id: string;
@@ -62,6 +70,8 @@ export interface GoalTask {
     exports?: Record<string, { available: boolean; reason: string }>;
     mode?: string;
     fixed_regression_passed?: boolean;
+    resource_lifecycle?: ResourceLifecycle[];
+    cleanup?: string;
     complete?: boolean;
     checks_passed?: boolean;
     focus?: {
@@ -136,6 +146,7 @@ export interface GoalTask {
         }[];
       }[];
       investigations?: {
+        role?: string | null;
         operation_id: string;
         method: string;
         path: string;
@@ -150,6 +161,9 @@ export interface GoalTask {
           passed: boolean;
         }[];
       }[];
+      resource_lifecycle?: ResourceLifecycle[];
+      cleanup?: string;
+      failure_explanation?: FailureExplanation | null;
       kinds?: string[];
       approved_negative_steps?: number;
       negative_rejections_passed?: number;

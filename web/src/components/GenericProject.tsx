@@ -77,6 +77,19 @@ export function GenericProject({
     };
   }, [document]);
 
+  useEffect(() => {
+    if (!value || !document.trim() || !csrf || operations.length) return;
+    let active = true;
+    const current = revision.current;
+    // Editing loads document metadata only; preserve all existing operator choices.
+    intakeApi.analyze(csrf, document).then((result) => {
+      if (active && current === revision.current) setOperations(result.operations);
+    }).catch(() => {
+      if (active && current === revision.current) setError("文档信息暂时无法读取，请重新读取文档。");
+    });
+    return () => { active = false; };
+  }, [document, csrf, !!value, operations.length]);
+
   async function analyze() {
     const current = ++revision.current;
     setBusy(true);

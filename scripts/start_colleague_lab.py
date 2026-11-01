@@ -1,6 +1,7 @@
 """Start three disposable loopback targets and the persistent product workspace."""
 
 import argparse
+import asyncio
 import os
 import secrets
 import socket
@@ -10,6 +11,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
+from prepare_colleague_workspace import prepare
 from serve_colleague_targets import document
 
 
@@ -18,6 +20,7 @@ def main():
     parser.add_argument("--port", type=int, default=18120,
                         help="Product port; next three are targets")
     parser.add_argument("--data", type=Path, default=Path("runs/testing-colleague/playground"))
+    parser.add_argument("--prepare-only", action="store_true", help="仅准备文档与项目，零模型/HTTP")
     args = parser.parse_args()
     if not 1024 <= args.port <= 65532:
         raise ValueError("Four local ports between 1024 and 65535 required")
@@ -47,6 +50,10 @@ def main():
     for role in ("OWNER", "READER"):
         for credential in ("USERNAME", "PASSWORD", "BEARER"):
             environment[f"AGENTTEST_TARGET_LAB_{role}_{credential}"] = secrets.token_urlsafe(24)
+    asyncio.run(prepare(data, args.port, environment))
+    if args.prepare_only:
+        print(f"隔离项目与文档已准备：{data}；0模型、0目标请求。", flush=True)
+        return
     children = []
 
     def start(script, *arguments):

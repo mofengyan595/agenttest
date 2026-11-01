@@ -89,3 +89,23 @@ test("document links suggest a lifecycle but require explicit fresh-resource con
   await userEvent.click(confirmation);
   expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({resource_lifecycles: []}));
 });
+
+test("editing reads document metadata without replacing the operator's saved configuration", async () => {
+  const change = vi.fn();
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({operations: [{
+    operation_id: "read", alias: "读取", enabled: true, role: null, statuses: [200],
+    arguments: [], checks: [], method: "GET", path: "/items", supported: true,
+    authentication_required: false,
+  }]}))));
+  const saved: GenericSetup = {base_url: "http://127.0.0.1:18998", isolated_confirmed: true,
+    allow_mutations: false, max_requests: 17, roles: [], operations: [
+      {operation_id: "read", alias: "我确认的名称", enabled: true, role: null,
+        statuses: [200], arguments: [], checks: []}], assisted: true};
+  render(<GenericProject document="saved document" csrf="local" value={saved}
+    onChange={change} disabled={false} />);
+  await screen.findByRole("group", {name: "GET /items"});
+  await userEvent.click(screen.getByText("查看或调整输入与检查"));
+  expect(await screen.findByDisplayValue("我确认的名称")).toBeVisible();
+  expect(screen.getByLabelText("隔离测试环境地址")).toHaveValue(saved.base_url);
+  expect(change).not.toHaveBeenCalled();
+});

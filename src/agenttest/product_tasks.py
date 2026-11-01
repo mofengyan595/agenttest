@@ -507,6 +507,7 @@ class ProductTasks:
                                 negative_rejections_passed=sum(
                                     s.negative_rejected_as_expected is True for s in report.steps),
                                 investigations=[dict(operation_id=i.operation_id,
+                                    role=i.role,
                                     method=i.method, path=i.path_template, outcome=i.outcome.value,
                                     requests=i.requests_used, reason=i.reason,
                                     checks=[c.model_dump() for c in i.checks],

@@ -15,6 +15,7 @@ import type { Outcome } from "../api/types";
 import { Badge, Notice, PageTitle, Panel } from "../components/ui";
 import { ResultBrief } from "../components/ResultBrief";
 import { ProductResult } from "../components/ProductResult";
+import { LifecycleStatus } from "../components/LifecycleStatus";
 
 const phases: Record<string, string> = {
   QUEUED: "已进入队列",
@@ -645,6 +646,8 @@ export function GoalTasks({
                   {missingNegativeChecks > 0 && <p>
                     {missingNegativeChecks} 项方案标为异常场景，但记录中没有实际受控异常检查，不能算作完成。
                   </p>}
+                  {selected.summary.mode === "FIXED_REGRESSION" &&
+                    <LifecycleStatus resources={selected.summary.resource_lifecycle} />}
                   {selected.summary.outcome === "ASSERTION_FAILED" && (
                     <p>
                       发现响应与已确认预期不一致。请查看业务证据中的实际响应、预期值和请求记录，再定位问题。

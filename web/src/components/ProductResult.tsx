@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useState } from "react";
 import type { GoalTask } from "../api/tasks";
 import { ProjectInventory } from "./ProjectInventory";
+import { LifecycleStatus } from "./LifecycleStatus";
 
 const kinds: Record<string, string> = {
   normal: "正常请求",
@@ -239,6 +240,13 @@ export function ProductResult({
             ))}
           </ul>
           {c.reason && <p>{c.reason}</p>}
+          <LifecycleStatus resources={c.resource_lifecycle} />
+          {c.failure_explanation && <div className="finding-card" aria-label="调查结论">
+            <strong>调查结论</strong>
+            <p>{c.failure_explanation.confirmed_observation}</p>
+            <p>{c.failure_explanation.uncertainty}</p>
+            <p>下一步：{c.failure_explanation.next_action}</p>
+          </div>}
           {c.run_id && result.exports?.[c.run_id]?.reason && (
             <p className="caption">{result.exports[c.run_id].reason}</p>
           )}
@@ -247,12 +255,13 @@ export function ProductResult({
               <strong>只读复核</strong>
               <p>
                 {probe.method} {probe.path} · 实际请求 {probe.requests} 次。
+                {probe.role && <> 使用身份：{probe.role}。</>}
               </p>
               <p>
                 {probe.requests === 0
                   ? "复核未能执行，未增加判断依据。"
                   : probe.outcome === "ASSERTION_FAILED"
-                    ? "相同身份与资源的只读复核再次出现不符结果，内部原因尚未确认。"
+                    ? "这项只读检查也出现不符，内部原因尚未确认。"
                     : probe.outcome === "PASS"
                       ? "只读复核符合原规则；原始失败仍然保留，暂不能确认差异原因。"
                       : "只读复核也未完成，需检查环境或账号；目前不能确认原因。"}

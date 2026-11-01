@@ -376,6 +376,19 @@ class TaskService:
         summary = row["summary"]
         runs = [summary["run_id"]] if summary.get("run_id") else []
         runs += [c["run_id"] for c in summary.get("cases", []) if c.get("run_id")]
+        if row["status"] in {"CANCELLED", "INTERRUPTED"}:
+            for run_id in runs:
+                try:
+                    report = self.reports.read(run_id)
+                except (ValueError, OSError):
+                    continue
+                evidence = dict(resource_lifecycle=report.resource_lifecycle,
+                    cleanup=report.cleanup, failure_explanation=report.failure_explanation)
+                if summary.get("mode") == "FIXED_REGRESSION":
+                    summary.update(evidence)
+                for case in summary.get("cases", []):
+                    if case.get("run_id") == run_id:
+                        case.update(evidence)
         exports = {}
         try:
             current_project = (self.project(row["project_id"])
