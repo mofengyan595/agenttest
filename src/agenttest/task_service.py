@@ -72,7 +72,16 @@ class TaskService:
 
     def project(self, project_id):
         if project_id in self.projects:
-            return self.intake.profile(project_id)
+            project = self.intake.profile(project_id)
+            if not self.synthetic:
+                from dataclasses import replace
+
+                names = {name for role in project.target.roles.values() for name in
+                         (role.username_env, role.password_env, role.bearer_env) if name}
+                project = replace(project, intake_revision=fingerprint(dict(
+                    project=project.identity(),
+                    credentials={n: self.environ.get(n) for n in names})))
+            return project
         if project_id.startswith("web_"):
             return self.intake.project(project_id)
         raise ValueError("PROJECT_NOT_REGISTERED")

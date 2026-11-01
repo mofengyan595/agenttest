@@ -26,6 +26,9 @@ def bounded_read(path: Path, limit: int = MAX_DOCUMENT_BYTES) -> bytes:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="AgentTest 确定性 API 测试")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    from agenttest.workspace_cli import add_parser
+
+    add_parser(subcommands)
     goal = subcommands.add_parser("goal", help="复用项目目标配置，无需逐题编写完整任务步骤")
     goal.add_argument("--project", type=Path, required=True)
     goal.add_argument("--model-timeout", type=float, default=30.0)
@@ -119,6 +122,10 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--runs-dir", type=Path, default=Path("runs"))
     args = parser.parse_args(argv)
     try:
+        if args.command == "workspace":
+            from agenttest.workspace_cli import command
+
+            return command(args)
         if args.command == "goal":
             from agenttest.goal_cli import goal_command
 

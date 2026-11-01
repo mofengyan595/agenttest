@@ -199,7 +199,7 @@ def install_task_api(app, service):
                                                  payload.submission_id)
         except (TaskConflict, ValueError, OSError):
             raise HTTPException(409,
-                "仅支持配置未变化的合成或只读真实固定测试；请重新检查项目与资产。") from None
+                "需使用配置未变化且具备完整准备与清理的写测试，或受支持的只读测试。") from None
         except KeyError:
             raise HTTPException(404, "Saved test not found") from None
 
@@ -228,6 +228,21 @@ def install_task_api(app, service):
         who = owner(request)
         lookup(task_id, who)
         return dict(events=enabled().db.events(task_id, who))
+
+    @app.get("/api/tasks/{task_id}/reports/{run_id}")
+    def owned_report(task_id: str, run_id: str, request: Request):
+        row = lookup(task_id, owner(request))
+        summary = row["summary"]
+        runs = {summary.get("run_id"), *[c.get("run_id") for c in summary.get("cases", [])]}
+        if run_id not in runs:
+            raise HTTPException(404, "Task report not found")
+        from agenttest.report_queries import public_report
+
+        try:
+            project = enabled().project(row["project_id"])
+            return public_report(enabled().reports.read(run_id), project.registry)
+        except (ValueError, OSError, KeyError):
+            raise HTTPException(404, "Task report not available") from None
 
     @app.post("/api/tasks/{task_id}/start")
     async def start(task_id: str, request: Request):
@@ -274,6 +289,19 @@ def install_task_api(app, service):
         return Response(data.getvalue(), media_type="application/zip",
             headers={"Content-Disposition": 'attachment; filename="agenttest-regression.zip"',
                      "Cache-Control": "no-store"})
+
+    @app.post("/api/tasks/{task_id}/save-test")
+    async def save_test(task_id: str, request: Request):
+        who = owner(request, True)
+        lookup(task_id, who)
+        payload = await body(request, ExportRequest)
+        try:
+            enabled().export_regression(task_id, who, payload.run_id)
+            return dict(saved=True, task_id=task_id, run_id=payload.run_id,
+                        model_source="DISABLED_FOR_FIXED_RUN")
+        except (TaskConflict, ValueError, OSError, KeyError):
+            raise HTTPException(409, "Complete unchanged lifecycle or read-only run required"
+                                ) from None
 
     @app.get("/api/tasks/{task_id}/events")
     async def events(task_id: str, request: Request, after: int = 0):

@@ -394,7 +394,7 @@ class ProjectIntake:
         registration = project.registration.model_copy(update={"id": key})
         # Revision binds in-flight tasks even when only display metadata changes.
         project = replace(project, registration=registration, document=record["document"].encode(),
-                          intake_revision=fingerprint(record))
+                          intake_revision=runtime_key or fingerprint(record))
         if runtime_key:
             self._remember(self._runtime_projects, runtime_key, deepcopy(project), 16)
         return project
