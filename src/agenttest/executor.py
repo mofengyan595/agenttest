@@ -171,7 +171,7 @@ class Executor:
                         self.store.save(report)
                         try:
                             if lifecycle:
-                                lifecycle.before(step)
+                                lifecycle.before(step, operation.method)
                                 self.store.save(report)
                             body = await self._step(
                                 client, step, operation, state, budget, result, report,
@@ -296,7 +296,7 @@ class Executor:
                 policy_sha256=fingerprint(policies[step.id].model_dump()),
                 policy_template_sha256=fingerprint(policies[step.id].model_dump()))
             report.lifecycle_cleanup.append(result)
-            lifecycle.before(step)
+            lifecycle.before(step, operation.method)
             self.store.save(report)
             try:
                 async with asyncio.timeout(self.config.connect_timeout + self.config.read_timeout):

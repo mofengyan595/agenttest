@@ -65,11 +65,11 @@ async def test_sdk_rejects_permission_expansion_without_echoing_credentials(capl
 @pytest.mark.asyncio
 async def test_sdk_stdio_workspace_discovery_needs_no_model_or_network(tmp_path):
     parameters = StdioServerParameters(command=sys.executable, args=[
-        "-m", "agenttest.workspace_mcp", "--session-file", str(tmp_path / "session.json")])
+        "-m", "agenttest.workspace_mcp", "--session-file", str(tmp_path / ".env")])
     async with asyncio.timeout(45):
         async with Client(parameters) as client:
             tools = (await client.list_tools()).tools
             assert {tool.name for tool in tools} == set(REQUESTS)
             rejected = await client.call_tool("task_status", dict(task_id="private-credential"))
             assert rejected.is_error and "private-credential" not in rejected.model_dump_json()
-    assert not (tmp_path / "session.json").exists()
+    assert not (tmp_path / ".env").exists()

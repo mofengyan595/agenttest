@@ -91,6 +91,18 @@ def test_export_is_offline_constant_code_and_contains_no_authority_or_credential
     assert b'"assertions"' not in raw and b'"reviewed"' not in raw
 
 
+@pytest.mark.asyncio
+async def test_legacy_write_contract_cannot_bypass_real_transport_lifecycle(inputs, tmp_path):
+    runtime, plan, source, requests = inputs
+    directory = tmp_path / "legacy_data"
+    export_regression(directory, replace(runtime, transport=None), plan, source)
+    runtime = replace(runtime, transport=httpx.MockTransport(
+        lambda _: pytest.fail("Legacy writes without lifecycle must send no HTTP")))
+    with pytest.raises(ValueError, match="FIXED_WRITE_LIFECYCLE_REQUIRED"):
+        await run_regression(directory, runtime)
+    assert not requests
+
+
 @pytest.mark.parametrize("change", ["outcome", "complete", "goal", "mode", "intent", "policy",
                                     "plan", "contract", "structure", "step_policy", "checks"])
 def test_rejects_partial_mismatched_or_unverified_source(inputs, tmp_path, change):

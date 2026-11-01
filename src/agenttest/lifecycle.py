@@ -95,7 +95,7 @@ class LifecycleJournal:
             self.rows[key] = row
         report.resource_lifecycle = list(self.rows.values())
 
-    def before(self, step):
+    def before(self, step, method):
         if step.id in self.rows:
             self.rows[step.id]["status"] = "CREATE_OUTCOME_UNKNOWN"
         for row in self.rows.values():
@@ -103,6 +103,15 @@ class LifecycleJournal:
                 if row["status"] != "OWNED":
                     raise ValueError("LIFECYCLE_OWNERSHIP_NOT_PROVEN")
                 row.update(status="CLEANUP_OUTCOME_UNKNOWN", cleanup_result="OUTCOME_UNKNOWN")
+        if method in {"PUT", "PATCH"}:
+            sources = {b.from_step for b in step.path_parameters.values()}
+            for key in sources:
+                if key in self.rows:
+                    row = self.rows[key]
+                    if row["status"] != "OWNED":
+                        raise ValueError("LIFECYCLE_OWNERSHIP_NOT_PROVEN")
+                    row.update(status="MUTATION_OUTCOME_UNKNOWN", mutation_step=step.id,
+                               mutation_result="OUTCOME_UNKNOWN")
 
     def after(self, step, result, body, vault):
         if step.id in self.rows:
@@ -122,6 +131,8 @@ class LifecycleJournal:
                     row["status"] = "RESOURCE_ID_UNVERIFIED"
                     raise ValueError("LIFECYCLE_RESOURCE_ID_UNVERIFIED") from None
         for row in self.rows.values():
+            if row.get("mutation_step") == step.id:
+                row.update(status="OWNED", mutation_result=result.outcome.value)
             if row["cleanup_step"] == step.id:
                 row.update(status="CLEANED" if result.outcome == Outcome.PASS
                            else "CLEANUP_PENDING", cleanup_result=result.outcome.value)

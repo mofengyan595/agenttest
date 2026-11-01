@@ -45,6 +45,7 @@ cd ..
 终态与脱敏报告，已有文件不会覆盖。请求失败不自动重试；提交前会打印防重复提交ID，
 如需核查同一次提交可通过 `--submission-id` 复用，不能把新提交当作原写请求恢复。
 等待超时后用status核查原任务，不意味着原任务已失败或可以重新写入。
+历史TaskContract包缺少写生命周期时仅保留隔离ASGI样例复现；不能改选真实HTTP传输绕过保护。
 
 项目要求审阅时，先查看status中的具体方案，再用
 `workspace start --task-id 任务ID --plan-version 版本 --review-approved` 批准指定版本。
@@ -52,7 +53,7 @@ cd ..
 尚未生成的新模型方案。取消使用 `workspace cancel --task-id 任务ID`。
 
 默认地址18120，可在workspace后、子命令前添加 `--server http://127.0.0.1:其他端口`。
-`--session-file` 指定本机会话文件；其中含访问凭据，不提交、不分享、不放入模型上下文。
+`--session-file` 指定本机会话.env文件；其中含访问凭据，不提交、不分享、不放入模型上下文。
 默认在被Git忽略的runs/workspace-client内。同文件的CLI与MCP共享任务归属；不同网页或
 客户端会话不能读取对方任务。会话文件绑定服务地址，不能拿到其他地址继续使用。
 
@@ -78,3 +79,14 @@ CI先准备已确认项目和已保存的回归来源，启动同一工作区，
 `tests/test_workspace_client.py`直接使用同一任务API的ASGI传输及模拟目标，验证报告、
 退出码、所有权和过期阻止，无需模型、网络或Docker。真实模型开发/正式验收必须单独
 显式开启，不混进默认离线通过数。
+
+正式验收的零调用排期和显式执行命令：
+
+```powershell
+.venv\Scripts\python.exe scripts/run_reliable_acceptance.py --plan
+.venv\Scripts\python.exe scripts/run_reliable_acceptance.py --real
+```
+
+新排期使用三个已冻结的新需求各三轮，通过正常网页提交。资料中的外部检查标准不提供给
+产品模型；第一次结果和失败永不覆盖，输出目录已存在时拒绝重跑。任一未知用量会停止
+后续位置，除非本Goal另有明确授权；不能用新目录绕过停止。旧任务仅作回归或性能证据。

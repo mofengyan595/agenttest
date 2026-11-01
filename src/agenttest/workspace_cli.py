@@ -12,7 +12,7 @@ def add_parser(subcommands):
     workspace = subcommands.add_parser("workspace", help="操作网页工作区的通用已注册项目")
     workspace.add_argument("--server", default="http://127.0.0.1:18120")
     workspace.add_argument("--session-file", type=Path,
-                           default=Path("runs/workspace-client/session.json"))
+                           default=Path("runs/workspace-client/.env"))
     commands = workspace.add_subparsers(dest="workspace_action", required=True)
     for name in ("projects", "saved", "status", "evidence", "submit", "save", "regression",
                  "cancel", "start"):

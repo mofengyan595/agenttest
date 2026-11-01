@@ -7,7 +7,7 @@ import httpx
 import pytest
 from test_resource_lifecycle import lifecycle_project, plan
 
-from agenttest.dsl import AssertionPolicy, ExpectedStatus
+from agenttest.dsl import AssertionPolicy, ExpectedStatus, Step
 from agenttest.executor import Executor
 from agenttest.investigation import InvestigationConfig
 from agenttest.policies import PolicyRegistry
@@ -225,3 +225,44 @@ async def test_agent_can_compare_only_an_already_approved_identity_on_same_resou
     assert report.resource_lifecycle[0]["status"] == "CLEANED"
     assert "owner-secret" not in report.model_dump_json()
     assert "reader-secret" not in json.dumps(model.contexts)
+
+
+@pytest.mark.asyncio
+async def test_unknown_update_can_be_read_but_not_replayed_or_blindly_cleaned(tmp_path):
+    project, _ = lifecycle_project()
+    operation = next(o for o in project.contract.operations if o.operation_id == "removeJob")
+    project.contract.operations.append(operation.model_copy(deep=True, update=dict(
+        operation_id="adjustJob", method="PATCH", responses={"200": dict(description="ok")})))
+    project.target.allowed_operations.append("adjustJob")
+    definitions = project.registry.definitions()
+    delete = next(p for p in definitions if p.operation_id == "removeJob")
+    adjust = delete.model_copy(deep=True, update=dict(id="adjust_rule", operation_id="adjustJob"))
+    adjust.assertions = AssertionPolicy(reviewed=True, source="Approved isolated adjustment",
+                                        status=ExpectedStatus(codes=[200]))
+    project.registry = PolicyRegistry([*definitions, adjust])
+    scenario = plan()
+    scenario.steps.insert(1, Step(id="adjust", operation_id="adjustJob", policy_id="adjust_rule",
+                                 path_parameters=scenario.steps[1].path_parameters))
+    requests, model = [], SelectRead()
+
+    def target(request):
+        requests.append(request.method)
+        if request.method == "POST":
+            return httpx.Response(201, json=dict(id="proven_owned"))
+        if request.method == "PATCH":
+            raise httpx.ReadTimeout("update result unknown")
+        return httpx.Response(200, json=dict(state="ready"))
+
+    report = await Executor(project.target, project.contract, ReportStore(tmp_path),
+        httpx.MockTransport(target), {}, project.registry,
+        investigation=InvestigationConfig(enabled=True, product_read_probe=True),
+        analyzer=model).run(
+            scenario, report=RunReport(scenario_sha256=fingerprint(scenario.model_dump()),
+                contract_sha256=fingerprint(project.contract.model_dump()), environment="isolated",
+                target_origin=project.target.base_url, task_mode="model_designed"))
+    assert requests == ["POST", "PATCH", "GET"]
+    assert report.outcome == Outcome.TEST_INFRA_ERROR
+    assert report.resource_lifecycle[0]["status"] == "MUTATION_OUTCOME_UNKNOWN"
+    assert report.resource_lifecycle[0]["resource_id"] == "proven_owned"
+    assert report.investigations[0].outcome == Outcome.PASS
+    assert "清理未完成" in report.cleanup

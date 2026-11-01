@@ -1,0 +1,44 @@
+{
+  "version": "reliable-colleague-v1",
+  "classification": "NEW_REQUESTS_EXISTING_DISPOSABLE_FIXTURES_NOT_NEW_PROJECT_GENERALIZATION",
+  "rounds": 3,
+  "execution_mode": "SERIAL",
+  "unknown_usage": "STOP_UNLESS_NEW_GOAL_EXPLICIT_AUTHORITY",
+  "tasks": [
+    {
+      "id": "RC_WRITE_01",
+      "project": "parcels",
+      "request": "创建名称为archive_box_611的专用包裹，数量为3，标签依次为amber、blue，关闭跟踪；读取后只把名称改成archive_checked_611，再次读取，最后删除本轮这个包裹。只做这一条完整流程，不做参数异常或服务状态测试。",
+      "initial_body": {"name": "archive_box_611", "quantity": 3, "meta": {"labels": ["amber", "blue"], "options": {"tracked": false}}},
+      "update_body": {"name": "archive_checked_611"},
+      "required_operations": ["createParcel", "readParcel", "changeParcel", "deleteParcel"],
+      "read_count": 2,
+      "write_lifecycle_required": true,
+      "fixed_runs": 2
+    },
+    {
+      "id": "RC_IDENTITY_01",
+      "project": "reservations",
+      "request": "用owner登录，创建标题为周二借阅核验的周二预约，座位依次为1、6。owner读取后，用已批准的reader身份检查读取被403拒绝，然后由owner清理本轮预约。另外单独检查一次创建时缺少标题应按文档返回422。不要检查服务可用状态。",
+      "initial_body": {"title": "周二借阅核验", "slot": {"day": "Tuesday", "seats": [1, 6]}},
+      "required_operations": ["openSession", "createReservation", "readReservation", "deleteReservation"],
+      "approved_reader_status": 403,
+      "negative_missing_field": "title",
+      "negative_status": 422,
+      "write_lifecycle_required": true,
+      "fixed_runs": 2
+    },
+    {
+      "id": "RC_INVESTIGATE_01",
+      "project": "directory",
+      "request": "读取第12个目录分区，limit为2、active为false；同时核验服务可用状态，若不符合规则就做有目的的只读检查，说明依据和仍不能确定的内容。只安排这两个接口的正常检查，不测试其他分区、参数异常、受限配置、上传或导出。",
+      "query": {"limit": 2, "active": false},
+      "required_operations": ["readSection12", "readAvailability"],
+      "injected_status": 503,
+      "minimum_investigation_requests": 1,
+      "maximum_investigation_requests": 2,
+      "write_lifecycle_required": false,
+      "fixed_runs": 0
+    }
+  ]
+}

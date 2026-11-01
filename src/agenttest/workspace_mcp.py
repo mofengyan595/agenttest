@@ -96,7 +96,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--server", default="http://127.0.0.1:18120")
     parser.add_argument("--session-file", type=Path,
-                        default=Path("runs/workspace-client/session.json"))
+                        default=Path("runs/workspace-client/.env"))
     parser.add_argument("--allow-real-model", action="store_true")
     parser.add_argument("--allow-reviewed-start", action="store_true")
     parser.add_argument("--max-tool-calls", type=int, default=128)

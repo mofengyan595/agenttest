@@ -58,7 +58,8 @@ class WorkspaceClient:
                  allow_reviewed_start=False, transport=None):
         self.server = workspace_origin(server)
         self.session_file = session_file.absolute()
-        if ".." in session_file.parts:
+        if ".." in session_file.parts or not (session_file.name == ".env"
+                                              or session_file.suffix == ".env"):
             raise ValueError("SESSION_PATH_INVALID")
         self.allow_model = allow_model
         self.allow_reviewed_start = allow_reviewed_start
@@ -74,17 +75,20 @@ class WorkspaceClient:
                         raw = source.read(2001)
                     if len(raw) > 2000:
                         raise ValueError("SESSION_FILE_INVALID")
-                    saved = json.loads(raw)
-                    if (set(saved) != {"server", "cookie"} or saved["server"] != self.server
-                            or not re.fullmatch(r"[A-Za-z0-9_-]{43}", saved["cookie"])):
+                    saved = dict(line.split("=", 1) for line in raw.decode("utf-8").splitlines())
+                    if (set(saved) != {"AGENTTEST_WORKSPACE_ORIGIN", "AGENTTEST_WORKSPACE_SESSION"}
+                            or saved["AGENTTEST_WORKSPACE_ORIGIN"] != self.server
+                            or not re.fullmatch(r"[A-Za-z0-9_-]{43}",
+                                                saved["AGENTTEST_WORKSPACE_SESSION"])):
                         raise ValueError("SESSION_SERVER_OR_COOKIE_INVALID")
-                    if value is not None and saved["cookie"] != value:
+                    if value is not None and saved["AGENTTEST_WORKSPACE_SESSION"] != value:
                         raise ValueError("SESSION_COOKIE_CHANGED")
-                    return saved["cookie"]
+                    return saved["AGENTTEST_WORKSPACE_SESSION"]
                 except FileNotFoundError:
                     if value is None:
                         return None
-                    data = json.dumps(dict(server=self.server, cookie=value)).encode()
+                    data = (f"AGENTTEST_WORKSPACE_ORIGIN={self.server}\n"
+                            f"AGENTTEST_WORKSPACE_SESSION={value}\n").encode()
                     with os.fdopen(directory.open(path.name, create=True), "wb") as destination:
                         destination.write(data)
                     return value

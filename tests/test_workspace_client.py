@@ -58,7 +58,7 @@ async def test_cli_shared_api_write_regression_and_expired_config(tmp_path, monk
     origin = "http://127.0.0.1:18120"
     transport = httpx.ASGITransport(app=create_app(svc.reports.root, task_service=svc,
                                                 allowed_origins=frozenset({origin})))
-    session_file = tmp_path / "client/session.json"
+    session_file = tmp_path / "client/.env"
     client = WorkspaceClient(origin, session_file, transport=transport, allow_model=True)
     try:
         proj, setup = lifecycle_project()
@@ -87,9 +87,10 @@ async def test_cli_shared_api_write_regression_and_expired_config(tmp_path, monk
         assert artifact["task"]["data"]["summary"]["context_usage"]["model_calls"] == 0
         assert artifact["reports"][0]["data"]["resource_lifecycle"][0]["status"] == "CLEANED"
         assert len(models) == 1 and len(ids) == 2 and resources == {"foreign"}
-        cookie = json.loads(session_file.read_text())["cookie"]
+        cookie = dict(line.split("=", 1) for line in session_file.read_text().splitlines())[
+            "AGENTTEST_WORKSPACE_SESSION"]
         assert cookie not in capsys.readouterr().out
-        outsider = WorkspaceClient(origin, tmp_path / "other/session.json", transport=transport)
+        outsider = WorkspaceClient(origin, tmp_path / "other/.env", transport=transport)
         assert not (await outsider.call("task_status", dict(task_id=task)))["ok"]
         before = list(requests)
         svc.environ["AGENTTEST_TARGET_AUDITOR"] = "rotated-private-credential"
@@ -112,7 +113,7 @@ async def test_client_rejects_unknown_arguments_and_requires_explicit_model(tmp_
     def network(request):
         pytest.fail("Invalid input must not reach the workspace")
 
-    client = WorkspaceClient("http://127.0.0.1:18120", tmp_path / "session.json",
+    client = WorkspaceClient("http://127.0.0.1:18120", tmp_path / ".env",
                               transport=httpx.MockTransport(network))
     for action, data in [("submit_test", dict(project_id="web_demo", user_task="测试",
                                              submission_id=uuid4().hex)),
@@ -158,7 +159,7 @@ async def test_fixed_cancel_restart_keeps_owned_resource_without_replay(tmp_path
     monkeypatch.setattr(httpx, "AsyncHTTPTransport", lambda **_: httpx.MockTransport(target))
     root = tmp_path / "workspace"
     svc = service(root, lambda _: response(design()))
-    origin, session = "http://127.0.0.1:18120", tmp_path / "client/session.json"
+    origin, session = "http://127.0.0.1:18120", tmp_path / "client/.env"
 
     def client(current):
         return WorkspaceClient(origin, session, allow_model=True,
