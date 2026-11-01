@@ -63,7 +63,7 @@ async def test_sdk_rejects_permission_expansion_without_echoing_credentials(capl
 
 
 @pytest.mark.asyncio
-async def test_actual_sdk_stdio_process_advertises_workspace_tools_without_model_or_network(tmp_path):
+async def test_sdk_stdio_workspace_discovery_needs_no_model_or_network(tmp_path):
     parameters = StdioServerParameters(command=sys.executable, args=[
         "-m", "agenttest.workspace_mcp", "--session-file", str(tmp_path / "session.json")])
     async with asyncio.timeout(45):
