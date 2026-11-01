@@ -24,6 +24,13 @@ branches/worktrees, multi-agent, RAG, new framework or real business writes.
 Keep all historical failures and UNKNOWN usage. Model calls and self-built isolated
 CRUD are authorized without a Goal-wide ceiling; retain per-task budgets and the
 operator-specific unknown-usage gates. Do not replay writes after cancellation/restart.
+Five stages and scoped self-built acceptance are complete; see
+docs/reliable-colleague-delivery.md. Final runtime is 4736758; final offline 2082 passed,
+15 skipped, 0 failed. Same-frozen-request real re-verification is 7/9, with two preserved
+planning failures; original v1 is 2 passed, 4 failed, 3 unexecuted. Do not retune/repeat
+used paid positions to chase a score. Final documentation local commit is authorized;
+no push. Actual business integration remains unverified and needs its own environment
+and scoped authorization. Preserve all original snapshots and failure records.
 
 ### Previous testing-colleague milestone (preserved)
 The 2026-10-26 testing-colleague Goal supersedes related product freezes. Follow

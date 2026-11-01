@@ -2,19 +2,25 @@
 
 ## 从干净目录启动
 
-准备Python3.11虚拟环境与项目锁定依赖（Windows见scripts/setup_env.ps1），以及web目录
-的锁定前端依赖。已有环境无需重新安装。首次编译网页后启动：
+首次在干净检出中准备Python3.11和Node.js，然后执行以下命令。`-Agent`将锁定的
+模型工作流与MCP可选依赖安装到项目`.venv`，不会安装到系统Python；脚本也会运行离线检查。
+已经具备这些依赖的环境无需重新安装，直接构建、启动即可。本Goal没有安装或升级依赖。
 
 ```powershell
-cd D:\Desktop\project\agenttest\web
+cd D:\Desktop\project\agenttest
+.\scripts\setup_env.ps1 -Agent
+cd web
+npm.cmd ci
 npm.cmd run build
 cd ..
 .venv\Scripts\python.exe scripts/start_colleague_lab.py --port 18420 --data runs/reliable-colleague/playground
 ```
 
-打开 http://127.0.0.1:18420 。三个项目、接口文档和工作区会从源码初始化，不需要旧runs、
+打开 <http://127.0.0.1:18420>。三个项目、接口文档和工作区会从源码初始化，不需要旧runs、
 数据库或历史凭据；启动本身不调用模型。真实模型读取本机已配置.env；缺失时阻止新模型
-测试，不回退模拟。预约靶场的专用随机凭据仅传给本次子进程，文档和网页不填写秘密。
+测试，不回退模拟。首次配置模型时，仅在`.env`不存在时从`.env.example`复制，填写
+`OPENAI_API_KEY`、`OPENAI_BASE_URL`和`AGENTTEST_MODEL`，不要覆盖现有文件。
+预约靶场的专用随机凭据仅传给本次子进程，文档和网页不填写秘密。
 目标端口18421至18423。冲突时换一组连续四端口和新的data目录，不停止其他服务。
 `--prepare-only`可只准备项目与文档，0模型、0目标请求。初始化重复执行保留已有配置，
 不会替操作者重新批准规则；同一data目录不可换端口。
@@ -37,13 +43,13 @@ cd ..
 以下均在项目根目录执行；将命令中的项目、任务、运行ID换成前一步返回的ID。
 
 ```powershell
-.venv\Scripts\python.exe -m agenttest workspace projects
-.venv\Scripts\python.exe -m agenttest workspace submit --project-id web_项目ID --user-task "创建专用数据，读取后清理" --real
-.venv\Scripts\python.exe -m agenttest workspace status --task-id 任务ID
-.venv\Scripts\python.exe -m agenttest workspace evidence --task-id 任务ID --run-id 运行ID
-.venv\Scripts\python.exe -m agenttest workspace save --task-id 任务ID --run-id 运行ID
-.venv\Scripts\python.exe -m agenttest workspace saved
-.venv\Scripts\python.exe -m agenttest workspace regression --task-id 来源任务ID --run-id 来源运行ID --output runs/ci/result-本次唯一名称.json
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 projects
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 submit --project-id web_项目ID --user-task "创建专用数据，读取后清理" --real
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 status --task-id 任务ID
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 evidence --task-id 任务ID --run-id 运行ID
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 save --task-id 任务ID --run-id 运行ID
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 saved
+.venv\Scripts\python.exe -m agenttest workspace --server http://127.0.0.1:18420 regression --task-id 来源任务ID --run-id 来源运行ID --output runs/ci/result-本次唯一名称.json
 ```
 
 `regression` 禁用模型；每次创建新任务、准备新数据，不依赖原运行资源。完整通过退出0，
@@ -58,15 +64,16 @@ cd ..
 对已有固定方案，可在regression命令附加 `--review-approved`。此选项不适用于预先批准
 尚未生成的新模型方案。取消使用 `workspace cancel --task-id 任务ID`。
 
-默认地址18120，可在workspace后、子命令前添加 `--server http://127.0.0.1:其他端口`。
+CLI默认地址18120；上例明确连接本说明启动的18420，可在workspace后、子命令前换端口。
 `--session-file` 指定本机会话.env文件；其中含访问凭据，不提交、不分享、不放入模型上下文。
 默认在被Git忽略的runs/workspace-client内。同文件的CLI与MCP共享任务归属；不同网页或
 客户端会话不能读取对方任务。会话文件绑定服务地址，不能拿到其他地址继续使用。
+同时使用多个工作区时，为每个地址指定不同的`--session-file`，不要删除旧会话来恢复写入。
 
 MCP使用项目现有的可选依赖，启动命令：
 
 ```powershell
-.venv\Scripts\python.exe -m agenttest.workspace_mcp --server http://127.0.0.1:18120
+.venv\Scripts\python.exe -m agenttest.workspace_mcp --server http://127.0.0.1:18420
 ```
 
 默认可查看和运行模型禁用的固定回归；允许安排新模型测试时，启动命令显式附加
@@ -86,7 +93,9 @@ CI先准备已确认项目和已保存的回归来源，启动同一工作区，
 退出码、所有权和过期阻止，无需模型、网络或Docker。真实模型开发/正式验收必须单独
 显式开启，不混进默认离线通过数。
 
-正式验收的零调用排期和显式执行命令：
+本Goal的正式排期与复验已经完成，结果见[交付记录](reliable-colleague-delivery.md)。
+以下保留复现命令；同一输出目录不可覆盖，复用这些需求也不能计作新的泛化成绩。
+零调用排期和显式执行命令：
 
 ```powershell
 .venv\Scripts\python.exe scripts/run_reliable_acceptance.py --plan
