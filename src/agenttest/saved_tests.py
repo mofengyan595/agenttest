@@ -35,7 +35,7 @@ class SavedTests:
         if self.service.synthetic:
             return True
         return (self.service.generic_intake
-                and replay_scope(project.contract, project.target, scenario)
+                and replay_scope(project.contract, project.target, scenario, project.registry)
                 != "MUTATION_LIFECYCLE_REQUIRED")
 
     @staticmethod
@@ -90,7 +90,10 @@ class SavedTests:
                 load_regression(self.directory(saved["task_id"], saved["run_id"]))
                 available = self.executable(project, scenario)
                 if available:
-                    reason = ("每次创建新资源，使用固定计划；模型禁用。"
+                    reason = ("每次准备本轮数据并清理，使用固定计划；模型禁用。"
+                              if replay_scope(project.contract, project.target, scenario,
+                                  project.registry) == "OWNED_WRITE_LIFECYCLE" else
+                              "每次创建新资源，使用固定计划；模型禁用。"
                               if self.service.synthetic else
                               "每次重新登录，再执行已确认的只读检查；模型禁用。"
                               if replay_scope(project.contract, project.target, scenario)
@@ -176,6 +179,7 @@ class SavedTests:
                     fixed_regression_passed=report.completed and report.outcome == Outcome.PASS,
                     task_satisfied=None, workflow_completed=report.workflow_completed,
                     model_source="DISABLED", context_usage=ledger.summary(),
+                    resource_lifecycle=report.resource_lifecycle, cleanup=report.cleanup,
                     execution_target=("SYNTHETIC_MEMORY" if svc.synthetic
                                       else "AUTHORIZED_TEST_ENVIRONMENT"))
                 svc.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=summary)

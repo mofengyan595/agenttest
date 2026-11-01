@@ -17,6 +17,15 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-11-01 reliable testing-colleague Goal supersedes related freezes only within
+docs/reliable-colleague-goal.md. Implement its five stages in order from 628b2dd.
+Scoped local commits on the current branch are authorized after stage checks; no push,
+branches/worktrees, multi-agent, RAG, new framework or real business writes.
+Keep all historical failures and UNKNOWN usage. Model calls and self-built isolated
+CRUD are authorized without a Goal-wide ceiling; retain per-task budgets and the
+operator-specific unknown-usage gates. Do not replay writes after cancellation/restart.
+
+### Previous testing-colleague milestone (preserved)
 The 2026-10-26 testing-colleague Goal supersedes related product freezes. Follow
 docs/testing-colleague-goal.md: complete five stages and fresh three-round real-model
 acceptance through the normal web UI on three new documented loopback projects,

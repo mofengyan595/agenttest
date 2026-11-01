@@ -27,7 +27,7 @@ from agenttest.project_inventory import (
 )
 from agenttest.report import fingerprint
 from agenttest.request_validation import validate_value
-from agenttest.safety import RoleCredential, StrictModel, TargetConfig
+from agenttest.safety import ResourceLifecycle, RoleCredential, StrictModel, TargetConfig
 from agenttest.selectors import validate_selector
 
 
@@ -121,6 +121,7 @@ class GenericSetup(StrictModel):
     approve_negative_tests: bool = False
     allow_negative_value_variants: bool = False
     default_role: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,39}$")
+    resource_lifecycles: list[ResourceLifecycle] = Field(default_factory=list, max_length=30)
 
     @model_validator(mode="after")
     def unique_identities(self):
@@ -136,7 +137,7 @@ class GenericSetup(StrictModel):
     def legacy_defaults(self, handler):
         data = handler(self)
         for key in ("assisted", "approve_negative_tests", "allow_negative_value_variants",
-                    "default_role"):
+                    "default_role", "resource_lifecycles"):
             if not getattr(self, key):
                 data.pop(key, None)
         return data
@@ -247,9 +248,12 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
         target = TargetConfig(base_url=setup.base_url, environment="isolated",
             authorized_ips=list(authorized_ips), allow_mutations=setup.allow_mutations,
             allowed_operations=ids, roles=roles, business_scenario=scenario,
-            max_requests=setup.max_requests)
+            max_requests=setup.max_requests, resource_lifecycles=setup.resource_lifecycles)
     except ValueError:
         raise ValueError("TARGET_AUTHORIZATION_REQUIRED") from None
+    from agenttest.lifecycle import validate_lifecycle_authority
+
+    validate_lifecycle_authority(contract, target)
     policy_ids = {op.operation_id: f"web_rule_{i + 1}" for i, op in enumerate(selected)}
     selected_by_id = {op.operation_id: op for op in selected}
     for alias, role in roles.items():

@@ -168,10 +168,15 @@ def export_regression(output: Path, runtime: RegressionRuntime, scenario: Scenar
     scenario = Scenario.model_validate_json(scenario.model_dump_json())
     executor, identity = _validated(runtime, scenario)
     if (isinstance(runtime.task_contract, FixedPlanSnapshot)
-            and replay_scope(executor.contract, executor.config, scenario)
+            and replay_scope(executor.contract, executor.config, scenario, executor.registry)
             == "MUTATION_LIFECYCLE_REQUIRED"):
         raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     proof = capture_plan(scenario)
+    if replay_scope(executor.contract, executor.config, scenario,
+                    executor.registry) == "OWNED_WRITE_LIFECYCLE":
+        if (not source.resource_lifecycle
+                or any(r.get("status") != "CLEANED" for r in source.resource_lifecycle)):
+            raise ValueError("REGRESSION_LIFECYCLE_NOT_VERIFIED")
     structure = [{key: getattr(step, key) for key in (
         "step_id", "operation_id", "role", "policy_id", "argument_sha256", "dependencies")}
         for step in proof.steps]
@@ -258,7 +263,7 @@ async def run_regression(directory: Path, runtime: RegressionRuntime) -> RunRepo
     manifest, scenario = load_regression(directory)
     executor, identity = _validated(runtime, scenario)
     if (isinstance(runtime.task_contract, FixedPlanSnapshot)
-            and replay_scope(executor.contract, executor.config, scenario)
+            and replay_scope(executor.contract, executor.config, scenario, executor.registry)
             == "MUTATION_LIFECYCLE_REQUIRED"):
         raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     if any(getattr(manifest, key) != value for key, value in identity.items()):

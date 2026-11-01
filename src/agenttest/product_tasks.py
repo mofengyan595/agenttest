@@ -490,6 +490,10 @@ class ProductTasks:
                                 executed_operations=[s.operation_id for s in report.steps
                                                      if s.attempts],
                                 http_requests=sum(len(s.attempts) for s in report.steps),
+                                resource_lifecycle=report.resource_lifecycle,
+                                cleanup=report.cleanup,
+                                cleanup_requests=sum(len(s.attempts)
+                                    for s in report.lifecycle_cleanup),
                                 approved_negative_steps=sum(
                                     s.input_validation == "APPROVED_NEGATIVE"
                                     for s in report.steps),
@@ -684,6 +688,7 @@ class ProductTasks:
                         reason="已停止后续动作，以下保留已发送请求的证据。",
                         executed_operations=[s.operation_id for s in report.steps if s.attempts],
                         http_requests=sum(len(s.attempts) for s in report.steps),
+                        resource_lifecycle=report.resource_lifecycle, cleanup=report.cleanup,
                         executed_steps=sum(bool(s.attempts) for s in report.steps),
                         evidence=[dict(operation_id=s.operation_id, method=s.method,
                             path=s.path_template, outcome=s.outcome.value,

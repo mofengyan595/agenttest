@@ -1,0 +1,132 @@
+"""Prove fixed write scope from operator authority and journal this run's resources."""
+
+import re
+
+from agenttest.report import Outcome, fingerprint
+from agenttest.selectors import select, validate_selector
+
+READS = {"GET", "HEAD", "OPTIONS"}
+
+
+def validate_lifecycle_authority(contract, target):
+    """Reject ambiguous authority at configuration time, before planning or execution."""
+    operations = {o.operation_id: o for o in contract.operations}
+    seen = set()
+    for rule in target.resource_lifecycles:
+        create = operations.get(rule.create_operation)
+        delete = operations.get(rule.delete_operation)
+        validate_selector(rule.id_selector)
+        if (not target.allow_mutations or target.environment != "isolated"
+                or rule.create_operation in seen or not create or not delete
+                or create.method != "POST" or delete.method != "DELETE"
+                or "{" in create.path or delete.path != create.path.rstrip("/")
+                    + "/{" + rule.path_parameter + "}"
+                or any(r.login_operation == rule.create_operation for r in target.roles.values())):
+            raise ValueError("LIFECYCLE_AUTHORITY_INVALID")
+        target.permit(rule.create_operation, create.method)
+        target.permit(rule.delete_operation, delete.method)
+        seen.add(rule.create_operation)
+
+
+def lifecycle_plan(contract, target, scenario, registry):
+    """Reject unsupported lifecycles; never infer ownership from an operation's name."""
+    validate_lifecycle_authority(contract, target)
+    operations = {op.operation_id: op for op in contract.operations}
+    policies = {p.id: p for p in registry.definitions()}
+    creates, deletes = {}, {}
+    for step in scenario.steps:
+        op = operations[step.operation_id]
+        role = target.roles.get(step.role)
+        if op.method in READS or role and role.login_operation == step.operation_id:
+            continue
+        policy = policies[step.policy_id]
+        rules = [r for r in target.resource_lifecycles
+                 if r.create_operation == step.operation_id]
+        if rules:
+            if (len(rules) != 1 or op.method != "POST" or step.path_parameters
+                    or policy.negative or not policy.assertions.status
+                    or policy.assertions.status.codes != [201]):
+                raise ValueError("LIFECYCLE_FRESH_CREATE_REQUIRED")
+            rule = rules[0]
+            validate_selector(rule.id_selector)
+            creates[step.id] = (step, rule)
+            continue
+        # Every mutating resource address must be bound directly to a fresh creation.
+        if len(step.path_parameters) != 1:
+            raise ValueError("LIFECYCLE_OWNED_RESOURCE_REQUIRED")
+        parameter, binding = next(iter(step.path_parameters.items()))
+        owned = creates.get(binding.from_step)
+        if not owned:
+            raise ValueError("LIFECYCLE_OWNED_RESOURCE_REQUIRED")
+        source, rule = owned
+        if (binding.select != rule.id_selector or parameter != rule.path_parameter
+                or step.role != source.role or source.id in deletes):
+            raise ValueError("LIFECYCLE_RESOURCE_SCOPE_MISMATCH")
+        # No hidden references to another run or a second resource in mutation data.
+        if any(b.from_step for b in [*step.body.values(), *step.query.values()]):
+            raise ValueError("LIFECYCLE_MUTATION_DATA_SCOPE_REQUIRED")
+        create_op = operations[source.operation_id]
+        expected_path = create_op.path.rstrip("/") + "/{" + parameter + "}"
+        if op.path != expected_path:
+            raise ValueError("LIFECYCLE_RESOURCE_PATH_MISMATCH")
+        if op.method == "DELETE":
+            if (step.operation_id != rule.delete_operation or step.body or step.query
+                    or policy.negative or not policy.assertions.status
+                    or any(c not in {200, 204} for c in policy.assertions.status.codes)):
+                raise ValueError("LIFECYCLE_CLEANUP_POLICY_REQUIRED")
+            deletes[source.id] = step
+        elif op.method not in {"PUT", "PATCH"}:
+            raise ValueError("LIFECYCLE_MUTATION_UNSUPPORTED")
+    if not creates or set(creates) != set(deletes):
+        raise ValueError("LIFECYCLE_PREPARATION_AND_CLEANUP_REQUIRED")
+    return {key: (source, rule, deletes[key]) for key, (source, rule) in creates.items()}
+
+
+class LifecycleJournal:
+    """No resume method. Interrupted journals are evidence, never instructions to retry."""
+
+    def __init__(self, plan, report):
+        self.plan, self.report = plan, report
+        self.rows = {}
+        for key, (_, rule, cleanup) in plan.items():
+            row = dict(create_step=key, cleanup_step=cleanup.id, owner_run_id=report.run_id,
+                       status="NOT_CREATED", resource_id=None, id_sha256=None,
+                       basis=rule.fresh_resource_basis, cleanup_result="NOT_SENT")
+            self.rows[key] = row
+        report.resource_lifecycle = list(self.rows.values())
+
+    def before(self, step):
+        if step.id in self.rows:
+            self.rows[step.id]["status"] = "CREATE_OUTCOME_UNKNOWN"
+        for row in self.rows.values():
+            if row["cleanup_step"] == step.id:
+                if row["status"] != "OWNED":
+                    raise ValueError("LIFECYCLE_OWNERSHIP_NOT_PROVEN")
+                row.update(status="CLEANUP_OUTCOME_UNKNOWN", cleanup_result="OUTCOME_UNKNOWN")
+
+    def after(self, step, result, body, vault):
+        if step.id in self.rows:
+            row = self.rows[step.id]
+            if result.outcome == Outcome.PASS:
+                try:
+                    value = select(body, self.plan[step.id][1].id_selector)
+                    if (type(value) not in {str, int} or type(value) is bool
+                            or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", str(value))
+                            or vault.contains_secret(value)):
+                        raise ValueError("UNSAFE_RESOURCE_ID")
+                    if any(other is not row and other["resource_id"] == value
+                           for other in self.rows.values()):
+                        raise ValueError("DUPLICATE_RESOURCE_ID")
+                    row.update(status="OWNED", resource_id=value, id_sha256=fingerprint(value))
+                except (ValueError, KeyError, TypeError, IndexError):
+                    row["status"] = "RESOURCE_ID_UNVERIFIED"
+                    raise ValueError("LIFECYCLE_RESOURCE_ID_UNVERIFIED") from None
+        for row in self.rows.values():
+            if row["cleanup_step"] == step.id:
+                row.update(status="CLEANED" if result.outcome == Outcome.PASS
+                           else "CLEANUP_PENDING", cleanup_result=result.outcome.value)
+
+    def finish(self):
+        pending = [r for r in self.rows.values() if r["status"] not in {"NOT_CREATED", "CLEANED"}]
+        self.report.cleanup = ("本轮资源已清理。" if not pending else
+                               "清理未完成；保留本轮资源和未知结果，请人工核实，不自动重放。")

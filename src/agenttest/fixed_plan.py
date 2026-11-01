@@ -38,7 +38,7 @@ def load_saved_contract(raw):
     return model.model_validate_json(raw)
 
 
-def replay_scope(contract, target, scenario):
+def replay_scope(contract, target, scenario, registry=None):
     """Authentication is explicit; business mutations need a separately verified data lifecycle."""
     methods = {op.operation_id: op.method for op in contract.operations}
     authenticated = False
@@ -47,6 +47,14 @@ def replay_scope(contract, target, scenario):
         role = target.roles.get(step.role)
         login = bool(role and method == "POST" and role.login_operation == step.operation_id)
         if method not in {"GET", "HEAD", "OPTIONS"} and not login:
+            if registry is not None:
+                from agenttest.lifecycle import lifecycle_plan
+
+                try:
+                    lifecycle_plan(contract, target, scenario, registry)
+                    return "OWNED_WRITE_LIFECYCLE"
+                except (ValueError, KeyError):
+                    pass
             return "MUTATION_LIFECYCLE_REQUIRED"
         authenticated = authenticated or login
     return "AUTHENTICATED_READONLY" if authenticated else "READONLY"

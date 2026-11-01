@@ -59,3 +59,33 @@ test("an existing fixed-negative approval does not silently authorize value vari
   expect(screen.queryByLabelText("允许在同一字段、同类文档约束内变化异常值"))
     .not.toBeInTheDocument();
 });
+
+test("document links suggest a lifecycle but require explicit fresh-resource confirmation", async () => {
+  const changed = vi.fn();
+  const common = {supported: true, enabled: true, role: null, checks: [],
+    authentication_required: false};
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({operations: [
+    {...common, operation_id: "create", alias: "创建", method: "POST", path: "/items",
+      statuses: [201], arguments: []},
+    {...common, operation_id: "delete", alias: "清理", method: "DELETE", path: "/items/{itemId}",
+      statuses: [204], arguments: [{location: "path_parameters", name: "itemId", value: null,
+        source_operation: "create", selector: "$.id"}]},
+  ]}))));
+  function Form() {
+    const [value, setValue] = useState<GenericSetup | null>(null);
+    return <GenericProject document="contract" csrf="local" value={value} disabled={false}
+      onChange={(next) => { changed(next); setValue(next); }} />;
+  }
+  render(<Form />);
+  await userEvent.click(screen.getByRole("button", {name: "读取接口并配置"}));
+  await userEvent.click(await screen.findByLabelText(/允许所选接口/));
+  const confirmation = screen.getByLabelText(/每次产生全新测试数据/);
+  expect(confirmation).not.toBeChecked();
+  await userEvent.click(confirmation);
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({resource_lifecycles: [
+    expect.objectContaining({create_operation: "create", delete_operation: "delete",
+      id_selector: "$.id", path_parameter: "itemId"}),
+  ]}));
+  await userEvent.click(confirmation);
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({resource_lifecycles: []}));
+});

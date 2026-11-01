@@ -199,6 +199,8 @@ class RunReport(BaseModel):
     feedback: FeedbackResult | None = None
     trusted_symptom: TrustedSymptomResult | None = None
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
+    resource_lifecycle: list[dict] = Field(default_factory=list)
+    lifecycle_cleanup: list[StepResult] = Field(default_factory=list)
 
     @model_serializer(mode="wrap")
     def serialize_execution_identity(self, handler):
@@ -210,6 +212,10 @@ class RunReport(BaseModel):
             data.pop("feedback", None)
         if self.trusted_symptom is None:
             data.pop("trusted_symptom", None)
+        if not self.resource_lifecycle:
+            data.pop("resource_lifecycle", None)
+        if not self.lifecycle_cleanup:
+            data.pop("lifecycle_cleanup", None)
         return data
 
 

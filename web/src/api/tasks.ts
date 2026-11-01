@@ -473,6 +473,8 @@ export interface GenericRole {
   token_selector?: string;
 }
 export interface GenericSetup {
+  resource_lifecycles?: {create_operation: string; delete_operation: string;
+    id_selector: string; path_parameter: string; fresh_resource_basis: string}[];
   base_url: string;
   isolated_confirmed: boolean;
   allow_mutations: boolean;

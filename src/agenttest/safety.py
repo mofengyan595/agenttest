@@ -4,7 +4,7 @@ import ipaddress
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 
 class StrictModel(BaseModel):
@@ -19,6 +19,16 @@ class RoleCredential(StrictModel):
     username_field: str = "username"
     password_field: str = "password"
     token_selector: str = "$.access_token"
+
+
+class ResourceLifecycle(StrictModel):
+    """Operator authority that POST creates a new, exclusively owned resource."""
+
+    create_operation: str
+    delete_operation: str
+    id_selector: str
+    path_parameter: str
+    fresh_resource_basis: str = Field(min_length=10, max_length=500)
 
 
 class TargetConfig(StrictModel):
@@ -37,6 +47,14 @@ class TargetConfig(StrictModel):
     read_timeout: float = Field(default=5.0, gt=0, le=30)
     run_timeout: float = Field(default=60.0, gt=0, le=300)
     min_request_interval: float = Field(default=0.01, ge=0, le=5)
+    resource_lifecycles: list[ResourceLifecycle] = Field(default_factory=list, max_length=30)
+
+    @model_serializer(mode="wrap")
+    def legacy_identity(self, handler):
+        data = handler(self)
+        if not self.resource_lifecycles:
+            data.pop("resource_lifecycles", None)
+        return data
 
     @model_validator(mode="after")
     def validate_target(self) -> "TargetConfig":

@@ -206,6 +206,27 @@ export function GenericProject({
             />
             允许受控异常参数测试，按文档中的 400 / 422 检查拒绝结果
           </label>
+          {value.allow_mutations && operations.filter((o) => o.method === "DELETE").map((o) => {
+            const configured = value.operations.find((v) => v.operation_id === o.operation_id);
+            const argument = configured?.arguments.find((a) => a.location === "path_parameters"
+              && a.source_operation && operations.some((source) => source.method === "POST"
+                && source.operation_id === a.source_operation
+                && o.path === source.path.replace(/\/$/, "") + "/{" + a.name + "}"));
+            if (!argument?.source_operation || !argument.selector) return null;
+            const create = argument.source_operation;
+            return <label className="task-option" key={o.operation_id}>
+              <input type="checkbox" disabled={disabled}
+                checked={(value.resource_lifecycles || []).some((r) => r.create_operation === create
+                  && r.delete_operation === o.operation_id)}
+                onChange={(e) => update({resource_lifecycles: [
+                  ...(value.resource_lifecycles || []).filter((r) => r.create_operation !== create),
+                  ...(e.target.checked ? [{create_operation: create, delete_operation: o.operation_id,
+                    id_selector: argument.selector, path_parameter: argument.name,
+                    fresh_resource_basis: "操作员确认：每次成功创建分配全新专用资源，清理仅删除本轮该资源。"}] : [])]})} />
+              我确认“{value.operations.find((v) => v.operation_id === create)?.alias || create}”
+              每次产生全新测试数据，允许“{configured?.alias}”清理本轮数据并保存复测
+            </label>;
+          })}
           {value.assisted && value.approve_negative_tests && (
             <label className="task-option">
               <input type="checkbox" disabled={disabled}

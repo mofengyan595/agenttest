@@ -138,6 +138,15 @@ class Executor:
         vault = CredentialVault(self.config, self.environ)
         authenticated: set[str] = set()
         budget = {"requests": 0, "last_request": 0.0}
+        lifecycle = None
+        if self.config.resource_lifecycles:
+            from agenttest.lifecycle import LifecycleJournal, lifecycle_plan
+
+            try:
+                lifecycle = LifecycleJournal(lifecycle_plan(
+                    self.contract, self.config, scenario, self.registry), report)
+            except ValueError:
+                report.cleanup = "此场景缺少完整且已授权的数据生命周期，不能保存为写回归。"
         timeout = httpx.Timeout(
             self.config.read_timeout, connect=self.config.connect_timeout,
             write=self.config.read_timeout, pool=self.config.connect_timeout,
@@ -161,10 +170,15 @@ class Executor:
                         # Journal before sending a mutation. Reports cannot be resumed/replayed.
                         self.store.save(report)
                         try:
+                            if lifecycle:
+                                lifecycle.before(step)
+                                self.store.save(report)
                             body = await self._step(
                                 client, step, operation, state, budget, result, report,
                                 policies[step.id], vault,
                             )
+                            if lifecycle:
+                                lifecycle.after(step, result, body, vault)
                             if result.outcome == Outcome.PASS:
                                 state[step.id] = vault.public_response(body)
                                 if step.role:
@@ -211,6 +225,9 @@ class Executor:
                         await investigate(self, client, scenario, report, state, vault,
                                           authenticated,
                                           last_request=budget["last_request"])
+                if lifecycle:
+                    await self._cleanup_owned(client, scenario, report, state, budget,
+                                              policies, vault, lifecycle)
         except asyncio.CancelledError:
             if report.investigations or report.feedback is not None:
                 report.investigation_error = "RUN_CANCELLED"
@@ -243,6 +260,9 @@ class Executor:
             else:
                 report.outcome, report.reason = Outcome.TOOL_ERROR, "TRANSPORT_SETUP_ERROR"
         finally:
+            if lifecycle:
+                lifecycle.finish()
+                self.store.save(report)
             state.clear()
             authenticated.clear()
             vault.close()
@@ -256,6 +276,38 @@ class Executor:
                 raise
             report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         return report
+
+    async def _cleanup_owned(self, client, scenario, report, state, budget, policies, vault,
+                             lifecycle):
+        """Only unsent approved deletes, after known outcomes; original failure is immutable."""
+        methods = {o.operation_id: o for o in self.contract.operations}
+        if any(s.method not in {"GET", "HEAD", "OPTIONS"} and s.attempts
+               and (s.attempts[-1].error_code or s.attempts[-1].status_code is None)
+               for s in report.steps):
+            return
+        sent = {s.step_id for s in report.steps}
+        for key, (_, _, step) in lifecycle.plan.items():
+            if lifecycle.rows[key]["status"] != "OWNED" or step.id in sent:
+                continue
+            operation = methods[step.operation_id]
+            result = StepResult(step_id=step.id, operation_id=step.operation_id,
+                method=operation.method, path_template=operation.path,
+                outcome=Outcome.TEST_INFRA_ERROR, reason="CLEANUP_PENDING",
+                policy_sha256=fingerprint(policies[step.id].model_dump()),
+                policy_template_sha256=fingerprint(policies[step.id].model_dump()))
+            report.lifecycle_cleanup.append(result)
+            lifecycle.before(step)
+            self.store.save(report)
+            try:
+                async with asyncio.timeout(self.config.connect_timeout + self.config.read_timeout):
+                    body = await self._step(client, step, operation, state, budget, result,
+                                            report, policies[step.id], vault)
+                lifecycle.after(step, result, body, vault)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                result.reason = "CLEANUP_UNCONFIRMED_NO_REPLAY"
+            self.store.save(report)
 
     def _binding(self, binding: ArgumentBinding, step: Step, state: dict) -> Any:
         if binding.from_step:
@@ -413,8 +465,7 @@ class Executor:
                     report.feedback.requests_used = budget["requests"]
             budget["last_request"] = time.monotonic()
             evidence = AttemptEvidence(attempt=len(result.attempts) + 1, elapsed_ms=0.0)
-            if isinstance(result, InvestigationResult):
-                evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
+            evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
             result.attempts.append(evidence)
             self.store.save(report)
             started = time.perf_counter()

@@ -26,7 +26,8 @@ class ProgressStore(ReportStore):
         super().save(report)
         phase = {"plan": "PLANNING", "validate": "VALIDATING", "execute": "EXECUTING"}.get(
             report.workflow_nodes[-1] if report.workflow_nodes else "", "REPORT")
-        self.callback(phase, report.run_id, sum(len(s.attempts) for s in report.steps))
+        self.callback(phase, report.run_id, sum(len(s.attempts) for s in
+            [*report.steps, *report.investigations, *report.lifecycle_cleanup]))
 
 
 class TaskService:
@@ -383,7 +384,7 @@ class TaskService:
                 scenario, _, project = asset
                 if (summary.get("mode") == "MODEL_DESIGNED"
                         and not self.saved.executable(project, scenario)):
-                    reason = "写入场景尚缺完整的数据准备与清理控制，当前不开放固定复测。"
+                    reason = "此写场景缺少已确认的新数据准备、同轮资源绑定或清理，请先补齐。"
                 elif any(s.upload or s.poll or s.read_retries for s in scenario.steps):
                     reason = "此场景含上传、轮询或读取重试，暂不支持固定回归导出。"
                 else:
