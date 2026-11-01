@@ -87,6 +87,7 @@ def configured_task_service(runs_dir, *, projects=None, model_env=None, generic_
         semantic_factory=lambda project: goal_spec_model(settings_for(project)),
         designer_factory=lambda project: test_designer(settings_for(project)),
         focus_factory=lambda project: test_focus(settings_for(project)),
+        product_probe_factory=lambda project: product_probe(settings_for(project)),
         model_status=model_status, generic_intake=generic_intake,
         private_input_guard=private_input_guard,
         environ=target_environment(model_env or os.environ.get("AGENTTEST_MODEL_ENV")),
@@ -98,6 +99,12 @@ def feedback(settings):
     from agenttest.evidence_context import EvidenceFeedbackModel
 
     return EvidenceFeedbackModel(settings)
+
+
+def product_probe(settings):
+    from agenttest.product_probe import ProductProbeModel
+
+    return ProductProbeModel(settings.model_copy(update={"timeout": 90.0}), profile="generic")
 
 
 def goal_spec_model(settings):

@@ -9,6 +9,11 @@ from agenttest.report import InvestigationResult, Outcome, fingerprint
 
 async def recheck_read(executor, client, scenario, report, state, budget, policies, vault):
     """Preserve the original failure; never replay a write or infer an unobserved root cause."""
+    if executor.analyzer is not None:
+        from agenttest.product_probe import investigate_product
+
+        return await investigate_product(executor, client, scenario, report, state, budget,
+                                         policies, vault)
     if report.outcome not in {Outcome.ASSERTION_FAILED, Outcome.TEST_INFRA_ERROR}:
         return
     if not report.steps:

@@ -35,7 +35,7 @@ class TaskService:
                  planner_factory, *, synthetic=False, environ=None, analyzer_factory=None,
                  semantic_factory=None, expose_registered=True, model_status=None,
                  generic_intake=False, intake_authorized_ips=(), designer_factory=None,
-                 focus_factory=None, private_input_guard=None):
+                 focus_factory=None, private_input_guard=None, product_probe_factory=None):
         self.projects = dict(projects)
         for key, path in self.projects.items():
             if load_goal_project(path).registration.id != key:
@@ -48,6 +48,7 @@ class TaskService:
         self.semantic_factory = semantic_factory
         self.designer_factory = designer_factory
         self.focus_factory = focus_factory
+        self.product_probe_factory = product_probe_factory
         self.private_input_guard = private_input_guard or (lambda _: False)
         self.environ = dict(os.environ if environ is None else environ)
         self._inputs, self._workers = {}, {}

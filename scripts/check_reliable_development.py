@@ -62,8 +62,10 @@ async def check(args):
                                               model_env=ROOT / ".env", generic_intake=True)
             raw = json.dumps(document("parcels"), ensure_ascii=False)
             operations = []
+            selected = ({"createParcel", "readParcel", "deleteParcel"}
+                        if args.case == "write" else {"readAvailability"})
             for op in analyze_contract(load_openapi(raw)):
-                if op["operation_id"] in {"createParcel", "readParcel", "deleteParcel"}:
+                if op["operation_id"] in selected:
                     operations.append(dict(operation_id=op["operation_id"], alias=op["summary"],
                         statuses=op["statuses"], checks=op["checks"], arguments=[
                             {k: v for k, v in a.items() if k in {"location", "name", "value",
@@ -73,11 +75,13 @@ async def check(args):
                 assisted=True, operations=operations, resource_lifecycles=[ResourceLifecycle(
                     create_operation="createParcel", delete_operation="deleteParcel",
                     path_parameter="parcelId", id_selector="$.id",
-                    fresh_resource_basis="自建隔离靶场用 uuid4 为每次成功创建分配全新专用包裹。")])
+                    fresh_resource_basis="自建隔离靶场用 uuid4 为每次成功创建分配全新专用包裹。")]
+                    if args.case == "write" else [])
             saved = service.intake.save(IntakeInput(name="写回归开发检查", document=raw,
                 generic=setup, confirmed=True), "operator")
             row = await service.submit("operator", saved["id"],
-                "创建一个专用测试包裹，读取确认内容后删除同一个包裹，只检查这条完整流程。",
+                "创建一个专用测试包裹，读取确认内容后删除同一个包裹，只检查这条完整流程。"
+                    if args.case == "write" else "检查服务可用状态，异常时调查，并保留原始失败。",
                 uuid4().hex)
             initial = await terminal(service, row)
             result["initial"] = initial
@@ -94,6 +98,12 @@ async def check(args):
                 r["summary"].get("fixed_regression_passed")
                 and r["summary"]["context_usage"]["model_calls"] == 0
                 for r in result["fixed"]))
+            if args.case == "investigation":
+                cases = initial["summary"].get("cases", [])
+                result["passed"] = any(c.get("outcome") == "ASSERTION_FAILED"
+                    and 1 <= len(c.get("investigations", [])) <= 2
+                    and c.get("failure_explanation", {}).get("cause_confirmed") is False
+                    for c in cases)
         finally:
             if service:
                 await service.close()
@@ -111,6 +121,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--real", action="store_true", required=True)
     parser.add_argument("--port", type=int, default=18341)
+    parser.add_argument("--case", choices=["write", "investigation"], default="write")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:

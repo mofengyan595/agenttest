@@ -201,6 +201,8 @@ class RunReport(BaseModel):
     cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
     resource_lifecycle: list[dict] = Field(default_factory=list)
     lifecycle_cleanup: list[StepResult] = Field(default_factory=list)
+    probe_decisions: list[dict] = Field(default_factory=list)
+    failure_explanation: dict | None = None
 
     @model_serializer(mode="wrap")
     def serialize_execution_identity(self, handler):
@@ -216,6 +218,10 @@ class RunReport(BaseModel):
             data.pop("resource_lifecycle", None)
         if not self.lifecycle_cleanup:
             data.pop("lifecycle_cleanup", None)
+        if not self.probe_decisions:
+            data.pop("probe_decisions", None)
+        if self.failure_explanation is None:
+            data.pop("failure_explanation", None)
         return data
 
 

@@ -472,17 +472,22 @@ class ProductTasks:
                             store = ProgressStore(svc.reports.root, progress)
                             probe_allowed = (ledger.requests + len(scenario.steps)
                                              < group_request_limit)
+                            probe_model = (BudgetPlanner(JournalPlanner(
+                                svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
+                                if probe_allowed and svc.product_probe_factory else None)
                             report = await Workflow(project.document, project.target,
                                 project.registry, FakeLLM(""), store,
                                 transport=bounded_transport, environ=svc.environ,
                                 task_mode="model_designed", user_task=text, prepared_plan=scenario,
+                                analyzer=probe_model,
                                 investigation=InvestigationConfig(enabled=probe_allowed,
                                     product_read_probe=probe_allowed),
                                 execution_guard=guard,
                                 plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
                                     model_request_sha256=model.stats.request_sha256),
                                 budget=WorkflowBudget(max_model_calls=0,
-                                    workflow_timeout=project.target.run_timeout + 15)).run()
+                                    workflow_timeout=min(300.,
+                                        project.target.run_timeout + 220))).run()
                             case_row.update(status="FINISHED", run_id=report.run_id,
                                 outcome=report.outcome.value, task_satisfied=None,
                                 planned_steps=len(scenario.steps),
@@ -492,6 +497,8 @@ class ProductTasks:
                                 http_requests=sum(len(s.attempts) for s in report.steps),
                                 resource_lifecycle=report.resource_lifecycle,
                                 cleanup=report.cleanup,
+                                failure_explanation=report.failure_explanation,
+                                probe_decisions=report.probe_decisions,
                                 cleanup_requests=sum(len(s.attempts)
                                     for s in report.lifecycle_cleanup),
                                 approved_negative_steps=sum(

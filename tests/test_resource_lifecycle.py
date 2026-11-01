@@ -16,7 +16,6 @@ from agenttest.lifecycle import lifecycle_plan
 from agenttest.regression import RegressionRuntime, export_regression, run_regression
 from agenttest.report import Outcome, ReportStore
 from agenttest.safety import ResourceLifecycle
-from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
 
 def lifecycle_project():
@@ -56,6 +55,9 @@ def executor(tmp_path, handler, proj=None):
 
 @pytest.mark.asyncio
 async def test_fresh_runs_cleanup_only_their_resource_and_export_without_model(tmp_path):
+    pytest.importorskip("langgraph")
+    from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
+
     proj, _ = lifecycle_project()
     resources, ids, calls = {"foreign": "ready"}, [], []
 

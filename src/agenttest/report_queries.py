@@ -44,7 +44,7 @@ def public_report(report: RunReport, registry: PolicyRegistry | None = None) -> 
     """
     policies = {fingerprint(p.model_dump()): p for p in registry.definitions()} if registry else {}
     result = report.model_copy(deep=True)
-    for step in [*result.steps, *result.investigations]:
+    for step in [*result.steps, *result.investigations, *result.lifecycle_cleanup]:
         policy = policies.get(step.policy_sha256)
         for check in step.checks:
             codes = check.expected
