@@ -9,7 +9,7 @@ from test_resource_lifecycle import lifecycle_project, plan
 
 from agenttest.dsl import AssertionPolicy, ExpectedStatus, Step
 from agenttest.executor import Executor
-from agenttest.investigation import InvestigationConfig
+from agenttest.investigation import FeedbackBudget, InvestigationConfig
 from agenttest.policies import PolicyRegistry
 from agenttest.product_probe import ProductProbeModel
 from agenttest.report import ModelCallStats, Outcome, ReportStore, RunReport, fingerprint
@@ -266,3 +266,32 @@ async def test_unknown_update_can_be_read_but_not_replayed_or_blindly_cleaned(tm
     assert report.resource_lifecycle[0]["resource_id"] == "proven_owned"
     assert report.investigations[0].outcome == Outcome.PASS
     assert "清理未完成" in report.cleanup
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["no_model_budget", "decision_timeout"])
+async def test_declared_probe_budget_stops_calls_and_preserves_cleanup(tmp_path, mode):
+    project, _ = lifecycle_project()
+
+    class SlowSelection(SelectRead):
+        async def generate(self, context):
+            self.contexts.append(context)
+            await asyncio.Event().wait()
+
+    model, requests = SlowSelection(), []
+
+    def target(request):
+        requests.append(request.method)
+        return httpx.Response(201, json=dict(id="fresh")) if request.method == "POST" else (
+            httpx.Response(204) if request.method == "DELETE" else
+            httpx.Response(200, json=dict(state="broken")))
+
+    budget = FeedbackBudget(max_requests=2,
+        max_model_calls=0 if mode == "no_model_budget" else 2, timeout=.01)
+    report = await execute(Executor(project.target, project.contract, ReportStore(tmp_path),
+        httpx.MockTransport(target), {}, project.registry, analyzer=model,
+        investigation=InvestigationConfig(enabled=True, product_read_probe=True, feedback=budget)))
+    assert len(model.contexts) == (0 if mode == "no_model_budget" else 1)
+    assert requests == ["POST", "GET", "DELETE"]
+    assert report.outcome == Outcome.ASSERTION_FAILED
+    assert report.resource_lifecycle[0]["status"] == "CLEANED"

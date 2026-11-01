@@ -211,7 +211,8 @@ test("frozen reliable colleague first attempt", async ({page}) => {
       expect(first.summary.fixed_regression_passed).toBe(true);
       await expect(page.getByLabel("本轮数据清理")).toContainText("已清理 1 项");
       // A protected .env transfers this browser's local ownership to the CLI, never to a model.
-      const cookie = (await page.context().cookies(origin)).find((c) => c.name === "agenttest_task_session");
+      const cookie = (await page.context().cookies(origin + "/api/task-session"))
+        .find((c) => c.name === "agenttest_task_session");
       expect(cookie).toBeTruthy();
       await mkdir(credentialDirectory, {recursive: true});
       await writeFile(sessionFile, `AGENTTEST_WORKSPACE_ORIGIN=${origin}\n` +

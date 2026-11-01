@@ -32,6 +32,10 @@ async def terminal(service, row):
 
 
 async def check(args):
+    from run_reliable_acceptance import unresolved_usage
+
+    if unresolved_usage(ROOT / "runs/reliable-colleague"):
+        raise ValueError("THIS_GOAL_UNKNOWN_USAGE_REQUIRES_RECONCILIATION_OR_EXPLICIT_AUTHORITY")
     started = perf_counter()
     args.output.mkdir(parents=True, exist_ok=False)
     with socket.socket() as probe:

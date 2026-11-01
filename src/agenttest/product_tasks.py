@@ -95,7 +95,8 @@ class ProductTasks:
         budget = dict(max_requests=project.target.max_requests,
             max_model_calls=project.registration.budget.suite_max_model_calls,
             max_total_tokens=project.registration.budget.suite_max_total_tokens,
-            max_steps_per_case=project.target.max_steps, max_seconds=600)
+            max_steps_per_case=project.target.max_steps, max_seconds=600,
+            max_readonly_investigations=2)
         summary = dict(mode="MODEL_DESIGNED", display_title="一轮接口测试", user_request=text,
             scope="project", inventory=inventory, budget=budget, cases=[], design_records=[],
             questions=[], not_covered=[], groups=design_groups(project),
@@ -458,7 +459,7 @@ class ProductTasks:
                                 case_row.update(status="REJECTED", reason=getattr(
                                     getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))
                                 continue
-                            from agenttest.investigation import InvestigationConfig
+                            from agenttest.investigation import FeedbackBudget, InvestigationConfig
                             from agenttest.task_service import ProgressStore
                             from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
@@ -470,8 +471,11 @@ class ProductTasks:
                                              requests=ledger.requests)
 
                             store = ProgressStore(svc.reports.root, progress)
-                            probe_allowed = (ledger.requests + len(scenario.steps)
-                                             < group_request_limit)
+                            probe_remaining = max(0, 2 - sum(i.get("requests", 0)
+                                for previous in summary["cases"]
+                                for i in previous.get("investigations", [])))
+                            probe_allowed = (probe_remaining > 0 and ledger.requests
+                                             + len(scenario.steps) < group_request_limit)
                             probe_model = (BudgetPlanner(JournalPlanner(
                                 svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
                                 if probe_allowed and svc.product_probe_factory else None)
@@ -481,13 +485,21 @@ class ProductTasks:
                                 task_mode="model_designed", user_task=text, prepared_plan=scenario,
                                 analyzer=probe_model,
                                 investigation=InvestigationConfig(enabled=probe_allowed,
-                                    product_read_probe=probe_allowed),
+                                    product_read_probe=probe_allowed, feedback=FeedbackBudget(
+                                        max_requests=probe_remaining,
+                                        max_model_calls=probe_remaining)),
                                 execution_guard=guard,
                                 plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
                                     model_request_sha256=model.stats.request_sha256),
                                 budget=WorkflowBudget(max_model_calls=0,
                                     workflow_timeout=min(300.,
                                         project.target.run_timeout + 220))).run()
+                            if (report.steps and report.outcome != Outcome.PASS
+                                    and report.failure_explanation is None):
+                                from agenttest.product_probe import explain_failure
+
+                                report.failure_explanation = explain_failure(report)
+                                store.save(report)
                             case_row.update(status="FINISHED", run_id=report.run_id,
                                 outcome=report.outcome.value, task_satisfied=None,
                                 planned_steps=len(scenario.steps),

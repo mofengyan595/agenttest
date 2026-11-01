@@ -280,6 +280,7 @@ class Executor:
     async def _cleanup_owned(self, client, scenario, report, state, budget, policies, vault,
                              lifecycle):
         """Only unsent approved deletes, after known outcomes; original failure is immutable."""
+        lifecycle.reconcile_unsent()
         methods = {o.operation_id: o for o in self.contract.operations}
         if any(s.method not in {"GET", "HEAD", "OPTIONS"} and s.attempts
                and (s.attempts[-1].error_code or s.attempts[-1].status_code is None)

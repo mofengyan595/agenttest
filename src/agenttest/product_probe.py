@@ -1,6 +1,7 @@
 """Closed, authorized read choices for the existing product Executor; never write repair."""
 
 import asyncio
+import time
 from typing import Literal
 
 from pydantic import Field
@@ -115,11 +116,16 @@ async def investigate_product(executor, client, scenario, report, state, budget,
     failed = report.steps[-1]
     # Keep remaining delete requests available; investigation never consumes cleanup's budget.
     reserved = sum(r["status"] == "OWNED" for r in report.resource_lifecycle)
-    for index in range(2):
+    limit = (min(2, executor.investigation.feedback.max_requests,
+                 executor.investigation.feedback.max_model_calls)
+             if executor.investigation.feedback else 2)
+    deadline = time.monotonic() + (executor.investigation.feedback.timeout
+                                  if executor.investigation.feedback else 180)
+    for index in range(limit):
         ledger = getattr(executor.transport, "ledger", None)
         remaining = min(executor.config.max_requests - budget["requests"],
                         ledger.max_requests - ledger.requests if ledger else 200) - reserved
-        if not available or remaining < 1:
+        if not available or remaining < 1 or time.monotonic() >= deadline:
             report.investigation_error = "NO_AUTHORIZED_READ_OR_BUDGET"
             break
         context = dict(original=dict(operation_id=failed.operation_id, outcome=failed.outcome.value,
@@ -127,12 +133,12 @@ async def investigate_product(executor, client, scenario, report, state, budget,
             choices=[entry[0] for entry in available],
             observations=[dict(operation_id=i.operation_id, outcome=i.outcome.value,
                 checks=[c.model_dump() for c in i.checks]) for i in report.investigations],
-            remaining_checks=2 - index)
+            remaining_checks=limit - index)
         decision = dict(index=index + 1, state="PENDING", model_call=None)
         report.probe_decisions.append(decision)
         executor.store.save(report)
         try:
-            async with asyncio.timeout(95):
+            async with asyncio.timeout(min(95., deadline - time.monotonic())):
                 raw = await executor.analyzer.generate(context)
             choice = ProbeChoice.model_validate(bounded_json(raw, 2000))
             validate_choice(choice, context["choices"])
@@ -164,7 +170,8 @@ async def investigate_product(executor, client, scenario, report, state, budget,
         before = budget["requests"]
         try:
             async with asyncio.timeout(min(15., executor.config.connect_timeout
-                                          + executor.config.read_timeout + 1)):
+                                          + executor.config.read_timeout + 1,
+                                          deadline - time.monotonic())):
                 await executor._step(client, step, operation, state, budget, probe, report,
                                      policy, vault)
             probe.reason = "PRODUCT_PROBE_EVALUATED"

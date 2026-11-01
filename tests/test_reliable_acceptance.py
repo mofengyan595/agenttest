@@ -51,3 +51,6 @@ def test_unknown_usage_audit_never_reconciles_or_replaces_tokens(acceptance, tmp
     assert result["model_calls"] == 1 and result["calls"][0]["stats"]["total_tokens"] is None
     assert db.model_usage_blocked()
     assert acceptance.usage(tmp_path / "missing.sqlite3")["model_calls"] is None
+    debt = acceptance.unresolved_usage(tmp_path)
+    assert len(debt) == 1 and debt[0]["call_id"] == call
+    assert db.model_usage_blocked()

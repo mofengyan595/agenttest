@@ -118,7 +118,7 @@ class LifecycleJournal:
             row = self.rows[step.id]
             if result.outcome == Outcome.PASS:
                 try:
-                    value = select(body, self.plan[step.id][1].id_selector)
+                    value = select(vault.public_response(body), self.plan[step.id][1].id_selector)
                     if (type(value) not in {str, int} or type(value) is bool
                             or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", str(value))
                             or vault.contains_secret(value)):
@@ -137,7 +137,23 @@ class LifecycleJournal:
                 row.update(status="CLEANED" if result.outcome == Outcome.PASS
                            else "CLEANUP_PENDING", cleanup_result=result.outcome.value)
 
+    def reconcile_unsent(self):
+        """A rejected preflight is not an unknown sent request; retain the failed result."""
+        results = {s.step_id: s for s in [*self.report.steps, *self.report.lifecycle_cleanup]}
+        for row in self.rows.values():
+            for key, state, restored in (("create_step", "CREATE_OUTCOME_UNKNOWN", "NOT_CREATED"),
+                    ("cleanup_step", "CLEANUP_OUTCOME_UNKNOWN", "CLEANUP_PENDING"),
+                    ("mutation_step", "MUTATION_OUTCOME_UNKNOWN", "OWNED")):
+                result = results.get(row.get(key))
+                if row["status"] == state and result is not None and not result.attempts:
+                    row["status"] = restored
+                    if key == "cleanup_step":
+                        row["cleanup_result"] = "NOT_SENT_PRECHECK_REJECTED"
+                    elif key == "mutation_step":
+                        row["mutation_result"] = "NOT_SENT_PRECHECK_REJECTED"
+
     def finish(self):
+        self.reconcile_unsent()
         pending = [r for r in self.rows.values() if r["status"] not in {"NOT_CREATED", "CLEANED"}]
         self.report.cleanup = ("本轮资源已清理。" if not pending else
                                "清理未完成；保留本轮资源和未知结果，请人工核实，不自动重放。")

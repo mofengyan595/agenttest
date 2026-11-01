@@ -41,6 +41,20 @@ def usage(path):
                 usage_known=not unknown, calls=calls)
 
 
+def unresolved_usage(root):
+    """Changing this Goal's output directory does not resolve an earlier unknown call."""
+    unresolved = []
+    for path in root.rglob("tasks.sqlite3") if root.exists() else []:
+        with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
+            calls = db.execute("SELECT id,task_id FROM model_usage_journal j WHERE state IN "
+                "('PENDING','UNKNOWN') AND NOT EXISTS (SELECT 1 FROM model_usage_reconciliations r "
+                "WHERE r.call_id=j.id) AND NOT EXISTS (SELECT 1 FROM model_usage_exceptions e "
+                "WHERE e.call_id=j.id)").fetchall()
+        unresolved.extend(dict(database=str(path.relative_to(root)), call_id=c[0], task_id=c[1])
+                          for c in calls)
+    return unresolved
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path,
@@ -49,6 +63,8 @@ def main():
                         default=Path("runs/reliable-colleague/acceptance-v1"))
     parser.add_argument("--real", action="store_true")
     parser.add_argument("--plan", action="store_true")
+    parser.add_argument("--reverification-of", type=Path,
+                        help="保持原任务不变，仅把修正后的复验另存，不改首次成绩")
     args = parser.parse_args()
     manifest_path = (ROOT / args.manifest).resolve()
     output = (ROOT / args.output).resolve()
@@ -57,6 +73,14 @@ def main():
         raise ValueError("ACCEPTANCE_PATH_OUTSIDE_WORKSPACE")
     manifest = json.loads(manifest_path.read_bytes())
     checked = preflight(manifest)
+    previous = None
+    if args.reverification_of:
+        previous = (ROOT / args.reverification_of).resolve()
+        if not previous.is_relative_to(ROOT / "runs/reliable-colleague"):
+            raise ValueError("REVERIFICATION_SOURCE_OUTSIDE_EVIDENCE_ROOT")
+        claim = json.loads((previous / "first-attempt-claim.json").read_bytes())
+        if claim["manifest_sha256"] != hashlib.sha256(manifest_path.read_bytes()).hexdigest():
+            raise ValueError("REVERIFICATION_MUST_KEEP_THE_ORIGINAL_FROZEN_REQUESTS")
     schedule = [dict(position=f"{round_number}:{task['id']}", round=round_number, task=task["id"])
                 for round_number in range(1, 4) for task in manifest["tasks"]]
     if args.plan:
@@ -65,10 +89,12 @@ def main():
         return 0
     if not args.real:
         parser.error("--real is required to send configured model requests")
+    if unresolved_usage(ROOT / "runs/reliable-colleague"):
+        raise ValueError("THIS_GOAL_UNKNOWN_USAGE_REQUIRES_RECONCILIATION_OR_EXPLICIT_AUTHORITY")
     output.mkdir(parents=True, exist_ok=False)
     write(output / "first-attempt-claim.json", dict(manifest_sha256=hashlib.sha256(
         manifest_path.read_bytes()).hexdigest(), schedule=schedule,
-        preserve_all_first_results=True))
+        preserve_all_first_results=True, reverification_of=str(previous) if previous else None))
     write(output / "reference-preflight.json", checked)
     write(output / "schedule.json", manifest)
     snapshot = source_snapshot(ROOT)
@@ -84,6 +110,9 @@ def main():
         raise ValueError("EXISTING_FRONTEND_RUNTIME_REQUIRED")
     started, records, stop_reason = time.perf_counter(), [], None
     for item in schedule:
+        if unresolved_usage(ROOT / "runs/reliable-colleague"):
+            stop_reason = "UNKNOWN_USAGE_REQUIRES_THIS_GOAL_AUTHORITY"
+            break
         if source_snapshot(ROOT) != snapshot:
             stop_reason = "SOURCE_CHANGED"
             break
@@ -130,7 +159,9 @@ def main():
     known = all(r["usage"]["usage_known"] for r in records)
     known_tokens = sum(r["usage"]["known_tokens"] for r in records)
     counts = [r["result"].get("task_target_requests") for r in records]
-    summary = dict(classification=manifest["classification"], scheduled=len(schedule),
+    summary = dict(classification=("REVERIFICATION_SAME_FROZEN_REQUESTS_NOT_NEW_QUALITY_SCORE"
+        if previous else manifest["classification"]),
+        reverification_of=str(previous) if previous else None, scheduled=len(schedule),
         executed=len(records), passed=sum(r["exit_code"] == 0 and r["result"].get("passed", False)
                                           for r in records),
         failed=sum(r["exit_code"] != 0 or not r["result"].get("passed", False) for r in records),

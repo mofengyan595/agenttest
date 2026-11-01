@@ -264,7 +264,7 @@ async def run_regression(directory: Path, runtime: RegressionRuntime) -> RunRepo
     executor, identity = _validated(runtime, scenario)
     if replay_scope(executor.contract, executor.config, scenario,
                     executor.registry) == "MUTATION_LIFECYCLE_REQUIRED":
-        # Old TaskContract exports remain reproducible as isolated ASGI fixtures only.
+        # Old TaskContract exports remain reproducible as isolated ASGI/Mock fixtures only.
         # They cannot bypass the lifecycle gate by selecting a real HTTP transport.
         from agenttest.goal_suite import BudgetTransport
         from agenttest.saved_tests import GuardedSyntheticTransport
@@ -274,7 +274,7 @@ async def run_regression(directory: Path, runtime: RegressionRuntime) -> RunRepo
             transport = (transport.inner if isinstance(transport, BudgetTransport)
                          else transport.delegate)
         if (isinstance(runtime.task_contract, FixedPlanSnapshot)
-                or not isinstance(transport, httpx.ASGITransport)):
+                or not isinstance(transport, (httpx.ASGITransport, httpx.MockTransport))):
             raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     if any(getattr(manifest, key) != value for key, value in identity.items()):
         raise ValueError("REGRESSION_AUTHORITY_CHANGED")

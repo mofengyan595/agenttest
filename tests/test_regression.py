@@ -96,8 +96,11 @@ async def test_legacy_write_contract_cannot_bypass_real_transport_lifecycle(inpu
     runtime, plan, source, requests = inputs
     directory = tmp_path / "legacy_data"
     export_regression(directory, replace(runtime, transport=None), plan, source)
-    runtime = replace(runtime, transport=httpx.MockTransport(
-        lambda _: pytest.fail("Legacy writes without lifecycle must send no HTTP")))
+    class PotentialExternalTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            pytest.fail("Legacy writes without lifecycle must send no external HTTP")
+
+    runtime = replace(runtime, transport=PotentialExternalTransport())
     with pytest.raises(ValueError, match="FIXED_WRITE_LIFECYCLE_REQUIRED"):
         await run_regression(directory, runtime)
     assert not requests

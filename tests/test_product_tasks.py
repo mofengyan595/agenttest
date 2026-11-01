@@ -347,7 +347,7 @@ async def test_runtime_cache_is_detached_and_invalidated_by_record_or_credential
         assert again.target.allowed_operations
         assert checks == [1]
         svc.environ["AGENTTEST_TARGET_CACHE_BEARER"] = "private-unit-rotated-bearer"
-        assert svc.project(saved["id"]).identity() == again.identity()
+        assert svc.project(saved["id"]).identity() != again.identity()
         assert checks == [1, 1]
         changed = svc.intake.save(IntakeInput(name="名称已修改", version=1,
             generic=setup, confirmed=True), "operator", saved["id"])
