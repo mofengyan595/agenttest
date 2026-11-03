@@ -9,9 +9,14 @@ export function EvidenceBrief({ run }: { run: RunReport }) {
     (s.checks || []).filter((c) => c.passed === false).map((c) => ({ s, c })),
   );
   const planSize = run.plan_structure?.length || undefined;
+  const checks = steps.flatMap((s) => s.checks || []);
+  const statusOnly = checks.length > 0 && checks.every((c) => c.kind === "http_status");
   return (
     <div className="evidence-brief">
       <h3>实际测试了什么</h3>
+      {statusOnly && <p className="finding-card">
+        本场景仅检查 HTTP 状态码，尚未检查响应字段或业务内容。
+      </p>}
       {steps.length ? (
         <ul>
           {steps.map((s) => (

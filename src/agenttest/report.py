@@ -198,7 +198,7 @@ class RunReport(BaseModel):
     investigation_error: str | None = None
     feedback: FeedbackResult | None = None
     trusted_symptom: TrustedSymptomResult | None = None
-    cleanup: str = "In-memory demo state discarded; external target cleanup is operator-owned"
+    cleanup: str = "未记录数据清理结论，请结合本轮资源记录核查。"
     resource_lifecycle: list[dict] = Field(default_factory=list)
     lifecycle_cleanup: list[StepResult] = Field(default_factory=list)
     probe_decisions: list[dict] = Field(default_factory=list)

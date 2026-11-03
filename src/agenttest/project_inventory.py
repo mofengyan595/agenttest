@@ -8,8 +8,14 @@ from agenttest.selectors import validate_selector
 
 
 def credential_field(spec):
-    return (spec.schema.get("format") == "password" or bool(re.search(
-        r"password|passwd|^pwd$|token|api.?key|authorization|cookie", spec.name, re.I)))
+    """Keep sensitive inputs out of literals, including nested objects and arrays."""
+    def sensitive(name, schema):
+        return (schema.get("format") == "password" or bool(re.search(
+            r"password|passwd|^pwd$|token|api.?key|authorization|cookie", name, re.I))
+            or any(sensitive(key, child) for key, child in schema.get("properties", {}).items())
+            or "items" in schema and sensitive("", schema["items"]))
+
+    return sensitive(spec.name, spec.schema)
 
 
 def sample(schema, depth=0):
@@ -134,6 +140,9 @@ def operation_reason(op, item, setup, environ=None, version="3.0.3"):
         if not identity_ready(role, environ):
             return ("NEEDS_INPUT", "所选身份的账号或令牌尚未在服务端配置。",
                     "配置凭据环境变量并重新检查。")
+    if not is_login and any(credential_field(s) for s in input_fields(op, version)):
+        return ("UNSUPPORTED", "此接口包含敏感输入，当前仅登录支持凭据注入。",
+                "保留接口资料；待受控敏感输入接入后测试，不要填写明文凭据。")
     for argument in ([] if is_login else item.arguments):
         if argument.needs_input:
             if any(s.name == argument.name and credential_field(s)

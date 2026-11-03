@@ -7,6 +7,7 @@ from typing import Any
 from agenttest.contracts import Operation
 from agenttest.discovery_models import InputVariation
 from agenttest.policies import NeedsReview
+from agenttest.request_patterns import pattern_examples
 from agenttest.request_validation import request_schemas, supported_schema, validate_value
 
 SCALARS = {"string", "integer", "number", "boolean"}
@@ -76,6 +77,12 @@ def witness(schema: dict, extra: dict | None = None) -> Any:
                 if value is not None:
                     choices.append(value)
     elif kind == "string":
+        for item in schemas:
+            if "pattern" in item:
+                choices.extend(pattern_examples(item["pattern"],
+                    max(s.get("minLength", 0) for s in schemas),
+                    min(MAX_SAMPLE_LENGTH, *[s.get("maxLength", MAX_SAMPLE_LENGTH)
+                                            for s in schemas])))
         formatted = {"uuid": "00000000-0000-4000-8000-000000000001",
             "email": "tester@example.invalid", "date": "2027-01-02",
             "date-time": "2027-01-02T03:04:05Z"}.get(schema.get("format"))
@@ -120,6 +127,9 @@ def fields(operation: Operation, version: str, basis: str) -> tuple[list[FieldSp
     result = []
     for location, entries in parameters.items():
         for name, schema in sorted(entries.items()):
+            # Preserve the frozen scalar-discovery v1 catalog; generic intake is separate.
+            if "pattern" in schema:
+                raise NeedsReview("UNSUPPORTED_REQUEST_SCHEMA")
             versioned_schema(schema, version)
             if schema.get("format") not in {None, "binary", "password", "int32", "int64"}:
                 raise NeedsReview("UNSUPPORTED_DISCOVERY_FORMAT")
@@ -145,6 +155,8 @@ def fields(operation: Operation, version: str, basis: str) -> tuple[list[FieldSp
         if set(body.get("required", [])) - set(body.get("properties", {})):
             raise NeedsReview("UNSUPPORTED_DISCOVERY_REQUIRED_PROPERTY")
         for name, schema in sorted(body.get("properties", {}).items()):
+            if "pattern" in schema:
+                raise NeedsReview("UNSUPPORTED_REQUEST_SCHEMA")
             if schema.get("readOnly"):
                 if name in body.get("required", []):
                     raise NeedsReview("UNSUPPORTED_DISCOVERY_REQUIRED_READ_ONLY")

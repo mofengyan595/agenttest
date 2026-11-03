@@ -63,7 +63,7 @@ async def test_pass_and_audit_evidence(tmp_path: Path) -> None:
     assert report.outcome == Outcome.PASS and report.completed
     assert report.steps[0].attempts[0].response_sha256
     assert report.steps[0].attempts[0].status_code == 200
-    raw = (tmp_path / report.run_id / "report.json").read_text()
+    raw = (tmp_path / report.run_id / "report.json").read_text(encoding="utf-8")
     assert "private-token" not in raw and "Authorization" not in raw
 
 

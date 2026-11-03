@@ -283,6 +283,21 @@ class ProjectIntake:
         if generic is not None and (not self.service.generic_intake or payload.profile_id):
             raise ValueError("GENERIC_INTAKE_NOT_ENABLED")
         if generic is not None:
+            from agenttest.project_inventory import credential_field, input_fields
+
+            contract = self.document(document)
+            operations = {o.operation_id: o for o in contract.operations}
+            for item in generic.operations:
+                try:
+                    secret_slots = {(s.location, s.name) for s in input_fields(
+                        operations[item.operation_id], contract.version)
+                        if credential_field(s)}
+                except (ValueError, KeyError):
+                    secret_slots = set()
+                if any(a.value is not None and ((a.location, a.name) in secret_slots or re.search(
+                        r"password|passwd|^pwd$|token|api.?key|authorization|cookie", a.name, re.I))
+                        for a in item.arguments):
+                    raise ValueError("PROJECT_CREDENTIAL_LITERAL")
             public_data = json.dumps([payload.name, document, notes, generic.model_dump()],
                                      ensure_ascii=False)
             if self.service.private_input_guard(public_data):

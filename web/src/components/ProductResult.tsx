@@ -45,6 +45,8 @@ export function ProductResult({
   const page = Math.min(negativePage.task === task.id ? negativePage.page : 0,
     Math.max(0, Math.ceil(remaining.length / 20) - 1));
   const cases = result.cases || [];
+  const checks = cases.flatMap((c) => (c.evidence || []).flatMap((e) => e.checks || []));
+  const statusOnly = checks.length > 0 && checks.every((c) => c.kind === "http_status");
   const completed = result.coverage?.completed_scenarios ?? cases.filter((c) =>
     c.status === "FINISHED" && ["PASS", "ASSERTION_FAILED"].includes(c.outcome || "") &&
     (c.planned_steps === undefined || c.executed_steps === c.planned_steps)).length;
@@ -63,6 +65,9 @@ export function ProductResult({
   );
   return (
     <section className="product-result" aria-label="本轮测试结果">
+      {statusOnly && <p className="finding-card">
+        本轮仅检查 HTTP 状态码，尚未检查响应字段或业务内容。可在项目中添加响应字段检查后再测试。
+      </p>}
       {result.reason && (
         <p className="finding-card">本轮停止原因：{result.reason}</p>
       )}

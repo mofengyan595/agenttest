@@ -231,6 +231,12 @@ class Workflow:
                 if vault.contains_secret(scenario.model_dump()):
                     raise ValidationFailure(Layer.DSL, "DSL_SECRET_LITERAL")
                 executor.validate(scenario, report=report)
+                operations = {op.operation_id: op for op in contract.operations}
+                if all(operations[s.operation_id].method in {"GET", "HEAD", "OPTIONS"}
+                       or (s.role in self._config.roles and self._config.roles[s.role]
+                           .login_operation == s.operation_id)
+                       for s in scenario.steps):
+                    report.cleanup = "本场景仅包含读取和登录，无业务数据需要清理。"
                 report.plan_valid = True
                 report.selected_policy_ids = [s.policy_id for s in scenario.steps]
                 report.plan_structure = [PlanStepEvidence(

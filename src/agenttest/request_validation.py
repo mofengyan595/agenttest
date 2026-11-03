@@ -10,12 +10,13 @@ from agenttest.contracts import Operation
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.json_values import json_equal
 from agenttest.policies import NeedsReview
+from agenttest.request_patterns import matches_pattern, supported_pattern
 
 ANNOTATIONS = {"title", "description", "default", "example", "examples", "deprecated",
                "externalDocs", "writeOnly", "readOnly"}
 CONSTRAINTS = {"type", "nullable", "enum", "properties", "required", "additionalProperties",
                "items", "minItems", "maxItems", "minLength", "maxLength", "minimum", "maximum",
-               "exclusiveMinimum", "exclusiveMaximum", "format", "contentMediaType"}
+               "exclusiveMinimum", "exclusiveMaximum", "format", "contentMediaType", "pattern"}
 
 
 def supported_schema(schema: Any, depth: int = 0) -> None:
@@ -40,11 +41,14 @@ def supported_schema(schema: Any, depth: int = 0) -> None:
         "properties": {"object"}, "required": {"object"}, "additionalProperties": {"object"},
         "items": {"array"}, "minItems": {"array"}, "maxItems": {"array"},
         "minLength": {"string"}, "maxLength": {"string"},
+        "pattern": {"string"},
         "minimum": {"number", "integer"}, "maximum": {"number", "integer"},
         "exclusiveMinimum": {"number", "integer"}, "exclusiveMaximum": {"number", "integer"},
     }
     if any(key in schema and kind not in kinds for key, kinds in applicability.items()):
         raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT")
+    if "pattern" in schema:
+        supported_pattern(schema["pattern"])
     for key in ("minItems", "maxItems", "minLength", "maxLength"):
         if key in schema and (type(schema[key]) is not int or schema[key] < 0):
             raise NeedsReview("UNSUPPORTED_REQUEST_CONSTRAINT_VALUE")
@@ -116,6 +120,9 @@ def validate_value(value: Any, schema: dict) -> None:
                 "Request length outside bounds")
     if kind == "string":
         validate_string_format(value, schema.get("format"))
+        if "pattern" in schema and not matches_pattern(schema["pattern"], value):
+            raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_PATTERN",
+                                    "Request value does not match the approved pattern")
     if kind in {"number", "integer"}:
         for bound, direction in (("minimum", -1), ("maximum", 1)):
             limit = schema.get(bound)

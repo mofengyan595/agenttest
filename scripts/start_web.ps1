@@ -1,4 +1,4 @@
-param([int]$Port = 18012, [switch]$Demo, [string]$ModelEnv, [string]$Projects, [string]$Data)
+﻿param([int]$Port = 18012, [switch]$Demo, [string]$ModelEnv, [string]$Projects, [string]$Data)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot

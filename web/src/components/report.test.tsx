@@ -6,7 +6,30 @@ import { ReportView } from "../pages/RunDetail";
 import { ValidationLayers } from "./ValidationLayers";
 import { StepEvidence } from "./StepEvidence";
 import { runFixture } from "../test/fixtures";
+import { EvidenceBrief } from "./ResultBrief";
 import type { Outcome } from "../api/types";
+
+test("model-designed legacy false intent is unverified, while an actual NL failure stays failed", () => {
+  const {rerender} = render(<ValidationLayers run={runFixture({task_mode: "model_designed",
+    dsl_valid: true, policy_authorized: true, intent_verified: false, task_satisfied: null})} />);
+  expect(screen.getByText("未独立核验").closest(".validation-card")).toHaveClass("neutral");
+  expect(screen.queryByText("未通过")).not.toBeInTheDocument();
+  rerender(<ValidationLayers run={runFixture({task_mode: "natural_language", dsl_valid: true,
+    policy_authorized: true, intent_verified: false, task_satisfied: false})} />);
+  expect(screen.getByText("未通过").closest(".validation-card")).toHaveClass("danger");
+});
+
+test("status-only evidence does not imply that response content was checked", () => {
+  const run = runFixture({steps: [{step_id: "read", operation_id: "read", method: "GET",
+    path_template: "/items", outcome: "PASS", reason: "POLICY_EVALUATED",
+    policy_sha256: "policy", attempts: [], checks: [
+      {kind: "http_status", passed: true, expected: [200], actual: 200}]}]});
+  const {rerender} = render(<EvidenceBrief run={run} />);
+  expect(screen.getByText(/本场景仅检查 HTTP 状态码/)).toBeVisible();
+  run.steps![0].checks!.push({kind: "field", selector: "$.items", passed: true});
+  rerender(<EvidenceBrief run={run} />);
+  expect(screen.queryByText(/本场景仅检查 HTTP 状态码/)).not.toBeInTheDocument();
+});
 
 test.each([
   [true, "目标拒绝符合批准预期。"],

@@ -9,7 +9,7 @@ pytest.importorskip("langgraph", reason="Install .[dev,agent] for workflow tests
 
 from agenttest.__main__ import main
 from agenttest.demo import PROJECT_ROOT, demo_inputs, run_demo
-from agenttest.dsl import Step
+from agenttest.dsl import Scenario, Step
 from agenttest.policies import PolicyRegistry
 from agenttest.report import Outcome, ReportStore
 from agenttest.safety import TargetConfig
@@ -42,6 +42,21 @@ def setup(tmp_path, output=None, handler=None, budget=None, **config):
                     fake, ReportStore(tmp_path), httpx.MockTransport(handler or default_handler),
                     environ={}, budget=budget, task_mode="operator_plan")
     return flow, fake, calls
+
+
+@pytest.mark.asyncio
+async def test_model_designed_read_only_report_does_not_claim_demo_or_independent_intent(tmp_path):
+    model = FakeLLM("")
+    flow = Workflow(DOCUMENT, TargetConfig(allowed_operations=["items"]), registry(), model,
+        ReportStore(tmp_path), httpx.MockTransport(lambda _: httpx.Response(200, json={})),
+        environ={}, task_mode="model_designed", user_task="查询列表",
+        prepared_plan=Scenario.model_validate_json(plan()),
+        budget=WorkflowBudget(max_model_calls=0))
+    report = await flow.run()
+    assert report.outcome == Outcome.PASS and report.completed
+    assert report.intent_verified is False and report.task_satisfied is None
+    assert report.cleanup == "本场景仅包含读取和登录，无业务数据需要清理。"
+    assert model.calls == 0
 
 
 @pytest.mark.asyncio

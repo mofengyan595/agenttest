@@ -39,6 +39,8 @@ def literal_schema(source):
     else:
         result = {k: source[k] for k in ("type", "minimum", "maximum", "minLength", "maxLength")
                   if k in source}
+        if "pattern" in source:
+            result["pattern"] = source["pattern"]
         if source.get("format") in {"uuid", "date", "date-time", "email"}:
             result["format"] = source["format"]
         for key, inclusive in (("exclusiveMinimum", "minimum"), ("exclusiveMaximum", "maximum")):

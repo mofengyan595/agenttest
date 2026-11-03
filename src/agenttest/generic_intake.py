@@ -187,6 +187,8 @@ def analyze_contract(contract: ContractSummary):
         except ValueError as exc:
             code = getattr(getattr(exc, "diagnostic", None), "code", str(exc))
             reason = ({"UNSUPPORTED_REQUEST_SCHEMA": "输入包含暂未支持的组合或自定义约束。",
+                "UNSUPPORTED_REQUEST_PATTERN":
+                    "参数的格式规则暂未支持；当前支持文字候选、简单字符范围及其长度限制。",
                 "UNSUPPORTED_REQUEST_FORMAT": "输入格式暂未支持，请查看格式约束。",
                 "ONLY_OBJECT_REQUEST_BODIES_SUPPORTED":
                     "请求体根节点暂需为 JSON 对象；对象内可嵌套数组。",
@@ -279,6 +281,8 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
             raise ValueError("PROTECTED_OPERATION_REQUIRES_ROLE")
         specs = {} if is_login else {(s.location, s.name): s
             for s in input_fields(op, contract.version)}
+        if any(credential_field(spec) for spec in specs.values()):
+            raise ValueError("SENSITIVE_INPUT_BINDING_REQUIRED")
         rules, seen = [], set()
         for argument in ([] if is_login else item.arguments):
             slot = argument.location, argument.name

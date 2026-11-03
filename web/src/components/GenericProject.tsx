@@ -20,6 +20,15 @@ function fieldLabel(selector: string) {
     .replaceAll("[0]", "的第一项").replaceAll(".", " 的 ");
 }
 
+function sensitiveInput(name: string, schema?: unknown): boolean {
+  if (/password|passwd|^pwd$|token|api.?key|authorization|cookie/i.test(name)) return true;
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) return false;
+  const shape = schema as Record<string, unknown>;
+  return shape.format === "password" || sensitiveInput("", shape.items) ||
+    !!shape.properties && typeof shape.properties === "object" &&
+      Object.entries(shape.properties).some(([key, child]) => sensitiveInput(key, child));
+}
+
 function loginChoices(operation: ContractOperation | undefined, field: string) {
   return field === "token_selector"
     ? (operation?.response_fields || []).filter((f) => f.value_type === "string")
@@ -47,6 +56,28 @@ function suggestLoginFields(operation: ContractOperation | undefined, role: Gene
     tokens.find((f) => /token|jwt/i.test(f.value)) || (tokens.length === 1 ? tokens[0] : undefined);
   return {username_field: username?.value || "", password_field: password?.value || "",
     token_selector: token?.value || role.token_selector || "$.access_token"};
+}
+
+function suggestLogin(operations: ContractOperation[]): GenericRole | undefined {
+  const candidates = operations.flatMap((operation) => {
+    const description = `${operation.operation_id} ${operation.path} ${operation.summary || ""}`;
+    if (!/login|sign.?in|authenticate|登录|登陆/i.test(description) ||
+        /register|sign.?up|注册|创建账号/i.test(description)) return [];
+    if (operation.method !== "POST" || operation.authentication_required || operation.arguments.length !== 2)
+      return [];
+    const fields = loginChoices(operation, "username_field");
+    const passwords = fields.filter((f) => /^(password|passwd|pwd)$/i.test(f.value));
+    const usernames = fields.filter((f) => /^(user.?name|account|login|email|phone)$/i.test(f.value));
+    const tokens = loginChoices(operation, "token_selector").filter((f) =>
+      /token|jwt/i.test(f.value) && !/token.?type|refresh.?token/i.test(f.value));
+    return passwords.length === 1 && usernames.length === 1 && tokens.length === 1
+      ? [{alias: "tester", login_operation: operation.operation_id,
+          username_env: "AGENTTEST_TARGET_USERNAME", password_env: "AGENTTEST_TARGET_PASSWORD",
+          username_field: usernames[0].value, password_field: passwords[0].value,
+          token_selector: tokens[0].value}]
+      : [];
+  });
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 export function GenericProject({
@@ -100,20 +131,37 @@ export function GenericProject({
       setOperations(result.operations);
       setPage(0);
       const supported = result.operations.filter((o) => o.supported);
+      const login = suggestLogin(supported);
+      if (value) {
+        const existing = new Map(value.operations.map((o) => [o.operation_id, o]));
+        onChange({...value, operations: supported.map((o) => existing.get(o.operation_id) || {
+          operation_id: o.operation_id, alias: o.alias, enabled: false, role: null,
+          statuses: o.statuses, checks: o.checks, arguments: o.arguments.map((a) => ({
+            location: a.location, name: a.name, value: a.value,
+            source_operation: a.source_operation, selector: a.selector,
+            generated: a.generated ?? false, needs_input: a.needs_input ?? false,
+          })),
+        })});
+        return;
+      }
       onChange(
         supported.length
           ? {
-              base_url: value?.base_url || "http://127.0.0.1:8080",
+              base_url: "http://127.0.0.1:8080",
               isolated_confirmed: false,
               allow_mutations: false,
               max_requests: 40,
               assisted: true,
-              roles: [],
+              roles: login ? [login] : [],
+              default_role: login?.alias,
               operations: supported.map((o) => ({
                 operation_id: o.operation_id,
                 alias: o.alias,
-                enabled: true,
-                role: null,
+                enabled: o.operation_id === login?.login_operation ||
+                  ["GET", "HEAD", "OPTIONS"].includes(o.method) &&
+                  !o.arguments.some((a) => a.location === "path_parameters" || a.needs_input),
+                role: login && (o.authentication_required || o.operation_id === login.login_operation)
+                  ? login.alias : null,
                 statuses: o.statuses,
                 checks: o.checks,
                 arguments: o.arguments.map((a) => ({
@@ -164,17 +212,18 @@ export function GenericProject({
         {busy
           ? "正在读取接口…"
           : value
-            ? "重新读取文档（重置接口配置）"
+            ? "更新接口建议（保留配置）"
             : "读取接口并配置"}
       </button>
       {error && <Notice error>{error}</Notice>}
-      {operations
-        .filter((o) => !o.supported)
-        .map((o, i) => (
-          <Notice key={i}>
-            {o.method} {o.path}：{o.reason}，不会加入测试范围。
-          </Notice>
+      {operations.some((o) => !o.supported) && <details>
+        <summary>暂不支持的接口（{operations.filter((o) => !o.supported).length}）</summary>
+        {operations.filter((o) => !o.supported).map((o) => (
+          <p key={o.operation_id} className="caption">
+            {o.method} {o.path}：{o.reason}，本轮不执行。
+          </p>
         ))}
+      </details>}
       {value && (
         <>
           <label htmlFor="generic-origin">隔离测试环境地址</label>
@@ -186,8 +235,9 @@ export function GenericProject({
             placeholder="http://127.0.0.1:8080"
           />
           <p className="caption">
-            填写本机测试服务的地址，不含接口路径。私网 IP
-            需在服务端另行授权；公网和生产环境不可用。
+            填写服务地址，不含接口路径。请确认它连接专用测试数据库；
+            本机地址不代表数据已隔离，勾选确认也不会自动创建隔离环境。
+            私网 IP 需在服务端另行授权；公网和生产环境不可用。
           </p>
           <label className="task-option">
             <input
@@ -262,7 +312,8 @@ export function GenericProject({
           <details className="configuration-details">
             <summary>配置测试身份（需要登录或 Token 时填写）</summary>
             <p>
-              这里只保存环境变量名称。账号和密钥由本机服务的环境变量提供，不填进测试需求。
+              登录字段来自接口文档，请核对。这里只保存变量名；实际账号密码填写在本机 .env 中。
+              修改 .env 后重启工作台，再检查身份是否就绪。
             </p>
             {value.roles.map((r, n) => (
               <fieldset key={n} disabled={disabled}>
@@ -472,7 +523,8 @@ export function GenericProject({
           <p>
             共 {operations.length || value.operations.length} 个接口，已选择{" "}
             {value.operations.filter((o) => o.enabled).length} 个。
-            文档中的状态、字段和输入约束是检查依据；业务含义仍需确认。缺少信息的接口会单独等待补充。
+            首次仅建议无需准备资源的读取接口及登录。写入和资源依赖接口可按需选择。
+            文档检查建议仍需确认；未选择、未授权和暂不支持分别记录。
           </p>
           <div className="button-row">
             <button
@@ -511,6 +563,12 @@ export function GenericProject({
               const info = operations.find(
                 (p) => p.operation_id === o.operation_id,
               );
+              const defaultRole = value.assisted && value.default_role
+                ? value.roles.find((r) => r.alias === value.default_role) : undefined;
+              const role = o.role || (info?.authentication_required ||
+                defaultRole?.login_operation === o.operation_id ? defaultRole?.alias : null);
+              const loginRole = value.roles.find((r) => r.alias === role &&
+                r.login_operation === o.operation_id && info?.method === "POST");
               return (
                 <fieldset
                   key={o.operation_id}
@@ -531,7 +589,7 @@ export function GenericProject({
                       {info ? `${info.method} ${info.path}` : o.operation_id}
                     </label>
                   </legend>
-                  {o.arguments.some((a) => a.needs_input) && (
+                  {!loginRole && o.arguments.some((a) => a.needs_input) && (
                     <p className="caption">
                       待补充：
                       {o.arguments
@@ -560,7 +618,7 @@ export function GenericProject({
                       <label>
                         执行身份
                         <select
-                          value={o.role || ""}
+                          value={role || ""}
                           onChange={(e) =>
                             updateOperation(index, {
                               role: e.target.value || null,
@@ -575,7 +633,7 @@ export function GenericProject({
                           ))}
                         </select>
                       </label>
-                      {info?.authentication_required && !o.role && (
+                      {info?.authentication_required && !role && (
                         <Notice>
                           文档要求身份认证，请先添加测试身份并在此选择。
                         </Notice>
@@ -591,8 +649,20 @@ export function GenericProject({
                           }
                         />
                       </label>
-                      {o.arguments.map((a, i) => (
-                        <div
+                      {!o.checks.length && <p className="caption">
+                        当前仅检查 HTTP 状态；可在下方添加响应字段检查，确认内容是否正确。
+                      </p>}
+                      {loginRole && <p className="caption" role="status">
+                        登录账号与密码由本机配置提供：{loginRole.username_env}、{loginRole.password_env}。
+                        无需在接口参数里重复填写；登录后由执行器管理 Token。
+                      </p>}
+                      {(loginRole ? [] : o.arguments).map((a, i) => (
+                        sensitiveInput(a.name, info?.arguments.find((f) =>
+                          f.location === a.location && f.name === a.name)?.schema)
+                        ? <p key={i} className="caption">
+                            {a.name} 是敏感输入。当前仅登录支持凭据注入，此接口暂不能执行；不要填写明文凭据。
+                          </p>
+                        : <div
                           className="generic-argument"
                           key={`${a.location}:${a.name}`}
                         >
