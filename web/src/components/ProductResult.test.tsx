@@ -4,6 +4,21 @@ import { MemoryRouter } from "react-router";
 import type { GoalTask } from "../api/tasks";
 import { ProductResult } from "./ProductResult";
 
+test("source field omissions remain visible without claiming execution or full coverage", () => {
+  const task: GoalTask = {
+    id: "a".repeat(32), project_id: "web_new", project_identity: "v1",
+    request_sha256: "b".repeat(64), status: "NEEDS_REVIEW", plan_version: 1, created_at: 1,
+    summary: {complete: false, requirement_ledger: [{name: "size", value: 0,
+      source_quote: "size=0", start: 2, end: 8, deferred: false,
+      candidate_operations: ["list"], status: "UNACCOUNTED"}]},
+  };
+  render(<MemoryRouter><ProductResult task={task} busy={false}
+    save={vi.fn()} answer={vi.fn()} /></MemoryRouter>);
+  expect(screen.getByText("size=0")).toBeVisible();
+  expect(screen.getByText(/规划漏项/)).toBeVisible();
+  expect(screen.getByText(/对应到规划不代表已经执行/)).toBeVisible();
+});
+
 test("a rejected design with no cases exposes the stop reason directly", () => {
   const task: GoalTask = {
     id: "a".repeat(32), project_id: "web_new", project_identity: "v1",

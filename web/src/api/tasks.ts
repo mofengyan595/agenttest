@@ -26,6 +26,11 @@ export interface GoalTask {
       requested_value: unknown; reason: string}[];
     display_title?: string;
     user_request?: string;
+    requirement_ledger?: {
+      name: string; value: unknown; source_quote: string; start: number; end: number;
+      deferred: boolean; candidate_operations: string[]; matched_operations?: string[];
+      status: "ACCOUNTED" | "UNACCOUNTED" | "UNKNOWN_FIELD" | "DEFERRED" | "NEEDS_REVIEW";
+    }[];
     inventory?: ProjectInventory;
     questions?: {
       confirmed_statuses?: number[];

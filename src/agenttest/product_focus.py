@@ -77,6 +77,7 @@ class FocusSelection(StrictModel):
     requested_checks: list[RequestedCheck] = Field(default_factory=list, max_length=40)
     expectation_questions: list[ExpectationQuestion] = Field(default_factory=list, max_length=8)
     source_conflicts: list[str] = Field(default_factory=list, max_length=1000)
+    requirement_ledger: list[dict] = Field(default_factory=list, max_length=1000)
 
     @model_validator(mode="after")
     def consistent(self):
@@ -250,7 +251,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
         properties = schema["properties"]
         for key in ("mode", "operation_ids", "normal_operation_ids", "question",
                     "blocked_operation_ids",
-                    "pending_questions", "not_covered", "source_conflicts"):
+                    "pending_questions", "not_covered", "source_conflicts", "requirement_ledger"):
             properties.pop(key)
         from agenttest.product_focus_wire import (
             constrain_operation_bundles,
@@ -444,6 +445,9 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
                                  context, selected)
         validate_requested_checks(selection.requested_checks, context, selected)
         validate_expectation_questions(selection.expectation_questions, context, selected)
+        from agenttest.requirement_ledger import validate_assignment_coverage
+
+        selection.requirement_ledger = validate_assignment_coverage(context, selection)
         unavailable = {o["operation_id"] for o in context["unavailable_operations"]}
         if set(selection.blocked_operation_ids) - unavailable:
             raise ValueError("FOCUS_BLOCKED_OPERATION_NOT_IN_INVENTORY")

@@ -190,6 +190,7 @@ class ProductTasks:
                                 timeout=getattr(getattr(raw_focus, "_settings", None),
                                                 "timeout", 90.0) + 1)
                             summary["focus"] = selection.model_dump()
+                            summary["requirement_ledger"] = selection.requirement_ledger
                             summary["requested_checks"] = [r.model_dump()
                                                             for r in selection.requested_checks]
                             for question in selection.expectation_questions:
@@ -276,6 +277,8 @@ class ProductTasks:
                             focus_record.update(status="SELECTED",
                                                 interpretation=selection.interpretation)
                         except (PlannerFailure, ValueError, TimeoutError) as exc:
+                            if hasattr(exc, "requirement_ledger"):
+                                summary["requirement_ledger"] = exc.requirement_ledger
                             focus_record.update(status="REJECTED", reason=getattr(
                                 exc, "reason", None) or getattr(
                                     getattr(exc, "diagnostic", None), "code", None)
@@ -445,6 +448,17 @@ class ProductTasks:
                             s.operation_id in group["primary"] and s.policy_id not in
                             negative_policies for s in c.plan.steps)) if text == DEFAULT_ROUND \
                             else design.cases
+                        # Validate the whole group before any login or business write.
+                        # Independent valid cases may run; rejected cases are never repaired.
+                        preflight = []
+                        for case in ordered_cases:
+                            try:
+                                preflight.append(validate_design_case(project, case, svc.reports,
+                                    cleanup_operations=group["primary"],
+                                    requested_checks=executable_checks,
+                                    environ=svc.environ, transport=bounded_transport))
+                            except ValueError as exc:
+                                preflight.append(exc)
                         for index, case in enumerate(ordered_cases):
                             case_row = dict(case_id=f"{group['id']}_case_{index + 1}",
                                 title=case.title, kinds=[case.kind], operation_id=None,
@@ -469,10 +483,9 @@ class ProductTasks:
                                 continue
                             svc.db.event(task_id, "VALIDATING", requests=ledger.requests)
                             try:
-                                scenario = validate_design_case(project, case, svc.reports,
-                                    cleanup_operations=group["primary"],
-                                    requested_checks=executable_checks,
-                                    environ=svc.environ, transport=bounded_transport)
+                                scenario = preflight[index]
+                                if isinstance(scenario, ValueError):
+                                    raise scenario
                             except ValueError as exc:
                                 case_row.update(status="REJECTED", reason=getattr(
                                     getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))

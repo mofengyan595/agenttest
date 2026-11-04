@@ -378,11 +378,8 @@ def design_groups(project, size=6, operation_ids=None):
     allowed = [o.operation_id for o in project.contract.operations
                if o.operation_id in project.target.allowed_operations]
     operations = [key for key in allowed if operation_ids is None or key in operation_ids]
-    groups = []
-    for start in range(0, len(operations), size):
-        primary = operations[start:start + size]
-        included = set(primary)
-        pending = list(primary)
+    def closure(primary, *, authentication=True):
+        included, pending = set(primary), list(primary)
         while pending:
             operation = pending.pop()
             for policy in by_operation.get(operation, []):
@@ -390,12 +387,38 @@ def design_groups(project, size=6, operation_ids=None):
                            if r.source_policy_id in policies]
                 sources += [policies[key].operation_id for key in policy.prerequisite_policy_ids
                             if key in policies]
-                sources += [project.target.roles[role].login_operation for role in policy.roles
-                            if role in project.target.roles]
+                if authentication:
+                    sources += [project.target.roles[role].login_operation for role in policy.roles
+                                if role in project.target.roles]
                 for source in sources:
                     if source and source not in included:
                         included.add(source)
                         pending.append(source)
+        return included
+
+    # Shared resource/state dependencies must not be split at an arbitrary batch boundary.
+    # Authentication alone does not join independent work into one large component.
+    components = []
+    for operation in operations:
+        primary, dependencies = [operation], closure([operation], authentication=False)
+        overlapping = [c for c in components if c[1] & dependencies]
+        for members, sources in overlapping:
+            primary.extend(members)
+            dependencies.update(sources)
+        components = [c for c in components if c not in overlapping]
+        components.append((primary, dependencies))
+    order = {key: index for index, key in enumerate(operations)}
+    components.sort(key=lambda c: min(order[key] for key in c[0]))
+    batches = []
+    for members, _ in components:
+        members.sort(key=order.get)
+        if batches and len(batches[-1]) + len(members) <= size:
+            batches[-1].extend(members)
+        else:
+            batches.append(list(members))
+    groups = []
+    for primary in batches:
+        included = closure(primary)
         groups.append(dict(id=f"group_{len(groups) + 1}", primary=primary,
                            operations=[op for op in allowed if op in included],
                            supported=len(included) <= 12))

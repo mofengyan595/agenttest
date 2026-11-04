@@ -210,9 +210,10 @@ def test_an_empty_case_is_never_an_executable_placeholder_for_a_pending_question
 def test_grouping_preserves_dependency_closure_without_all_contract_context():
     proj, _ = project()
     groups = design_groups(proj, size=1)
-    assert groups[0]["operations"] == ["insertJob"]
-    assert groups[1]["operations"] == ["insertJob", "readJob"]
-    context = design_context(proj, "帮我看看新建和查询是否正常", groups[1], 10, 2)
+    assert len(groups) == 1  # A resource chain takes precedence over the batch size.
+    assert groups[0]["primary"] == ["insertJob", "readJob"]
+    assert groups[0]["operations"] == ["insertJob", "readJob"]
+    context = design_context(proj, "帮我看看新建和查询是否正常", groups[0], 10, 2)
     assert len(context["operations"]) == 2
     assert "创建任务" in json.dumps(context, ensure_ascii=False)
     assert "unit-model-private-key" not in json.dumps(context)

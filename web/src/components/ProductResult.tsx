@@ -23,6 +23,7 @@ const caseReasons: Record<string, string> = {
   DESIGN_DUPLICATE_RESOURCE_SETUP: "模型在不同场景重复创建同一组资源，整组请求未发送。需要调整规划后重新测试；不会自动重放写入。",
   MODEL_SERVICE_ERROR: "模型服务返回错误，本组接口请求未发送。请核对模型服务及未知用量记录；系统没有自动重试。",
   MODEL_API_ERROR: "模型服务拒绝请求，本组接口请求未发送。请核对服务配置和生成格式。",
+  FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED: "原文中的明确字段要求尚未逐项对应到计划，本次业务请求未发送。请查看字段对账中的漏项。",
 };
 function caseReason(reason: string) {
   return caseReasons[reason] || (/^[A-Z][A-Z0-9_]+$/.test(reason)
@@ -69,6 +70,15 @@ export function ProductResult({
   );
   return (
     <section className="product-result" aria-label="本轮测试结果">
+      {!!result.requirement_ledger?.length && <details open>
+        <summary>明确字段对账</summary>
+        <p className="muted">核对原文中的字段和值是否进入规划；对应到规划不代表已经执行，也不代表其他需求全部覆盖。</p>
+        <ul>{result.requirement_ledger.map((item, index) => <li key={index}>
+          <q>{item.source_quote}</q>：{{ACCOUNTED: "已对应到规划", UNACCOUNTED: "规划漏项",
+            UNKNOWN_FIELD: "字段含义待核对", DEFERRED: "留待未来，本轮不执行",
+            NEEDS_REVIEW: "相关输入或规则待补充"}[item.status]}
+        </li>)}</ul>
+      </details>}
       {statusOnly && <p className="finding-card">
         本轮仅检查 HTTP 状态码，尚未检查响应字段或业务内容。可在项目中添加响应字段检查后再测试。
       </p>}
