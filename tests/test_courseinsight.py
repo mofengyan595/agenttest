@@ -70,7 +70,7 @@ async def test_java_envelope_scalar_id_and_all_consistency_checks(tmp_path):
     assert {check.selector for check in report.steps[-1].checks} >= {
         "$.data.id", "$.data.code", "$.data.name", "$.data.teacherName", "$.code"}
     assert report.investigations == []
-    raw = (tmp_path / report.run_id / "report.json").read_text()
+    raw = (tmp_path / report.run_id / "report.json").read_text(encoding="utf-8")
     for secret in [TOKEN, *ENV.values(), "987654", scenario.steps[1].body["code"].value]:
         assert secret not in raw
 

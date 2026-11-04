@@ -274,7 +274,8 @@ async def test_generated_credentials_never_persist(service, monkeypatch):
                                                 "invocation_id": uuid4().hex})
     assert result["report"]["outcome"] == "PASS"
     assert len(generated) >= 4
-    persisted = "".join(p.read_text() for p in service._store.root.rglob("*.json"))
+    persisted = "".join(p.read_text(encoding="utf-8")
+                        for p in service._store.root.rglob("*.json"))
     for value in generated:
         assert value not in persisted and value not in json.dumps(result)
 

@@ -50,7 +50,7 @@ async def test_complete_java_workflow_and_failures(tmp_path, fault):
     assert report.plan_valid and report.intent_verified
     assert len(requests) == (2 if fault == "timeout" else 3)
     assert sum(r.method == "POST" and r.url.path == "/api/courses" for r in requests) == 1
-    raw = (tmp_path / report.run_id / "report.json").read_text()
+    raw = (tmp_path / report.run_id / "report.json").read_text(encoding="utf-8")
     assert all(s not in raw for s in ["secret-session", *ENV.values(), '"913"'])
     assert report.investigations == []
     context = json.dumps(planner.contexts, ensure_ascii=False)

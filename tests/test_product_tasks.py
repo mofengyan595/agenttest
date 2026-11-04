@@ -19,6 +19,8 @@ from agenttest.task_store import TaskConflict, TaskStore
 
 
 def service(root, model):
+    # Model-designed cases execute through the optional shared LangGraph workflow.
+    pytest.importorskip("langgraph")
     return TaskService({}, TaskStore(root / "tasks.sqlite3"), ReportStore(root / "reports"),
         lambda _: None, designer_factory=lambda _: DesignModel(settings(),
             transport=httpx.MockTransport(model), profile="generic"), generic_intake=True,
