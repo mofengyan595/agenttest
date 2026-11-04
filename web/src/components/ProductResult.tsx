@@ -70,6 +70,29 @@ export function ProductResult({
   );
   return (
     <section className="product-result" aria-label="本轮测试结果">
+      {!!result.requirement_sources?.length && <details open>
+        <summary>原文逐项对账</summary>
+        <p className="muted">逐段保留原文及其规划对应关系。动作有请求记录、检查已通过、完整需求已完成分别核对；模型映射本身不证明语义完整。</p>
+        <ol>{result.requirement_sources.map((source) => {
+          const requirement = result.focus?.requirements?.find((r) => r.source_id === source.source_id);
+          return <li key={source.source_id}>
+            <q>{source.text}</q>
+            <p>{requirement ? {required: "本轮必测", needs_review: "存在待补充依据",
+              deferred: "未来动作，本轮不执行", constraint: "范围约束"}[requirement.disposition]
+              : "尚未形成可靠映射"}</p>
+            {requirement?.actions.map((action, index) => {
+              const observed = cases.some((c) => c.evidence?.some((e) =>
+                e.executed && e.operation_id === action.operation_id && e.role === action.role));
+              const label = result.inventory?.operations.find((op) =>
+                op.operation_id === action.operation_id)?.summary || action.operation_id;
+              return <p key={index}>{label}（{action.role || "未指定身份"}）：
+                {observed ? "已有请求记录，需核对下方断言" : "尚无对应请求记录"}</p>;
+            })}
+            {!!requirement?.before.length && <p>包含明确的先后关系，按下方执行证据核对。</p>}
+            {!!requirement?.same_resource.length && <p>要求使用同一新资源，归属与清理见场景证据。</p>}
+          </li>;
+        })}</ol>
+      </details>}
       {!!result.requirement_ledger?.length && <details open>
         <summary>明确字段对账</summary>
         <p className="muted">核对原文中的字段和值是否进入规划；对应到规划不代表已经执行，也不代表其他需求全部覆盖。</p>
@@ -96,7 +119,8 @@ export function ProductResult({
       )}
       {result.focus?.mode === "selected" && (
         <p>
-          按本次重点安排 {result.focus.operation_ids.length}{" "}
+          按本次重点安排 {result.focus.operation_ids.filter((op) =>
+            result.focus?.operation_sources?.[op] !== "TRUSTED_PREREQUISITE").length}{" "}
           个接口，必要的前置步骤另计。
         </p>
       )}
@@ -348,6 +372,10 @@ export function ProductResult({
       </details>
       {result.inventory && <ProjectInventory value={result.inventory} />}
       <h3>下一步</h3>
+      {!!result.suggestions?.length && <details>
+        <summary>额外测试建议（未在本轮执行）</summary>
+        <ul>{result.suggestions.map((suggestion, index) => <li key={index}>{suggestion}</li>)}</ul>
+      </details>}
       <p>
         {pending.length
           ? "补充上面的问题，确认预期后再安排受影响的测试。已完成的证据会保留。"

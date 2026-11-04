@@ -19,6 +19,30 @@ test("source field omissions remain visible without claiming execution or full c
   expect(screen.getByText(/对应到规划不代表已经执行/)).toBeVisible();
 });
 
+test("original clause mapping, actual requests and extra advice stay distinct", () => {
+  const task: GoalTask = {
+    id: "a".repeat(32), project_id: "web_new", project_identity: "v1",
+    request_sha256: "b".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {complete: false, requirement_sources: [{source_id: "request_1",
+      text: "读取后删除同一资源", start: 0, end: 9}],
+      focus: {mode: "selected", interpretation: "读取并清理", operation_ids: ["read", "delete"],
+        question: null, requirements: [{source_id: "request_1", source_quote: "读取后删除同一资源",
+          disposition: "required", actions: [{operation_id: "read", role: "owner"},
+            {operation_id: "delete", role: "owner"}], before: [{earlier: "read", later: "delete"}],
+          same_resource: [{producer: "create", consumer: "read"}]}]},
+      cases: [{case_id: "one", operation_id: null, status: "FINISHED", max_business_requests: 1,
+        evidence: [{operation_id: "read", role: "owner", executed: true, method: "GET",
+          path: "/items/{id}", outcome: "ASSERTION_FAILED", checks: []}]}],
+      suggestions: ["可另行测试更大的分页范围"]},
+  };
+  render(<MemoryRouter><ProductResult task={task} busy={false}
+    save={vi.fn()} answer={vi.fn()} /></MemoryRouter>);
+  expect(screen.getByText("读取后删除同一资源")).toBeVisible();
+  expect(screen.getByText(/已有请求记录，需核对下方断言/)).toBeVisible();
+  expect(screen.getByText(/尚无对应请求记录/)).toBeVisible();
+  expect(screen.getByText("额外测试建议（未在本轮执行）")).toBeVisible();
+});
+
 test("a rejected design with no cases exposes the stop reason directly", () => {
   const task: GoalTask = {
     id: "a".repeat(32), project_id: "web_new", project_identity: "v1",

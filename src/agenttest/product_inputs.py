@@ -45,7 +45,8 @@ def validate_input_questions(questions, requirements, context, selected):
         seen.add(key)
         for choice in question.choices:
             validate_requirements([InputRequirement(**question.model_dump(
-                exclude={"question", "choices"}), value=choice)], context, selected)
+                exclude={"question", "choices"}), value=choice)], context, selected,
+                allow_ambiguity_source=True)
 
 
 def input_blocked_operations(project, questions, *, operation_ids=()):
@@ -120,7 +121,7 @@ def input_fields(project):
     return fields
 
 
-def validate_requirements(requirements, context, selected):
+def validate_requirements(requirements, context, selected, *, allow_ambiguity_source=False):
     """Validate quoted provenance, approved slots and values, without granting authority."""
     request = context["user_task"]
     fields = context.get("input_fields", [])
@@ -131,6 +132,10 @@ def validate_requirements(requirements, context, selected):
                 for k in ("operation_id", "location", "name", "path", "value"))
             and requirement.source_quote in previous.get("source_quote", "")
             for previous in context.get("previous_input_requirements", []))
+        if ('request_atoms' in context and not allow_ambiguity_source and not known_previous
+                and requirement.source_quote in request and requirement.source_quote not in {
+                    a['text'] for a in context['request_atoms'] if not a.get('future_only')}):
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_INPUT_SOURCE_NOT_CURRENT')
         if requirement.operation_id not in selected:
             raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_OPERATION_NOT_SELECTED")
         if requirement.source_quote not in request and not known_previous:
@@ -152,6 +157,13 @@ def validate_requirements(requirements, context, selected):
         validate_value(value, field["schema"])
         try:
             _check_quote(value, field["schema"], requirement.source_quote)
+            from agenttest.requirement_ledger import explicit_assignments
+
+            named = {a['name'] for a in explicit_assignments(requirement.source_quote)
+                     if json_equal(a['value'], value) and not a['deferred']}
+            name = requirement.path[-1] if requirement.path else requirement.name
+            if named and name not in named:
+                raise ValidationFailure(Layer.MODEL, 'FOCUS_INPUT_FIELD_CHANGED')
         except ValidationFailure as exc:
             exc.diagnostic.fields = [f"input_requirements.{index}.value",
                                      f"approved_input_fields.{fields.index(field)}"]
@@ -253,11 +265,52 @@ def _check_quote(value, schema, quote):
             _check_quote(item, schema["properties"][name], quote)
 
 
-def constrain_input_schema(schema, operation, rule, requirements):
+def input_requirement_roles(requirement, source_requirements):
+    """Bind a value to actors from its exact source clause; never infer actors from plan order."""
+    clauses = [r.model_dump() if hasattr(r, 'model_dump') else r for r in source_requirements]
+    candidates = [r for r in clauses if (r['source_quote'] in requirement.source_quote or
+        requirement.source_quote in r['source_quote']) and any(
+            a['operation_id'] == requirement.operation_id for a in r['actions'])]
+    exact = [r for r in candidates if r['source_quote'] == requirement.source_quote]
+    if exact:
+        candidates = exact
+    else:
+        value = literal_data(requirement.value)
+
+        def quoted(current, quote):
+            if isinstance(current, dict):
+                return all(quoted(v, quote) for v in current.values())
+            if isinstance(current, list):
+                return all(quoted(v, quote) for v in current)
+            if type(current) is str:
+                return current in quote
+            if type(current) in {int, float}:
+                return str(current) in re.findall(r'-?\d+(?:\.\d+)?', quote)
+            return False
+
+        anchored = []
+        for clause in candidates:
+            if quoted(value, clause['source_quote']):
+                anchored.append(clause)
+        if anchored:
+            candidates = anchored
+        elif len({a['role'] for r in candidates for a in r['actions']
+                  if a['operation_id'] == requirement.operation_id}) > 1:
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_INPUT_IDENTITY_AMBIGUOUS')
+    roles = {a['role'] for r in candidates for a in r['actions']
+             if a['operation_id'] == requirement.operation_id}
+    return roles or None
+
+
+def constrain_input_schema(schema, operation, rule, requirements, *, roles=None,
+                           source_requirements=()):
     """Restrict literals before generation; do not rewrite returned arguments."""
     result = deepcopy(schema)
     by_path = {}
     for requirement in requirements:
+        scope = input_requirement_roles(requirement, source_requirements)
+        if roles is not None and scope is not None and not set(roles) & scope:
+            continue
         if (requirement.operation_id, requirement.location, requirement.name) == (
                 operation, rule["location"], rule["name"]):
             by_path.setdefault(tuple(requirement.path), []).append(literal_data(requirement.value))
@@ -276,7 +329,8 @@ def constrain_input_schema(schema, operation, rule, requirements):
     return result
 
 
-def validate_design_inputs(project, design, requirements, *, normal_operation_ids=()):
+def validate_design_inputs(project, design, requirements, *, normal_operation_ids=(),
+                           source_requirements=()):
     """Preserve requested values across every baseline; negatives remain executor-owned."""
     policies = {p.id: p for p in project.registry.definitions()}
     steps = [s for c in design.cases for s in c.plan.scenario().steps
@@ -285,10 +339,14 @@ def validate_design_inputs(project, design, requirements, *, normal_operation_id
     for requirement in requirements:
         key = (requirement.operation_id, requirement.location,
                requirement.name, tuple(requirement.path))
-        alternatives.setdefault(key, []).append(literal_data(requirement.value))
+        alternatives.setdefault(key, []).append((literal_data(requirement.value),
+            input_requirement_roles(requirement, source_requirements)))
     for step in steps:
-        for (operation, location, name, path), allowed in alternatives.items():
+        for (operation, location, name, path), candidates in alternatives.items():
             if step.operation_id != operation:
+                continue
+            allowed = [value for value, scope in candidates if scope is None or step.role in scope]
+            if not allowed:
                 continue
             binding = getattr(step, location).get(name)
             if binding is not None and binding.from_step is not None:
@@ -305,9 +363,12 @@ def validate_design_inputs(project, design, requirements, *, normal_operation_id
                 raise ValueError("DESIGN_EXPLICIT_INPUT_NOT_PRESERVED")
     for requirement in requirements:
         wanted = literal_data(requirement.value)
+        scope = input_requirement_roles(requirement, source_requirements)
         observed = False
         for step in steps:
             if step.operation_id != requirement.operation_id:
+                continue
+            if scope is not None and step.role not in scope:
                 continue
             if (requirement.operation_id in normal_operation_ids
                     and policies[step.policy_id].negative):

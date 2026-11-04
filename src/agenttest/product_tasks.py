@@ -103,6 +103,9 @@ class ProductTasks:
             questions=[], not_covered=[], groups=design_groups(project),
             model_source=svc.model_status(), execution_target="AUTHORIZED_TEST_ENVIRONMENT",
             complete=False, task_satisfied=None)
+        from agenttest.request_requirements import request_atoms
+
+        summary['requirement_sources'] = request_atoms(current_request)
         summary["negative_check_catalog"] = [dict(policy_id=p.id, operation_id=p.operation_id,
             field=p.negative.name, kind=p.negative.kind,
             example=(f"长度 {len(p.negative.value)}" if isinstance(p.negative.value, (str, list))
@@ -287,6 +290,8 @@ class ProductTasks:
                             focus_record["elapsed_ms"] = round(
                                 (time.perf_counter() - focus_started) * 1000, 3)
                             focus_record["model_call"] = focus_model.stats.model_dump(mode="json")
+                            focus_record['proposed_question_count'] = getattr(
+                                raw_focus, 'proposed_question_count', None)
                             checkpoint()
                         if selection is None or selection.mode == "needs_information":
                             if selection:
@@ -303,10 +308,14 @@ class ProductTasks:
                                     "请查看方案原因，再安排新的独立测试。")
                                 code = getattr(focus_model.stats.diagnostic, "code", None)
                                 summary["reason"] = {
+                                    "MODEL_TOKEN_BUDGET": "规划输入超过本任务预算，未调用模型，"
+                                        "也未发送业务请求。请查看输入预算记录。",
                                     "FOCUS_INPUT_TEXT_CHANGED": "模型提取的文字没有保留原文，"
                                         "本次没有发送业务请求。请核对需求后安排新的独立测试。",
                                     "FOCUS_INPUT_NUMBER_CHANGED": "模型提取的数字与原文不一致，"
                                         "本次没有发送业务请求。请核对需求后安排新的独立测试。",
+                                    "FOCUS_INPUT_FIELD_CHANGED": "模型把明确输入关联到了其他字段，"
+                                        "未发送业务请求；原文保留供核对。",
                                     "FOCUS_INPUT_QUESTION_CONFLICT":
                                         "模型对同一输入同时确认和提问，"
                                         "本次没有发送业务请求。请重新交代需要检查的内容。",
@@ -319,10 +328,24 @@ class ProductTasks:
                             svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW",
                                               summary=summary)
                             return
+                        if selection.mode == 'no_current_action':
+                            summary.update(complete=True, checks_passed=False,
+                                reason='本轮仅包含未来动作或范围约束，没有安排当前业务请求。',
+                                groups=[])
+                            self.coverage(summary)
+                            checkpoint()
+                            svc.db.transition(task_id, owner, 'RUNNING', 'FINISHED',
+                                              summary=summary)
+                            svc.db.event(task_id, 'FINISHED', requests=ledger.requests)
+                            return
                         selected_ids = (selection.operation_ids if selection.mode == "selected"
                                         else project.target.allowed_operations)
+                        if selection.mode == 'selected':
+                            selected_ids = [op for op in selected_ids if
+                                selection.operation_sources.get(op) != 'TRUSTED_PREREQUISITE']
                         summary["groups"] = design_groups(project, operation_ids=[
-                            op for op in selected_ids if op not in blocked_inputs])
+                            op for op in selected_ids if op not in blocked_inputs],
+                            requirement_links=selection.requirements)
                         checkpoint()
                     for position, group in enumerate(summary["groups"]):
                         guard()
@@ -380,6 +403,8 @@ class ProductTasks:
                                 input_requirements=summary.get("focus", {}).get(
                                     "input_requirements", []),
                                 requested_checks=executable_checks,
+                                request_requirements=summary.get('focus', {}).get(
+                                    'requirements', []),
                                 pending_negative_values=summary.get("pending_negative_values", []),
                                 project_notes=project_record.get("business_notes", ""),
                                 group_http_budget=suggested,
@@ -430,6 +455,9 @@ class ProductTasks:
                             record["elapsed_ms"] = round(
                                 (time.perf_counter() - design_started) * 1000, 3)
                             record["model_call"] = model.stats.model_dump(mode="json")
+                            if hasattr(raw_model, 'construction_records'):
+                                record['plan_construction'] = raw_model.construction_records
+                                record['construction_ms'] = raw_model.construction_elapsed_ms
                             checkpoint()
                         for question in design.questions:
                             if question.existing_question_ref is not None:
@@ -440,6 +468,7 @@ class ProductTasks:
                                 summary["questions"].append(data)
                         if design.relevant:
                             summary["not_covered"].extend(design.not_covered)
+                        summary.setdefault('suggestions', []).extend(design.suggestions)
                         clarification_operations = {q.operation_id for q in design.questions
                             if q.kind == "clarification" and q.existing_question_ref is None}
                         negative_policies = {p.id for p in project.registry.definitions()
@@ -536,6 +565,7 @@ class ProductTasks:
 
                                 report.failure_explanation = explain_failure(report)
                                 store.save(report)
+                            plan_roles = {p.step_id: p.role for p in report.plan_structure}
                             case_row.update(status="FINISHED", run_id=report.run_id,
                                 outcome=report.outcome.value, task_satisfied=None,
                                 planned_steps=len(scenario.steps),
@@ -562,6 +592,8 @@ class ProductTasks:
                                     checks=[c.model_dump() for c in i.checks],
                                     cause_confirmed=False) for i in report.investigations],
                                 evidence=[dict(operation_id=s.operation_id, method=s.method,
+                                    step_id=s.step_id, role=plan_roles.get(s.step_id),
+                                    executed=bool(s.attempts),
                                     path=s.path_template, outcome=s.outcome.value,
                                     request=s.request_evidence,
                                     checks=[c.model_dump() for c in s.checks])

@@ -20,12 +20,15 @@ AREAS = {
               "test_product_tasks", "test_usage_reconciliation"],
     "product": ["test_contract_cache", "test_task_store", "test_generic_intake",
                 "test_project_inventory", "test_product_*", "test_usage_reconciliation",
+                "test_request_requirements", "test_requirement_ledger", "test_plan_construction",
                 "test_workspace_*", "test_dev_checks"],
     "focus": ["test_product_focus", "test_product_inputs", "test_product_sources",
+              "test_request_requirements", "test_requirement_ledger",
               "test_product_lengths"],
     "intake": ["test_generic_intake", "test_project_inventory", "test_product_schema",
                "test_workspace_identity", "test_workspace_mode"],
     "execution": ["test_product_tasks", "test_product_cancellation", "test_product_checks",
+                  "test_plan_construction",
                   "test_product_scope", "test_negative_values", "test_task_store"],
 }
 

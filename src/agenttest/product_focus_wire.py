@@ -43,6 +43,9 @@ def constrain_operation_bundles(schema, context):
     shared, operation_properties = {}, {}
     index = context.get("approved_checks", [])
     local_checks = operation_checks(index)
+    from agenttest.request_requirements import future_only_operations
+
+    future = future_only_operations(context)
     for operation in context["approved_ids"]:
         all_fields = [f for f in context.get("input_fields", []) if f["operation_id"] == operation]
         fields = [f for f in all_fields if not f.get("source_dependency")]
@@ -99,6 +102,8 @@ def constrain_operation_bundles(schema, context):
             shared[key] = name
         operation_properties[operation] = dict(anyOf=[dict(type="null"),
             {"$ref": "#/$defs/" + shared[key]}])
+        if operation in future:
+            operation_properties[operation] = dict(type='null')
     return dict(type="object", additionalProperties=False,
                 properties=operation_properties, required=list(operation_properties))
 

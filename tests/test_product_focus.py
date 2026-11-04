@@ -27,10 +27,27 @@ def focus_response(selection, request, *, approved_checks=()):
         if selection["mode"] == "selected" else {})
     blocked = selection.get("blocked_operation_ids", [])
 
-    def cited(value):
+    def cited(value, *, question=False, confirmed_input=False):
         value = dict(value)
         quote = value.pop("source_quote")
-        source = next(s for s in context["input_sources"] if quote in s["text"])
+        allowed = {a['text'] for a in context.get('request_atoms', []) if not a['future']} | {
+            q['source_quote'] for q in context.get('previous_expectation_questions', [])}
+        sources = context['input_sources']
+        if confirmed_input and 'request_atoms' in context:
+            current = {a['text'] for a in context['request_atoms'] if not a.get('future_only')}
+            eligible = [s for s in sources if s['text'] in current or
+                        s['origin'] in {'previous_validated', 'previous_request'}]
+            direct = [s for s in eligible if quote in s['text']]
+            if direct:
+                sources = direct
+            else:
+                literal = value.get('value')
+                sources = [s for s in eligible if s['text'] in quote and str(literal) in s['text']]
+                if not sources:
+                    sources = eligible
+        source = next(s for s in sources if (quote in s['text'] or
+            confirmed_input and s['text'] in quote) and
+            (not question or not allowed or s['text'] in allowed))
         return dict(**value, source_ref=source["source_id"])
 
     for key in ("input_requirements", "input_questions"):
@@ -40,12 +57,13 @@ def focus_response(selection, request, *, approved_checks=()):
                 and value["operation_id"] in g["operation_ids"])
             scope["operations"][value["operation_id"]][key].append(cited(dict(
                 field_ref=group["field_ref"], **{k: v for k, v in value.items()
-                if k not in {"operation_id", "location", "name", "path"}})))
+                if k not in {"operation_id", "location", "name", "path"}}),
+                confirmed_input=key == 'input_requirements'))
     for question in selection.get("expectation_questions", []):
         question = {"kind": "business_rule", "role": None, "status_choices": [], **question}
         operation = question["operation_id"]
         scope["operations"][operation]["expectation_questions"].append(cited({
-            key: value for key, value in question.items() if key != "operation_id"}))
+            key: value for key, value in question.items() if key != "operation_id"}, question=True))
     mapping = {entry["policy_id"]: (operation, reference)
         for operation, entries in operation_checks(approved_checks).items()
         for reference, entry in entries.items()}
@@ -59,9 +77,35 @@ def focus_response(selection, request, *, approved_checks=()):
             check_ref=reference, source_quote=check["source_quote"],
             exact_value=check.get("exact_value"), **length)))
 
-    return response(dict(interpretation=selection["interpretation"], scope=scope,
+    output = dict(interpretation=selection["interpretation"], scope=scope,
         blocked_operations={o["operation_id"]: o["operation_id"] in blocked
-                            for o in context["unavailable_operations"]}))
+                            for o in context["unavailable_operations"]})
+    if 'request_atoms' in context:
+        selected = (context['approved_ids'] if selection['mode'] == 'all_ready'
+                    else selection['operation_ids'])
+        identity = next((a['identity'] for a in context.get('managed_authentication', [])), None)
+        resources = [dict(producer=d['from_operation'], consumer=d['operation_id'])
+            for d in context.get('resource_dependencies', []) if d['operation_id'] in selected]
+        orders = [dict(earlier=d['after_operation'], later=d['operation_id'])
+            for d in context.get('execution_prerequisites', []) if d['operation_id'] in selected]
+        if not orders and len(selected) > 1:
+            orders = [dict(earlier=selected[0], later=selected[-1])]
+        questions = [*selection.get('expectation_questions', []),
+                     *selection.get('input_questions', [])]
+        gaps = {a['source_id']: [q for q in questions if q['source_quote'] in a['text']
+                or a['text'] in q['source_quote']] for a in context['request_atoms']}
+        requested_roles = {q['operation_id']: q['role'] for q in questions
+                           if q.get('kind') == 'permission'}
+        output['requirement_map'] = selection.get('requirement_map', {
+            a['source_id']: dict(disposition='deferred' if a['future'] else
+                'required' if selected and not gaps[a['source_id']] else 'needs_review',
+                actions=[] if a['future'] else [dict(operation_id=o,
+                    role=requested_roles.get(o, identity)) for o in selected],
+                before=orders if a['ordered'] and not a['future'] else [],
+                same_resource=resources if a['same_resource'] and not a['future'] else [],
+                response_checks=[], forbidden_operation_ids=[], blocked_operation_ids=[])
+                for a in context['request_atoms']})
+    return response(output)
 
 
 def test_wire_selection_is_a_closed_set_and_mode_question_branches_are_consistent():
@@ -354,6 +398,9 @@ async def test_focus_receives_read_dependency_provenance_without_literal_id_auth
             return FocusSelection(interpretation="先查询已确认报表，再用响应编号导出。",
                 mode="selected",
                 operation_ids=["readExport"], question=None, pending_questions=[], not_covered=[],
+                requirements=[dict(source_id=a['source_id'], source_quote=a['text'],
+                    disposition='required', actions=[dict(operation_id='readExport', role=None)],
+                    before=[], same_resource=[]) for a in context['request_atoms']],
                 source_conflicts=[]).model_dump_json()
 
     selection = await select_focus(proj, Focus(), dict(current_request="导出本轮已确认的报表。"),
@@ -733,6 +780,10 @@ async def test_focus_sees_controlled_identity_readiness_without_credentials(pass
             # Unknown behavior remains a real question even when credentials are prepared.
             return FocusSelection(interpretation="查询任务并保留待确认的缓存业务规则。",
                 mode="selected", operation_ids=["readJob"], question=None,
+                requirements=[dict(source_id=a['source_id'], source_quote=a['text'],
+                    disposition='needs_review', actions=[dict(operation_id='readJob', role=None)],
+                    before=[], same_resource=[])
+                    for a in context['request_atoms']],
                 pending_questions=[], not_covered=[], expectation_questions=[dict(
                     operation_id="readJob", question="任务查询允许缓存多久？",
                     requested_behavior="查询缓存时长", source_quote="查询任务的缓存时长")]

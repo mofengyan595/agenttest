@@ -348,7 +348,7 @@ def constrain_optional_negative_cases(schema, context):
     branches[:] = [b for b in branches if b["properties"]["policy_id"]["enum"]]
 
 
-def decode_optional_negative_cases(wire, context):
+def decode_optional_negative_cases(wire, context, *, construction_chains=None):
     """A category label cannot turn an ordinary request into an executed negative check."""
     cases = wire.get("cases")
     if type(cases) is not list:
@@ -371,6 +371,9 @@ def decode_optional_negative_cases(wire, context):
                 raise ValidationFailure(Layer.MODEL, "DESIGN_NEGATIVE_CHECK_MISSING")
             cases[index] = dict(title=case["title"], kind="negative", plan=dict(
                 name="approved_negative", steps=[*case["before"], case["check"], *case["after"]]))
+            if construction_chains is not None:
+                construction_chains.append((index,
+                    [step.get('id') for step in cases[index]['plan']['steps']]))
         elif type(case) is not dict or case.get("kind") == "negative" or any(
                 step.get("policy_id") in negative for step in case.get("plan", {}).get("steps", [])
                 if type(step) is dict):
@@ -388,8 +391,10 @@ def constrain_required_cases(schema, context):
     cases = {}
     for requirement in requested:
         identifier = requirement["policy_id"]
-        branch = next(step for step in schema["$defs"]["GenericDraftStep"]["anyOf"]
-                      if identifier in step["properties"]["policy_id"]["enum"])
+        branch = next((step for step in schema["$defs"]["GenericDraftStep"]["anyOf"]
+                       if identifier in step["properties"]["policy_id"]["enum"]), None)
+        if branch is None:
+            raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_IDENTITY_NOT_APPROVED')
         check = deepcopy(branch)
         check["properties"]["policy_id"] = dict(type="string", enum=[identifier])
         before, after = negative_prerequisite_policies(context, identifier)
@@ -410,7 +415,7 @@ def constrain_required_cases(schema, context):
     branches[:] = [branch for branch in branches if branch["properties"]["policy_id"]["enum"]]
 
 
-def decode_required_cases(wire, context):
+def decode_required_cases(wire, context, *, construction_chains=None):
     requested = context.get("requested_checks", [])
     if not requested:
         return
@@ -441,6 +446,9 @@ def decode_required_cases(wire, context):
             raise ValidationFailure(Layer.MODEL, "DESIGN_REQUESTED_CHECKS_MISSING")
         wire["cases"].append(dict(title=case["title"], kind="negative", plan=dict(
             name="requested_check", steps=[*case["before"], case["check"], *case["after"]])))
+        if construction_chains is not None:
+            construction_chains.append((len(wire['cases']) - 1,
+                [step.get('id') for step in wire['cases'][-1]['plan']['steps']]))
 
 
 def validate_check_coverage(design, requested):

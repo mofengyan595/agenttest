@@ -47,6 +47,12 @@ def test_future_clause_does_not_request_execution_or_a_question():
     assert ledger[0]['source_quote'] == 'size=0'
 
 
+def test_future_action_does_not_hide_current_required_assignment():
+    for text in ('现在检查size=0，留给以后重试。', '本轮检查size=0并保留给下次重试。'):
+        with pytest.raises(ValidationFailure):
+            validate_assignment_coverage(context(text), selection())
+
+
 def test_parser_preserves_scalar_type_source_offsets_and_identifier_boundaries():
     text = '检查size＝0；name="x"；flag=true；other=null；标题=3；foo.size=4'
     items = explicit_assignments(text)

@@ -52,6 +52,8 @@ def input_sources(context):
     current = context["user_task"]
     for start in ([0] if len(current) <= 300 else range(0, len(current), 150)):
         add(current[start:start + 300], "current")
+    for atom in context.get('request_atoms', []):
+        add(atom['text'], 'current_clause')
     for key in ("previous_input_requirements", "previous_requested_checks",
                 "previous_expectation_questions"):
         for item in context.get(key, []):
@@ -102,6 +104,10 @@ def constrain_input_sources(properties, context, operation, fields):
 
     sources = input_sources(context)
     current = [s["source_id"] for s in sources if s["origin"] == "current"]
+    confirmed_current = list(current)
+    if 'request_atoms' in context:
+        current_texts = {a['text'] for a in context['request_atoms'] if not a.get('future_only')}
+        confirmed_current = [s['source_id'] for s in sources if s['text'] in current_texts]
     by_ref = {input_slot(f).split("/", 1)[1]: f for f in fields}
     def cited(branch, identifiers):
         branch = deepcopy(branch)
@@ -115,7 +121,8 @@ def constrain_input_sources(properties, context, operation, fields):
         for branch in array.get("items", {}).get("anyOf", []):
             reference = branch["properties"]["field_ref"]["enum"][0]
             field_schema = by_ref[reference]["schema"]
-            for source in (s for s in sources if s["source_id"] in current):
+            source_ids = confirmed_current if key == 'input_requirements' else current
+            for source in (s for s in sources if s["source_id"] in source_ids):
                 direct = cited(branch, [source["source_id"]])
                 if (key == "input_requirements"
                         and field_schema.get("type") in {"integer", "number"}

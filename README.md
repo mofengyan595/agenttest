@@ -1,200 +1,53 @@
 # AgentTest
 
-[![Keyless checks](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml/badge.svg)](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml)
+**用一句话发起 API 测试，让规划、执行和结果都有据可查。**
 
-AgentTest 是一个基于 Python 的 AI API 测试项目。用户用受支持的自然语言描述测试需求，
-LLM 提出结构化测试计划；系统结合 OpenAPI 契约、Policy、Intent 和资源依赖校验计划，
-再由确定性 Executor 执行 HTTP 请求与可信断言。模型负责选择业务步骤，执行权限和结果判定由程序控制。
+AgentTest 是一个 Python API 测试平台。接入 OpenAPI 和已确认的业务规则后，用自然语言描述要测的行为，查看实际请求、断言、失败原因及未完成项，并将支持的稳定场景保存为无模型固定回归。
 
-项目支持单接口、跨接口及项目级测试，可查看执行证据与失败原因，并将符合条件的成功场景
-导出为无需模型的 pytest 回归用例。主要面向经过授权的隔离测试环境；首次接入仍需审核契约、
-角色和业务预期，目前不提供通用生产测试平台或任意项目的可靠性保证。
+适合需要检查多接口流程、参数边界和身份权限的后端开发者、测试开发者。首次接入仍需核对环境、账号、资源关系和预期；模型不能替你批准未知业务规则。
 
-## 主要功能
+[快速开始](#快速开始) · [接入自己的项目](#接入自己的项目) · [怎样看结果](#怎样看结果) · [当前证据与限制](#当前证据与限制) · [文档导航](#文档导航)
 
-### 当前 CourseInsight 真实接入
+## 一次实际输出
 
-本轮通过正常网页、真实模型和真实HTTP检验当前26个接口，并接通通用受控凭据、CSV上传、
-有限异步等待、内容检查、资源顺序和独立写回归。按用户要求复用原Demo，只写本轮已归属
-资源。[启动与一句话使用](docs/courseinsight-colleague-runbook.md)，本机入口为
-<http://127.0.0.1:18520>；[完整交付、首次失败、复验及边界](docs/courseinsight-colleague-delivery.md)。
+下面是2026-11-04实际运行 `python -m agenttest showcase --case all` 的摘要。业务目标均为模拟服务：
 
-首次冻结需求完整完成3/10，首次实际请求18/26接口；明确标记的复验后正式覆盖26/26，
-不覆盖原成绩。全轮72次真实规划调用、598736已知Token、3条UNKNOWN；250次目标HTTP
-尝试中249次获得响应状态，1次登录超时。固定写回归禁用模型，每次新建并清理自己的资源。
-旧的上传/轮询等固定包限制仍明确显示；首次接入需核对身份、来源和业务预期。
+| 演示 | 实际结果 | 请求数 | 是否符合演示预期 |
+| --- | --- | ---: | --- |
+| 正常跨接口流程 | PASS | 9 | 是 |
+| 预设业务故障 | ASSERTION_FAILED | 4 | 是 |
+| 故障后的受控只读调查 | ASSERTION_FAILED | 5 | 是 |
+| Java格式Mock | PASS | 3 | 是 |
+| MCP stdio | PASS | 9 | 是 |
 
-### 上一轮可靠测试同事（历史记录）
+真实模型调用 **0**，真实Java请求 **0**。`verified: true`表示演示符合预期，故障结果仍是失败，不能称为业务检查全部通过。命令会输出Run ID和本地报告位置；新克隆仓库即可重新生成，无需私有记录。
 
-2026-11-01 可靠测试同事Goal已完成五阶段实施与自建环境验收：写回归每轮准备新资源并
-记录清理，整项任务最多两次授权只读调查，网页、CLI与MCP共用任务服务，固定复测禁用模型。
-从干净检出可初始化三个隔离项目；[启动、保存和CI命令](docs/reliable-colleague-guide.md)。
-本次网页为 <http://127.0.0.1:18420>。
+真实网页测试及首次失败见[CourseInsight上一轮交付](docs/courseinsight-colleague-delivery.md)。固定回归与自然语言理解分开统计。
 
-最终离线2082通过、15跳过、0失败。三需求各三轮真实模型修复后复验7/9满足全部条件，
-两项规划失败保留；首次v1仍为2满足、4失败、3未执行。复验21调用、147320已知Token、
-0未知，92任务目标HTTP。真实业务尚未提供；[结果、证据、限制与本地提交](docs/reliable-colleague-delivery.md)、
-[开发进度](docs/progress.md)。下面v16数字与当时写复测限制均属于上一轮冻结结果。
+<details>
+<summary>查看当前真实网页：原文对账、实际请求与未完成项</summary>
 
-### 上一轮产品交付（历史记录）
+![AgentTest实际网页：开发只读样例](docs/images/first-completion-desktop.png)
 
-本轮“接手接口测试”产品已完成声明范围内的开发与验收。当前可打开
-<http://127.0.0.1:18120>，从三个已接入的自建隔离项目开始；测试重点可以留空。
-也可上传新文档，核对必要环境和身份，系统整理完整清单、建议和缺失项，再安排测试。
-[使用说明](docs/testing-colleague-guide.md)介绍补充信息、看结果、保存与再次运行。
+这是本轮开发阶段的一次正常网页实测：真实模型与原CourseInsight，健康和课程列表2场景、3个HTTP请求、2次模型调用、17,746已知Token、0 UNKNOWN。页面中的3/26是该次实际接口覆盖，不是完整需求完成率，也不计入正式48位置对照。截图已核对，没有凭据或用户业务正文。
 
-真实模型负责理解重点、提出场景与输入；原执行器独立校验权限、参数、依赖和断言。
-支持路径/查询参数、嵌套JSON与数组、受控异常、登录/Bearer、动态资源和隔离CRUD。
-结果分别显示任务完成、实际检查与完整接口覆盖；未知业务预期不自动成为断言，
-HTTP200不等于业务正确。通过的受支持只读场景可保存，重启后禁用模型固定复测。
-写场景尚缺完整重新准备和副作用控制，暂不开放固定复测；上传和长异步等限制见说明。
-
-上一轮v16：三个新任务经正常网页各三轮，9/9满足预定条件；30次真实模型调用、
-266135已知Token、0未知，90次自建目标接口HTTP。完整离线2009通过、15跳过、0失败；
-前端59通过，类型/构建通过，离线浏览器12通过、2显式真实调用跳过。
-这仅证明本轮声明范围，未证明广泛泛化、独立人审、真实业务或人工节时。
-全部历史失败和原成绩保留，不重新计分；[交付证据与范围](docs/testing-colleague-delivery.md)、
-[完整开发记录](docs/testing-colleague-development.md)。
-
-2026-10-26：[通用项目接入与真实模型产品入口](docs/product-intake-guide.md)已接通。
-正常启动使用真实配置模型，不再默认模拟；上传新文档后可配置接口、输入、身份、资源依赖和检查规则，
-无需匹配工单/课程样例。首次产品浏览器真实验收1次ecnu-plus/1197 Token，2次本机HTTP通过；
-保存后只读固定复测另2请求/0模型通过。目标为自建测试服务，用户实际环境尚未提供，
-不作为广泛泛化或独立人审证据；[完整记录与限制](docs/product-intake-delivery.md)。
-
-- 自然语言入口：从批准的项目目标目录派生任务约束，再由 LLM 提出计划；未知语义或预期待审。
-- 计划校验：检查 DSL、OpenAPI、操作白名单、角色、Policy、Intent 及资源生产／消费关系。
-- 三层测试：单接口套件、跨接口资源流程、项目已授权核心接口分组；分别记录完整分母和未执行原因。
-- 合法计划复用：复用任务内已验证结构，按规则派生合法边界、枚举输入与批准负例，重新校验后执行。
-- HTTP 执行：动态 ID 引用、受控登录或 Bearer、JSON、单个受控CSV与有限异步轮询。
-  通用网页可使用已核对的文件和终态规则；不代表支持任意文件或无限等待。
-- 证据与报告：固定断言、失败分类、请求尝试记录、分层校验结果及脱敏 JSON 报告。
-- 可选只读调查：显式启用后，在独立限制内选择批准的只读能力，保留原业务判定与独立调查结论。
-- pytest 导出：完整通过的普通JSON及已核实本轮生命周期的写场景可固定复测，保留来源与清理证据。
-- 本地网页：项目接入表单、测试助手与测试记录。导入文档并明确确认通用配置，或绑定已有服务端配置后，
-  可用一句话发起受支持测试，查看实际进度、结论和未完成项，保存固定回归。
-  独立的只读服务仍可只查看报告；新规则须由本地操作者明确确认，目标仍受本机/服务端私网授权约束，
-  凭据仅由服务端读取，不进入任务文字或模型上下文。
-- MCP stdio：提供契约查看、计划校验、批准 mini 场景执行和报告读取，复用原执行门禁。
-  当前不能通过 MCP 执行任意计划、指定目标 URL 或进行 Java 写入。
-
-## 技术栈
-
-下表版本来自当前依赖声明与锁文件；LangGraph、MCP 为可选依赖，基础执行与测试不依赖它们。
-
-| 技术 | 版本与用途 |
-| --- | --- |
-| Python | 推荐 3.11；包声明支持 3.11–3.12，安装脚本固定检查 3.11 |
-| FastAPI / Pydantic / HTTPX | 锁定 0.143.0 / 2.14.0 / 0.28.1；本地 API、严格数据模型与 HTTP 执行 |
-| LangGraph | 1.2.14；受约束规划、校验、执行与有界反馈工作流 |
-| MCP Python SDK | 2.3.0，使用 `MCPServer`；stdio 工具封装 |
-| OpenAPI | 3.0 / 3.1，JSON / YAML；契约解析与受支持的请求 Schema 校验 |
-| SQLite | Python 标准库；项目接入、任务状态、用量、报告与固定测试引用，不作为业务响应数据库 |
-| React / TypeScript / Vite | 锁定 19.3.0 / 5.9.3 / 8.3.4；本地控制台 |
-| pytest / Ruff | 锁定 9.1.1 / 0.17.0；离线测试与静态检查 |
-| Vitest / Playwright | 锁定 5.0.3 / 1.64.0；前端组件测试与隔离浏览器 E2E |
-
-Python 依赖见 [pyproject.toml](pyproject.toml) 与 [Agent 锁文件](requirements-agent.lock)
-（包含基础与 MCP 锁文件）；前端使用 [package-lock.json](web/package-lock.json)。
-Schemathesis 仅用于独立可选对照环境，不是产品运行依赖。
-
-## 系统架构
-
-```mermaid
-flowchart LR
-    U[用户测试目标] --> P[LLM Planner]
-    P --> D[不可信 DSL 计划]
-    O[操作员批准的契约、角色、策略与目标授权] --> V[DSL / OpenAPI / Policy / Intent / 依赖校验]
-    D --> V
-    V --> |通过| E[确定性 Executor]
-    O --> E
-    E --> T[授权隔离测试目标]
-    T --> F[确定性 Verifier]
-    F --> R[脱敏 Report]
-    R --> |完整通过及来源核对| X[可信固定模板 pytest Export]
-```
-
-操作员配置是信任根；LLM 输出即使符合 JSON Schema，也不能直接获得 HTTP 执行权限。
-Verifier 在 Executor 内逐步执行，图中单列其结果判定职责。可选反馈调查不改变原业务断言，
-导出的 Python 来自仓库固定模板，模型计划仅作为数据保存。
-
-## 核心技术实现
-
-以下说明同时包含已有目标目录/CLI路径。本轮通用网页按文档接入并由模型提出方案，
-结构校验不构成独立自然语言意图证明，`task_satisfied` 保留为 `null`。
-目标目录的独立Intent约束、可选模型反馈和CLI导出能力不代表通用页面支持所有相同场景。
-
-### 受约束的 AI 规划
-
-LLM 用来解释支持范围内的需求并选择业务步骤、角色、策略与资源引用。
-它没有 Executor、凭据或任意 HTTP 工具的直接访问权。规划上下文只包含筛选后的公共契约、
-角色别名和批准策略关系，不包含目标地址、凭据或评测答案。
-
-Pydantic DSL 限制可表达的操作，OpenAPI 校验参数位置与受支持的类型、必填、枚举和边界；
-Policy Registry 再检查操作、角色、业务场景、参数及准确的资源来源。
-Intent Validator 独立核对需求要求的步骤、顺序、角色与覆盖，不能根据模型计划反向补写目标。
-项目级入口从操作员目标目录派生这些约束，不要求每条新需求手写完整步骤。
-
-未知需求、未批准的参数变化或越权操作不会直接执行；缺少可信预期时保留 `NEEDS_REVIEW`。
-当前自然语言识别和 Schema 校验都有明确子集，不是通用语义理解或完整 JSON Schema 实现。
-
-### 合法计划复用与确定性派生
-
-同一业务结构的边界测试无需反复交给模型规划。LLM 先提出基础结构，只有通过原有
-DSL、OpenAPI、Policy、Intent 和依赖门禁的计划，才能保存为任务内不可变的 `LegalStructure`。
-结构绑定项目配置、原始需求与计划指纹，配置或关系变化后不能继续借用旧结构。
-
-确定性规则按契约与批准策略派生正常输入、合法边界／枚举及批准负例。
-负例必须有显式批准的变更字段、错误语义和断言；并非发现一个非法值就能发送。
-每个派生计划重新检查授权、参数与依赖，不变更操作、角色、引用来源或用户钉定的字面量。
-报告保留基础计划链接、变化字段与规则来源，派生本身不调用模型。
-
-复用的是计划结构，每次执行都会新建 run、重新登录或注入凭据，并重新产生动态资源；
-不复用旧任务的 ID、认证状态或执行结果。基础计划被拒绝时不自动修复，关联派生标记未执行，
-仍留在统计分母中；业务执行中的断言失败也不会触发重规划或写入重放。
-
-### 有界执行与可信证据
-
-Executor 控制请求数、步骤、超时、请求／响应大小和轮询；套件共用父级请求及模型预算，
-不会通过拆分子用例刷新额度。资源只能绑定到批准的前序成功响应，凭据由运行时 Vault 管理，
-不交给模型，也不作为业务参数引用。写入请求发送前记录 attempt，未知结果不自动重试或恢复。
-
-Verifier 使用批准的状态码、字段关系、终态和条数断言，报告区分 `PASS`、`ASSERTION_FAILED`、
-`TEST_INFRA_ERROR`、`TOOL_ERROR`、`NEEDS_REVIEW`。同时分别记录计划合法、策略授权、
-意图验证、工作流结束与任务满足；流程结束或安全拦截都不等于业务测试成功。
-报告保存脱敏步骤证据、摘要和实际用量，不保存原始模型回复、HTTP 正文或认证秘密。
-
-可选反馈由模型提出调查或结束建议，只能使用操作员批准的只读能力与同 run 资源。
-业务结果、模型建议和确定性证据支持检查分别保存；模型不能更改断言或把推测升级为可信结论。
-
-### 无模型回归导出
-
-完整通过且来源一致的普通 JSON 场景，可将计划数据与 manifest 写入新回归包；
-pytest 文件逐字来自可信模板。执行时仍需操作员提供契约、目标、策略、凭据和 transport fixture，
-重新校验配置与断言。需要新建资源的已支持CLI场景，重跑时重新准备；本轮通用网页的
-写场景仍因副作用控制不完整而停用固定复测。CSV、轮询及带读取重试的场景暂不导出。
-
-固定回归无需再调用模型；其 `operator_plan` / `task_satisfied=null` 只表示固定计划的执行结果，
-不代表再次成功理解自然语言需求。失败或待审报告不能导出成通过资产。
-
-实现细节见[技术设计](docs/project-technical-summary.md)、[计划复用](docs/plan-reuse-stage2.md)
-与[有界反馈](docs/bounded-feedback.md)。旧阶段文档保留当时范围，当前通用网页入口以本文和[使用说明](docs/testing-colleague-guide.md)为准。
+</details>
 
 ## 快速开始
 
-### 离线 Demo
+准备 **Python 3.11**、**Node.js 22.12+** 和Git。首次安装需要包源或已缓存依赖；安装后的离线演示不需要密钥、Docker、外网或真实业务服务。不要复制其他机器的虚拟环境。
 
-准备 Python 3.11；首次安装需要包源或预先缓存依赖，安装后 Demo 不需要 API Key、Docker、
-外网或真实业务服务。安装脚本会创建或沿用本仓库 `.venv`，安装锁定依赖并运行 pytest、Ruff。
-不要复制其他机器的虚拟环境。
-
-Windows PowerShell，在仓库根目录执行：
+Windows PowerShell：
 
 ```powershell
 git clone https://github.com/mofengyan595/agenttest.git
 Set-Location agenttest
 .\scripts\setup_env.ps1 -Agent
-.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/readme-demo
+Set-Location web
+npm ci
+npm run build
+Set-Location ..
+.\scripts\start_web.ps1 -Demo
 ```
 
 Linux：
@@ -203,127 +56,89 @@ Linux：
 git clone https://github.com/mofengyan595/agenttest.git
 cd agenttest
 bash scripts/setup_env.sh --agent
-.venv/bin/python -m agenttest showcase --case all --runs-dir runs/readme-demo
-```
-
-`-Agent` / `--agent` 安装 LangGraph 和 MCP，使五项完整演示可用。
-只安装基础依赖时省略该选项，选择 `--case normal` 或 `--case fault`。
-完整演示覆盖正常、故障、只读调查、Java 格式 Mock 与 MCP stdio；其中 Java Mock 不连接 Java 服务。
-
-输出包含 run ID、报告路径和 `verified`。正常场景的业务结果应为 `PASS`；
-故障场景应保留 `ASSERTION_FAILED`。`verified: true` 表示演示符合预期，不能把二者都称为业务 PASS。
-MCP 报告位于独立子目录，读取位置以输出的 `reports_root` 为准。
-
-### 本地 Web Console
-
-推荐先体验新的完整网页流程。沿用上面的 Agent 环境，在 `web/` 首次运行 `npm ci`、
-`npm run build`；之后从仓库根目录启动：
-
-```powershell
-.\scripts\start_web.ps1
-```
-
-打开 [AgentTest 网页](http://127.0.0.1:18012)，按“项目 → 测试助手 → 测试记录”操作。
-先上传工单或课程的示例 OpenAPI，选择对应内存模拟配置，核对并保存接入，再发起需求。
-默认数据持久保存在 `runs/web-workspace/`；规划器为模拟模型，业务目标为专用内存服务。
-不需要模型密钥或真实业务环境。详见 [简短使用说明、接入边界和故障指引](docs/web-intake-guide.md)。
-
-以下为保留的只读报告查看启动方式：
-
-沿用上面的 Python 环境与 `runs/readme-demo` 报告，准备 Node.js 22.12+。
-从仓库根目录启动 FastAPI，只监听回环地址：
-
-```powershell
-$env:AGENTTEST_RUNS_DIR = 'runs/readme-demo'
-.\.venv\Scripts\python.exe -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
-```
-
-Linux 对应命令：
-
-```bash
-export AGENTTEST_RUNS_DIR=runs/readme-demo
-.venv/bin/python -m uvicorn agenttest.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
-```
-
-另开终端进入仓库的 `web/`（PowerShell 使用 `Set-Location web`，Linux 使用 `cd web`）：
-
-```bash
+cd web
 npm ci
-npm run dev
+npm run build
+cd ..
+.venv/bin/python scripts/serve_web_workspace.py --demo
 ```
 
-打开 [本地控制台](http://127.0.0.1:5173)，在历史页选择 Run ID 查看校验、断言与请求尝试。
-Vite 默认同源代理到 8000 端口，不需要放宽 CORS。默认服务只提供契约解析与报告查看。
-若此前启用过任务服务，先取消 `AGENTTEST_PROJECTS_FILE` 设置再使用此只读路径。
+安装脚本创建仓库`.venv`、安装锁定依赖并运行后端检查；Agent选项包含LangGraph和MCP。打开[本地网页](http://127.0.0.1:18012)，体验“项目 → 测试助手 → 测试记录”。模拟模式使用工单、课程两个专用内存目标，不代表真实模型理解能力。
 
-要从 `/tasks` 发起测试，须由操作员批准项目配置并显式启用任务服务，见[配置与授权](docs/nl-entry.md)。
-任务元数据使用 SQLite；取消不回滚已发送请求，服务重启不恢复 HTTP 或重放写入。
-[模拟模型体验入口](docs/plan-reuse-user-trial.md)可离线查看三层测试和派生结果，不代表真实模型质量。
+第一次可上传仓库中的`examples/trusted-testing/projects/tickets/openapi.json`，选择“工单 · 内存模拟目标”，核对配置并保存。[模拟网页操作说明](docs/web-intake-guide.md)。
 
-## 测试与评测结果
+只运行命令行离线演示：
 
-最新合法计划复用对照使用六条新原文、每条三轮，两版各 18 次首次尝试；真实模型为 `ecnu-plus`，
-业务目标为专用 ASGI 内存服务，没有真实第三方业务请求或数据库写入。
-数据属于 `DEVELOPMENT_ONLY / UNREVIEWED` 的小样本开发对照，尚未独立人工审核。
-
-| 指标 | 旧版 | 候选版 |
-| --- | ---: | ---: |
-| 完整任务 | 2/18 | 9/18 |
-| 明确授权且预算足够的任务 | 2/15 | 9/15 |
-| 足额项目任务 | 0/6 | 3/6 |
-| 批准负例实际执行并正确拒绝 | 64/105 | 85/105 |
-| 模型调用（含语义、规划与反馈） | 162 | 50 |
-
-完整任务、项目覆盖与负例执行率均未达到预定质量目标。候选仍存在缺少请求体、依赖／意图不匹配，
-以及未知预期澄清和证据不足诊断的失败。规则实际派生并执行 103/129 个用例，另外 26 个因基础计划
-失败未执行；这些派生不能计作模型规划成功。安全拒绝也不等于业务完成或模型正确主动弃权。
-
-两版实际完成覆盖不同，项目差异还包含旧版缺少新增正常边界能力，不能全归因于模型改善。
-调用减少不能直接证明等覆盖条件下的成本收益；目前没有实际人工节时或真实用户效率提升的验证。
-固定 pytest、Schemathesis 数据生成适配与 AgentTest 仅比较批准的共同能力子集，且共用执行／断言引擎；
-Agent 子集由完整任务提取，未独立强制子集预算，不是原生工具全能力或独立同预算排名。
-
-[完整结果、分母与原始失败](docs/plan-reuse-final-results.md) ·
-[公开真实收据](docs/demo-evidence/plan-reuse-paired-real-v2.json) ·
-[成熟工具对照与价值限制](docs/plan-reuse-value-report.md)。历史实验、Token 明细和评分口径保留在原文档中。
-
-仓库测试分别覆盖确定性执行、Fake／Mock 工作流、固定回归与浏览器交互，不能替代真实模型评测。
-Python CI 包含 Windows／Linux × base／agent 四组检查；Web CI 在两平台检查类型、组件、构建与 E2E。
-较大范围的产品快检可运行 `.\.venv\Scripts\python.exe scripts/check_dev.py --area product --jobs 3`；
-小改按范围选择 `focus`、`intake`、`execution`、`contracts` 或 `tasks`，默认串行。
-[开发快检说明](docs/development-checks.md)列明范围和完整验收要求。
-本地可运行 `.\.venv\Scripts\python.exe -m pytest -q` 和 `.\.venv\Scripts\python.exe -m ruff check .`；
-在 `web/` 运行 `npm test`、`npm run build`。浏览器依赖与 E2E 配置见[Web 文档](docs/web-console.md)。
-
-## 安全与适用范围
-
-- 目标与操作必须事先批准；仅接受回环地址或显式授权的隔离私网 IP，禁用任意 DNS 目标、重定向和环境代理。
-- 不执行模型生成的 Python、Shell 或任意代码；模型不能自行指定凭据、任意 URL 或可信断言。
-- 写操作需要隔离模式与明确授权；不支持自动修复、未知写入恢复、跨服务回滚或自动清理副作用。
-- 未支持的需求与未知预期可以进入 `NEEDS_REVIEW`，不得降低断言或强行判定通过。
-- 默认演示离线；真实模型调用及第三方目标执行需要额外授权和本地配置。
-- 当前依赖操作员审核配置，没有生产级多租户、完整人工审批或任意项目适配保证。
-
-CourseInsight 只作为独立 Java 测试目标。历史验证固定于 `430c23e`，仅覆盖管理员登录、创建和查询课程；
-当前主分支已有后续接口与权限变更，旧适配未重新验证，版本不符时预检会拒绝执行。
-仅修改 SHA 不能证明兼容；真实运行须重新审核契约、Policy、Intent、隔离环境及副作用。
-详见[历史 Java 接入](docs/stage3a-courseinsight.md)、[真实模型记录](docs/stage4a-results.json)
-与[接口差异审查](docs/engineering-review-20261013.md)。
-
-## 项目结构与相关文档
-
-```text
-src/agenttest/  # 规划、门禁、计划派生、执行、验证、报告、CLI / API / MCP 与任务服务
-web/           # React / TypeScript 本地控制台及前端测试
-examples/      # 项目配置样例、合成任务与固定回归包
-scripts/       # 环境安装、离线验收、显式启用的实测与评测工具
-tests/         # 默认离线的执行、授权、工作流及服务回归测试
-docs/          # 技术设计、使用说明、完整评测与历史证据
+```powershell
+.\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/readme-demo
 ```
 
-- 系统技术设计：[模块职责与边界](docs/project-technical-summary.md)、[计划复用](docs/plan-reuse-stage2.md)、[证据与有界反馈](docs/bounded-feedback.md)。
-- 自然语言与项目接入：[三层入口和任务服务](docs/nl-entry.md)、[项目配置预检](docs/project-inputs.md)、[真实模型配置](docs/model-configuration.md)。
-- Web 与 MCP：[控制台使用说明](docs/web-console.md)、[MCP 工具及客户端](docs/mcp-guide.md)。
-- 最新评测与工具对照：[完整真实结果](docs/plan-reuse-final-results.md)、[价值与共同子集](docs/plan-reuse-value-report.md)、[待审体验包](docs/plan-reuse-user-trial.md)。
-- 回归导出：[导出条件与 runtime fixture](docs/regression-export.md)、[回归样例](examples/regressions/README.md)。
-- 历史开发与实验：[进度索引](docs/progress.md)、[演示与证据导航](docs/goal-delivery-guide.md)、[上一轮完整结果](docs/trusted-testing-final-results.md)、[技术选型记录](docs/rag-necessity-20261013.md)。
+Linux将解释器替换为`.venv/bin/python`。只安装基础依赖时选择`--case normal`或`--case fault`。
+
+## 接入自己的项目
+
+1. 准备一个允许测试的本地或已授权隔离环境，导出OpenAPI 3.0/3.1 JSON或YAML。
+2. 在本机`.env`配置`OPENAI_API_KEY`、`OPENAI_BASE_URL`和`AGENTTEST_MODEL`。不要将真实值写进需求、仓库或截图。
+3. 启动真实模式：Windows从根目录运行`.\scripts\start_web.ps1`；Linux运行`.venv/bin/python scripts/serve_web_workspace.py`。**不加Demo参数**；未配置模型时阻止执行，不回退模拟。
+4. 在“项目”导入文档，核对允许的操作、身份、输入来源、资源依赖、错误语义和业务断言。凭据由服务端环境变量读取，页面只登记变量名。写入还需明确隔离授权及资源归属。
+5. 保存并检查接入，就绪后进入测试助手。例如：“创建一个测试资源，修改名称后读取核对，最后删除同一资源。”实际可执行范围取决于已确认的接口和规则。
+
+日常发起无需手写JSON、DSL或逐步脚本。缺少账号、业务规则或资源归属时，仍需补齐配置。上传和轮询需配置受控文件、等待上限及终态预期。
+
+[通用接入说明](docs/product-intake-guide.md) · [模型配置](docs/model-configuration.md) · [CourseInsight运行条件](docs/courseinsight-colleague-runbook.md)
+
+## 怎样看结果
+
+测试记录展示实际请求的接口、完整执行的场景、检查结果和未执行原因。接口返回200不能证明原文中的字段、身份、顺序和内容都测到了。
+
+| 结果 | 含义 |
+| --- | --- |
+| PASS | 当前已执行检查符合已确认预期 |
+| ASSERTION_FAILED | 响应不符合已确认断言；需结合证据判断是否为业务缺陷 |
+| NEEDS_REVIEW | 缺少可靠输入、规则、授权或计划依据 |
+| TEST_INFRA_ERROR | 环境或传输失败，不能直接归为业务缺陷 |
+| TOOL_ERROR | 计划或执行工具错误 |
+
+明确字段对账区分“已对应到规划”和“已执行”。目前独立提取仅覆盖明确的ASCII字段=标量语法，其他语义仍有漏项风险。流程结束、场景通过、接口覆盖和完整需求完成是不同指标。
+
+支持的稳定场景可保存为固定测试。普通JSON及已核实资源生命周期的部分写场景可无模型重跑，每次准备自己的新资源。CSV、轮询等暂不能全部保存为固定包；配置变化会暂停旧资产。
+
+| 方式 | 模型与目标 | 能说明什么 |
+| --- | --- | --- |
+| 离线示例 | Fake/模拟模型、内存或Mock目标 | 工程链路符合示例预期 |
+| 真实自然语言测试 | 真实模型、已授权测试服务 | 该次需求的规划与执行表现 |
+| 固定回归 | 模型禁用、对应批准目标 | 固定步骤符合原断言，不是再次理解自然语言 |
+
+## 模型与程序各做什么
+
+```mermaid
+flowchart LR
+    U[自然语言需求] --> P[模型提出结构化计划]
+    C[已确认契约、规则与身份] --> V[计划、来源、授权与依赖校验]
+    P --> V
+    V --> E[确定性执行器]
+    E --> T[授权测试环境]
+    T --> R[固定断言与脱敏报告]
+    R --> F[受支持场景的固定回归]
+```
+
+模型负责规划；可信代码负责凭据、请求、预算、断言和证据。不执行模型生成的Python、Shell或任意URL。未知预期不能自动变成断言或写入授权。取消不回滚已发送请求，未知写入不自动重发。
+
+准确依赖见[pyproject.toml](pyproject.toml)、[Agent锁文件](requirements-agent.lock)与[前端锁文件](web/package-lock.json)。LangGraph和MCP为可选依赖，基础检查不依赖密钥或模型。
+
+## 当前证据与限制
+
+- 上一轮CourseInsight冻结首次完整完成 **3/10**，首次实际覆盖 **18/26** 接口；加入另行记录的复验后覆盖 **26/26**。后者仅说明该次特定接口覆盖，不能代替需求完成率或宣传任意项目全部接口可测。[分母、失败、用量及限制](docs/courseinsight-colleague-delivery.md)。
+- 本轮首次完成率增量仍在开发，尚未完成新的48位置真实对照，不能宣称可靠性提升。[本轮口径和进度](docs/first-completion-goal.md)。
+- 首次接入依赖操作员核对。自然语言理解、Schema、文件和轮询均有支持子集；不保证零配置、生产可用或任意项目适配。
+- 不提供跨服务回滚、未知写入恢复或任意资源自动清理。无删除接口的资源记录待清理，不绕过业务限制。
+- 超时与缺失用量分别保留，UNKNOWN不估算补齐。规划模型Token不等于被测系统自身AI成本；实际费用需供应商账单证据。
+
+## 文档导航
+
+后端在仓库环境运行`python -m pytest -q`、`python -m ruff check .`；前端在`web/`运行`npm test`、`npm run build`、`npm run test:e2e`。浏览器准备条件见[Web说明](docs/web-console.md)。CI包含Windows/Linux × base/agent及两平台Web检查。
+
+- 开始使用：[通用接入](docs/product-intake-guide.md)、[模拟体验](docs/web-intake-guide.md)、[真实模型配置](docs/model-configuration.md)。
+- 结果与回归：[固定回归](docs/regression-export.md)、[回归样例](examples/regressions/README.md)、[CourseInsight交付](docs/courseinsight-colleague-delivery.md)。
+- 设计与开发：[技术设计](docs/project-technical-summary.md)、[开发快检](docs/development-checks.md)、[MCP](docs/mcp-guide.md)。
+- 验收与历史：[本轮Goal](docs/first-completion-goal.md)、[进度索引](docs/progress.md)、[历史计划复用对照](docs/plan-reuse-final-results.md)。历史分数不重计为当前版本成绩。

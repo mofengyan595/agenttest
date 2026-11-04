@@ -5,6 +5,67 @@ from copy import deepcopy
 from agenttest.report import fingerprint
 
 
+def share_repeated_schemas(schema):
+    """Intern identical schema nodes through local refs without changing their constraints."""
+    import json
+    from collections import Counter
+
+    counts, originals = Counter(), {}
+
+    def children(node):
+        for key in ('properties', '$defs', 'patternProperties', 'dependentSchemas'):
+            for name, child in node.get(key, {}).items():
+                if isinstance(child, dict):
+                    yield node[key], name, child
+        for key in ('items', 'additionalProperties', 'not', 'if', 'then', 'else', 'contains'):
+            if isinstance(node.get(key), dict):
+                yield node, key, node[key]
+        for key in ('anyOf', 'oneOf', 'allOf', 'prefixItems'):
+            for index, child in enumerate(node.get(key, [])):
+                if isinstance(child, dict):
+                    yield node[key], index, child
+
+    def signature(node):
+        return json.dumps(node, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+
+    def count(node):
+        for _, _, child in children(node):
+            encoded = signature(child)
+            if len(encoded) >= 120:
+                counts[encoded] += 1
+                originals[encoded] = child
+            count(child)
+
+    count(schema)
+    names, reserved = {}, set(schema.get('$defs', {}))
+    for encoded in originals:
+        if counts[encoded] > 1:
+            name = 'S' + str(len(names))
+            while name in reserved:
+                name += '_'
+            names[encoded] = name
+            reserved.add(name)
+    definitions = {}
+
+    def replace(node):
+        result = deepcopy(node)
+        for parent, key, child in list(children(result)):
+            encoded = signature(child)
+            if encoded in names:
+                name = names[encoded]
+                if name not in definitions:
+                    definitions[name] = replace(originals[encoded])
+                parent[key] = {'$ref': '#/$defs/' + name}
+            else:
+                parent[key] = replace(child)
+        return result
+
+    result = replace(schema)
+    result.setdefault('$defs', {}).update(definitions)
+    schema.clear()
+    schema.update(result)
+
+
 def constrain_fixed_resource_setups(schema, context):
     """Keep one fixed fresh-resource setup per identity across ordinary wire cases.
 
@@ -182,12 +243,30 @@ def constrain_product_steps(schema, context):
     """Intersect operation, policy, identity and valid baseline argument choices on the wire."""
     policies = {p["id"]: p for p in context["policies"]}
     groups = {}
+    forbidden = {op for r in context.get('request_requirements', [])
+                 for op in r.get('forbidden_operation_ids', [])}
+    identities = {}
+    for requirement in context.get('request_requirements', []):
+        if requirement['disposition'] == 'required':
+            for action in requirement['actions']:
+                identities.setdefault(action['operation_id'], set()).add(action['role'])
     for policy in policies.values():
+        if policy['operation_id'] in forbidden:
+            continue
+        if policy['operation_id'] in identities:
+            policy = {**policy, 'roles': [role for role in policy['roles']
+                                         if role in identities[policy['operation_id']]]}
+            if not policy['roles']:
+                continue
         baseline = policies.get(policy.get("binding_rules_from_policy"), policy)
         rules = baseline.get("binding_rules", [])
-        signature = fingerprint([policy["operation_id"], policy["roles"], rules])
-        group = groups.setdefault(signature, dict(policy=policy, rules=rules, ids=[]))
-        group["ids"].append(policy["id"])
+        role_groups = ([[role] for role in policy['roles']] if context.get('request_requirements')
+                       else [policy['roles']])
+        for roles in role_groups:
+            scoped = {**policy, 'roles': roles}
+            signature = fingerprint([policy["operation_id"], roles, rules])
+            group = groups.setdefault(signature, dict(policy=scoped, rules=rules, ids=[]))
+            group["ids"].append(policy["id"])
     original = schema["$defs"]["GenericDraftStep"]
     branches = []
     for group in groups.values():
@@ -204,7 +283,9 @@ def constrain_product_steps(schema, context):
                 from agenttest.product_inputs import InputRequirement, constrain_input_schema
 
                 literal = constrain_input_schema(literal, policy["operation_id"], rule,
-                    [InputRequirement.model_validate(r) for r in context["input_requirements"]])
+                    [InputRequirement.model_validate(r) for r in context["input_requirements"]],
+                    roles=policy['roles'],
+                    source_requirements=context.get('request_requirements', []))
             properties = dict(location=dict(type="string", enum=[rule["location"]]),
                 name=dict(type="string", enum=[rule["name"]]),
                 value=literal_schema(literal) if literal is not None else {"type": "null"},

@@ -532,7 +532,11 @@ async def test_permission_answer_is_version_bound_and_reused_without_granting_mo
                 observed.append(context)
                 return json.dumps(dict(interpretation="保留已确认规则，等待另一身份凭据",
                     mode="selected", operation_ids=["readJob"], question=None,
-                    pending_questions=[], not_covered=[]))
+                    pending_questions=[], not_covered=[], requirements=[dict(
+                        source_id=a['source_id'], source_quote=a['text'],
+                        disposition='needs_review',
+                        actions=[dict(operation_id='readJob', role='reader')], before=[],
+                        same_resource=[]) for a in context['request_atoms']]))
 
         await select_focus(available, CaptureFocus(),
             dict(current_request="按已确认规则检查另一身份", requests=[]),

@@ -108,7 +108,10 @@ async def test_exact_length_is_executed_and_fixed_replayed_without_model(tmp_pat
         async def generate(self, context):
             return json.dumps(dict(interpretation="按指定长度检查输入拒绝", mode="selected",
                 operation_ids=["lookup"], normal_operation_ids=[], question=None,
-                pending_questions=[], not_covered=[], requested_checks=[check]))
+                pending_questions=[], not_covered=[], requested_checks=[check], requirements=[dict(
+                    source_id=a['source_id'], source_quote=a['text'], disposition='required',
+                    actions=[dict(operation_id='lookup', role=None)], before=[], same_resource=[])
+                    for a in context['request_atoms']]))
 
     def design(request):
         context = json.loads(json.loads(request.content)["messages"][1]["content"])

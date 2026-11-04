@@ -26,6 +26,8 @@ export interface GoalTask {
       requested_value: unknown; reason: string}[];
     display_title?: string;
     user_request?: string;
+    requirement_sources?: {source_id: string; text: string; start: number; end: number}[];
+    suggestions?: string[];
     requirement_ledger?: {
       name: string; value: unknown; source_quote: string; start: number; end: number;
       deferred: boolean; candidate_operations: string[]; matched_operations?: string[];
@@ -86,10 +88,21 @@ export interface GoalTask {
     complete?: boolean;
     checks_passed?: boolean;
     focus?: {
-      mode: "selected" | "all_ready" | "needs_information";
+      mode: "selected" | "all_ready" | "needs_information" | "no_current_action";
       interpretation: string;
       operation_ids: string[];
       normal_operation_ids?: string[];
+      operation_sources?: Record<string, "USER_REQUIREMENT" | "TRUSTED_PREREQUISITE">;
+      requirements?: {
+        source_id: string; source_quote: string;
+        disposition: "required" | "needs_review" | "deferred" | "constraint";
+        actions: {operation_id: string; role: string | null}[];
+        before: {earlier: string; later: string}[];
+        same_resource: {producer: string; consumer: string}[];
+        response_checks?: string[];
+        forbidden_operation_ids?: string[];
+        blocked_operation_ids?: string[];
+      }[];
       question: string | null;
       expectation_questions?: {
         operation_id: string;
@@ -138,6 +151,9 @@ export interface GoalTask {
       outcome?: string;
       task_satisfied?: boolean | null;
       evidence?: {
+        step_id?: string;
+        role?: string | null;
+        executed?: boolean;
         operation_id: string;
         method: string;
         path: string;

@@ -9,6 +9,29 @@ from agenttest.product_design import TestDesignModel as DesignModel
 from agenttest.product_design import design_context, design_groups
 
 
+def test_shared_schema_preserves_nested_constraints_and_closed_objects():
+    from agenttest.product_schema import share_repeated_schemas
+
+    child = dict(type='object', additionalProperties=False, properties=dict(
+        field=dict(type='string', enum=['page', 'size']),
+        value=dict(type='integer', minimum=0, maximum=4)), required=['field', 'value'])
+    schema = dict(type='object', additionalProperties=False,
+        properties={key: copy.deepcopy(child) for key in ('teacher', 'student')},
+        required=['teacher', 'student'])
+    original = copy.deepcopy(schema)
+    share_repeated_schemas(schema)
+    Draft202012Validator.check_schema(schema)
+    assert '$ref' in schema['properties']['teacher']
+    assert len(json.dumps(schema)) < len(json.dumps(original))
+    valid = dict(teacher=dict(field='page', value=1), student=dict(field='size', value=4))
+    variants = [valid, {**valid, 'extra': 1}, {**valid, 'teacher': dict(field='size', value=-1)},
+        {**valid, 'student': dict(field='other', value=2)},
+        {**valid, 'student': dict(field='size', value=2, extra=1)}]
+    for value in variants:
+        assert Draft202012Validator(schema).is_valid(value) == (
+            Draft202012Validator(original).is_valid(value))
+
+
 def test_schema_pruning_keeps_reachable_cycles_and_has_identical_validation():
     from agenttest.product_schema import prune_schema_definitions
 
