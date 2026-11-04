@@ -14,7 +14,6 @@ from agenttest.project_intake import IntakeInput
 from agenttest.report import Outcome, ReportStore
 from agenttest.task_service import TaskService
 from agenttest.task_store import TaskStore
-from agenttest.workflow import FakeLLM
 
 
 def document():
@@ -42,8 +41,13 @@ def setup():
 
 
 def service(root, **kwargs):
+    def planner(project):
+        from agenttest.workflow import FakeLLM
+
+        return FakeLLM("{}")
+
     return TaskService({}, TaskStore(root / "tasks.sqlite3"), ReportStore(root / "reports"),
-        lambda project: FakeLLM("{}"), generic_intake=True, environ={}, **kwargs)
+        planner, generic_intake=True, environ={}, **kwargs)
 
 
 def test_omitting_optional_input_keeps_closed_policy_and_required_validation(tmp_path):
@@ -79,6 +83,8 @@ def test_omitting_optional_input_keeps_closed_policy_and_required_validation(tmp
 @pytest.mark.asyncio
 async def test_new_document_persists_and_executes_original_gates_with_dynamic_resource(tmp_path):
     pytest.importorskip("langgraph")
+    from agenttest.workflow import FakeLLM
+
     svc = service(tmp_path)
     try:
         config = setup()
@@ -190,6 +196,8 @@ async def test_analysis_is_readonly_csrf_protected_and_confirmation_cannot_be_fo
 @pytest.mark.asyncio
 async def test_generic_login_uses_vault_and_runs_a_previously_unknown_protected_interface(tmp_path):
     pytest.importorskip("langgraph")
+    from agenttest.workflow import FakeLLM
+
     doc = json.loads(document())
     doc["components"] = {"securitySchemes": {"bearer": {"type": "http", "scheme": "bearer"}}}
     doc["paths"] = {

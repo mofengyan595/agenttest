@@ -382,7 +382,7 @@ test("real API: project entry, history, evidence and responsive layouts", async 
   await expect(
     page
       .locator(".validation-card")
-      .filter({ hasText: "DSL Validity" })
+      .filter({ hasText: "计划检查" })
       .getByText("未记录", { exact: true }),
   ).toBeVisible();
   await expect(
