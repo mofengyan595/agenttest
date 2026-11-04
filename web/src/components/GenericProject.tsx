@@ -5,19 +5,35 @@ import {
   type GenericOperation,
   type GenericSetup,
   type GenericRole,
+  type GenericArgument,
 } from "../api/tasks";
 import { Notice } from "./ui";
 import { InputValue } from "./InputValue";
 
 function scalar(text: string): unknown {
-  if (text === "true" || text === "false") return text === "true";
-  if (/^-?\d+(\.\d+)?$/.test(text)) return Number(text);
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== "number" || Number.isFinite(parsed)) return parsed;
+  } catch { /* Ordinary text needs no JSON quoting. */ }
   return text;
+}
+
+function expectedText(value: unknown): string {
+  if (value == null) return value === null ? "null" : "";
+  if (typeof value === "object" || typeof value === "string" && scalar(value) !== value)
+    return JSON.stringify(value);
+  return String(value);
 }
 
 function fieldLabel(selector: string) {
   return selector === "$" ? "整个响应" : selector.replace(/^\$\./, "")
     .replaceAll("[0]", "的第一项").replaceAll(".", " 的 ");
+}
+
+function argumentType(argument: GenericArgument, operation?: ContractOperation) {
+  const field = operation?.arguments.find((item) => item.location === argument.location &&
+    item.name === argument.name);
+  return field?.value_type || field?.schema?.type;
 }
 
 function sensitiveInput(name: string, schema?: unknown): boolean {
@@ -82,12 +98,14 @@ function suggestLogin(operations: ContractOperation[]): GenericRole | undefined 
 
 export function GenericProject({
   document,
+  projectId,
   csrf,
   value,
   onChange,
   disabled,
 }: {
   document: string;
+  projectId?: string;
   csrf: string;
   value: GenericSetup | null;
   onChange: (value: GenericSetup | null) => void;
@@ -97,6 +115,7 @@ export function GenericProject({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
+  const [extraFields, setExtraFields] = useState<Record<string, string>>({});
   const revision = useRef(0);
   useEffect(() => {
     revision.current++;
@@ -106,27 +125,27 @@ export function GenericProject({
     return () => {
       revision.current++;
     };
-  }, [document]);
+  }, [document, projectId]);
 
   useEffect(() => {
-    if (!value || !document.trim() || !csrf || operations.length) return;
+    if (!value || (!document.trim() && !projectId) || !csrf || operations.length) return;
     let active = true;
     const current = revision.current;
     // Editing loads document metadata only; preserve all existing operator choices.
-    intakeApi.analyze(csrf, document).then((result) => {
+    intakeApi.analyze(csrf, document, projectId).then((result) => {
       if (active && current === revision.current) setOperations(result.operations);
     }).catch(() => {
       if (active && current === revision.current) setError("文档信息暂时无法读取，请重新读取文档。");
     });
     return () => { active = false; };
-  }, [document, csrf, !!value, operations.length]);
+  }, [document, projectId, csrf, !!value, operations.length]);
 
   async function analyze() {
     const current = ++revision.current;
     setBusy(true);
     setError("");
     try {
-      const result = await intakeApi.analyze(csrf, document);
+      const result = await intakeApi.analyze(csrf, document, projectId);
       if (current !== revision.current) return;
       setOperations(result.operations);
       setPage(0);
@@ -206,7 +225,7 @@ export function GenericProject({
       </p>
       <button
         type="button"
-        disabled={disabled || busy || !document.trim() || !csrf}
+        disabled={disabled || busy || (!document.trim() && !projectId) || !csrf}
         onClick={() => void analyze()}
       >
         {busy
@@ -309,6 +328,16 @@ export function GenericProject({
               onChange={(e) => update({ max_requests: Number(e.target.value) })}
             />
           </label>
+          <details className="configuration-details">
+            <summary>等待与超时（异步接口需要时调整）</summary>
+            <label>单场景最长等待（秒）<input type="number" min={1} max={300}
+              value={value.run_timeout ?? 60} disabled={disabled} onChange={(e) =>
+                update({run_timeout: Number(e.target.value)})} /></label>
+            <label>单次响应超时（秒）<input type="number" min={1} max={30}
+              value={value.read_timeout ?? 5} disabled={disabled} onChange={(e) =>
+                update({read_timeout: Number(e.target.value)})} /></label>
+            <p className="caption">达到次数、请求预算或时间上限即停止。写入结果未知时不自动重发。</p>
+          </details>
           <details className="configuration-details">
             <summary>配置测试身份（需要登录或 Token 时填写）</summary>
             <p>
@@ -652,16 +681,114 @@ export function GenericProject({
                       {!o.checks.length && <p className="caption">
                         当前仅检查 HTTP 状态；可在下方添加响应字段检查，确认内容是否正确。
                       </p>}
+                      {info?.response_fields?.some((f) => f.label === "CSV 数据行数") &&
+                        <p className="caption">CSV 响应按 UTF-8 表格检查：row_count 为数据行数，
+                          columns 为列名，rows 为各行字段。单元格按原文字符串比较；
+                          无效编码、重复列名或结构不完整不会转换成有效表格。</p>}
+                      {!loginRole && <details><summary>执行前置条件（需要先完成其他操作时）</summary>
+                        <p className="caption">用于删除后查空等没有返回值依赖的顺序。系统安排前置操作；
+                          顺序不符的方案会在发送请求前停止。</p>
+                        {value.operations.filter((p) => p.enabled && p.operation_id !== o.operation_id)
+                          .map((p) => <label className="task-option" key={p.operation_id}>
+                            <input type="checkbox" checked={(o.after_operations || []).includes(p.operation_id)}
+                              onChange={(e) => updateOperation(index, {after_operations: e.target.checked
+                                ? [...new Set([...(o.after_operations || []), p.operation_id])]
+                                : (o.after_operations || []).filter((id) => id !== p.operation_id)})} />
+                            此前必须完成：{p.alias}
+                          </label>)}
+                      </details>}
+                      {info?.method === "POST" && !loginRole && <>
+                        <label className="task-option"><input type="checkbox" checked={!!o.creation}
+                          onChange={(e) => updateOperation(index, {creation: e.target.checked ? {
+                            id_selector: responseChoices(info)[0]?.value || "$",
+                            fresh_resource_basis: ""} : null})} />记录本轮新建资源的归属</label>
+                        {o.creation && <>
+                          <label>新资源标识字段<select value={o.creation.id_selector} onChange={(e) =>
+                            updateOperation(index, {creation: {...o.creation!, id_selector: e.target.value}})}>
+                            {responseChoices(info, [o.creation.id_selector]).map((f) =>
+                              <option key={f.value} value={f.value}>{f.label}</option>)}
+                          </select></label>
+                          <label>新建资源的依据<input value={o.creation.fresh_resource_basis}
+                            placeholder="说明该接口为什么会创建本轮专用的新资源"
+                            onChange={(e) => updateOperation(index, {creation: {...o.creation!,
+                              fresh_resource_basis: e.target.value}})} /></label>
+                          <p className="caption">发送前记录未知结果，成功后记录安全标识；此设置不授权删除或重放。</p>
+                        </>}
+                      </>}
                       {loginRole && <p className="caption" role="status">
                         登录账号与密码由本机配置提供：{loginRole.username_env}、{loginRole.password_env}。
                         无需在接口参数里重复填写；登录后由执行器管理 Token。
                       </p>}
+                      {info?.upload_field && <label>
+                        本轮测试 CSV
+                        <input type="file" aria-label="本轮测试 CSV" accept=".csv,text/csv"
+                          onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 100_000 || !/\.csv$/i.test(file.name)) {
+                            setError("请选择不超过 100 KB 的专用测试 CSV。"); return;
+                          }
+                          const content = await file.text();
+                          updateOperation(index, {upload: {field: info.upload_field!,
+                            filename: "input.csv", content}});
+                        }} />
+                        <small>{o.upload ? `已准备 ${o.upload.filename}；内容固定，由执行器上传。`
+                          : "仅使用合成测试内容；文件不发送给规划模型。"}</small>
+                      </label>}
+                      {info?.method === "GET" && <>
+                        <label className="task-option"><input type="checkbox"
+                          checked={!!o.poll} onChange={(e) => updateOperation(index, {poll:
+                            e.target.checked ? {select: responseChoices(info)[0]?.value || "$",
+                              terminal_values: [], progress_values: [], max_attempts: 20,
+                              interval: 1} : null})} />开启有限异步等待</label>
+                        {o.poll && <div className="generic-argument">
+                          <label>进度响应字段<select value={o.poll.select} onChange={(e) =>
+                            updateOperation(index, {poll: {...o.poll!, select: e.target.value}})}>
+                            {responseChoices(info, [o.poll.select]).map((f) =>
+                              <option key={f.value} value={f.value}>{f.label}</option>)}
+                          </select></label>
+                          <label>终态值（逗号分隔）<input value={o.poll.terminal_values.join(",")}
+                            onChange={(e) => updateOperation(index, {poll: {...o.poll!,
+                              terminal_values: e.target.value.split(",").filter(Boolean)}})} />
+                          </label>
+                          <label>进行中状态（逗号分隔）<input value={o.poll.progress_values.join(",")}
+                            onChange={(e) => updateOperation(index, {poll: {...o.poll!,
+                              progress_values: e.target.value.split(",").filter(Boolean)}})} />
+                          </label>
+                          <label>最多查询次数<input type="number" min={1} max={20}
+                            value={o.poll.max_attempts} onChange={(e) => updateOperation(index,
+                              {poll: {...o.poll!, max_attempts: Number(e.target.value)}})} /></label>
+                          <label>查询间隔（秒）<input type="number" min={0} max={5} step={0.1}
+                            value={o.poll.interval} onChange={(e) => updateOperation(index,
+                              {poll: {...o.poll!, interval: Number(e.target.value)}})} /></label>
+                          <p className="caption">还需在响应检查中明确本场景的预期终态；
+                            预期成功却进入失败终态时会判为不符。
+                            达到次数或任务预算后停止，不重提写请求。</p>
+                        </div>}
+                      </>}
                       {(loginRole ? [] : o.arguments).map((a, i) => (
-                        sensitiveInput(a.name, info?.arguments.find((f) =>
+                        (sensitiveInput(a.name, info?.arguments.find((f) =>
                           f.location === a.location && f.name === a.name)?.schema)
-                        ? <p key={i} className="caption">
-                            {a.name} 是敏感输入。当前仅登录支持凭据注入，此接口暂不能执行；不要填写明文凭据。
-                          </p>
+                          || !!o.credential_inputs?.[a.name]) && a.location === "body"
+                        ? (argumentType(a, info) === "object" || argumentType(a, info) === "array")
+                          ? <p key={i} className="caption">{a.name} 是敏感输入，
+                              嵌套凭据暂未支持；请保留资料，不要填写明文。</p>
+                          : <label key={i}>
+                            {a.name} 的凭据变量名
+                            <input aria-label={`${a.name} 的凭据变量名`}
+                              placeholder="AGENTTEST_TARGET_…（仅变量名）"
+                              value={o.credential_inputs?.[a.name] || ""}
+                              onChange={(e) => {
+                                const aliases = {...o.credential_inputs};
+                                if (e.target.value) aliases[a.name] = e.target.value;
+                                else delete aliases[a.name];
+                                updateOperation(index, {credential_inputs: aliases,
+                                  arguments: o.arguments.map((p, j) => i === j ? {...p,
+                                    value: null, source_operation: null,
+                                    generated: false, negative_enabled: false, needs_input: false} : p)});
+                              }} />
+                            <small>值只在服务端配置，由执行器注入；不要在此填写账号或密码。</small>
+                          </label>
                         : <div
                           className="generic-argument"
                           key={`${a.location}:${a.name}`}
@@ -678,6 +805,20 @@ export function GenericProject({
                               )
                             </small>
                           </strong>
+                          {a.location !== "path_parameters" && info?.arguments.find((f) =>
+                            f.location === a.location && f.name === a.name)?.required === false &&
+                            <button type="button" onClick={() => updateOperation(index, {
+                              arguments: o.arguments.filter((_, j) => j !== i),
+                            })}>暂不发送：{a.name}（可选）</button>}
+                          {a.location === "body" && argumentType(a, info) === "string" &&
+                            <button type="button"
+                              onClick={() => updateOperation(index, {
+                                credential_inputs: {...o.credential_inputs, [a.name]:
+                                  `AGENTTEST_TARGET_${a.name.toUpperCase()}`},
+                                arguments: o.arguments.map((p, j) => i === j ? {...p,
+                                  value: null, source_operation: null,
+                                  generated: false, negative_enabled: false, needs_input: false} : p),
+                              })}>改用服务端凭据变量</button>}
                           <label>
                             输入来源
                             <select
@@ -697,6 +838,7 @@ export function GenericProject({
                                             : "$",
                                           needs_input: false,
                                           generated: false,
+                                          negative_enabled: false,
                                         }
                                       : p,
                                   ),
@@ -781,6 +923,15 @@ export function GenericProject({
                                   })
                                 }
                               />
+                              {value.approve_negative_tests && !loginRole && !a.generated &&
+                                a.location !== "path_parameters" && !sensitiveInput(a.name, a.schema) &&
+                                <label className="task-option"><input type="checkbox"
+                                  checked={!!a.negative_enabled}
+                                  onChange={(e) => updateOperation(index, {arguments: o.arguments.map((p, j) =>
+                                    i === j ? {...p, negative_enabled: e.target.checked} : p)})} />
+                                  允许异常检查：{a.name}
+                                  <small>仅启用文档支持的单字段拒绝检查；合法基线保持不变。</small>
+                                </label>}
                               {a.generated && (
                                 <p className="caption">
                                   系统可在文档约束内变化输入；修改此值后会固定使用你的值。
@@ -790,6 +941,15 @@ export function GenericProject({
                           )}
                         </div>
                       ))}
+                      {!loginRole && info?.arguments.filter((f) => f.required === false &&
+                        f.location !== "path_parameters" && !sensitiveInput(f.name, f.schema) &&
+                        !o.arguments.some((a) => a.location === f.location && a.name === f.name)
+                      ).map((f) => <button type="button" key={`${f.location}:${f.name}`}
+                        onClick={() => updateOperation(index, {arguments: [...o.arguments, {
+                          location: f.location, name: f.name, value: f.value,
+                          source_operation: f.source_operation, selector: f.selector,
+                          generated: f.generated ?? false, needs_input: f.needs_input ?? false,
+                        }]})}>添加可选输入：{f.name}</button>)}
                       {o.checks.map((check, i) => (
                         <div className="generic-argument" key={i}>
                           <label>
@@ -849,7 +1009,8 @@ export function GenericProject({
                             <label>
                               预期值
                               <input
-                                value={String(check.expected ?? "")}
+                                aria-label="预期值"
+                                value={expectedText(check.expected)}
                                 onChange={(e) =>
                                   updateOperation(index, {
                                     checks: o.checks.map((c, j) =>
@@ -863,8 +1024,16 @@ export function GenericProject({
                                   })
                                 }
                               />
+                              <small>按文字比较数字时加双引号，例如 "5"；列表或对象可用 JSON 格式。</small>
                             </label>
                           )}
+                          <label className="task-option"><input type="checkbox"
+                            checked={(o.public_evidence || []).includes(check.select)}
+                            onChange={(e) => updateOperation(index, {public_evidence: e.target.checked
+                              ? [...new Set([...(o.public_evidence || []), check.select])]
+                              : (o.public_evidence || []).filter((s) => s !== check.select)})} />
+                            允许记录此字段的安全数值证据（凭据仍会脱敏）
+                          </label>
                           <button
                             type="button"
                             onClick={() =>
@@ -895,6 +1064,24 @@ export function GenericProject({
                       >
                         添加响应字段检查
                       </button>
+                      <details>
+                        <summary>补充文档未列出的响应字段</summary>
+                        <p className="caption">仅添加已从业务规则或服务实现核实的字段；请记录依据。</p>
+                        <label>响应检查依据<input value={o.check_source || ""}
+                          onChange={(e) => updateOperation(index, {check_source: e.target.value || null})} />
+                        </label>
+                        <label>已核实的字段路径<input placeholder="$.status"
+                          value={extraFields[o.operation_id] || ""} onChange={(e) =>
+                            setExtraFields({...extraFields, [o.operation_id]: e.target.value})} />
+                        </label>
+                        <button type="button" disabled={!o.check_source?.trim() ||
+                            !extraFields[o.operation_id]?.trim()}
+                          onClick={() => {
+                            updateOperation(index, {checks: [...o.checks, {
+                              select: extraFields[o.operation_id].trim(), operator: "exists", expected: null}]});
+                            setExtraFields({...extraFields, [o.operation_id]: ""});
+                          }}>添加已核实字段检查</button>
+                      </details>
                       {(!info ||
                         ["GET", "HEAD", "OPTIONS"].includes(info.method)) && (
                         <details>
@@ -909,19 +1096,21 @@ export function GenericProject({
                               <label>
                                 执行身份
                                 <select
-                                  value={rule.role}
+                                  value={rule.role === null ? "__anonymous__" : rule.role}
                                   onChange={(e) =>
                                     updateOperation(index, {
                                       access_checks: o.access_checks!.map(
                                         (r, j) =>
                                           j === i
-                                            ? { ...r, role: e.target.value }
+                                            ? { ...r, role: e.target.value === "__anonymous__"
+                                              ? null : e.target.value }
                                             : r,
                                       ),
                                     })
                                   }
                                 >
                                   <option value="">请选择身份</option>
+                                  <option value="__anonymous__">未登录（仅文档允许的 401）</option>
                                   {value.roles.map((r) => (
                                     <option key={r.alias} value={r.alias}>
                                       {r.alias}

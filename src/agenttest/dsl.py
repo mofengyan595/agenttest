@@ -175,6 +175,12 @@ def validate_plan(
         if step.role is not None and step.role not in config.roles:
             raise ValidationFailure(Layer.DSL, "DSL_UNKNOWN_ROLE", "Unknown role alias")
         role = config.roles.get(step.role)
+        from agenttest.controlled_inputs import controlled_payload
+
+        controlled = config.credential_inputs.get(step.operation_id, {})
+        if set(controlled) & set(step.body) or controlled and step.upload:
+            raise ValidationFailure(Layer.DSL, "DSL_CONTROLLED_INPUT_IS_EXECUTOR_OWNED")
+        controlled_payload(operation, controlled, environ)
         bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values()]
         for binding in bindings:
             if binding.from_step and binding.from_step not in seen:
@@ -203,6 +209,8 @@ def validate_plan(
                 Layer.DSL, "DSL_AUTHENTICATION_OPERATION_REQUIRES_ITS_APPROVED_ROLE",
                 "Authentication operation requires its approved role")
         requires_auth = bool(operation.security) and {} not in operation.security
+        approved_anonymous = (step.role is None and operation.method in {"GET", "HEAD", "OPTIONS"}
+            and step.policy_id in config.unauthenticated_checks.get(step.operation_id, []))
         if requires_auth:
             supported = any(
                 len(req) == 1 and contract.security_schemes[next(iter(req))].get("type") == "http"
@@ -213,15 +221,16 @@ def validate_plan(
                 raise ValidationFailure(
                     Layer.DSL, "DSL_STAGE_1_SUPPORTS_HTTP_BEARER_AUTHENTICATION_ONLY",
                     "Stage 1 supports HTTP bearer authentication only")
-            if not role:
+            if not role and not approved_anonymous:
                 raise ValidationFailure(
                     Layer.DSL, "DSL_RESTRICTED_OPERATION_NEEDS_A_ROLE_ALIAS",
                     "Restricted operation needs a role alias")
-            logged_in = any(
+            logged_in = approved_anonymous or any(
                 previous.role == step.role and previous.operation_id == role.login_operation
                 for previous in seen.values()
             )
-            if not logged_in and (not role.bearer_env or not environ.get(role.bearer_env)):
+            if not logged_in and (not role or not role.bearer_env
+                                  or not environ.get(role.bearer_env)):
                 raise ValidationFailure(
                     Layer.DSL, "DSL_AUTHENTICATION_ORDER",
                     "Restricted operation lacks a credential")
@@ -247,7 +256,7 @@ def validate_plan(
                         Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",
                         "Missing required operation parameter")
         if operation.request_body and operation.request_body.get("required"):
-            if not step.body and not step.upload and not is_login:
+            if not step.body and not step.upload and not is_login and not controlled:
                 raise ValidationFailure(
                     Layer.OPENAPI, "OPENAPI_BODY_REQUIRED",
                     "Missing required request body")
@@ -255,7 +264,7 @@ def validate_plan(
         from agenttest.request_validation import request_schemas, validate_value
 
         media = ("multipart/form-data" if step.upload else "application/json"
-                 if step.body or is_login else None)
+                 if step.body or is_login or controlled else None)
         schemas, body_schema = request_schemas(operation, media)
         for location, values in (("path", step.path_parameters), ("query", step.query)):
             if set(values) - set(schemas[location]):
@@ -274,7 +283,7 @@ def validate_plan(
                     raise ValidationFailure(
                         Layer.OPENAPI, "OPENAPI_UNKNOWN_BODY_FIELD",
                         "Unknown request body field")
-                if set(body_schema.get("required", [])) - set(step.body):
+                if set(body_schema.get("required", [])) - set(step.body) - set(controlled):
                     raise ValidationFailure(
                         Layer.OPENAPI, "OPENAPI_BODY_FIELD_REQUIRED",
                         "Missing required request body field")

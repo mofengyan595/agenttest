@@ -1,6 +1,7 @@
 """Product orchestration around the existing single Workflow and deterministic Executor."""
 
 import asyncio
+import time
 from uuid import uuid4
 
 import httpx
@@ -131,9 +132,18 @@ class ProductTasks:
         context = svc.db.context(task_id, owner)
         transport = None
         executable_checks = []
+        started = time.perf_counter()
+
+        def record_timing():
+            summary["timings"] = dict(total_ms=round((time.perf_counter() - started) * 1000, 3),
+                planning_ms=round(sum(r.get("elapsed_ms", 0)
+                    for r in summary.get("design_records", [])), 3),
+                execution_ms=round(sum(c.get("elapsed_ms", 0)
+                    for c in summary.get("cases", [])), 3))
 
         def checkpoint():
             summary["context_usage"] = ledger.summary()
+            record_timing()
             svc.db.transition(task_id, owner, "RUNNING", "RUNNING", summary=summary)
             svc.db.save_context(task_id, owner, {**context, "usage": ledger.summary()})
 
@@ -170,6 +180,7 @@ class ProductTasks:
                         svc.db.event(task_id, "PLANNING", requests=ledger.requests)
                         checkpoint()
                         selection = None
+                        focus_started = time.perf_counter()
                         try:
                             selection = await select_focus(project, focus_model, context,
                                 environ=svc.environ, notes=project_record.get("business_notes", ""),
@@ -266,8 +277,12 @@ class ProductTasks:
                                                 interpretation=selection.interpretation)
                         except (PlannerFailure, ValueError, TimeoutError) as exc:
                             focus_record.update(status="REJECTED", reason=getattr(
-                                exc, "reason", None) or "FOCUS_NOT_VALIDATED")
+                                exc, "reason", None) or getattr(
+                                    getattr(exc, "diagnostic", None), "code", None)
+                                or "FOCUS_NOT_VALIDATED")
                         finally:
+                            focus_record["elapsed_ms"] = round(
+                                (time.perf_counter() - focus_started) * 1000, 3)
                             focus_record["model_call"] = focus_model.stats.model_dump(mode="json")
                             checkpoint()
                         if selection is None or selection.mode == "needs_information":
@@ -343,6 +358,7 @@ class ProductTasks:
                             record["suggested_group_requests"] = suggested
                         summary["design_records"].append(record)
                         checkpoint()
+                        design_started = time.perf_counter()
                         try:
                             design = await propose_design(project, text, group, model,
                                 environ=svc.environ,
@@ -408,6 +424,8 @@ class ProductTasks:
                             group.update(status="NOT_EXECUTED", reason=reason)
                             continue
                         finally:
+                            record["elapsed_ms"] = round(
+                                (time.perf_counter() - design_started) * 1000, 3)
                             record["model_call"] = model.stats.model_dump(mode="json")
                             checkpoint()
                         for question in design.questions:
@@ -479,21 +497,26 @@ class ProductTasks:
                             probe_model = (BudgetPlanner(JournalPlanner(
                                 svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
                                 if probe_allowed and svc.product_probe_factory else None)
-                            report = await Workflow(project.document, project.target,
-                                project.registry, FakeLLM(""), store,
-                                transport=bounded_transport, environ=svc.environ,
-                                task_mode="model_designed", user_task=text, prepared_plan=scenario,
-                                analyzer=probe_model,
-                                investigation=InvestigationConfig(enabled=probe_allowed,
-                                    product_read_probe=probe_allowed, feedback=FeedbackBudget(
-                                        max_requests=probe_remaining,
-                                        max_model_calls=probe_remaining)),
-                                execution_guard=guard,
-                                plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
-                                    model_request_sha256=model.stats.request_sha256),
-                                budget=WorkflowBudget(max_model_calls=0,
-                                    workflow_timeout=min(300.,
-                                        project.target.run_timeout + 220))).run()
+                            case_started = time.perf_counter()
+                            try:
+                                report = await Workflow(project.document, project.target,
+                                    project.registry, FakeLLM(""), store,
+                                    transport=bounded_transport, environ=svc.environ,
+                                    task_mode="model_designed", user_task=text,
+                                    prepared_plan=scenario, analyzer=probe_model,
+                                    investigation=InvestigationConfig(enabled=probe_allowed,
+                                        product_read_probe=probe_allowed, feedback=FeedbackBudget(
+                                            max_requests=probe_remaining,
+                                            max_model_calls=probe_remaining)),
+                                    execution_guard=guard,
+                                    plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
+                                        model_request_sha256=model.stats.request_sha256),
+                                    budget=WorkflowBudget(max_model_calls=0,
+                                        workflow_timeout=min(300.,
+                                            project.target.run_timeout + 220))).run()
+                            finally:
+                                case_row["elapsed_ms"] = round(
+                                    (time.perf_counter() - case_started) * 1000, 3)
                             if (report.steps and report.outcome != Outcome.PASS
                                     and report.failure_explanation is None):
                                 from agenttest.product_probe import explain_failure
@@ -508,6 +531,7 @@ class ProductTasks:
                                                      if s.attempts],
                                 http_requests=sum(len(s.attempts) for s in report.steps),
                                 resource_lifecycle=report.resource_lifecycle,
+                                created_resources=report.created_resources,
                                 cleanup=report.cleanup,
                                 failure_explanation=report.failure_explanation,
                                 probe_decisions=report.probe_decisions,
@@ -558,12 +582,15 @@ class ProductTasks:
                 svc.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=summary)
                 svc.db.event(task_id, "FINISHED", requests=ledger.requests)
         except asyncio.CancelledError:
+            record_timing()
             self.stop(task_id, owner, summary, ledger,
                       "INTERRUPTED" if svc._shutting_down else "CANCELLED",
                       "已停止后续动作；已发送请求不自动回滚或重放。")
         except TimeoutError:
+            record_timing()
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED", "本轮达到 600 秒时限。")
         except Exception:
+            record_timing()
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       "执行条件发生变化或工具停止；保留已发生的证据，不重放请求。")
         finally:
@@ -582,8 +609,13 @@ class ProductTasks:
         try:
             _validated(RegressionRuntime(project.document, project.target, project.registry,
                 snapshot, svc.environ, None, svc.reports), scenario)
-        except ValueError:
-            case_row["save_reason"] = "场景包含敏感输入或不支持的复测参数，暂不能保存。"
+        except ValueError as exc:
+            case_row["save_reason"] = {
+                "REGRESSION_SENSITIVE_DATA":
+                    "场景含受保护的输入字段，不能写入固定回归包；凭据请使用服务端变量。",
+                "REGRESSION_JSON_SCOPE_REQUIRED":
+                    "场景含上传、轮询或读取重试，当前固定回归尚未支持这些执行参数。",
+            }.get(str(exc), "固定回归校验未通过，请检查本轮记录及已确认的输入与规则。")
             return
         svc._assets[(row["id"], report.run_id)] = (scenario, snapshot, project)
         svc.db.save_product_asset(report.run_id, row["id"], project.identity(), dict(
@@ -708,7 +740,8 @@ class ProductTasks:
                         reason="已停止后续动作，以下保留已发送请求的证据。",
                         executed_operations=[s.operation_id for s in report.steps if s.attempts],
                         http_requests=sum(len(s.attempts) for s in report.steps),
-                        resource_lifecycle=report.resource_lifecycle, cleanup=report.cleanup,
+                        resource_lifecycle=report.resource_lifecycle,
+                        created_resources=report.created_resources, cleanup=report.cleanup,
                         executed_steps=sum(bool(s.attempts) for s in report.steps),
                         evidence=[dict(operation_id=s.operation_id, method=s.method,
                             path=s.path_template, outcome=s.outcome.value,

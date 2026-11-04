@@ -31,6 +31,13 @@ class ResourceLifecycle(StrictModel):
     fresh_resource_basis: str = Field(min_length=10, max_length=500)
 
 
+class ResourceCreation(StrictModel):
+    """Reviewed fresh creation receipt; this grants no deletion or replay authority."""
+
+    id_selector: str
+    fresh_resource_basis: str = Field(min_length=10, max_length=500)
+
+
 class TargetConfig(StrictModel):
     base_url: str = "http://127.0.0.1:8080"
     environment: Literal["local", "isolated"] = "local"
@@ -48,16 +55,36 @@ class TargetConfig(StrictModel):
     run_timeout: float = Field(default=60.0, gt=0, le=300)
     min_request_interval: float = Field(default=0.01, ge=0, le=5)
     resource_lifecycles: list[ResourceLifecycle] = Field(default_factory=list, max_length=30)
+    credential_inputs: dict[str, dict[str, str]] = Field(default_factory=dict)
+    unauthenticated_checks: dict[str, list[str]] = Field(default_factory=dict)
+    resource_creations: dict[str, ResourceCreation] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def legacy_identity(self, handler):
         data = handler(self)
         if not self.resource_lifecycles:
             data.pop("resource_lifecycles", None)
+        if not self.credential_inputs:
+            data.pop("credential_inputs", None)
+        if not self.unauthenticated_checks:
+            data.pop("unauthenticated_checks", None)
+        if not self.resource_creations:
+            data.pop("resource_creations", None)
         return data
 
     @model_validator(mode="after")
     def validate_target(self) -> "TargetConfig":
+        from agenttest.controlled_inputs import credential_alias
+
+        for operation, policies in self.unauthenticated_checks.items():
+            if (operation not in self.allowed_operations or not policies
+                    or any(not p for p in policies)):
+                raise ValueError("UNAUTHENTICATED_CHECK_NOT_AUTHORIZED")
+        for operation, aliases in self.credential_inputs.items():
+            if operation not in self.allowed_operations or not aliases or len(aliases) > 30:
+                raise ValueError("CONTROLLED_INPUT_OPERATION_NOT_AUTHORIZED")
+            for alias in aliases.values():
+                credential_alias(alias)
         parsed = urlsplit(self.base_url)
         if (parsed.scheme not in {"http", "https"} or not parsed.hostname
                 or parsed.username or parsed.password or parsed.query or parsed.fragment

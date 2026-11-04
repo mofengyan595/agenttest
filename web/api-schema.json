@@ -256,6 +256,52 @@
         }
       }
     },
+    "/api/tasks/{task_id}/reports/{run_id}": {
+      "get": {
+        "summary": "Owned Report",
+        "operationId": "owned_report_api_tasks__task_id__reports__run_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tasks/{task_id}/start": {
       "post": {
         "summary": "Start",
@@ -371,6 +417,43 @@
       "post": {
         "summary": "Regression",
         "operationId": "regression_api_tasks__task_id__regression_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/save-test": {
+      "post": {
+        "summary": "Save Test",
+        "operationId": "save_test_api_tasks__task_id__save_test_post",
         "parameters": [
           {
             "name": "task_id",
@@ -668,6 +751,21 @@
               }
             ],
             "title": "Error Code"
+          },
+          "response_projection": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CSV_TABLE_V1",
+                  "CSV_INVALID"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Projection"
           }
         },
         "type": "object",
@@ -1829,7 +1927,50 @@
           "cleanup": {
             "type": "string",
             "title": "Cleanup",
-            "default": "In-memory demo state discarded; external target cleanup is operator-owned"
+            "default": "未记录数据清理结论，请结合本轮资源记录核查。"
+          },
+          "resource_lifecycle": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Resource Lifecycle"
+          },
+          "created_resources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Created Resources"
+          },
+          "lifecycle_cleanup": {
+            "items": {
+              "$ref": "#/components/schemas/StepResult"
+            },
+            "type": "array",
+            "title": "Lifecycle Cleanup"
+          },
+          "probe_decisions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Probe Decisions"
+          },
+          "failure_explanation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Explanation"
           }
         },
         "type": "object",

@@ -26,6 +26,10 @@ def dependency_roles_match(source: str | None, consumer: str | None, relation: s
     """Anonymous flow is explicit; existing identity rules still require named roles."""
     if relation == "anonymous":
         return source is None and consumer is None
+    if relation == "unauthenticated":
+        return source is not None and consumer is None
+    if relation == "anonymous_source":
+        return source is None and consumer is not None
     return (source is not None and consumer is not None
             and (relation is None or relation == "same" and source == consumer
                  or relation == "different" and source != consumer))
@@ -37,7 +41,8 @@ class BindingRule(StrictModel):
     literal_schema: dict | None = None
     source_policy_id: str | None = None
     source_selector: str = "$"
-    role_relation: Literal["same", "different", "anonymous"] | None = None
+    role_relation: Literal["same", "different", "anonymous", "unauthenticated",
+                           "anonymous_source"] | None = None
     # Approved equality relations, never model-authored expected values.
     response_selector: str | None = None
     source_body_equalities: dict[str, str] = Field(default_factory=dict)
@@ -61,6 +66,7 @@ class RegisteredPolicy(StrictModel):
     # Exact binding prerequisites make data-dependent approvals auditable.
     required_bindings: dict = Field(default_factory=dict)
     binding_rules: list[BindingRule] = Field(default_factory=list)
+    prerequisite_policy_ids: list[str] = Field(default_factory=list, max_length=20)
     closed_arguments: bool = False
     csv_fixture: ApprovedCSVFixture | None = None
     # Explicitly public, operator-authored catalog text; never an execution rule.
@@ -74,6 +80,8 @@ class RegisteredPolicy(StrictModel):
             data.pop("planning_purpose", None)
         if self.negative is None:
             data.pop("negative", None)
+        if not self.prerequisite_policy_ids:
+            data.pop("prerequisite_policy_ids", None)
         return data
 
 
@@ -91,6 +99,9 @@ class PolicyRegistry:
                 raise ValueError("Duplicate policy id")
             self._entries[policy.id] = policy.model_dump_json()
         for policy in self.definitions():
+            if any(identifier == policy.id or identifier not in self._entries
+                   for identifier in policy.prerequisite_policy_ids):
+                raise NeedsReview("DEPENDENCY_PREREQUISITE_UNKNOWN")
             if policy.negative is None:
                 continue
             base_raw = self._entries.get(policy.negative.base_policy_id)
@@ -98,7 +109,7 @@ class PolicyRegistry:
             if (base is None or base.negative is not None
                     or any(getattr(policy, k) != getattr(base, k) for k in (
                         "operation_id", "roles", "business_scenario", "required_bindings",
-                        "binding_rules", "closed_arguments"))
+                        "binding_rules", "closed_arguments", "prerequisite_policy_ids"))
                     or policy.csv_fixture or policy.poll or base.csv_fixture or base.poll
                     or not policy.assertions.reviewed or not policy.assertions.source.strip()
                     or not policy.assertions.status
@@ -129,6 +140,9 @@ class PolicyRegistry:
         for field, expected in policy.required_bindings.items():
             if step.model_dump().get(field) != expected:
                 raise NeedsReview("POLICY_BINDING_MISMATCH")
+        if not set(policy.prerequisite_policy_ids) <= {
+                source.policy_id for source in (previous or {}).values()}:
+            raise NeedsReview("DEPENDENCY_PREREQUISITE_NOT_COMPLETED")
         if policy.csv_fixture is not None and step.upload != policy.csv_fixture.upload:
             raise NeedsReview("POLICY_CSV_FIXTURE_MISMATCH")
         if policy.negative and (step.upload or step.poll or step.read_retries):
@@ -191,6 +205,8 @@ class PolicyRegistry:
         return [{"id": item.id, "operation_id": item.operation_id, "roles": item.roles,
                  "required_bindings": item.required_bindings,
                  "binding_rules": [r.model_dump() for r in item.binding_rules],
+                 **({"prerequisite_policy_ids": item.prerequisite_policy_ids}
+                    if item.prerequisite_policy_ids else {}),
                  "closed_arguments": item.closed_arguments,
                  "poll_allowed": item.poll is not None,
                  **({"negative_test": dict(base_policy_id=item.negative.base_policy_id,

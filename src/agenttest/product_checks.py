@@ -93,6 +93,17 @@ def validate_requested_checks(checks, context, selected):
                 or check.policy_id in seen):
             raise ValidationFailure(Layer.MODEL, "FOCUS_REQUESTED_CHECK_INVALID")
         seen.add(check.policy_id)
+        # An explicit field=value request cannot migrate to another field with the same value.
+        import re
+
+        value = (literal_data(check.exact_value.value) if check.exact_value is not None
+                 else entry.get("invalid_value"))
+        assignments = re.findall(r"(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\s*[=＝]\s*"
+                                 r"(-?\d+(?:\.\d+)?)", check.source_quote)
+        named = {name for name, number in assignments if type(value) in {int, float}
+                 and float(number) == value}
+        if named and entry.get("name") not in named:
+            raise ValidationFailure(Layer.MODEL, "FOCUS_NEGATIVE_FIELD_CHANGED")
         if check.exact_length is not None:
             from agenttest.product_inputs import _check_quote
 
@@ -258,8 +269,9 @@ def negative_prerequisite_policies(context, identifier):
     def sources(identifier):
         policy = policies[identifier]
         baseline = policies.get(policy.get("binding_rules_from_policy"), policy)
-        return {r["source_policy_id"] for r in baseline.get("binding_rules", [])
-                if r.get("source_policy_id") in policies}
+        return ({r["source_policy_id"] for r in baseline.get("binding_rules", [])
+                 if r.get("source_policy_id") in policies}
+                | set(policy.get("prerequisite_policy_ids", [])))
     before, pending = set(), list(sources(identifier))
     while pending:
         source = pending.pop()

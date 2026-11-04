@@ -711,7 +711,10 @@ export function GoalTasks({
                     </ol>
                   </details>
                 )}
-                {selected.summary.run_id && (
+                {selected.summary.run_id && !taskTerminal(selected.status) && (
+                  <p>正在执行，完成后显示完整请求与检查证据。</p>
+                )}
+                {selected.summary.run_id && taskTerminal(selected.status) && (
                   <ResultBrief id={selected.summary.run_id} />
                 )}
                 <details open={selected.status === "WAITING_REVIEW"}>

@@ -26,6 +26,7 @@ import { StepEvidence } from "../components/StepEvidence";
 import { RunLookup } from "./History";
 import type { RunReport } from "../api/types";
 import { EvidenceBrief } from "../components/ResultBrief";
+import { CreationStatus } from "../components/LifecycleStatus";
 
 export function Inspect() {
   return (
@@ -146,6 +147,7 @@ export function ReportView({
       </section>
       <Panel title="先看测试结论">
         <EvidenceBrief run={run} />
+        <CreationStatus receipts={run.created_resources} />
       </Panel>
       {run.task_mode === "operator_plan" && (
         <Notice>

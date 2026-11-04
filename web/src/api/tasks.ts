@@ -3,6 +3,10 @@ export interface ResourceLifecycle {
   create_step: string; cleanup_step: string; owner_run_id: string;
   status: string; resource_id: string | number | null; cleanup_result: string;
 }
+export interface CreationReceipt {
+  create_step: string; operation_id: string; owner_run_id: string; role: string | null;
+  status: string; resource_id: string | number | null; basis: string; cleanup_result: string;
+}
 export interface FailureExplanation {
   mismatch: string; basis?: string; confirmed_observation: string;
   cause_confirmed: boolean; uncertainty: string; next_action: string;
@@ -36,6 +40,7 @@ export interface GoalTask {
       input_label?: string;
     }[];
     not_covered?: string[];
+    timings?: {total_ms: number; planning_ms: number; execution_ms: number};
     untested_operations?: ProjectInventory["operations"];
     design_records?: {
       group_id: string;
@@ -71,6 +76,7 @@ export interface GoalTask {
     mode?: string;
     fixed_regression_passed?: boolean;
     resource_lifecycle?: ResourceLifecycle[];
+    created_resources?: CreationReceipt[];
     cleanup?: string;
     complete?: boolean;
     checks_passed?: boolean;
@@ -162,6 +168,7 @@ export interface GoalTask {
         }[];
       }[];
       resource_lifecycle?: ResourceLifecycle[];
+      created_resources?: CreationReceipt[];
       cleanup?: string;
       failure_explanation?: FailureExplanation | null;
       kinds?: string[];
@@ -450,6 +457,7 @@ export interface IntakePayload {
   generic?: GenericSetup | null;
 }
 export interface GenericArgument {
+  required?: boolean;
   location: "body" | "path_parameters" | "query";
   name: string;
   value: unknown;
@@ -457,12 +465,22 @@ export interface GenericArgument {
   selector: string;
   value_type?: string;
   generated?: boolean;
+  negative_enabled?: boolean;
   needs_input?: boolean;
   schema?: Record<string, unknown>;
   basis?: string;
   dependency_basis?: string | null;
 }
 export interface GenericOperation {
+  after_operations?: string[];
+  check_source?: string | null;
+  public_evidence?: string[];
+  creation?: {id_selector: string; fresh_resource_basis: string} | null;
+  credential_inputs?: Record<string, string>;
+  upload?: {field: string; filename: string; content: string} | null;
+  poll?: {select: string; terminal_values: string[]; progress_values: string[];
+    progress_fields?: {select: string; operator: "equals" | "exists" | "count" | "in";
+      expected: unknown}[]; max_attempts: number; interval: number} | null;
   operation_id: string;
   alias: string;
   enabled: boolean;
@@ -474,7 +492,7 @@ export interface GenericOperation {
     operator: "exists" | "equals" | "count" | "in";
     expected: unknown;
   }[];
-  access_checks?: { role: string; statuses: number[]; rule: string }[];
+  access_checks?: { role: string | null; statuses: number[]; rule: string }[];
 }
 export interface GenericRole {
   alias: string;
@@ -493,6 +511,8 @@ export interface GenericSetup {
   isolated_confirmed: boolean;
   allow_mutations: boolean;
   max_requests: number;
+  run_timeout?: number;
+  read_timeout?: number;
   roles: GenericRole[];
   operations: GenericOperation[];
   assisted?: boolean;
@@ -501,6 +521,7 @@ export interface GenericSetup {
   default_role?: string | null;
 }
 export interface ContractOperation extends GenericOperation {
+  upload_field?: string;
   method: string;
   path: string;
   summary?: string | null;
@@ -523,11 +544,11 @@ export const intakeApi = {
       status,
       project_version: version,
     }),
-  analyze: (csrf: string, document: string) =>
+  analyze: (csrf: string, document: string, project_id?: string) =>
     call<{ operations: ContractOperation[] }>(
       "/api/project-intake/analyze",
       csrf,
-      { document },
+      { document, ...(project_id ? {project_id} : {}) },
     ),
   read: () => call<IntakeCatalog>("/api/project-intake"),
   save: (csrf: string, payload: IntakePayload, id?: string) =>

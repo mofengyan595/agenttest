@@ -63,12 +63,49 @@ def test_scalar_response_can_be_selected_as_a_whole_without_writing_a_selector()
         selector="$", label="整个响应", value_type="string")]
 
 
+def test_array_containers_can_be_checked_without_asserting_that_the_first_item_exists():
+    doc = dict(openapi="3.0.3", info=dict(title="Empty list", version="1"), paths={
+        "/list": {"get": dict(operationId="list", responses={"200": dict(description="ok",
+            content={"application/json": dict(schema=dict(type="object", properties=dict(
+                data=dict(type="array", items=dict(type="string")))))})})}})
+    fields = analyze_contract(load_openapi(json.dumps(doc)))[0]["response_fields"]
+    assert dict(selector="$.data", label="data", value_type="array") in fields
+
+
+def test_same_path_creation_scalar_envelope_suggests_id_with_review_basis():
+    raw = json.loads(contract_document())
+    response = raw["paths"]["/records"]["post"]["responses"]["201"]
+    response.pop("links")
+    response["content"] = {"application/json": dict(schema=dict(type="object", properties=dict(
+        code=dict(type="integer"), data=dict(type="string"))))}
+    rows = analyze_contract(load_openapi(json.dumps(raw)))
+    detail = next(o for o in rows if o["operation_id"] == "readRecord")
+    assert detail["arguments"][0]["source_operation"] == "createRecord"
+    assert detail["arguments"][0]["selector"] == "$.data"
+    assert "需确认" in detail["arguments"][0]["dependency_basis"]
+
+
+def test_mutation_never_suggests_an_existing_list_first_item_as_its_resource():
+    raw = json.loads(contract_document())
+    raw["paths"]["/records"] = {"get": dict(operationId="listRecords", responses={
+        "200": dict(description="ok", content={"application/json": dict(schema=dict(
+            type="array", items=dict(type="object", properties=dict(id=dict(type="string")))))})})}
+    raw["paths"]["/records/{id}"]["patch"] = {
+        **raw["paths"]["/records/{id}"]["get"], "operationId": "modifyRecord"}
+    analyzed = analyze_contract(load_openapi(json.dumps(raw)))
+    write = next(o for o in analyzed if o["operation_id"] == "modifyRecord")
+    read = next(o for o in analyzed if o["operation_id"] == "readRecord")
+    assert write["arguments"][0]["source_operation"] is None
+    assert write["arguments"][0]["needs_input"]
+    assert read["arguments"][0]["source_operation"] == "listRecords"
+
+
 def test_full_inventory_nested_links_and_partial_authorization():
     contract = load_openapi(contract_document())
     setup = proposed_setup(contract)
     listing = inventory(contract, setup, {})
     assert listing["total"] == 47
-    assert listing["counts"] == dict(READY=42, NEEDS_INPUT=3, UNAUTHORIZED=1, UNSUPPORTED=1)
+    assert listing["counts"] == dict(READY=42, NEEDS_INPUT=3, UNAUTHORIZED=2, UNSUPPORTED=0)
     nested = next(s for s in setup.operations if s.operation_id == "createRecord")
     assert nested.arguments[0].value == {"labels": ["new", "new"]}
     read = next(s for s in setup.operations if s.operation_id == "readRecord")
@@ -95,9 +132,14 @@ def test_missing_input_and_unsupported_reasons_are_actionable():
     missing = next(e for e in listing["operations"] if e["operation_id"] == "missing")
     assert "item" in missing["reason"]
     upload = next(e for e in listing["operations"] if e["operation_id"] == "upload")
-    assert "上传" in upload["reason"]
+    assert upload["state"] == "UNAUTHORIZED"
+    setup.allow_mutations = True
+    upload = next(e for e in inventory(contract, setup, {})["operations"]
+                  if e["operation_id"] == "upload")
+    assert upload["state"] == "NEEDS_INPUT" and "CSV" in upload["reason"]
+    setup.allow_mutations = False
     setup.operations[0].enabled = False
-    assert inventory(contract, setup)["counts"]["UNAUTHORIZED"] == 2
+    assert inventory(contract, setup)["counts"]["UNAUTHORIZED"] == 3
 
 
 def test_standard_rest_dependency_is_suggested_without_document_links_or_business_aliases():

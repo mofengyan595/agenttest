@@ -3,8 +3,8 @@
 import re
 from typing import Any
 
-SELECTOR = re.compile(r"\$(?:(?:\.[A-Za-z_][A-Za-z0-9_]*)|(?:\[\d{1,6}\]))*")
-TOKEN = re.compile(r"\.([A-Za-z_][A-Za-z0-9_]*)|\[(\d+)\]")
+SELECTOR = re.compile(r"\$(?:(?:\.[^\W\d]\w*)|(?:\[\d{1,6}\]))*")
+TOKEN = re.compile(r"\.([^\W\d]\w*)|\[(\d+)\]")
 
 
 def validate_selector(path: str) -> str:

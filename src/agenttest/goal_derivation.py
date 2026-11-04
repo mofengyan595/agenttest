@@ -175,6 +175,13 @@ def _derive_requirements(project, user_task, result, literal):
                     raise NeedsReview("INTENT_GOAL_AUTHENTICATION_AMBIGUOUS")
                 login = visit(matches[0].id, role)
         arguments = []
+        prerequisites = []
+        for identifier in policy.prerequisite_policy_ids:
+            source = policies.get(identifier)
+            identities = [r for r in source.roles if r is None or r in project.target.roles]
+            if len(identities) != 1:
+                raise NeedsReview("INTENT_GOAL_SOURCE_ROLE_AMBIGUOUS")
+            prerequisites.append(visit(identifier, identities[0]))
         specs = [] if is_login else fields(op, project.contract.version, "#/operations")[0]
         by_slot = {(f.location, f.name): f for f in specs}
         for rule in policy.binding_rules:
@@ -218,6 +225,7 @@ def _derive_requirements(project, user_task, result, literal):
         active.remove(key)
         if login:
             before.append((login.key, step.key))
+        before.extend((parent.key, step.key) for parent in prerequisites)
         return step
 
     roots, seen = [], set()

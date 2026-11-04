@@ -368,3 +368,45 @@ async def test_missing_literal_never_sends_the_default_bad_value_and_independent
         assert sent == [dict(limit="1", order="asc"), dict(limit="1", order="oblique_order")]
     finally:
         await svc.close()
+
+
+@pytest.mark.asyncio
+async def test_fixed_valid_baseline_has_independent_explicit_negative_authority(tmp_path):
+    proj, setup = read_project()
+    argument = setup.operations[0].arguments[0]
+    argument.generated = False
+    argument.value = 1
+    fixed = build_generic_project("reports", proj.document.decode(), proj.contract, setup)
+    assert not any(p.negative and p.negative.name == "limit" for p in fixed.registry.definitions())
+    argument.negative_enabled = True
+    enabled = build_generic_project("reports", proj.document.decode(), proj.contract, setup)
+    approved = policy(enabled, kind="boundary_outside", value=0)
+    baseline = next(p for p in enabled.registry.definitions()
+                    if p.id == approved.negative.base_policy_id)
+    assert baseline.binding_rules[0].literal_schema["enum"] == [1]
+    seen = []
+
+    def target(request):
+        seen.append(dict(request.url.params))
+        return httpx.Response(422, json={"error": "out of range"})
+
+    report = await Executor(enabled.target, enabled.contract, ReportStore(tmp_path),
+        registry=enabled.registry, environ={}, transport=httpx.MockTransport(target)).run(
+            scenario(approved.id, 0))
+    assert report.outcome == Outcome.PASS
+    assert seen == [dict(limit="0", order="asc")]
+    assert baseline.binding_rules[0].literal_schema["enum"] == [1]
+
+
+def test_explicit_numeric_negative_field_cannot_change_even_when_value_is_identical():
+    from agenttest.diagnostics import ValidationFailure
+
+    index = [dict(policy_id="page_bad", operation_id="list", name="page", invalid_value=0)]
+    context = dict(user_task="检查size=0按文档拒绝", approved_checks=index)
+    for value in (None, dict(value=0)):
+        check = RequestedCheck(policy_id="page_bad", source_quote=context["user_task"],
+            exact_value=value)
+        with pytest.raises(ValidationFailure, match="FOCUS_NEGATIVE_FIELD_CHANGED"):
+            validate_requested_checks([check], context, ["list"])
+    index[0]["name"] = "size"
+    validate_requested_checks([check], context, ["list"])

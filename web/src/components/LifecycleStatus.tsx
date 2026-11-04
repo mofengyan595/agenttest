@@ -1,4 +1,22 @@
-import type { ResourceLifecycle } from "../api/tasks";
+import type { CreationReceipt, ResourceLifecycle } from "../api/tasks";
+
+export function CreationStatus({receipts}: {receipts?: CreationReceipt[]}) {
+  if (!receipts?.length) return null;
+  return <div className="finding-card" aria-label="新建资源归属">
+    <p>本轮新建资源收据：{receipts.filter((r) => r.status === "OWNED").length} 项归属已核实。</p>
+    <p>已核实清理 {receipts.filter((r) => r.cleanup_result === "PASS").length} 项；
+      其余资源保留待处理，不会自动重放写入。</p>
+    <details><summary>查看新建资源与依据</summary>
+      {receipts.map((r) => <div key={r.create_step}>
+        <p>{r.operation_id} · {r.resource_id === null ? "资源标识未核实" : `资源 ${r.resource_id}`} ·
+          {r.status === "OWNED" ? "本轮归属已核实" : r.status.includes("UNKNOWN")
+            ? "写入结果未知，需核实" : "新建结果未核实"}</p>
+        <p className="caption">归属运行 {r.owner_run_id}；依据：{r.basis}；
+          {r.cleanup_result === "PASS" ? "本轮清理已核实。" : "清理尚未确认。"}</p>
+      </div>)}
+    </details>
+  </div>;
+}
 
 export function LifecycleStatus({resources}: {resources?: ResourceLifecycle[]}) {
   if (!resources?.length) return null;

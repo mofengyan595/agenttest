@@ -103,7 +103,8 @@ def input_fields(project):
             if source is None:
                 operation = operations[policy.operation_id]
                 parameters, body = request_schemas(operation,
-                    "application/json" if operation.request_body else None)
+                    "application/json" if rule.location == "body" and operation.request_body
+                    else None)
                 source = ((body or {}).get("properties", {}).get(rule.name)
                     if rule.location == "body" else parameters[
                         "path" if rule.location == "path_parameters" else "query"].get(rule.name))
@@ -216,7 +217,8 @@ def constrain_focus_inputs(schema, groups):
         array.pop("items", None)
     questions = []
     for group in groups:
-        if group["schema"].get("type") != "string":
+        if (group["schema"].get("type") != "string"
+                or "enum" in group["schema"] and len(group["schema"]["enum"]) < 2):
             continue
         branch = deepcopy(schema["$defs"]["InputQuestion"])
         props = branch["properties"]

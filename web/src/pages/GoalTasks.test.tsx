@@ -8,6 +8,46 @@ import type { GoalTask } from "../api/tasks";
 const response = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status });
 
+test("fixed regression reads the completed evidence instead of caching a partial report", async () => {
+  const id = "a".repeat(32), runId = "b".repeat(32);
+  let ended = false, reportRequests = 0;
+  const pending: GoalTask = {id, project_id: "records", project_identity: "v1",
+    request_sha256: "c".repeat(64), status: "RUNNING", plan_version: 1, created_at: 1,
+    summary: {mode: "FIXED_REGRESSION", run_id: runId, model_source: "DISABLED"}};
+  const methods = ["POST", "POST", "PUT", "GET", "DELETE"];
+  const report = {run_id: runId, completed: true, outcome: "PASS",
+    plan_structure: methods.map((method, i) => ({step_id: `s${i}`, method})),
+    steps: methods.map((method, i) => ({step_id: `s${i}`, method,
+      path_template: `/records/${i}`, outcome: "PASS", reason: "POLICY_EVALUATED",
+      attempts: [{status_code: 200}], checks: []}))};
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({csrf_token: "local"});
+    if (url === "/api/projects") return response({projects: []});
+    if (url === "/api/project-intake") return response({projects: [], profiles: []});
+    if (url === "/api/tasks") return response({tasks: [pending]});
+    if (url === "/api/saved-tests") return response({tests: []});
+    if (url.endsWith("/timeline")) return response({events: []});
+    if (url === `/api/tasks/${id}`) return response(ended ? {...pending, status: "FINISHED",
+      summary: {...pending.summary, outcome: "PASS", fixed_regression_passed: true}} : pending);
+    if (url === `/api/runs/${runId}`) {
+      reportRequests++;
+      return response(ended ? report : {...report, completed: false, outcome: "TEST_INFRA_ERROR",
+        steps: report.steps.slice(0, 3).map((s, i) => i === 2 ? {...s,
+          outcome: "TEST_INFRA_ERROR", reason: "IN_PROGRESS"} : s)});
+    }
+    throw new Error("Unexpected request");
+  }));
+  render(<MemoryRouter initialEntries={[`/saved?task=${id}`]}><GoalTasks savedOnly /></MemoryRouter>);
+  expect(await screen.findByText("正在执行，完成后显示完整请求与检查证据。"))
+    .toBeVisible();
+  expect(reportRequests).toBe(0);
+  ended = true;
+  expect(await screen.findByText("固定回归检查通过", {}, {timeout: 4000})).toBeVisible();
+  expect(await screen.findByText(/已记录步骤 5\/5；未执行 0/)).toBeVisible();
+  expect(screen.queryByText(/测试环境异常/)).not.toBeInTheDocument();
+  expect(reportRequests).toBe(1);
+});
+
 test("cancelled result appears after reload while the full project catalog is still loading", async () => {
   const cancelled: GoalTask = {
     id: "c".repeat(32), project_id: "web_cancelled", project_identity: "v1",

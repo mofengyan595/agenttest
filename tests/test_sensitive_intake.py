@@ -34,7 +34,9 @@ def test_sensitive_nonlogin_is_blocked_even_if_browser_claims_inputs_are_ready()
     assert analyze_contract(contract)[0]["supported"]  # Parsing is distinct from safe execution.
     config = setup()
     config.operations[0].arguments[1].needs_input = False
-    assert inventory(contract, config, {})["operations"][0]["state"] == "UNSUPPORTED"
+    item = inventory(contract, config, {})["operations"][0]
+    assert item["state"] == "NEEDS_INPUT"
+    assert "凭据" in item["reason"]
     config.assisted = False
     with pytest.raises(ValueError, match="SENSITIVE_INPUT_BINDING_REQUIRED"):
         build_generic_project("web_signup", DOCUMENT, contract, config)

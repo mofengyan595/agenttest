@@ -298,6 +298,11 @@ class ProjectIntake:
                         r"password|passwd|^pwd$|token|api.?key|authorization|cookie", a.name, re.I))
                         for a in item.arguments):
                     raise ValueError("PROJECT_CREDENTIAL_LITERAL")
+                if any(a.location == "body" and a.name in item.credential_inputs
+                       and (a.value is not None or a.source_operation or a.generated
+                            or a.negative_enabled)
+                       for a in item.arguments):
+                    raise ValueError("PROJECT_CREDENTIAL_LITERAL")
             public_data = json.dumps([payload.name, document, notes, generic.model_dump()],
                                      ensure_ascii=False)
             if self.service.private_input_guard(public_data):
@@ -305,7 +310,10 @@ class ProjectIntake:
             # Reject known target secrets even when saving an unconfirmed draft.
             for name, value in self.service.environ.items():
                 if (name.startswith("AGENTTEST_TARGET_") and value
-                        and any(part in name for part in ("TOKEN", "BEARER", "PASSWORD", "SECRET"))
+                        and (any(part in name for part in (
+                            "TOKEN", "BEARER", "PASSWORD", "SECRET"))
+                            or any(name in item.credential_inputs.values()
+                                   for item in generic.operations))
                         and value in public_data):
                     raise ValueError("PROJECT_CREDENTIAL_LITERAL")
         for profile_key in self.service.projects:
@@ -394,6 +402,8 @@ class ProjectIntake:
             config = GenericSetup.model_validate(record["generic"])
             credential_names = {name for role in config.roles
                 for name in (role.username_env, role.password_env, role.bearer_env) if name}
+            credential_names.update(name for item in config.operations
+                                    for name in item.credential_inputs.values())
             # Memory-only digest: changes to credentials, authorization or any record field
             # invalidate the compiled runtime before the next guarded HTTP request.
             runtime_key = fingerprint(dict(record=record,

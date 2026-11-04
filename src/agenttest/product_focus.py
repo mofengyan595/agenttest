@@ -98,6 +98,14 @@ Interpret the CURRENT request using document operation summaries and paths. Dist
 resource numbers. Select intended business actions including requested cleanup. Deterministic
 dependency/login prerequisites are added later; do not select only login when a business flow is
 requested. Multiple roles using the same interface still select that interface once.
+managed_authentication contains server-verified identity readiness, never credentials.
+READY identities already have controlled login or bearer inputs. Login is an executor prerequisite;
+do not ask which username/password to use, extract them, or mark their presence as an unknown
+business rule. MISSING means configuration is required through the controlled credential path,
+never by putting a password in the natural-language request. Unknown authentication behavior
+(such as an undocumented rejection status) still requires a genuine business-rule question.
+Select actions requested NOW. Keeping a resource for a future action does not request that action
+in this round; do not select or block interfaces mentioned only as future use.
 This stage selects a SET of distinct API interfaces, NOT a sequence of HTTP requests.
 Each operation_id occurs AT MOST ONCE. A read before and after an update uses ONE selection;
 the next design stage chooses its repeated steps and their order. Different roles/scenarios or
@@ -123,7 +131,11 @@ If any requested ready interface is identifiable, select independent ready work.
 expectations do not make an identifiable interface unknown; the next design stage asks about them.
 
 input_fields lists approved fields, their exact field_ref, schemas and operation_ids. A field_ref
-is local to each listed operation. Put {field_ref,value,source_ref} in that operation's
+is local to each listed operation. For quoted string inputs, prefer value={text_ref:<identifier>}
+from literal_texts when that choice is offered by the field schema; trusted code copies the exact
+original text. Do not shorten, translate or retype quoted strings. A text_ref must occur inside
+the cited source_ref. Unquoted inputs still use ordinary literal values with unchanged provenance.
+Put {field_ref,value,source_ref} in that operation's
 input_requirements for EVERY explicitly requested VALID input: exact names, numbers, enum choices,
 booleans and ordered arrays. Preserve Chinese free text exactly. Objects use {"object":[...]},
 arrays use {"array":[...]}. Do not extract invalid inputs, status codes or interface numbers as
@@ -132,6 +144,10 @@ free text must remain literal. Do not replace explicit resource IDs with newly g
 runtime_supplied_fields are NOT inputs to extract or ask the user to fill. Their real values come
 from preceding approved steps. For a newly prepared resource, existing_resource=false and do NOT
 invent, name, describe or copy a placeholder ID into input_requirements or input_questions.
+resource_dependencies identifies each approved producer operation, method and response selector.
+A GET/HEAD producer may query an already confirmed existing resource. Reusing that response is
+still the approved runtime source: do not set existing_resource=true merely because the resource
+already exists, or because the request says "本轮资源". Retain the approved query dependency.
 If the user explicitly wants an already existing resource instead of the approved producer's data,
 set existing_resource=true for that consumer. The engine will hold it and ask about the approved
 data source. Keep the user's original text unchanged; this flag cannot grant literal-ID authority.
@@ -195,6 +211,12 @@ choose the ACCESSING identity (not the creator) from permission_question_roles, 
 Never turn that access question into a generic business_rule. confirmed_access_rules are already
 confirmed and must not be asked again. pending_checks are confirmed rules awaiting identity
 credentials, not unresolved expectations; explain that gap without asking403/404 again.
+Fixed single-value input enums are existing project configuration, not values extracted from the
+user request. Do not copy configured defaults into input_requirements unless the operator actually
+states that value in the cited request. The design model already receives those approved defaults.
+confirmed_response_checks are operator-reviewed content assertions, including exact selectors and
+expected values. Use them as known facts; do not ask the operator to identify those fields or values
+again. They authorize only their listed operation, roles and assertions.
 For other unknown business behavior use kind=business_rule,
 role=null and status_choices=[].
 Ask a specific natural-language question and cite the operator's exact source. Do not put a new
@@ -253,7 +275,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
         properties["scope"] = {"anyOf": scopes}
         properties["blocked_operations"] = operation_choices([
             o["operation_id"] for o in context.get("unavailable_operations", [])])
-        from agenttest.product_sources import constrain_source_refs, input_sources
+        from agenttest.product_sources import constrain_source_refs, input_sources, literal_texts
 
         sources = input_sources(context)
         constrain_source_refs(schema, sources)
@@ -270,7 +292,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
                   "runtime_supplied_fields": public_input_groups([
                       field for field in fields if field.get("source_dependency")]),
                   "approved_checks": public_check_groups(context.get("approved_checks", [])),
-                  "input_sources": sources}
+                  "input_sources": sources, "literal_texts": literal_texts(sources)}
         executed = set((context.get("previous_result") or {}).get("executed_policy_ids", []))
         public["previous_executed_checks"] = [dict(operation_id=operation, check_ref=reference)
             for operation, checks in operation_checks(context.get("approved_checks", [])).items()
@@ -347,10 +369,30 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         previous_requests=task_context.get("requests", [])[:-1], project_notes=notes,
         previous_result=task_context.get("previous_result"),
         grouped_index=index, approved_ids=list(project.target.allowed_operations))
+    from agenttest.project_inventory import identity_ready
+
+    context["managed_authentication"] = [dict(identity=alias,
+        login_operation=role.login_operation, method="bearer" if role.bearer_env else "login",
+        credential_status="READY" if identity_ready(role, environ) else "MISSING",
+        input_source="SERVER_CONTROLLED") for alias, role in project.target.roles.items()]
     context["input_fields"] = input_fields(project)
+    policies = {p.id: p for p in project.registry.definitions()}
+    context["execution_prerequisites"] = [dict(operation_id=p.operation_id,
+        after_operation=policies[key].operation_id) for p in policies.values()
+        for key in p.prerequisite_policy_ids if key in policies]
+    context["resource_dependencies"] = [dict(operation_id=p.operation_id,
+        location=r.location, name=r.name, from_operation=policies[r.source_policy_id].operation_id,
+        from_method=operations[policies[r.source_policy_id].operation_id].method,
+        selector=r.source_selector, roles=p.roles)
+        for p in policies.values() if not p.negative for r in p.binding_rules
+        if r.source_policy_id in policies]
     from agenttest.product_checks import check_index
 
     context["approved_checks"] = check_index(project)
+    context["confirmed_response_checks"] = [dict(operation_id=p.operation_id, roles=p.roles,
+        statuses=p.assertions.status.codes if p.assertions.status else [],
+        fields=[f.model_dump() for f in p.assertions.fields])
+        for p in project.registry.definitions() if not p.negative]
     confirmed = [p for p in project.registry.definitions() if not p.negative
                  and operations[p.operation_id].method in {"GET", "HEAD", "OPTIONS"}
                  and any(role is not None for role in p.roles)]

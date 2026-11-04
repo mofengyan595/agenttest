@@ -28,6 +28,30 @@ class PlannerFailure(Exception):
         self.diagnostic = diagnostic or Diagnostic(layer=Layer.MODEL, code=reason)
 
 
+async def provider_error_diagnostic(response, stats):
+    """Classify bounded provider errors using closed schema keywords, never raw messages."""
+    raw = bytearray()
+    try:
+        async for chunk in response.aiter_bytes(chunk_size=4096):
+            raw.extend(chunk)
+            stats.response_bytes = len(raw)
+            if len(raw) > 8192:
+                return None
+        data = bounded_json(raw.decode("utf-8"), 8192)
+        error = data.get("error") if isinstance(data, dict) else None
+        message = error.get("message") if isinstance(error, dict) else None
+        if not isinstance(message, str):
+            return None
+        keywords = [key for key in ("allOf", "contains", "minContains", "maxContains",
+                    "response_format", "json_schema") if key in message]
+        if keywords:
+            return Diagnostic(layer=Layer.MODEL, code="MODEL_PROVIDER_SCHEMA_ERROR",
+                              fields=keywords)
+    except (httpx.TransportError, UnicodeError, ValueError, TypeError):
+        pass
+    return None
+
+
 class ModelSettings(StrictModel):
     model: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$", repr=False)
     base_url: str = Field(repr=False)
@@ -475,9 +499,10 @@ class OpenAICompatiblePlanner:
                     self.stats.http_status = response.status_code
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
+                        diagnostic = await provider_error_diagnostic(response, self.stats)
                         raise PlannerFailure(
                             Outcome.TEST_INFRA_ERROR if infra else Outcome.TOOL_ERROR,
-                            "MODEL_SERVICE_ERROR" if infra else "MODEL_API_ERROR")
+                            "MODEL_SERVICE_ERROR" if infra else "MODEL_API_ERROR", diagnostic)
                     raw = bytearray()
                     async for chunk in response.aiter_bytes(chunk_size=16384):
                         raw.extend(chunk)

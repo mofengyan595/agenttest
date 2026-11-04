@@ -5,9 +5,9 @@ from typing import Any, Literal
 from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary
-from agenttest.dsl import AssertionPolicy, ExpectedStatus, FieldAssertion
+from agenttest.dsl import AssertionPolicy, CSVUpload, ExpectedStatus, FieldAssertion, PollPolicy
 from agenttest.planner_input import validate_user_task
-from agenttest.policies import BindingRule, PolicyRegistry, RegisteredPolicy
+from agenttest.policies import ApprovedCSVFixture, BindingRule, PolicyRegistry, RegisteredPolicy
 from agenttest.project_goals import (
     GoalCatalog,
     GoalProject,
@@ -24,10 +24,17 @@ from agenttest.project_inventory import (
     response_checks,
     response_fields,
     sample,
+    upload_field,
 )
 from agenttest.report import fingerprint
 from agenttest.request_validation import validate_value
-from agenttest.safety import ResourceLifecycle, RoleCredential, StrictModel, TargetConfig
+from agenttest.safety import (
+    ResourceCreation,
+    ResourceLifecycle,
+    RoleCredential,
+    StrictModel,
+    TargetConfig,
+)
 from agenttest.selectors import validate_selector
 
 
@@ -38,12 +45,13 @@ class IntakeArgument(StrictModel):
     source_operation: str | None = None
     selector: str = "$"
     generated: bool = False
+    negative_enabled: bool = False
     needs_input: bool = False
 
     @model_serializer(mode="wrap")
     def legacy_defaults(self, handler):
         data = handler(self)
-        for key in ("generated", "needs_input"):
+        for key in ("generated", "needs_input", "negative_enabled"):
             if not getattr(self, key):
                 data.pop(key, None)
         return data
@@ -62,18 +70,43 @@ class IntakeOperation(StrictModel):
     statuses: list[int] = Field(min_length=1, max_length=20)
     arguments: list[IntakeArgument] = Field(default_factory=list, max_length=100)
     checks: list[FieldAssertion] = Field(default_factory=list, max_length=30)
+    check_source: str | None = Field(default=None, min_length=1, max_length=500)
     access_checks: list["IntakeAccess"] = Field(default_factory=list, max_length=8)
+    credential_inputs: dict[str, str] = Field(default_factory=dict)
+    upload: CSVUpload | None = None
+    poll: PollPolicy | None = None
+    creation: ResourceCreation | None = None
+    public_evidence: list[str] = Field(default_factory=list, max_length=30)
+    after_operations: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("credential_inputs")
+    @classmethod
+    def private_aliases(cls, value):
+        from agenttest.controlled_inputs import credential_alias
+
+        for alias in value.values():
+            credential_alias(alias)
+        return value
 
     @model_serializer(mode="wrap")
     def legacy_defaults(self, handler):
         data = handler(self)
         if not self.access_checks:
             data.pop("access_checks", None)
+        if not self.credential_inputs:
+            data.pop("credential_inputs", None)
+        for key in ("upload", "poll", "check_source", "creation"):
+            if getattr(self, key) is None:
+                data.pop(key, None)
+        if not self.public_evidence:
+            data.pop("public_evidence", None)
+        if not self.after_operations:
+            data.pop("after_operations", None)
         return data
 
 
 class IntakeAccess(StrictModel):
-    role: str = Field(min_length=1, max_length=40)
+    role: str | None = Field(min_length=1, max_length=40)
     statuses: list[int] = Field(min_length=1, max_length=10)
     rule: str = Field(min_length=1, max_length=160)
     source_question: str | None = Field(default=None, pattern=r"^question_[a-f0-9]{20}$")
@@ -115,6 +148,8 @@ class GenericSetup(StrictModel):
     isolated_confirmed: bool = False
     allow_mutations: bool = False
     max_requests: int = Field(default=40, ge=1, le=64)
+    run_timeout: float = Field(default=60.0, gt=0, le=300)
+    read_timeout: float = Field(default=5.0, gt=0, le=30)
     roles: list[IntakeRole] = Field(default_factory=list, max_length=8)
     operations: list[IntakeOperation] = Field(min_length=1, max_length=1000)
     assisted: bool = False
@@ -139,6 +174,9 @@ class GenericSetup(StrictModel):
         for key in ("assisted", "approve_negative_tests", "allow_negative_value_variants",
                     "default_role", "resource_lifecycles"):
             if not getattr(self, key):
+                data.pop(key, None)
+        for key, default in (("run_timeout", 60.0), ("read_timeout", 5.0)):
+            if getattr(self, key) == default:
                 data.pop(key, None)
         return data
 
@@ -197,8 +235,6 @@ def analyze_contract(contract: ContractSummary):
         statuses = sorted(int(k) for k in op.responses if k.isdigit() and 200 <= int(k) < 300)
         if not statuses:
             reason = reason or "文档没有明确的成功状态码，请先补齐。"
-        if statuses == [202]:
-            reason = "长异步任务的完成条件和轮询尚未接入此产品流程。"
         if op.security and {} not in op.security and not any(
                 requirement and all(contract.security_schemes.get(name, {}).get("type") == "http"
                     and contract.security_schemes[name].get("scheme", "").lower() == "bearer"
@@ -211,6 +247,12 @@ def analyze_contract(contract: ContractSummary):
             checks=response_checks(op), response_fields=response_fields(op),
             basis=f"OpenAPI {op.method} {op.path} responses / parameters / requestBody",
             authentication_required=bool(op.security) and {} not in op.security))
+        try:
+            file_field = upload_field(op)
+        except ValueError:
+            file_field = None
+        if file_field:
+            suggestions[-1]["upload_field"] = file_field
     return suggestions
 
 
@@ -250,7 +292,13 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
         target = TargetConfig(base_url=setup.base_url, environment="isolated",
             authorized_ips=list(authorized_ips), allow_mutations=setup.allow_mutations,
             allowed_operations=ids, roles=roles, business_scenario=scenario,
-            max_requests=setup.max_requests, resource_lifecycles=setup.resource_lifecycles)
+            max_requests=setup.max_requests, resource_lifecycles=setup.resource_lifecycles,
+            run_timeout=setup.run_timeout, read_timeout=setup.read_timeout)
+        target.credential_inputs = {item.operation_id: item.credential_inputs
+                                    for item in selected if item.credential_inputs}
+        target.resource_creations = {item.operation_id: item.creation
+                                     for item in selected if item.creation}
+        target = TargetConfig.model_validate(target.model_dump())
     except ValueError:
         raise ValueError("TARGET_AUTHORIZATION_REQUIRED") from None
     from agenttest.lifecycle import validate_lifecycle_authority
@@ -258,6 +306,10 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
     validate_lifecycle_authority(contract, target)
     policy_ids = {op.operation_id: f"web_rule_{i + 1}" for i, op in enumerate(selected)}
     selected_by_id = {op.operation_id: op for op in selected}
+    if any(len(set(item.after_operations)) != len(item.after_operations)
+           or any(parent not in selected_by_id or parent == item.operation_id
+                  for parent in item.after_operations) for item in selected):
+        raise ValueError("EXECUTION_PREREQUISITE_NOT_SELECTED")
     for alias, role in roles.items():
         if role.login_operation:
             primary = selected_by_id[role.login_operation].role
@@ -270,24 +322,62 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
         op = operations[item.operation_id]
         role = roles.get(item.role)
         is_login = bool(role and role.login_operation == item.operation_id and op.method == "POST")
+        if item.creation:
+            validate_selector(item.creation.id_selector)
+            validate_user_task(item.creation.fresh_resource_basis)
+            if is_login or op.method != "POST" or item.statuses != [201]:
+                raise ValueError("FRESH_CREATION_REQUIRES_POST_201")
         if (op.method not in {"GET", "HEAD", "OPTIONS"}
                 and not setup.allow_mutations and not is_login):
             raise ValueError("WRITE_AUTHORIZATION_REQUIRED")
         target.permit(item.operation_id, op.method)
         validate_user_task(item.alias)
+        if item.check_source:
+            validate_user_task(item.check_source)
         if item.role is not None and item.role not in roles:
             raise ValueError("ROLE_NOT_CONFIGURED")
         if op.security and {} not in op.security and item.role is None:
             raise ValueError("PROTECTED_OPERATION_REQUIRES_ROLE")
         specs = {} if is_login else {(s.location, s.name): s
             for s in input_fields(op, contract.version)}
-        if any(credential_field(spec) for spec in specs.values()):
+        file_field = upload_field(op)
+        if item.upload and (not file_field or item.upload.field != file_field):
+            raise ValueError("UPLOAD_NOT_DECLARED_IN_CONTRACT")
+        if file_field and not item.upload:
+            raise ValueError("CSV_FIXTURE_REQUIRED")
+        if item.poll and (op.method not in {"GET", "HEAD"} or item.upload):
+            raise ValueError("POLL_REQUIRES_READ_OPERATION")
+        if item.poll and not any(check.select == item.poll.select
+                and check.operator in {"equals", "in"}
+                and (check.expected in item.poll.terminal_values if check.operator == "equals"
+                     else bool(check.expected) and all(v in item.poll.terminal_values
+                                                       for v in check.expected))
+                for check in item.checks):
+            raise ValueError("POLL_TERMINAL_ASSERTION_REQUIRED")
+        from agenttest.controlled_inputs import controlled_payload
+
+        if is_login and item.credential_inputs:
+            raise ValueError("LOGIN_CREDENTIALS_ALREADY_MANAGED")
+        controlled_payload(op, item.credential_inputs, environ)
+        if any(credential_field(spec) and not (
+                spec.location == "body" and spec.name in item.credential_inputs)
+                for spec in specs.values()):
             raise ValueError("SENSITIVE_INPUT_BINDING_REQUIRED")
+        specs = {slot: spec for slot, spec in specs.items()
+                 if not (slot[0] == "body" and slot[1] in item.credential_inputs)}
         rules, seen = [], set()
         for argument in ([] if is_login else item.arguments):
             slot = argument.location, argument.name
+            if argument.location == "body" and argument.name in item.credential_inputs:
+                if (argument.value is not None or argument.source_operation
+                        or argument.generated or argument.negative_enabled):
+                    raise ValueError("CONTROLLED_INPUT_CANNOT_HAVE_PUBLIC_VALUE")
+                continue
             if slot not in specs or slot in seen:
                 raise ValueError("ARGUMENT_NOT_IN_CONTRACT")
+            if argument.negative_enabled and (argument.location == "path_parameters"
+                    or argument.source_operation or credential_field(specs[slot])):
+                raise ValueError("NEGATIVE_FIELD_NOT_ELIGIBLE")
             seen.add(slot)
             if argument.source_operation:
                 producer = selected_by_id.get(argument.source_operation)
@@ -298,6 +388,7 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
                 if any(r.login_operation == producer.operation_id for r in roles.values()):
                     raise ValueError("AUTHENTICATION_RESPONSE_IS_NOT_A_BUSINESS_RESOURCE")
                 relation = ("anonymous" if producer.role is None and item.role is None else
+                    "anonymous_source" if producer.role is None and item.role is not None else
                     "same" if producer.role == item.role and item.role is not None else
                     "different" if producer.role is not None and item.role is not None else None)
                 if relation is None:
@@ -315,9 +406,14 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
             raise ValueError("REQUIRED_ARGUMENT_MISSING")
         base_policy = RegisteredPolicy(id=policy_ids[item.operation_id],
             operation_id=item.operation_id, roles=[item.role], business_scenario=scenario,
-            assertions=AssertionPolicy(reviewed=True, source=source,
-                status=ExpectedStatus(codes=item.statuses), fields=item.checks),
-            binding_rules=rules, closed_arguments=True)
+            assertions=AssertionPolicy(reviewed=True, source=source + (
+                ":" + item.check_source if item.check_source else ""),
+                status=ExpectedStatus(codes=item.statuses), fields=item.checks,
+                public_evidence=item.public_evidence),
+            binding_rules=rules, closed_arguments=True, poll=item.poll,
+            prerequisite_policy_ids=[policy_ids[parent] for parent in item.after_operations],
+            csv_fixture=(ApprovedCSVFixture(id="csv_" + fingerprint(item.upload.model_dump())[:20],
+                classification="DEVELOPMENT_ONLY", upload=item.upload) if item.upload else None))
         policies.append(base_policy)
         if setup.assisted and is_login:
             for alias, configured in roles.items():
@@ -344,8 +440,12 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
             if setup.assisted and access.role not in roles and any(
                     r.alias == access.role for r in setup.roles):
                 continue  # Pending credentials are visible in the complete inventory.
-            if op.method not in {"GET", "HEAD", "OPTIONS"} or access.role not in roles:
+            if (op.method not in {"GET", "HEAD", "OPTIONS"}
+                    or access.role is not None and access.role not in roles):
                 raise ValueError("ACCESS_CHECK_REQUIRES_APPROVED_READONLY_ROLE")
+            if access.role is None and (access.statuses != [401] or "401" not in op.responses
+                    or not op.security or {} in op.security):
+                raise ValueError("UNAUTHENTICATED_CHECK_REQUIRES_DOCUMENTED_401")
             access_rules = []
             for rule in rules:
                 copied = rule.model_copy(deep=True)
@@ -355,11 +455,17 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
                     producer_role = selected_by_id[producer_id].role
                     if producer_role is None:
                         raise ValueError("ACCESS_CHECK_REQUIRES_NAMED_RESOURCE_OWNER")
-                    copied.role_relation = "same" if producer_role == access.role else "different"
+                    copied.role_relation = ("unauthenticated" if access.role is None else
+                        "same" if producer_role == access.role else "different")
+                copied.source_body_equalities = {}
+                copied.response_selector = None
                 access_rules.append(copied)
             validate_user_task(access.rule)
+            access_id = base_policy.id + f"_access_{number + 1}"
+            if access.role is None:
+                target.unauthenticated_checks.setdefault(item.operation_id, []).append(access_id)
             policies.append(base_policy.model_copy(update={
-                "id": base_policy.id + f"_access_{number + 1}", "roles": [access.role],
+                "id": access_id, "roles": [access.role], "poll": None, "csv_fixture": None,
                 "binding_rules": access_rules, "planning_purpose": access.rule,
                 "assertions": AssertionPolicy(reviewed=True,
                     source=source + ":OPERATOR_ACCESS_RULE",
@@ -367,8 +473,8 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
         goals.append(GoalTemplate(id=f"action_{index + 1}", aliases=[item.alias],
             policy_id=policy_ids[item.operation_id], role=item.role))
     # Reject cycles before a task can spend model or HTTP budget.
-    edges = {item.operation_id: [a.source_operation for a in item.arguments
-             if a.source_operation] for item in selected}
+    edges = {item.operation_id: [*item.after_operations, *[a.source_operation
+             for a in item.arguments if a.source_operation]] for item in selected}
 
     def visit(node, active, done):
         if node in active:

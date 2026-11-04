@@ -327,6 +327,41 @@ def test_runtime_bindings_are_not_fillable_literals_and_existing_resource_only_h
 
 
 @pytest.mark.asyncio
+async def test_focus_receives_read_dependency_provenance_without_literal_id_authority():
+    from agenttest.contracts import load_openapi
+    from agenttest.generic_intake import GenericSetup, build_generic_project
+    from agenttest.product_focus import select_focus
+
+    doc = json.dumps(dict(openapi="3.0.3", info=dict(title="Reports", version="1"), paths={
+        "/reports/current": {"get": dict(operationId="readHeader", responses={
+            "200": dict(description="ok")})},
+        "/reports/{id}/export": {"get": dict(operationId="readExport", parameters=[dict(
+            name="id", **{"in": "path"}, required=True, schema=dict(type="integer"))],
+            responses={"200": dict(description="ok")})}}))
+    setup = GenericSetup.model_validate(dict(base_url="http://127.0.0.1:18998",
+        isolated_confirmed=True, operations=[dict(operation_id="readHeader", alias="读取已确认报表",
+            statuses=[200]), dict(operation_id="readExport", alias="导出报表", statuses=[200],
+            arguments=[dict(location="path_parameters", name="id", source_operation="readHeader",
+                            selector="$.id")])]))
+    proj = build_generic_project("web_reports", doc, load_openapi(doc), setup, environ={})
+
+    class Focus:
+        async def generate(self, context):
+            assert context["resource_dependencies"] == [dict(operation_id="readExport",
+                location="path_parameters", name="id", from_operation="readHeader",
+                from_method="GET", selector="$.id", roles=[None])]
+            assert context["input_fields"][0]["source_dependency"]
+            return FocusSelection(interpretation="先查询已确认报表，再用响应编号导出。",
+                mode="selected",
+                operation_ids=["readExport"], question=None, pending_questions=[], not_covered=[],
+                source_conflicts=[]).model_dump_json()
+
+    selection = await select_focus(proj, Focus(), dict(current_request="导出本轮已确认的报表。"),
+                                   environ={})
+    assert not selection.source_conflicts and not selection.input_requirements
+
+
+@pytest.mark.asyncio
 async def test_existing_source_conflict_holds_consumers_and_runs_only_independent_read(
         tmp_path, monkeypatch):
     from agenttest.generic_intake import IntakeOperation
@@ -677,3 +712,43 @@ def test_actual_previous_checks_are_published_as_current_closed_refs_without_mut
                                                        check_ref=match["check_ref"])]
     assert "executed_policy_ids" not in public["previous_result"]
     assert context == original
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("password,status", [("private-focus-password", "READY"),
+    ("", "MISSING"), ("private-focus-password\n", "MISSING")])
+async def test_focus_sees_controlled_identity_readiness_without_credentials(password, status):
+    from agenttest.product_focus import select_focus
+    from agenttest.safety import RoleCredential
+
+    proj, _ = project()
+    proj.target.roles["reviewer"] = RoleCredential(login_operation="signIn",
+        username_env="AGENTTEST_TARGET_FOCUS_USER", password_env="AGENTTEST_TARGET_FOCUS_PASS")
+    proj.target.roles["reader"] = RoleCredential(bearer_env="AGENTTEST_TARGET_FOCUS_BEARER")
+    captured = {}
+
+    class Focus:
+        async def generate(self, context):
+            captured.update(context)
+            # Unknown behavior remains a real question even when credentials are prepared.
+            return FocusSelection(interpretation="查询任务并保留待确认的缓存业务规则。",
+                mode="selected", operation_ids=["readJob"], question=None,
+                pending_questions=[], not_covered=[], expectation_questions=[dict(
+                    operation_id="readJob", question="任务查询允许缓存多久？",
+                    requested_behavior="查询缓存时长", source_quote="查询任务的缓存时长")]
+                ).model_dump_json()
+
+    result = await select_focus(proj, Focus(),
+        dict(current_request="查询任务的缓存时长"), environ={
+            "AGENTTEST_TARGET_FOCUS_USER": "private-focus-user",
+            "AGENTTEST_TARGET_FOCUS_PASS": password,
+            "AGENTTEST_TARGET_FOCUS_BEARER": "private-focus-bearer"})
+    body = FocusModel(settings(), profile="generic").prepare_request(captured).decode()
+    public = json.loads(json.loads(body)["messages"][1]["content"])
+    assert public["managed_authentication"] == [dict(identity="reviewer",
+        login_operation="signIn", method="login", credential_status=status,
+        input_source="SERVER_CONTROLLED"), dict(identity="reader", login_operation=None,
+        method="bearer", credential_status="READY", input_source="SERVER_CONTROLLED")]
+    assert not any(secret in body for secret in ("private-focus-password", "private-focus-user",
+        "private-focus-bearer", "AGENTTEST_TARGET_FOCUS_"))
+    assert len(result.expectation_questions) == 1

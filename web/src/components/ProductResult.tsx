@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { useState } from "react";
 import type { GoalTask } from "../api/tasks";
 import { ProjectInventory } from "./ProjectInventory";
-import { LifecycleStatus } from "./LifecycleStatus";
+import { CreationStatus, LifecycleStatus } from "./LifecycleStatus";
 
 const kinds: Record<string, string> = {
   normal: "正常请求",
@@ -20,6 +20,9 @@ const caseReasons: Record<string, string> = {
   DSL_AUTHENTICATION_ORDER: "本场景没有单独登录，相关请求未发送。请安排新的测试，为每个独立场景准备身份。",
   DSL_MISSING_AUTHENTICATION_CREDENTIALS: "本场景缺少可用身份，相关请求未发送。请先补充项目中的测试身份。",
   POLICY_DEPENDENCY_MISMATCH: "资源来源与已确认规则不一致，相关请求未发送。请先补充本轮数据的准备方式。",
+  DESIGN_DUPLICATE_RESOURCE_SETUP: "模型在不同场景重复创建同一组资源，整组请求未发送。需要调整规划后重新测试；不会自动重放写入。",
+  MODEL_SERVICE_ERROR: "模型服务返回错误，本组接口请求未发送。请核对模型服务及未知用量记录；系统没有自动重试。",
+  MODEL_API_ERROR: "模型服务拒绝请求，本组接口请求未发送。请核对服务配置和生成格式。",
 };
 function caseReason(reason: string) {
   return caseReasons[reason] || (/^[A-Z][A-Z0-9_]+$/.test(reason)
@@ -45,6 +48,7 @@ export function ProductResult({
   const page = Math.min(negativePage.task === task.id ? negativePage.page : 0,
     Math.max(0, Math.ceil(remaining.length / 20) - 1));
   const cases = result.cases || [];
+  const rejectedDesigns = result.design_records?.filter((r) => r.status === "REJECTED") || [];
   const checks = cases.flatMap((c) => (c.evidence || []).flatMap((e) => e.checks || []));
   const statusOnly = checks.length > 0 && checks.every((c) => c.kind === "http_status");
   const completed = result.coverage?.completed_scenarios ?? cases.filter((c) =>
@@ -71,6 +75,9 @@ export function ProductResult({
       {result.reason && (
         <p className="finding-card">本轮停止原因：{result.reason}</p>
       )}
+      {rejectedDesigns.map((record) => <p className="finding-card" key={record.group_id}>
+        本组未执行：{caseReason(record.reason || "DESIGN_REJECTED")}
+      </p>)}
       {result.user_request && (
         <details className="request-focus">
           <summary>本次测试重点</summary>
@@ -215,6 +222,10 @@ export function ProductResult({
             {!!c.approved_negative_steps && <> · 受控异常检查通过 {c.negative_rejections_passed ?? 0}
               /{c.approved_negative_steps}</>}
           </p>}
+          {c.evidence?.some((e) => e.checks.length > 0 &&
+            e.checks.every((check) => check.kind === "http_status")) && <p className="caption">
+            本场景包含只检查状态码的请求；这些响应的正文尚未核验。
+          </p>}
           <ul>
             {c.evidence?.map((e, i) => (
               <li key={i}>
@@ -255,6 +266,7 @@ export function ProductResult({
           </ul>
           {c.reason && <p>{caseReason(c.reason)}</p>}
           <LifecycleStatus resources={c.resource_lifecycle} />
+          <CreationStatus receipts={c.created_resources} />
           {c.failure_explanation && <div className="finding-card" aria-label="调查结论">
             <strong>调查结论</strong>
             <p>{c.failure_explanation.confirmed_observation}</p>
@@ -340,6 +352,9 @@ export function ProductResult({
       <details>
         <summary>模型建议与真实用量</summary>
         <p>需求理解和方案来自模型；检查依据来自已确认规则，结果来自实际执行。</p>
+        {result.timings && <p>本轮记录耗时 {(result.timings.total_ms / 1000).toFixed(1)} 秒，
+          其中准备与规划 {(result.timings.planning_ms / 1000).toFixed(1)} 秒，
+          执行与等待 {(result.timings.execution_ms / 1000).toFixed(1)} 秒。</p>}
         {result.design_records?.map((r, i) => (
           <div key={i}>
             <p>{r.interpretation || r.reason || "方案处理中"}</p>

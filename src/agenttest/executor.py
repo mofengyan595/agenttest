@@ -67,6 +67,9 @@ class Executor:
     def validate(
         self, scenario: Scenario, *, report: RunReport | None = None,
     ) -> tuple[dict[str, Operation], dict[str, RegisteredPolicy]]:
+        from agenttest.lifecycle import validate_lifecycle_authority
+
+        validate_lifecycle_authority(self.contract, self.config)
         operations = validate_plan(scenario, self.contract, self.config, self.environ)
         if report is not None:
             report.dsl_valid = True
@@ -139,6 +142,9 @@ class Executor:
         authenticated: set[str] = set()
         budget = {"requests": 0, "last_request": 0.0}
         lifecycle = None
+        from agenttest.lifecycle import CreationJournal
+
+        creations = CreationJournal(self.config, report)
         if self.config.resource_lifecycles:
             from agenttest.lifecycle import LifecycleJournal, lifecycle_plan
 
@@ -171,6 +177,9 @@ class Executor:
                         # Journal before sending a mutation. Reports cannot be resumed/replayed.
                         self.store.save(report)
                         try:
+                            receipt = creations.before(step, policies[step.id])
+                            if receipt is not None:
+                                self.store.save(report)
                             if lifecycle:
                                 lifecycle.before(step, operation.method)
                                 self.store.save(report)
@@ -178,6 +187,7 @@ class Executor:
                                 client, step, operation, state, budget, result, report,
                                 policies[step.id], vault,
                             )
+                            creations.after(receipt, result, body, vault)
                             if lifecycle:
                                 lifecycle.after(step, result, body, vault)
                             if result.outcome == Outcome.PASS:
@@ -263,6 +273,8 @@ class Executor:
         finally:
             if lifecycle:
                 lifecycle.finish()
+            creations.finish()
+            if lifecycle or report.created_resources:
                 self.store.save(report)
             state.clear()
             authenticated.clear()
@@ -345,8 +357,12 @@ class Executor:
             raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
         if is_login:
             payload = vault.login_payload(step.role)
+        controlled = vault.controlled_payload(operation)
+        if set(controlled) & set(payload):
+            raise ValidationFailure(Layer.DSL, "DSL_CONTROLLED_INPUT_IS_EXECUTOR_OWNED")
+        payload.update(controlled)
         media = ("multipart/form-data" if step.upload else "application/json"
-                 if step.body or is_login else None)
+                 if step.body or is_login or controlled else None)
         request_payload = {step.upload.field: step.upload.content} if step.upload else payload
         validate_request(operation, path_values, query, request_payload, media)
         result.input_validation = "NORMAL_VALIDATED"
@@ -377,7 +393,8 @@ class Executor:
         result.policy_sha256 = fingerprint(policy.model_dump())
         if report.task_mode == "model_designed":
             public_request = vault.public_response(dict(path_parameters=path_values, query=query,
-                body={} if is_login or step.upload else payload))
+                body={} if is_login or step.upload else {
+                    k: v for k, v in payload.items() if k not in controlled}))
             if len(json.dumps(public_request, ensure_ascii=False).encode()) <= 4096:
                 result.request_evidence = dict(role=step.role, values=public_request,
                     credentials="由执行器管理，未记录", source=policy.assertions.source)
@@ -390,7 +407,7 @@ class Executor:
             kwargs["files"] = {step.upload.field: (
                 step.upload.filename, step.upload.content.encode("utf-8"), "text/csv",
             )}
-        elif step.body or is_login:
+        elif step.body or is_login or controlled:
             kwargs["json"] = payload
         poll = policy.poll if step.poll else None
         attempts = poll.max_attempts if poll else 1
@@ -482,10 +499,18 @@ class Executor:
                             raise ExecutionLimit("RESPONSE_BODY_LIMIT")
                     evidence.response_bytes = len(chunks)
                     evidence.response_sha256 = hashlib.sha256(chunks).hexdigest()
-                    try:
-                        body = json.loads(chunks)
-                    except (ValueError, UnicodeError):
-                        body = None
+                    if response.headers.get("content-type", "").split(";", 1)[0].strip().lower() \
+                            == "text/csv":
+                        from agenttest.response_content import csv_table
+
+                        body = csv_table(bytes(chunks))
+                        evidence.response_projection = ("CSV_TABLE_V1" if body is not None
+                                                        else "CSV_INVALID")
+                    else:
+                        try:
+                            body = json.loads(chunks)
+                        except (ValueError, UnicodeError):
+                            body = None
                     evidence.error_code = None
                     return response.status_code, body
                 finally:

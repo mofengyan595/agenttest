@@ -415,6 +415,7 @@ export function Projects() {
                 <>
                   <GenericProject
                     document={document}
+                    projectId={editing?.id}
                     csrf={csrf}
                     value={generic}
                     disabled={busy || uploading}
@@ -512,8 +513,8 @@ export function Projects() {
         </>
       )}
       <p className="caption">
-        支持路径、查询、嵌套 JSON 对象与数组、匿名和 Bearer
-        身份及明确的接口依赖。上传和长异步任务暂未接入此流程。
+        支持路径、查询、嵌套 JSON、受控凭据、单个 CSV 文件及有限异步等待。
+        接口依赖和成功条件需要先核对，超出等待范围会明确保留为未完成。
       </p>
     </>
   );

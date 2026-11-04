@@ -1,5 +1,6 @@
 """Closed references to exact operator text; the model does not retype evidence quotations."""
 
+import re
 from copy import deepcopy
 
 from agenttest.diagnostics import Layer, ValidationFailure
@@ -10,6 +11,13 @@ def compact_sources(context):
     sources = {}
 
     result = deepcopy(context)
+    for policy in result.get("policies", []):
+        # Absent optional bindings and polling are the same as their empty defaults.
+        # Keep the trusted context intact for all validators and execution checks.
+        if policy.get("required_bindings") == {}:
+            policy.pop("required_bindings")
+        if policy.get("poll_allowed") is False:
+            policy.pop("poll_allowed")
     for owner in (result, result.get("previous_result") or {}):
         for key in ("input_requirements", "requested_checks"):
             entries = []
@@ -54,6 +62,18 @@ def input_sources(context):
     return result
 
 
+def literal_texts(sources):
+    """Offer exact quoted strings as closed references before model generation."""
+    result = {}
+    pattern = r'"([^"\n]{1,300})"|“([^”\n]{1,300})”|「([^」\n]{1,300})」|`([^`\n]{1,300})`'
+    for source in sources:
+        for match in re.finditer(pattern, source["text"]):
+            value = next(group for group in match.groups() if group is not None)
+            if value not in result.values():
+                result[f"text_{len(result) + 1}"] = value
+    return result
+
+
 def constrain_source_refs(schema, sources):
     identifiers = [entry["source_id"] for entry in sources]
 
@@ -94,8 +114,40 @@ def constrain_input_sources(properties, context, operation, fields):
         branches = []
         for branch in array.get("items", {}).get("anyOf", []):
             reference = branch["properties"]["field_ref"]["enum"][0]
-            if current:
-                branches.append(cited(branch, current))
+            field_schema = by_ref[reference]["schema"]
+            for source in (s for s in sources if s["source_id"] in current):
+                direct = cited(branch, [source["source_id"]])
+                if (key == "input_requirements"
+                        and field_schema.get("type") in {"integer", "number"}
+                        and (numbers := re.findall(r"-?\d+(?:\.\d+)?", source["text"]))):
+                    values = []
+                    for token in dict.fromkeys(numbers):
+                        value = float(token) if "." in token else int(token)
+                        try:
+                            validate_value(value, field_schema)
+                        except ValueError:
+                            continue
+                        # Match the existing post-generation provenance check exactly.
+                        if str(value) in numbers:
+                            values.append(value)
+                    if not values:
+                        continue
+                    direct["properties"]["value"] = dict(enum=values)
+                if (key == "input_requirements"
+                        and by_ref[reference]["schema"].get("type") == "string"):
+                    choices = []
+                    for identifier, value in literal_texts(sources).items():
+                        try:
+                            validate_value(value, by_ref[reference]["schema"])
+                        except ValueError:
+                            continue
+                        choices.append(identifier)
+                    if choices:
+                        direct["properties"]["value"] = {"anyOf": [
+                            direct["properties"]["value"], dict(type="object",
+                                properties=dict(text_ref=dict(type="string", enum=choices)),
+                                required=["text_ref"], additionalProperties=False)]}
+                branches.append(direct)
             if key != "input_requirements":
                 continue
             field = by_ref[reference]
@@ -136,6 +188,7 @@ def constrain_input_sources(properties, context, operation, fields):
 
 def decode_source_refs(wire, sources):
     index = {entry["source_id"]: entry["text"] for entry in sources}
+    texts = literal_texts(sources)
     for key in ("input_requirements", "input_questions", "requested_checks",
                 "expectation_questions"):
         entries = wire.get(key, [])
@@ -147,3 +200,11 @@ def decode_source_refs(wire, sources):
                     or entry["source_ref"] not in index):
                 raise ValidationFailure(Layer.MODEL, "FOCUS_SOURCE_REFERENCE_INVALID")
             entry["source_quote"] = index[entry.pop("source_ref")]
+            value = entry.get("value")
+            if key == "input_requirements" and type(value) is dict and "text_ref" in value:
+                reference = value.get("text_ref")
+                if (set(value) != {"text_ref"} or type(reference) is not str
+                        or reference not in texts
+                        or texts[reference] not in entry["source_quote"]):
+                    raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_SOURCE_INVALID")
+                entry["value"] = texts[reference]

@@ -4,6 +4,36 @@ import { MemoryRouter } from "react-router";
 import type { GoalTask } from "../api/tasks";
 import { ProductResult } from "./ProductResult";
 
+test("a rejected design with no cases exposes the stop reason directly", () => {
+  const task: GoalTask = {
+    id: "a".repeat(32), project_id: "web_new", project_identity: "v1",
+    request_sha256: "b".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {complete: false, cases: [], design_records: [{group_id: "group_1",
+      status: "REJECTED", reason: "DESIGN_DUPLICATE_RESOURCE_SETUP"}]},
+  };
+  render(<MemoryRouter><ProductResult task={task} busy={false}
+    save={vi.fn()} answer={vi.fn()} /></MemoryRouter>);
+  expect(screen.getByText(/本组未执行：模型在不同场景重复创建/)).toBeVisible();
+});
+
+test("mixed content checks do not hide requests checked only for rejection status", () => {
+  const task: GoalTask = {
+    id: "a".repeat(32), project_id: "web_new", project_identity: "v1",
+    request_sha256: "b".repeat(64), status: "FINISHED", plan_version: 1, created_at: 1,
+    summary: {cases: [{case_id: "mixed", operation_id: null, status: "FINISHED",
+      outcome: "PASS", max_business_requests: 2, evidence: [{operation_id: "items",
+        outcome: "PASS", method: "GET", path: "/items",
+        checks: [{kind: "equals", selector: "$.total", expected: 1, actual: 1, passed: true}]},
+      {operation_id: "restricted", outcome: "PASS", method: "GET", path: "/restricted",
+        checks: [{kind: "http_status", selector: null,
+        expected: [403], actual: 403, passed: true}]}]}]},
+  };
+  render(<MemoryRouter><ProductResult task={task} busy={false}
+    save={vi.fn()} answer={vi.fn()} /></MemoryRouter>);
+  expect(screen.getByText(/本场景包含只检查状态码的请求/)).toBeVisible();
+  expect(screen.queryByText(/本轮仅检查 HTTP 状态码/)).not.toBeInTheDocument();
+});
+
 test("passing ordinary scenarios do not hide an unexecuted explicitly requested negative check", () => {
   const task: GoalTask = {
     id: "a".repeat(32), project_id: "web_new", project_identity: "v1",

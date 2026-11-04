@@ -84,6 +84,29 @@ async def test_api_errors_do_not_retry_or_leak(status, outcome, reason):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("message,keywords", [
+    ("Unsupported schema keyword maxContains; private-provider-secret", ["maxContains"]),
+    ("Internal error private-provider-secret", []),
+    ("contains" * 3000, []),
+])
+async def test_provider_schema_error_is_bounded_closed_and_does_not_invent_usage(message, keywords):
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(500, json=dict(error=dict(message=message)))
+
+    llm = planner(handler)
+    with pytest.raises(PlannerFailure, match="MODEL_SERVICE_ERROR"):
+        await llm.generate(context())
+    assert len(requests) == 1 and llm.stats.total_tokens is None
+    assert llm.stats.diagnostic.fields == keywords
+    assert llm.stats.diagnostic.code == (
+        "MODEL_PROVIDER_SCHEMA_ERROR" if keywords else "MODEL_SERVICE_ERROR")
+    assert "private-provider-secret" not in llm.stats.model_dump_json()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("response,reason", [
     (completion("{bad"), "MODEL_INVALID_RESPONSE"),
     (completion('{"name":"x","name":"y","steps":[]}'), "MODEL_INVALID_RESPONSE"),

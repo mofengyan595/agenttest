@@ -49,9 +49,11 @@ def sample(schema, depth=0):
 def input_fields(op, version):
     """Keep historical discovery conservative; generic intake supports nested JSON."""
     content = (op.request_body or {}).get("content", {})
-    if content and "application/json" not in content:
-        raise ValueError("文件上传或非 JSON 请求暂未接入此产品流程。")
-    parameters, body = request_schemas(op, "application/json" if content else None)
+    upload = upload_field(op)
+    if content and "application/json" not in content and not upload:
+        raise ValueError("当前支持 JSON 或单个 CSV 文件的 multipart 请求。")
+    parameters, body = request_schemas(op,
+        "multipart/form-data" if upload else "application/json" if content else None)
     result = []
     for location, entries in parameters.items():
         for name, schema in entries.items():
@@ -60,7 +62,7 @@ def input_fields(op, version):
                             if p["in"] == location and p["name"] == name)
             result.append(FieldSpec("path_parameters" if location == "path" else "query",
                 name, schema, required, f"{op.method} {op.path} 参数 {name}", "OpenAPI required"))
-    if body is not None:
+    if body is not None and not upload:
         versioned_schema(body, version)
         for name, schema in body.get("properties", {}).items():
             if not schema.get("readOnly"):
@@ -70,6 +72,21 @@ def input_fields(op, version):
     if len(result) > 30:
         raise ValueError("单个接口一次计划最多支持 30 项输入；请拆分该接口的输入范围。")
     return result
+
+
+def upload_field(op):
+    """Only a single binary multipart field; do not silently drop additional form data."""
+    content = (op.request_body or {}).get("content", {})
+    if "application/json" in content or "multipart/form-data" not in content:
+        return None
+    _, body = request_schemas(op, "multipart/form-data")
+    properties = (body or {}).get("properties", {})
+    if len(properties) != 1:
+        raise ValueError("MULTIPART_REQUIRES_SINGLE_CSV_FIELD")
+    name, field = next(iter(properties.items()))
+    if field.get("type") != "string" or field.get("format") != "binary":
+        raise ValueError("MULTIPART_REQUIRES_BINARY_FILE_FIELD")
+    return name
 
 
 def linked_inputs(contract):
@@ -109,12 +126,13 @@ def linked_inputs(contract):
                 for field in response_fields(producer):
                     leaf = field["selector"].rsplit(".", 1)[-1].lower().replace("_", "")
                     requested = parameter["name"].lower().replace("_", "")
-                    if (leaf not in {requested, "id", "key"}
+                    if (leaf not in {requested, "id", "key", "data", "$"}
                             or field["value_type"] != parameter.get("schema", {}).get("type")):
                         continue
                     candidates[producer.method].append((producer.operation_id,
                         field["selector"], "文档结构建议：同一资源路径与兼容标识字段，需确认"))
-            choices = candidates["POST"] or candidates["GET"]
+            choices = candidates["POST"] or (candidates["GET"]
+                if consumer.method in {"GET", "HEAD", "OPTIONS"} else [])
             if len(choices) == 1:
                 inferred[key] = choices[0]
     return inferred
@@ -140,10 +158,31 @@ def operation_reason(op, item, setup, environ=None, version="3.0.3"):
         if not identity_ready(role, environ):
             return ("NEEDS_INPUT", "所选身份的账号或令牌尚未在服务端配置。",
                     "配置凭据环境变量并重新检查。")
-    if not is_login and any(credential_field(s) for s in input_fields(op, version)):
-        return ("UNSUPPORTED", "此接口包含敏感输入，当前仅登录支持凭据注入。",
-                "保留接口资料；待受控敏感输入接入后测试，不要填写明文凭据。")
+    from agenttest.controlled_inputs import controlled_payload
+
+    try:
+        controlled_payload(op, item.credential_inputs, environ)
+    except ValueError:
+        return ("NEEDS_INPUT", "受控输入的凭据变量缺失或不符合文档。",
+                "核对服务端凭据变量与字段映射后重新检查。")
+    file_field = upload_field(op)
+    if file_field and (not item.upload or item.upload.field != file_field):
+        return ("NEEDS_INPUT", "尚未提供并确认本轮 CSV 测试文件。",
+                "在接口配置中选择专用测试 CSV；不会让模型生成文件内容。")
+    sensitive = [s for s in input_fields(op, version) if credential_field(s)
+                 and not (s.location == "body" and s.name in item.credential_inputs)]
+    if not is_login and sensitive:
+        if all(s.location == "body" and s.schema.get("type") == "string" for s in sensitive):
+            return ("NEEDS_INPUT", "敏感字段尚未绑定受控凭据变量。",
+                    "只填写服务端凭据变量名；不要在普通输入中填写凭据。")
+        return ("UNSUPPORTED", "当前仅支持顶层字符串字段的受控凭据注入。",
+                "嵌套敏感输入暂未支持；不要填写明文凭据。")
     for argument in ([] if is_login else item.arguments):
+        if argument.location == "body" and argument.name in item.credential_inputs:
+            if (argument.value is not None or argument.source_operation or argument.generated
+                    or argument.negative_enabled):
+                return "NEEDS_INPUT", "受控输入不能包含普通值。", "清除普通输入，仅保留凭据变量。"
+            continue
         if argument.needs_input:
             if any(s.name == argument.name and credential_field(s)
                    for s in input_fields(op, version)):
@@ -154,7 +193,10 @@ def operation_reason(op, item, setup, environ=None, version="3.0.3"):
     if not is_login:
         try:
             specs = {(s.location, s.name): s for s in input_fields(op, version)}
-            supplied = {(a.location, a.name): a for a in item.arguments}
+            specs = {slot: spec for slot, spec in specs.items()
+                     if not (slot[0] == "body" and slot[1] in item.credential_inputs)}
+            supplied = {(a.location, a.name): a for a in item.arguments
+                        if not (a.location == "body" and a.name in item.credential_inputs)}
             for slot, spec in specs.items():
                 if spec.required and slot not in supplied:
                     return "NEEDS_INPUT", f"必填参数 {spec.name} 尚未提供。", f"补充 {spec.name}。"
@@ -201,6 +243,9 @@ def inventory(contract, setup, environ=None):
             blocked = next((a.source_operation for a in item.arguments
                 if a.source_operation and states.get(a.source_operation) != "READY"),
                 None) if item else None
+            if item and not blocked:
+                blocked = next((key for key in item.after_operations
+                                if states.get(key) != "READY"), None)
             if item and item.role:
                 role = next((r for r in setup.roles if r.alias == item.role), None)
                 if role and role.login_operation and role.login_operation != item.operation_id:
@@ -217,6 +262,7 @@ def inventory(contract, setup, environ=None):
     for key in pending:
         item = configured[key]
         parents = {a.source_operation for a in item.arguments if a.source_operation}
+        parents.update(item.after_operations)
         role = next((r for r in setup.roles if r.alias == item.role), None)
         if role and role.login_operation and role.login_operation != key:
             parents.add(role.login_operation)
@@ -233,6 +279,8 @@ def inventory(contract, setup, environ=None):
     pending_checks = []
     for item in setup.operations:
         for check in item.access_checks:
+            if check.role is None:
+                continue
             role = next((r for r in setup.roles if r.alias == check.role), None)
             if role is None or environ is not None and not identity_ready(role, environ):
                 pending_checks.append(dict(operation_id=item.operation_id, role=check.role,
@@ -252,6 +300,8 @@ def response_fields(op):
         if depth > 8 or len(result) >= 50:
             return
         if schema.get("type") == "object":
+            if path != "$":
+                result.append(dict(selector=path, label=label, value_type="object"))
             for name, child in schema.get("properties", {}).items():
                 try:
                     selected = validate_selector(path + "." + name)
@@ -259,6 +309,7 @@ def response_fields(op):
                     continue
                 walk(child, selected, label + name, depth + 1)
         elif schema.get("type") == "array":
+            result.append(dict(selector=path, label=label or "整个响应", value_type="array"))
             walk(schema.get("items", {}), path + "[0]", label + "第一项的", depth + 1)
         elif path != "$" or schema.get("type") in {"string", "integer", "number", "boolean"}:
             result.append(dict(selector=path, label=label or "整个响应",
@@ -268,6 +319,11 @@ def response_fields(op):
         if code.isdigit() and 200 <= int(code) < 300:
             walk(response.get("content", {}).get("application/json", {}).get("schema", {}),
                  "$", "")
+            if "text/csv" in response.get("content", {}):
+                result.extend([dict(selector="$.row_count", label="CSV 数据行数",
+                                    value_type="integer"),
+                               dict(selector="$.columns", label="CSV 列名", value_type="array"),
+                               dict(selector="$.rows", label="CSV 数据行", value_type="array")])
     return list({r["selector"]: r for r in result}.values())
 
 

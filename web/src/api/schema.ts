@@ -176,6 +176,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{task_id}/reports/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owned Report */
+        get: operations["owned_report_api_tasks__task_id__reports__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tasks/{task_id}/start": {
         parameters: {
             query?: never;
@@ -238,6 +255,23 @@ export interface paths {
         put?: never;
         /** Regression */
         post: operations["regression_api_tasks__task_id__regression_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/save-test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Test */
+        post: operations["save_test_api_tasks__task_id__save_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -352,6 +386,8 @@ export interface components {
             response_sha256?: string | null;
             /** Error Code */
             error_code?: string | null;
+            /** Response Projection */
+            response_projection?: ("CSV_TABLE_V1" | "CSV_INVALID") | null;
         };
         /** CheckResult */
         CheckResult: {
@@ -776,9 +812,27 @@ export interface components {
             trusted_symptom?: components["schemas"]["TrustedSymptomResult"] | null;
             /**
              * Cleanup
-             * @default In-memory demo state discarded; external target cleanup is operator-owned
+             * @default 未记录数据清理结论，请结合本轮资源记录核查。
              */
             cleanup?: string;
+            /** Resource Lifecycle */
+            resource_lifecycle?: {
+                [key: string]: unknown;
+            }[];
+            /** Created Resources */
+            created_resources?: {
+                [key: string]: unknown;
+            }[];
+            /** Lifecycle Cleanup */
+            lifecycle_cleanup?: components["schemas"]["StepResult"][];
+            /** Probe Decisions */
+            probe_decisions?: {
+                [key: string]: unknown;
+            }[];
+            /** Failure Explanation */
+            failure_explanation?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** RunSummary */
         RunSummary: {
@@ -1154,6 +1208,38 @@ export interface operations {
             };
         };
     };
+    owned_report_api_tasks__task_id__reports__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_api_tasks__task_id__start_post: {
         parameters: {
             query?: never;
@@ -1248,6 +1334,37 @@ export interface operations {
         };
     };
     regression_api_tasks__task_id__regression_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_test_api_tasks__task_id__save_test_post: {
         parameters: {
             query?: never;
             header?: never;

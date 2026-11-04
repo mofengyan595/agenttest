@@ -15,7 +15,7 @@ from agenttest.generic_intake import IntakeOperation, build_generic_project
 from agenttest.lifecycle import lifecycle_plan
 from agenttest.regression import RegressionRuntime, export_regression, run_regression
 from agenttest.report import Outcome, ReportStore
-from agenttest.safety import ResourceLifecycle
+from agenttest.safety import ResourceCreation, ResourceLifecycle
 
 
 def lifecycle_project():
@@ -59,6 +59,8 @@ async def test_fresh_runs_cleanup_only_their_resource_and_export_without_model(t
     from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
 
     proj, _ = lifecycle_project()
+    proj.target.resource_creations = {"insertJob": ResourceCreation(id_selector="$.id",
+        fresh_resource_basis="隔离靶场为本轮创建独立任务，不会返回既有任务。")}
     resources, ids, calls = {"foreign": "ready"}, [], []
 
     def target(request):
@@ -80,6 +82,8 @@ async def test_fresh_runs_cleanup_only_their_resource_and_export_without_model(t
         user_task="创建读取清理", prepared_plan=scenario,
         budget=WorkflowBudget(max_model_calls=0)).run()
     assert report.outcome == Outcome.PASS and report.workflow_completed
+    assert report.created_resources[0]["cleanup_result"] == "PASS"
+    assert report.created_resources[0]["resource_id"] == report.resource_lifecycle[0]["resource_id"]
     snapshot = FixedPlanSnapshot(user_task="创建读取清理", source_run_id=report.run_id,
         scenario_sha256=report.scenario_sha256, contract_sha256=report.contract_sha256,
         target_config_sha256=report.target_config_sha256, policy_sha256=proj.registry.digest())
@@ -90,8 +94,13 @@ async def test_fresh_runs_cleanup_only_their_resource_and_export_without_model(t
     for _ in range(2):
         repeated = await run_regression(directory, runtime)
         assert repeated.outcome == Outcome.PASS and repeated.planner_calls == 0
+        assert len(repeated.plan_structure) == len(scenario.steps)
+        assert repeated.plan_derivation == dict(source="FIXED_REGRESSION",
+                                               source_run_id=report.run_id)
+        assert repeated.task_satisfied is None and not repeated.intent_verified
         assert repeated.resource_lifecycle[0]["status"] == "CLEANED"
         assert repeated.resource_lifecycle[0]["owner_run_id"] == repeated.run_id
+        assert repeated.created_resources[0]["cleanup_result"] == "PASS"
     assert ids == ["job_0", "job_1", "job_2"] and resources == {"foreign": "ready"}
     assert len(calls) == 9
     changed = proj.target.model_copy(deep=True)

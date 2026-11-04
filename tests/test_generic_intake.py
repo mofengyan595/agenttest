@@ -46,6 +46,36 @@ def service(root, **kwargs):
         lambda project: FakeLLM("{}"), generic_intake=True, environ={}, **kwargs)
 
 
+def test_omitting_optional_input_keeps_closed_policy_and_required_validation(tmp_path):
+    from agenttest.dsl import Scenario
+    from agenttest.executor import Executor
+
+    data = json.loads(document())
+    body = data["paths"]["/objects"]["post"]["requestBody"]["content"][
+        "application/json"]["schema"]
+    body["properties"]["reviewerUserId"] = dict(type="integer", minimum=1)
+    raw = json.dumps(data)
+    config = setup()
+    contract = load_openapi(raw)
+    project = build_generic_project("optional", raw, contract, config)
+    policy = project.registry.definitions()[0]
+    assert [r.name for r in policy.binding_rules] == ["title"]
+    plan = Scenario.model_validate(dict(name="省略可选字段", steps=[dict(id="create",
+        operation_id="insertObject", policy_id=policy.id,
+        body=dict(title=dict(value="operator chosen")))]))
+    engine = Executor(project.target, contract, ReportStore(tmp_path), environ={},
+                      registry=project.registry)
+    engine.validate(plan)
+    from agenttest.dsl import ArgumentBinding
+
+    plan.steps[0].body["reviewerUserId"] = ArgumentBinding(value=999)
+    with pytest.raises(ValueError):
+        engine.validate(plan)
+    config.operations[0].arguments.clear()
+    with pytest.raises(ValueError, match="REQUIRED_ARGUMENT_MISSING"):
+        build_generic_project("missing", raw, contract, config)
+
+
 @pytest.mark.asyncio
 async def test_new_document_persists_and_executes_original_gates_with_dynamic_resource(tmp_path):
     pytest.importorskip("langgraph")
@@ -136,11 +166,21 @@ async def test_analysis_is_readonly_csrf_protected_and_confirmation_cannot_be_fo
             assert [o["operation_id"] for o in analysis["operations"]] == [
                 "insertObject", "fetchObject"]
             assert svc.intake.list() == []
+            saved = svc.intake.save(IntakeInput(name="Saved contract", document=document(),
+                generic=setup()), "unit-owner")
+            saved_analysis = await client.post("/api/project-intake/analyze", headers=headers,
+                json={"project_id": saved["id"]})
+            assert saved_analysis.status_code == 200
+            assert saved_analysis.json() == analysis
+            assert (await client.post("/api/project-intake/analyze", headers=headers,
+                json={"project_id": "web_missing"})).status_code == 422
+            assert (await client.post("/api/project-intake/analyze", headers=headers,
+                json={})).status_code == 422
             unapproved = setup().model_copy(update={"isolated_confirmed": False}).model_dump()
             invalid = await client.post("/api/project-intake", headers=headers,
                 json={"name": "unknown", "document": document(), "confirmed": True,
                       "generic": unapproved})
-            assert invalid.status_code == 422 and not svc.intake.list()
+            assert invalid.status_code == 422 and len(svc.intake.list()) == 1
         suggestions = analyze_contract(load_openapi(document()))
         assert all(o["supported"] and not o["enabled"] for o in suggestions)
     finally:

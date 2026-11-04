@@ -11,6 +11,13 @@ READS = {"GET", "HEAD", "OPTIONS"}
 def validate_lifecycle_authority(contract, target):
     """Reject ambiguous authority at configuration time, before planning or execution."""
     operations = {o.operation_id: o for o in contract.operations}
+    for operation_id, rule in target.resource_creations.items():
+        op = operations.get(operation_id)
+        validate_selector(rule.id_selector)
+        if (not target.allow_mutations or target.environment != "isolated" or not op
+                or op.method != "POST" or operation_id not in target.allowed_operations
+                or any(r.login_operation == operation_id for r in target.roles.values())):
+            raise ValueError("CREATION_RECEIPT_AUTHORITY_INVALID")
     seen = set()
     for rule in target.resource_lifecycles:
         create = operations.get(rule.create_operation)
@@ -93,6 +100,59 @@ def lifecycle_plan(contract, target, scenario, registry, *, require_fresh_reads=
     if not creates or set(creates) != set(deletes):
         raise ValueError("LIFECYCLE_PREPARATION_AND_CLEANUP_REQUIRED")
     return {key: (source, rule, deletes[key]) for key, (source, rule) in creates.items()}
+
+
+class CreationJournal:
+    """Persist one-shot creation outcomes without claiming cleanup or permitting replay."""
+
+    def __init__(self, target, report):
+        self.target, self.report = target, report
+
+    def before(self, step, policy):
+        rule = self.target.resource_creations.get(step.operation_id)
+        if not rule:
+            return None
+        row = dict(create_step=step.id, operation_id=step.operation_id,
+            owner_run_id=self.report.run_id, role=step.role, status="CREATE_OUTCOME_UNKNOWN",
+            resource_id=None, basis=rule.fresh_resource_basis, cleanup_result="NOT_PERFORMED")
+        if policy.negative:
+            row["negative_policy_id"] = policy.id
+        self.report.created_resources.append(row)
+        return row
+
+    def after(self, row, result, body, vault):
+        if row is None or not result.attempts:
+            return
+        status = result.attempts[-1].status_code
+        if status is None or result.attempts[-1].error_code:
+            return
+        if status != 201:
+            row["status"] = "NOT_CONFIRMED_CREATED"
+            return
+        rule = self.target.resource_creations[row["operation_id"]]
+        try:
+            value = select(vault.public_response(body), rule.id_selector)
+            if (type(value) not in {str, int} or type(value) is bool
+                    or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", str(value))
+                    or vault.contains_secret(value)):
+                raise ValueError("UNSAFE_RESOURCE_ID")
+            row.update(status="OWNED", resource_id=value, id_sha256=fingerprint(value),
+                response_sha256=result.attempts[-1].response_sha256,
+                checks_outcome=result.outcome.value)
+        except (ValueError, KeyError, TypeError, IndexError):
+            row["status"] = "RESOURCE_ID_UNVERIFIED"
+
+    def finish(self):
+        """Link cleanup only to this run's matching, separately verified lifecycle receipt."""
+        for row in self.report.created_resources:
+            if row["status"] != "OWNED":
+                continue
+            for proof in self.report.resource_lifecycle:
+                if (proof["create_step"] == row["create_step"]
+                        and proof["owner_run_id"] == row["owner_run_id"]
+                        and proof["id_sha256"] == row["id_sha256"]):
+                    row["cleanup_result"] = proof["cleanup_result"]
+                    row["cleanup_step"] = proof["cleanup_step"]
 
 
 class LifecycleJournal:

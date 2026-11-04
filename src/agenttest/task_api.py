@@ -37,7 +37,8 @@ class ExportRequest(StrictModel):
 
 
 class ContractIntakeRequest(StrictModel):
-    document: str = Field(min_length=1, max_length=1_000_000)
+    document: str = Field(default="", max_length=1_000_000)
+    project_id: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_-]{0,39}$")
 
 
 class FixedRunRequest(ExportRequest):
@@ -136,9 +137,12 @@ def install_task_api(app, service):
         from agenttest.generic_intake import analyze_contract
 
         try:
-            return dict(operations=analyze_contract(enabled().intake.document(payload.document)),
+            document = payload.document
+            if not document and payload.project_id:
+                document = enabled().intake.record(payload.project_id)["document"]
+            return dict(operations=analyze_contract(enabled().intake.document(document)),
                         execution_authorized=False, model_calls=0, http_requests=0)
-        except (ValueError, OSError):
+        except (ValueError, OSError, KeyError):
             raise HTTPException(422, "Invalid or unsupported OpenAPI document") from None
 
     @app.post("/api/project-intake", status_code=201)

@@ -100,11 +100,18 @@ Literal arguments: value=<literal>, from_step=null, select=null. Dependency argu
 from_step=<earlier step ID>, select=<approved source selector>. Login arguments are empty and the
 executor supplies credentials. No URLs, headers, secrets, code, uploads, polling, retries
 or invented IDs. Keep each case self-contained, reuse producer data in a flow.
+When a policy lists csv_fixture or poll_allowed, its already-approved file bytes and bounded
+polling are supplied by the trusted executor adapter. Select that policy normally, with ordinary
+path/query arguments only; never generate upload content, polling options or retries. Polling
+success requires the operator's terminal response assertions, not submission acceptance alone.
 authentication lists the exact requirements for each identity. If login_operation_id is non-null,
 include that login as an explicit FIRST step for that role in EACH case before protected requests.
 The executor supplies login credentials, not missing login steps. A preconfigured_bearer role needs
 no login step; this does not remove a different role's login requirement in the same case.
 Every from_step reference must point to an earlier step IN THE SAME CASE, never another case.
+Every prerequisite_policy_ids entry must occur earlier in the SAME case, even without a value
+binding (for example, checking an empty list after deletion). Never insert that check before its
+prerequisite. This is a validation rule, not a suggestion to reorder a rejected plan.
 A flow with create, access by another identity, and cleanup belongs in ONE case containing all
 those steps. Cases run independently with fresh identity and binding state, never shared data.
 When the user asks to create one resource, read/update it and then clean it up, keep that entire
@@ -120,6 +127,11 @@ must include same-resource cleanup in that case; incomplete lifecycles are rejec
 Do not add another ordinary case with the same successful creation inputs and role. Reuse one
 lifecycle. Distinct valid input variations and isolated setup for approved negative cases remain
 possible; repeated login is executor-owned authentication, not a duplicate resource creation.
+fixed_resource_setups: each resource_flows slot holds ONE complete case or null if blocked.
+Include its one creation, all fixed_resource_dependent_policies, reader logins, checks and cleanup
+in that SAME case. Never put them in ordinary cases or another slot. Independent reads and
+variable-input cases remain in cases; negative setup stays in before/check/after. Do not duplicate
+creation to test another reader. Cases cannot share bindings.
 Keep independent read-only checks in separate cases so one failure does not stop unrelated checks.
 Read-only steps with actual data dependencies still belong in the same self-contained case.
 Never replay a write for investigation.
@@ -286,6 +298,9 @@ class TestDesignModel(OpenAICompatiblePlanner):
 
         constrain_required_cases(schema, context)
         constrain_optional_negative_cases(schema, context)
+        from agenttest.product_schema import constrain_fixed_resource_setups
+
+        constrain_fixed_resource_setups(schema, context)
         from agenttest.product_schema import share_step_arguments
 
         share_step_arguments(schema)
@@ -345,7 +360,9 @@ class TestDesignModel(OpenAICompatiblePlanner):
                     and not context.get("allow_new_questions", True)):
                 raise ValidationFailure(Layer.MODEL, "DESIGN_UNSCOPED_QUESTION")
         from agenttest.product_checks import decode_optional_negative_cases, decode_required_cases
+        from agenttest.product_schema import decode_fixed_resource_setups
 
+        decode_fixed_resource_setups(wire, context)
         decode_optional_negative_cases(wire, context)
         decode_required_cases(wire, context)
         return TestDesign.model_validate(wire).model_dump_json()
@@ -371,6 +388,8 @@ def design_groups(project, size=6, operation_ids=None):
             for policy in by_operation.get(operation, []):
                 sources = [policies[r.source_policy_id].operation_id for r in policy.binding_rules
                            if r.source_policy_id in policies]
+                sources += [policies[key].operation_id for key in policy.prerequisite_policy_ids
+                            if key in policies]
                 sources += [project.target.roles[role].login_operation for role in policy.roles
                             if role in project.target.roles]
                 for source in sources:
@@ -415,6 +434,7 @@ def design_context(project, text, group, remaining_requests, inventory_total):
     for operation in context["operations"]:
         operation["description"] = descriptions.get(operation["id"])
     context.update(group_id=group["id"], primary_operations=group["primary"],
+        fresh_resource_operations=sorted(set(project.target.resource_creations) & selected),
         full_inventory_count=inventory_total, max_case_steps=min(20, remaining_requests),
         remaining_http_requests=remaining_requests,
         confirmed_rules=[dict(policy_id=p.id, status=p.assertions.status.model_dump()
@@ -662,6 +682,14 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
     from agenttest.product_checks import RequestedCheck, requested_invalid_value
 
     policies = {p.id: p for p in project.registry.definitions()}
+    # Materialize server-owned options before preflight. The wire has no fields for
+    # file bytes or polling; an invalid proposal is never repaired or retried.
+    for step in scenario.steps:
+        policy = policies.get(step.policy_id)
+        if policy and policy.operation_id == step.operation_id and step.role in policy.roles:
+            if policy.csv_fixture:
+                step.upload = policy.csv_fixture.upload.model_copy(deep=True)
+            step.poll = policy.poll is not None
     overrides = {r.policy_id: requested_invalid_value(r, policies[r.policy_id])
         for item in requested_checks if ((r := RequestedCheck.model_validate(item)).exact_value
         is not None or r.exact_length is not None)}

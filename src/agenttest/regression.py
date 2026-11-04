@@ -20,7 +20,14 @@ from agenttest.fixed_plan import FixedPlanSnapshot, replay_scope
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import PRIVATE_LITERAL
 from agenttest.policies import PolicyRegistry
-from agenttest.report import ModelCallStats, Outcome, ReportStore, RunReport, fingerprint
+from agenttest.report import (
+    ModelCallStats,
+    Outcome,
+    PlanStepEvidence,
+    ReportStore,
+    RunReport,
+    fingerprint,
+)
 from agenttest.report_files import pinned_directory
 from agenttest.safety import StrictModel, TargetConfig
 from agenttest.task_contract import TaskContract, task_validator
@@ -278,7 +285,16 @@ async def run_regression(directory: Path, runtime: RegressionRuntime) -> RunRepo
             raise ValueError("FIXED_WRITE_LIFECYCLE_REQUIRED")
     if any(getattr(manifest, key) != value for key, value in identity.items()):
         raise ValueError("REGRESSION_AUTHORITY_CHANGED")
-    return await executor.run(scenario)
+    proof = capture_plan(scenario)
+    report = RunReport(scenario_sha256=identity["scenario_sha256"],
+        contract_sha256=identity["contract_sha256"], environment=executor.config.environment,
+        target_origin=executor.config.base_url, task_mode="operator_plan", plan_valid=True,
+        user_task_sha256=fingerprint(runtime.task_contract.user_task),
+        plan_derivation=dict(source="FIXED_REGRESSION", source_run_id=manifest.source_run_id),
+        plan_structure=[PlanStepEvidence(**{key: getattr(step, key) for key in (
+            "step_id", "operation_id", "role", "policy_id", "argument_sha256", "dependencies")})
+            for step in proof.steps])
+    return await executor.run(scenario, report=report)
 
 
 def assert_regression_passed(report: RunReport) -> None:

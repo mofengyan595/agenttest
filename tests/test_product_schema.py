@@ -59,6 +59,58 @@ def proposal(design_case):
                 cases=[design_case], questions=[], not_covered=[])
 
 
+def test_fixed_resource_wire_rejects_duplicate_ordinary_setups_only():
+    from agenttest.llm_planner import literal_data
+    from agenttest.product_design import DesignCase
+    from agenttest.product_schema import decode_fixed_resource_setups
+
+    proj, _ = project()
+    context = design_context(proj, "创建本轮资源并由其他身份读取", design_groups(proj)[0], 40, 2)
+    context["fresh_resource_operations"] = ["insertJob"]
+    ordinary = case()
+    values = {a.name: literal_data(a.value)
+              for a in DesignCase.model_validate(ordinary).plan.steps[0].arguments}
+    for policy in context["policies"]:
+        if policy["operation_id"] == "insertJob":
+            for rule in policy["binding_rules"]:
+                rule["literal_schema"]["enum"] = [values[rule["name"]]]
+    chained = copy.deepcopy(context["policies"][1])
+    chained["id"] = "follow_read"
+    chained["binding_rules"][0]["source_policy_id"] = "web_rule_2"
+    access = {**copy.deepcopy(chained), "id": "follow_access",
+              "binding_rules_from_policy": "follow_read"}
+    access.pop("binding_rules")
+    context["policies"].extend([chained, access])
+    model = DesignModel(settings(), profile="generic")
+    schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
+    assert set(context["fixed_resource_dependent_policies"]) == {
+        "web_rule_2", "follow_read", "follow_access"}
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema)
+    wire = {**proposal(ordinary), "cases": [], "resource_flows": {"fresh_1": ordinary}}
+    assert validator.is_valid(wire)
+    for identifier in ("web_rule_2", "follow_read", "follow_access"):
+        outside = dict(title="依赖本轮新资源的查询", kind="normal", plan=dict(name="outside",
+            steps=[dict(id="read", operation_id="readJob", policy_id=identifier, role=None,
+                arguments=[dict(location="path_parameters", name="jobId", value=None,
+                                from_step="insert", select="$.id")])]))
+        assert not validator.is_valid({**wire, "cases": [outside]})
+    assert not validator.is_valid({**wire, "cases": [ordinary]})
+    assert not validator.is_valid({**wire, "resource_flows": {"fresh_1": ordinary, "extra": None}})
+    assert validator.is_valid({**wire, "resource_flows": {"fresh_1": None}})
+    decoded = json.loads(model._decode_output(json.dumps(wire), context))
+    assert decoded["cases"] == [ordinary]
+    duplicate = {**copy.deepcopy(wire), "cases": [ordinary]}
+    with pytest.raises(ValueError, match="DESIGN_DUPLICATE_RESOURCE_SETUP"):
+        decode_fixed_resource_setups(duplicate, context)
+    context["policies"][0]["binding_rules"][0]["literal_schema"].pop("enum")
+    context.pop("fixed_resource_setups", None)
+    variable_schema = json.loads(model.prepare_request(context))[
+        "response_format"]["json_schema"]["schema"]
+    assert "resource_flows" not in variable_schema["properties"]
+    assert "fixed_resource_dependent_policies" not in context
+
+
 def test_wire_schema_covers_all_policy_ids_and_requires_valid_negative_baselines():
     proj, _ = project(negative=True)
     schema = schema_for(proj)
@@ -82,6 +134,74 @@ def test_wire_schema_covers_all_policy_ids_and_requires_valid_negative_baselines
         check=missing["plan"]["steps"][0])))
     # The source mutation remains executor-owned; schema generation changes no approval.
     assert all(p.negative is None or p.assertions.status.codes == [422] for p in policies)
+
+
+def test_fresh_resource_consumers_must_share_their_producer_case():
+    from agenttest.llm_planner import literal_data
+    from agenttest.product_design import DesignCase
+    from agenttest.product_schema import decode_fixed_resource_setups
+
+    proj, _ = project()
+    context = design_context(proj, "创建资源并查询同一资源", design_groups(proj)[0], 40, 2)
+    context["fresh_resource_operations"] = ["insertJob"]
+    fresh = case()
+    values = {a.name: literal_data(a.value)
+              for a in DesignCase.model_validate(fresh).plan.steps[0].arguments}
+    for policy in context["policies"]:
+        if policy["operation_id"] == "insertJob":
+            for rule in policy["binding_rules"]:
+                rule["literal_schema"]["enum"] = [values[rule["name"]]]
+    read = dict(id="read", operation_id="readJob", policy_id="web_rule_2", role=None,
+        arguments=[dict(location="path_parameters", name="jobId", value=None,
+                        from_step="insert", select="$.id")])
+    separate = dict(title="读取本轮新资源", kind="normal",
+                    plan=dict(name="read-new", steps=[read]))
+    model = DesignModel(settings(), profile="generic")
+    schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
+    wire = {**proposal(fresh), "cases": [separate], "resource_flows": {"fresh_1": fresh}}
+    assert not Draft202012Validator(schema).is_valid(wire)
+    with pytest.raises(ValueError, match="DESIGN_RESOURCE_DEPENDENCY_OUTSIDE_FLOW"):
+        decode_fixed_resource_setups(copy.deepcopy(wire), context)
+    wire["cases"] = []
+    fresh["plan"]["steps"].append(read)
+    Draft202012Validator(schema).validate(wire)
+    assert len(json.loads(model._decode_output(json.dumps(wire), context))["cases"]) == 1
+
+
+@pytest.mark.parametrize("mandatory", [False, True])
+def test_unique_resource_slots_preserve_independent_approved_negative_cases(mandatory):
+    from agenttest.llm_planner import literal_data
+    from agenttest.product_design import DesignCase
+
+    proj, _ = project(negative=True)
+    context = design_context(proj, "创建一次并检查已批准的无效数量", design_groups(proj)[0], 40, 2)
+    context["fresh_resource_operations"] = ["insertJob"]
+    values = {a.name: literal_data(a.value)
+              for a in DesignCase.model_validate(case()).plan.steps[0].arguments}
+    for policy in context["policies"]:
+        if policy["operation_id"] == "insertJob" and not policy.get("negative_test"):
+            for rule in policy["binding_rules"]:
+                rule["literal_schema"]["enum"] = [values[rule["name"]]]
+    negative = next(p for p in proj.registry.definitions() if p.negative
+                    and p.negative.name == "quantity" and p.negative.kind == "boundary_outside")
+    if mandatory:
+        context["requested_checks"] = [dict(policy_id=negative.id,
+                                             source_quote=context["user_task"])]
+    model = DesignModel(settings(), profile="generic")
+    schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
+    rejected = dict(title="检查无效数量", before=[], after=[],
+                    check=case(policy=negative.id)["plan"]["steps"][0])
+    wire = {**proposal(case()), "cases": [], "resource_flows": {"fresh_1": case()}}
+    if mandatory:
+        wire["required_cases"] = {negative.id: rejected}
+    else:
+        wire["cases"] = [rejected]
+    Draft202012Validator(schema).validate(wire)
+    decoded = json.loads(model._decode_output(json.dumps(wire), context))
+    assert len(decoded["cases"]) == 2
+    assert {c["kind"] for c in decoded["cases"]} == {"normal", "negative"}
+    assert sum(s["policy_id"] == negative.id for c in decoded["cases"]
+               for s in c["plan"]["steps"]) == 1
 
 
 def test_clarification_questions_must_refer_to_an_operation_in_the_group():

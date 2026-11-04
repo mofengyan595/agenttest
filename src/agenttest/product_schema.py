@@ -5,6 +5,132 @@ from copy import deepcopy
 from agenttest.report import fingerprint
 
 
+def constrain_fixed_resource_setups(schema, context):
+    """Keep one fixed fresh-resource setup per identity across ordinary wire cases.
+
+    Only closed, singleton literal inputs qualify. Variable inputs, dependencies and
+    explicit negative preparation remain unrestricted; executor validation is unchanged.
+    """
+    context.pop("fixed_resource_setups", None)
+    context.pop("fixed_resource_dependent_policies", None)
+    policies = {p["id"]: p for p in context["policies"]}
+    fixed = {}
+    for policy in policies.values():
+        if (policy["operation_id"] not in context.get("fresh_resource_operations", [])
+                or policy.get("negative_test") or not policy.get("closed_arguments")):
+            continue
+        baseline = policies.get(policy.get("binding_rules_from_policy"), policy)
+        rules = baseline.get("binding_rules", [])
+        if any(len((r.get("literal_schema") or {}).get("enum", [])) != 1 for r in rules):
+            continue
+        for role in policy["roles"]:
+            key = fingerprint([policy["operation_id"], role, rules])
+            entry = fixed.setdefault(key, dict(operation_id=policy["operation_id"],
+                                               role=role, policy_ids=[]))
+            entry["policy_ids"].append(policy["id"])
+    if not fixed or len(fixed) > 12:
+        return
+    entries = {f"fresh_{i + 1}": entry for i, entry in enumerate(fixed.values())}
+    pairs = {(identifier, entry["role"]) for entry in entries.values()
+             for identifier in entry["policy_ids"]}
+    dependent = {identifier for identifier, _ in pairs}
+    while True:
+        consumers = {p["id"] for p in policies.values() if any(
+            r.get("source_policy_id") in dependent for r in policies.get(
+                p.get("binding_rules_from_policy"), p).get("binding_rules", []))
+            or set(p.get("prerequisite_policy_ids", [])) & dependent}
+        if consumers <= dependent:
+            break
+        dependent.update(consumers)
+    dependent.difference_update(identifier for identifier, _ in pairs)
+    original_steps = deepcopy(schema["$defs"]["GenericDraftStep"]["anyOf"])
+
+    def choices(entry=None):
+        allowed = {(p, entry["role"]) for p in entry["policy_ids"]} if entry else set()
+        result = []
+        for branch in original_steps:
+            props = branch["properties"]
+            grouped = {}
+            for identifier in props["policy_id"]["enum"]:
+                if entry is None and identifier in dependent:
+                    continue
+                roles = tuple(role for role in props["role"]["enum"]
+                              if (identifier, role) not in pairs or (identifier, role) in allowed)
+                if roles:
+                    grouped.setdefault(roles, []).append(identifier)
+            for roles, identifiers in grouped.items():
+                current = deepcopy(branch)
+                current["properties"]["policy_id"]["enum"] = identifiers
+                current["properties"]["role"]["enum"] = list(roles)
+                result.append(current)
+        return result
+
+    case_type = schema["$defs"]["DesignCase"]
+    plan_name = case_type["properties"]["plan"]["$ref"].rsplit("/", 1)[1]
+    slots = {}
+    for name, entry in entries.items():
+        case = deepcopy(case_type)
+        plan = deepcopy(schema["$defs"][plan_name])
+        plan["properties"]["steps"]["items"] = {"anyOf": choices(entry)}
+        case["properties"]["plan"] = plan
+        slots[name] = {"anyOf": [dict(type="null"), case]}
+    ordinary_steps = choices()
+    steps = schema["$defs"][plan_name]["properties"]["steps"]
+    if ordinary_steps:
+        steps["items"] = {"anyOf": ordinary_steps}
+    else:
+        # Optional negative wire cases retain independent before/check/after schemas.
+        cases = schema["properties"]["cases"]
+        alternatives = [b for b in cases["items"].get("anyOf", [])
+                        if b.get("$ref") != "#/$defs/DesignCase"]
+        if alternatives:
+            cases["items"] = {"anyOf": alternatives}
+        else:
+            cases.update(maxItems=0)
+            cases.pop("items", None)
+    schema["properties"]["resource_flows"] = dict(type="object", additionalProperties=False,
+                                                   properties=slots, required=list(slots))
+    schema["required"].append("resource_flows")
+    context["fixed_resource_setups"] = [dict(slot=key, **entry) for key, entry in entries.items()]
+    context["fixed_resource_dependent_policies"] = sorted(dependent)
+
+
+def decode_fixed_resource_setups(wire, context):
+    """Decode the predeclared wire slots; reject misplaced/duplicate setups without repair."""
+    from agenttest.diagnostics import Layer, ValidationFailure
+
+    setups = context.get("fixed_resource_setups", [])
+    if not setups:
+        return
+    flows = wire.pop("resource_flows", None)
+    if (type(flows) is not dict or set(flows) != {s["slot"] for s in setups}
+            or type(wire.get("cases")) is not list):
+        raise ValidationFailure(Layer.MODEL, "DESIGN_RESOURCE_SLOT_INVALID")
+    pairs = {(p, s["role"]) for s in setups for p in s["policy_ids"]}
+    for case in wire["cases"]:
+        if type(case) is dict and "check" not in case and any(
+                (s.get("policy_id"), s.get("role")) in pairs
+                for s in case.get("plan", {}).get("steps", []) if type(s) is dict):
+            raise ValidationFailure(Layer.MODEL, "DESIGN_DUPLICATE_RESOURCE_SETUP")
+        if type(case) is dict and "check" not in case and any(
+                s.get("policy_id") in context.get("fixed_resource_dependent_policies", [])
+                for s in case.get("plan", {}).get("steps", []) if type(s) is dict):
+            raise ValidationFailure(Layer.MODEL, "DESIGN_RESOURCE_DEPENDENCY_OUTSIDE_FLOW")
+    for setup in setups:
+        case = flows[setup["slot"]]
+        if case is None:
+            continue
+        if type(case) is not dict or type(case.get("plan")) is not dict:
+            raise ValidationFailure(Layer.MODEL, "DESIGN_RESOURCE_SLOT_INVALID")
+        creations = [(s.get("policy_id"), s.get("role"))
+                     for s in case["plan"].get("steps", []) if type(s) is dict
+                     and (s.get("policy_id"), s.get("role")) in pairs]
+        if len(creations) != 1 or creations[0] not in {
+                (p, setup["role"]) for p in setup["policy_ids"]}:
+            raise ValidationFailure(Layer.MODEL, "DESIGN_RESOURCE_SLOT_INVALID")
+        wire["cases"].append(case)
+
+
 def encoded_literal(value):
     if isinstance(value, dict):
         return {"object": [{"key": k, "value": encoded_literal(v)} for k, v in value.items()]}

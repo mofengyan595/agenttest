@@ -1,8 +1,112 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { GenericSetup } from "../api/tasks";
 import { GenericProject } from "./GenericProject";
+
+test("state ordering and fixed baseline negative checks are explicit independent choices", async () => {
+  const documents = [
+    {operation_id: "clear", alias: "删除本轮记录", method: "DELETE", path: "/records/current",
+      supported: true, statuses: [204], arguments: [], response_fields: []},
+    {operation_id: "list", alias: "确认删除后为空", method: "GET", path: "/records",
+      supported: true, statuses: [200], arguments: [{location: "query", name: "size",
+        value: 20, value_type: "integer", required: false, schema: {type: "integer", minimum: 1}}],
+      response_fields: []},
+  ];
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({operations: documents}))));
+  const initial: GenericSetup = {base_url: "http://127.0.0.1:8765", isolated_confirmed: true,
+    allow_mutations: true, approve_negative_tests: true, max_requests: 15, roles: [],
+    operations: documents.map((d) => ({operation_id: d.operation_id, alias: d.alias,
+      enabled: true, role: null, statuses: d.statuses, checks: [], arguments: d.arguments.map((a) =>
+        ({...a, location: "query" as const, source_operation: null, selector: "$", generated: false}))}))};
+  const changed = vi.fn();
+  function Harness() {
+    const [value, setValue] = useState<GenericSetup | null>(initial);
+    return <GenericProject document="" projectId="records" csrf="local" value={value}
+      disabled={false} onChange={(next) => {setValue(next); changed(next);}} />;
+  }
+  render(<Harness />);
+  const group = within(await screen.findByRole("group", {name: "GET /records"}));
+  await userEvent.click(group.getByText("查看或调整输入与检查"));
+  await userEvent.click(group.getByText("执行前置条件（需要先完成其他操作时）"));
+  await userEvent.click(group.getByRole("checkbox", {name: "此前必须完成：删除本轮记录"}));
+  expect(changed.mock.lastCall?.[0].operations[1].after_operations).toEqual(["clear"]);
+  await userEvent.click(group.getByRole("checkbox", {name: /允许异常检查：size/}));
+  expect(changed.mock.lastCall?.[0].operations[1].arguments[0]).toEqual(
+    expect.objectContaining({value: 20, generated: false, negative_enabled: true}));
+  await userEvent.click(group.getByRole("checkbox", {name: /允许异常检查：size/}));
+  expect(changed.mock.lastCall?.[0].operations[1].arguments[0].negative_enabled).toBe(false);
+  expect(group.queryByRole("checkbox", {name: "此前必须完成：确认删除后为空"})).not.toBeInTheDocument();
+});
+
+test("document optional inputs can be omitted and added without removing required inputs", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({operations: [{
+    operation_id: "create", alias: "创建条目", method: "POST", path: "/records", supported: true,
+    authentication_required: false, statuses: [201], enabled: true, role: null,
+    arguments: [{location: "body", name: "title", required: true, value: "synthetic",
+      value_type: "string", source_operation: null, selector: "$"},
+    {location: "body", name: "reviewerUserId", required: false, value: 1,
+      value_type: "integer", source_operation: null, selector: "$"}], checks: [],
+  }]}))));
+  const changed = vi.fn();
+  function Harness() {
+    const [value, setValue] = useState<GenericSetup | null>(null);
+    return <GenericProject document="contract" csrf="local" value={value} disabled={false}
+      onChange={(next) => {setValue(next); changed(next);}} />;
+  }
+  render(<Harness />);
+  await userEvent.click(screen.getByRole("button", {name: "读取接口并配置"}));
+  await userEvent.click(await screen.findByRole("checkbox", {name: "POST /records"}));
+  await userEvent.click(await screen.findByText("查看或调整输入与检查"));
+  expect(screen.queryByRole("button", {name: "暂不发送：title（可选）"})).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {name: "暂不发送：reviewerUserId（可选）"}));
+  expect(changed.mock.lastCall?.[0].operations[0].arguments.map((a: {name: string}) => a.name))
+    .toEqual(["title"]);
+  expect(screen.queryByLabelText("输入值：reviewerUserId")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {name: "添加可选输入：reviewerUserId"}));
+  expect(screen.getByLabelText("输入值：reviewerUserId")).toHaveValue(1);
+  expect(changed.mock.lastCall?.[0].operations[0].arguments).toHaveLength(2);
+});
+
+test("editing restores saved document metadata without overwriting reviewed choices", async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({operations: [{
+    operation_id: "health", alias: "health", method: "GET", path: "/health", supported: true,
+    authentication_required: false, statuses: [200], arguments: [], checks: [],
+    response_fields: [{selector: "$.state", label: "状态", value_type: "string"}],
+  }]})));
+  vi.stubGlobal("fetch", fetcher);
+  const changed = vi.fn();
+  const value: GenericSetup = {base_url: "http://127.0.0.1:8765", isolated_confirmed: true,
+    allow_mutations: false, max_requests: 15, roles: [], operations: [{
+      operation_id: "health", alias: "已核对的检查", enabled: true, role: null,
+      statuses: [200], checks: [], arguments: []}]};
+  function SavedForm() {
+    const [saved, setSaved] = useState<GenericSetup | null>(value);
+    return <GenericProject document="" projectId="web_existing" csrf="local" value={saved}
+      disabled={false} onChange={(next) => {setSaved(next); changed(next);}} />;
+  }
+  render(<SavedForm />);
+  await screen.findByRole("checkbox", {name: "GET /health"});
+  expect(JSON.parse(fetcher.mock.calls[0][1]?.body as string)).toEqual({document: "", project_id: "web_existing"});
+  expect(changed).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByText("查看或调整输入与检查"));
+  expect(screen.getByRole("button", {name: "添加响应字段检查"})).toBeEnabled();
+  await userEvent.click(screen.getByText("补充文档未列出的响应字段"));
+  await userEvent.type(screen.getByLabelText("已核实的字段路径"), "$.status");
+  expect(screen.getByRole("button", {name: "添加已核实字段检查"})).toBeDisabled();
+  await userEvent.type(screen.getByLabelText("响应检查依据"), "服务实现明确返回 status");
+  await userEvent.click(screen.getByRole("button", {name: "添加已核实字段检查"}));
+  expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({operations: [
+    expect.objectContaining({check_source: "服务实现明确返回 status", checks: [
+      {select: "$.status", operator: "exists", expected: null}]})]}));
+  await userEvent.selectOptions(screen.getByLabelText("检查方式"), "equals");
+  const expected = screen.getByLabelText("预期值");
+  for (const [text, parsed] of [['"5"', "5"], ['["a","b"]', ["a", "b"]], ["5", 5]] as const) {
+    fireEvent.change(expected, {target: {value: text}});
+    expect(changed.mock.lastCall?.[0].operations[0].checks[0].expected).toEqual(parsed);
+    expect(expected).toHaveValue(text);
+  }
+});
 
 test("login and response fields are chosen from the document without typing selectors", async () => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({operations: [{
@@ -83,7 +187,8 @@ test("registration returning a token is not suggested as login and cannot collec
   await userEvent.click(screen.getByRole("checkbox", {name: "POST /signup"}));
   await userEvent.click(screen.getByText("查看或调整输入与检查"));
   expect(screen.queryByLabelText("输入值：password")).not.toBeInTheDocument();
-  expect(screen.getByText(/当前仅登录支持凭据注入，此接口暂不能执行/)).toBeVisible();
+  expect(screen.getByRole("textbox", {name: "password 的凭据变量名"})).toBeVisible();
+  expect(screen.getByText(/值只在服务端配置，由执行器注入/)).toBeVisible();
 });
 
 test("a password nested inside an array does not expose a normal JSON input", async () => {

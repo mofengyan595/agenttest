@@ -26,6 +26,14 @@ class CredentialVault:
             environ[name] for role in config.roles.values()
             for name in (role.password_env, role.bearer_env) if name and environ.get(name)
         }
+        self._secrets.update(environ[name] for aliases in config.credential_inputs.values()
+                             for name in aliases.values() if environ.get(name))
+
+    def controlled_payload(self, operation):
+        from agenttest.controlled_inputs import controlled_payload
+
+        return controlled_payload(operation, self.config.credential_inputs.get(
+            operation.operation_id, {}), self._environ)
 
     def login_payload(self, role_name: str) -> dict[str, str]:
         role = self.config.roles[role_name]
@@ -63,11 +71,13 @@ class CredentialVault:
         return value is not None and any(secret in str(value) for secret in self._secrets)
 
     def public_response(self, value: Any) -> Any:
-        """Remove whole sensitive subtrees and secret aliases, including numeric values."""
+        """Remove sensitive fields and secret leaves, retaining safe resource identifiers."""
         if isinstance(value, dict):
             return {k: self.public_response(v) for k, v in value.items()
                     if not sensitive_field(k, self.config.sensitive_fields)
-                    and not self.contains_secret(k) and not self.contains_secret(v)}
+                    and not self.contains_secret(k)
+                    and (isinstance(v, (dict, list)) or not self.contains_secret(v))}
         if isinstance(value, list):
-            return [self.public_response(v) for v in value if not self.contains_secret(v)]
+            return [self.public_response(v) for v in value
+                    if isinstance(v, (dict, list)) or not self.contains_secret(v)]
         return None if self.contains_secret(value) else value

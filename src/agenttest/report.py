@@ -44,6 +44,14 @@ class AttemptEvidence(BaseModel):
     response_bytes: int = 0
     response_sha256: str | None = None
     error_code: str | None = None
+    response_projection: Literal["CSV_TABLE_V1", "CSV_INVALID"] | None = None
+
+    @model_serializer(mode="wrap")
+    def legacy_json_evidence(self, handler):
+        data = handler(self)
+        if self.response_projection is None:
+            data.pop("response_projection", None)
+        return data
 
 
 class StepResult(BaseModel):
@@ -200,6 +208,7 @@ class RunReport(BaseModel):
     trusted_symptom: TrustedSymptomResult | None = None
     cleanup: str = "未记录数据清理结论，请结合本轮资源记录核查。"
     resource_lifecycle: list[dict] = Field(default_factory=list)
+    created_resources: list[dict] = Field(default_factory=list)
     lifecycle_cleanup: list[StepResult] = Field(default_factory=list)
     probe_decisions: list[dict] = Field(default_factory=list)
     failure_explanation: dict | None = None
@@ -216,6 +225,8 @@ class RunReport(BaseModel):
             data.pop("trusted_symptom", None)
         if not self.resource_lifecycle:
             data.pop("resource_lifecycle", None)
+        if not self.created_resources:
+            data.pop("created_resources", None)
         if not self.lifecycle_cleanup:
             data.pop("lifecycle_cleanup", None)
         if not self.probe_decisions:

@@ -244,6 +244,44 @@ async def test_partial_product_task_keeps_evidence_after_restart(tmp_path, monke
 
 
 @pytest.mark.asyncio
+async def test_successful_upload_explains_why_fixed_export_is_unavailable(tmp_path, monkeypatch):
+    from test_generic_upload_poll import document, setup
+
+    design = dict(title="上传并等待", kind="flow", plan=dict(name="upload", steps=[
+        dict(id="send", operation_id="sendImport", role=None, policy_id="web_rule_1", arguments=[]),
+        dict(id="wait", operation_id="readImport", role=None, policy_id="web_rule_2", arguments=[
+            dict(location="path_parameters", name="job", value=None,
+                 from_step="send", select="$.job")])]))
+
+    calls = []
+
+    def target(request):
+        calls.append(request.method)
+        return httpx.Response(201, json=dict(job="fresh")) if request.method == "POST" else (
+            httpx.Response(200, json=dict(state="PENDING" if len(calls) == 2 else "DONE")))
+
+    monkeypatch.setattr(httpx, "AsyncHTTPTransport", lambda **_: httpx.MockTransport(target))
+    svc = service(tmp_path, lambda _: response(dict(interpretation="执行合成文件上传与终态检查",
+        cases=[design], questions=[], not_covered=[])))
+    try:
+        config = setup()
+        config.operations[1].poll.interval = 0.02
+        saved = svc.intake.save(IntakeInput(name="上传资源", document=document(), generic=config,
+            confirmed=True), "operator")
+        done = await finished(svc, await svc.submit("operator", saved["id"], "", uuid4().hex))
+        case = done["summary"]["cases"][0]
+        assert case["outcome"] == "PASS"
+        view = svc.task_view(done)["summary"]["exports"][case["run_id"]]
+        assert not view["available"] and "上传、轮询" in view["reason"]
+        assert calls == ["POST", "GET", "GET"]
+        timings = done["summary"]["timings"]
+        assert timings["execution_ms"] >= 20 and timings["planning_ms"] > 0
+        assert timings["total_ms"] >= timings["planning_ms"] + timings["execution_ms"] - 1
+    finally:
+        await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_blank_focus_normal_api_runs_and_saved_read_repeats_without_a_model(tmp_path,
                                                                               monkeypatch):
     calls, requests = [], []

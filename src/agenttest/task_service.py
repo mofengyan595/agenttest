@@ -383,6 +383,7 @@ class TaskService:
                 except (ValueError, OSError):
                     continue
                 evidence = dict(resource_lifecycle=report.resource_lifecycle,
+                    created_resources=report.created_resources,
                     cleanup=report.cleanup, failure_explanation=report.failure_explanation)
                 if summary.get("mode") == "FIXED_REGRESSION":
                     summary.update(evidence)
@@ -402,6 +403,9 @@ class TaskService:
             except (KeyError, ValueError, OSError):
                 asset = None
             reason = "仅完整通过且满足固定复测条件的场景可以保存。"
+            case = next((c for c in summary.get("cases", []) if c.get("run_id") == run_id), {})
+            if not asset and case.get("save_reason"):
+                reason = case["save_reason"]
             available = False
             if row["status"] == "FINISHED" and asset:
                 scenario, _, project = asset
