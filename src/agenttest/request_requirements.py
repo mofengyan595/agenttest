@@ -2,9 +2,10 @@
 
 import re
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.json_values import json_equal
 from agenttest.report import fingerprint
 from agenttest.safety import StrictModel
 
@@ -24,6 +25,12 @@ class RequiredResource(StrictModel):
     consumer: str
 
 
+class ExistingResource(StrictModel):
+    operation_id: str
+    role: str | None
+    path: dict[str, str | int]
+
+
 class RequestRequirement(StrictModel):
     source_id: str
     source_quote: str
@@ -31,9 +38,62 @@ class RequestRequirement(StrictModel):
     actions: list[RequiredAction] = Field(max_length=20)
     before: list[RequiredOrder] = Field(max_length=20)
     same_resource: list[RequiredResource] = Field(max_length=20)
+    existing_resources: list[ExistingResource] = Field(default_factory=list, max_length=20)
     response_checks: list[str] = Field(default_factory=list, max_length=30)
     forbidden_operation_ids: list[str] = Field(default_factory=list, max_length=30)
     blocked_operation_ids: list[str] = Field(default_factory=list, max_length=30)
+
+    @model_serializer(mode='wrap')
+    def omit_empty_resources(self, handler):
+        data = handler(self)
+        if not self.existing_resources:
+            data.pop('existing_resources', None)
+        return data
+
+
+def existing_resource_index(project):
+    """Expose only complete, fixed path bindings from configured read policies."""
+    reads = {op.operation_id: {p['name'] for p in op.parameters if p['in'] == 'path'}
+             for op in project.contract.operations if op.method in {'GET', 'HEAD'}
+             and op.operation_id in project.target.allowed_operations}
+    resources = {}
+    for policy in project.registry.definitions():
+        names = reads.get(policy.operation_id)
+        if not names or policy.negative:
+            continue
+        path = {}
+        for rule in policy.binding_rules:
+            choices = (rule.literal_schema or {}).get('enum', [])
+            if (rule.location == 'path_parameters' and rule.source_policy_id is None
+                    and len(choices) == 1 and type(choices[0]) in {str, int}):
+                path[rule.name] = choices[0]
+        if path.keys() == names:
+            for role in policy.roles:
+                item = dict(operation_id=policy.operation_id, role=role, path=path)
+                resources['resource_' + fingerprint(item)[:16]] = item
+    return resources
+
+
+def resource_mentioned(resource, quote):
+    from agenttest.requirement_ledger import explicit_assignments
+
+    assignments = explicit_assignments(quote)
+    unassigned = quote
+    for item in reversed(assignments):
+        unassigned = unassigned[:item['start']] + ' ' + unassigned[item['end']:]
+    unassigned = re.sub(r'(?:HTTP|返回|状态码)\s*\d{3}(?!\d)', '', unassigned, flags=re.I)
+    for name, value in resource.path.items():
+        named = [a['value'] for a in assignments if a['name'] == name and not a['deferred']]
+        if named:
+            if not all(json_equal(value, item) for item in named):
+                return False
+        elif type(value) is int:
+            if str(value) not in re.findall(r'-?\d+(?:\.\d+)?', unassigned):
+                return False
+        elif not re.search(r'(?<![A-Za-z0-9_-])' + re.escape(value) + r'(?![A-Za-z0-9_-])',
+                           unassigned):
+            return False
+    return True
 
 
 def response_expectations(project):
@@ -157,10 +217,18 @@ def requirement_schema(context):
     order = dict(type='object', additionalProperties=False, properties={
         key: dict(type='string', enum=operations) for key in ('earlier', 'later')},
         required=['earlier', 'later'])
-    resource = dict(type='object', additionalProperties=False, properties={
-        key: dict(type='string', enum=operations) for key in ('producer', 'consumer')},
+    resource_choices = [dict(type='object', additionalProperties=False,
+        properties=dict(producer=dict(type='string', enum=[producer]),
+                        consumer=dict(type='string', enum=consumers)),
         required=['producer', 'consumer'])
-    definitions = dict(RequestAction=action, RequestOrder=order, RequestResource=resource)
+        for producer, consumers in resource_edges(context).items()]
+    if existing := context.get('existing_resources'):
+        resource_choices.append(dict(type='object', additionalProperties=False,
+            properties=dict(resource_ref=dict(type='string', enum=list(existing))),
+            required=['resource_ref']))
+    definitions = dict(RequestAction=action, RequestOrder=order)
+    if resource_choices:
+        definitions['RequestResource'] = dict(anyOf=resource_choices)
     action = {'$ref': '#/$defs/RequestAction'}
     order = {'$ref': '#/$defs/RequestOrder'}
     resource = {'$ref': '#/$defs/RequestResource'}
@@ -176,8 +244,9 @@ def requirement_schema(context):
                              else 0, maxItems=20 if disposition != 'deferred' else 0),
                 before=dict(type='array', items=order, minItems=int(
                     disposition == 'required' and atom['ordered']), maxItems=20),
-                same_resource=dict(type='array', items=resource, minItems=int(
-                    disposition == 'required' and atom['same_resource']), maxItems=20),
+                same_resource=(dict(type='array', items=resource, minItems=int(
+                    disposition == 'required' and atom['same_resource']), maxItems=20)
+                    if resource_choices else dict(type='array', maxItems=0)),
                 response_checks=(dict(type='array', items=dict(type='string', enum=list(
                     context['response_expectations'])), maxItems=30)
                     if context.get('response_expectations') else dict(type='array', maxItems=0)),
@@ -206,12 +275,36 @@ def requirement_schema(context):
                 required=list(properties), **{'$defs': definitions})
 
 
+def resource_edges(context):
+    result = {}
+    for edge in context.get('resource_dependencies', []):
+        result.setdefault(edge['from_operation'], set()).add(edge['operation_id'])
+    return {key: sorted(consumers) for key, consumers in result.items()}
+
+
 def decode_requirements(wire, context):
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
     if type(wire) is not dict or set(wire) != set(atoms):
         raise ValidationFailure(Layer.MODEL, 'FOCUS_SOURCE_CLAUSE_MISSING')
-    return [RequestRequirement(source_id=key, source_quote=atoms[key]['text'], **value)
-            for key, value in wire.items()]
+    resources = context.get('existing_resources', {})
+    result = []
+    for key, value in wire.items():
+        if (type(value) is not dict or 'existing_resources' in value
+                or type(value.get('same_resource')) is not list):
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+        links, existing = [], []
+        for relation in value['same_resource']:
+            if type(relation) is dict and 'resource_ref' in relation:
+                ref = relation['resource_ref']
+                if (set(relation) != {'resource_ref'} or type(ref) is not str
+                        or ref not in resources):
+                    raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                existing.append(resources[ref])
+            else:
+                links.append(relation)
+        result.append(RequestRequirement(source_id=key, source_quote=atoms[key]['text'],
+            **{**value, 'same_resource': links}, existing_resources=existing))
+    return result
 
 
 def validate_requirement_links(requirements, context, selection):
@@ -264,6 +357,19 @@ def validate_requirement_links(requirements, context, selection):
         raise error
     selection.operation_sources = {operation: 'USER_REQUIREMENT' if operation in mapped
         else 'TRUSTED_PREREQUISITE' for operation in selection.operation_ids}
+    configured_resources = list(context.get('existing_resources', {}).values())
+    from agenttest.product_sources import numeric_boundary_reference
+
+    for requested in selection.requested_checks:
+        check = checks.get(requested.policy_id, {})
+        _, value = numeric_boundary_reference(check, requested.source_quote)
+        if value is not None and 'roles' in check and not any(
+                item.disposition in {'required', 'needs_review'}
+                and item.source_quote == requested.source_quote
+                and any(a.operation_id == check['operation_id'] and a.role in check['roles']
+                        for a in item.actions) for item in requirements):
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_NEGATIVE_IDENTITY_INVALID')
+    pending_boundaries = pending_numeric_boundaries(selection, checks)
     for item in requirements:
         atom = atoms[item.source_id]
         if (item.source_quote != atom['text'] or item.disposition not in {
@@ -273,6 +379,7 @@ def validate_requirement_links(requirements, context, selection):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
         if item.disposition == 'deferred':
             if (not atom['future'] or item.actions or item.before or item.same_resource
+                    or item.existing_resources
                     or item.response_checks or item.forbidden_operation_ids
                     or item.blocked_operation_ids):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
@@ -288,7 +395,7 @@ def validate_requirement_links(requirements, context, selection):
                 set(item.blocked_operation_ids) - set(selection.blocked_operation_ids)):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
         if item.disposition == 'required' and (not item.actions or
-                atom['same_resource'] and not item.same_resource or
+                atom['same_resource'] and not (item.same_resource or item.existing_resources) or
                 atom['ordered'] and not item.before):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')
         if any(a.operation_id not in selected or a.role not in roles for a in item.actions):
@@ -298,6 +405,14 @@ def validate_requirement_links(requirements, context, selection):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INVALID')
         if any((r.producer, r.consumer) not in resources for r in item.same_resource):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+        for resource in item.existing_resources:
+            action = RequiredAction(operation_id=resource.operation_id, role=resource.role)
+            anchored = any(prior.disposition == 'required' and action in prior.actions
+                and atoms[prior.source_id]['start'] <= atom['start']
+                and resource_mentioned(resource, prior.source_quote) for prior in requirements)
+            if (item.disposition != 'required' or action not in item.actions or not anchored
+                    or resource.model_dump() not in configured_resources):
+                raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
         if any(ref not in context.get('response_expectations', {}) for ref in item.response_checks):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
         human_gap = any(item.source_quote in q.source_quote or q.source_quote in item.source_quote
@@ -307,11 +422,30 @@ def validate_requirement_links(requirements, context, selection):
         configuration_gap = bool(item.blocked_operation_ids) and all(any(
             operation == o['operation_id'] for o in context.get('unavailable_operations', []))
             for operation in item.blocked_operation_ids)
-        has_gap = (human_gap or identity_gap or configuration_gap or
+        boundary_gap = any(item.source_quote in quote and item.actions and all(
+            a.operation_id == operation and a.role in check_roles for a in item.actions)
+            for quote, operation, check_roles in pending_boundaries)
+        has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or
                    selection.mode == 'needs_information' and selection.question)
         if item.disposition == 'needs_review' and not has_gap:
             # An unresolved clause is not silently accepted as a completed requirement.
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
+
+
+def pending_numeric_boundaries(selection, checks):
+    from agenttest.llm_planner import literal_data
+    from agenttest.product_sources import numeric_boundary_reference
+
+    result = []
+    for requested in selection.requested_checks:
+        check = checks.get(requested.policy_id, {})
+        _, value = numeric_boundary_reference(check, requested.source_quote)
+        if (value is not None and requested.exact_value is not None
+                and json_equal(value, literal_data(requested.exact_value.value))
+                and not check['allow_value_variants']
+                and not json_equal(value, check['invalid_value'])):
+            result.append((requested.source_quote, check['operation_id'], check['roles']))
+    return result
 
 
 def validate_plan_requirements(design, requirements, primary, expectations=None):
@@ -328,6 +462,16 @@ def validate_plan_requirements(design, requirements, primary, expectations=None)
             if action.operation_id in primary and not any(
                     s.operation_id == action.operation_id and s.role == action.role for s in steps):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_IDENTITY_ACTION_MISSING')
+        for resource in item.existing_resources:
+            if resource.operation_id not in primary:
+                continue
+            witnesses = [s for s in steps if s.operation_id == resource.operation_id
+                         and s.role == resource.role]
+            if not witnesses or any(set(s.path_parameters) != resource.path.keys() or any(
+                    binding.from_step is not None
+                    or not json_equal(binding.value, resource.path[key])
+                    for key, binding in s.path_parameters.items()) for s in witnesses):
+                raise ValidationFailure(Layer.MODEL, 'DESIGN_EXISTING_RESOURCE_WITNESS_MISSING')
         for ref in item.response_checks:
             rule = expectations.get(ref)
             if rule is None:

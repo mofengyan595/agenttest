@@ -80,6 +80,10 @@ def reconcile_assignments(context, selection):
             for requirement in selection.requirements:
                 if item['source_quote'] not in requirement.source_quote:
                     continue
+                for resource in requirement.existing_resources:
+                    if item['name'] in resource.path and json_equal(
+                            item['value'], resource.path[item['name']]):
+                        matched.append(resource.operation_id)
                 for ref in requirement.response_checks:
                     rule = context.get('response_expectations', {}).get(ref, {})
                     if (rule.get('operator') == 'equals'

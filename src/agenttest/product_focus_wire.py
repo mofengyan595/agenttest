@@ -78,7 +78,10 @@ def constrain_operation_bundles(schema, context):
                 properties["field_ref"] = dict(type="string", enum=[
                     reference.split("/", 1)[1] for reference in references])
                 branch["required"] = list(properties)
-        from agenttest.product_sources import constrain_input_sources
+        from agenttest.product_sources import (
+            constrain_input_sources,
+            constrain_numeric_check_sources,
+        )
 
         constrain_input_sources(local["properties"], context, operation, fields)
         item = local["properties"]["requested_checks"].get("items")
@@ -89,6 +92,8 @@ def constrain_operation_bundles(schema, context):
                     ref for ref, check in local_checks[operation].items()
                     if check["policy_id"] in identifiers])
                 branch["required"] = list(branch["properties"])
+            constrain_numeric_check_sources(local["properties"]["requested_checks"],
+                                            local_checks[operation], context)
         bundle = dict(type="object", additionalProperties=False,
                       properties={**local["properties"], "test_normal": dict(type="boolean"),
                           "existing_resource": dict(

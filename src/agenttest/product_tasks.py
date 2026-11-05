@@ -247,8 +247,15 @@ class ProductTasks:
                                 context["current_request"], relevant)
                             summary["pending_input_questions"] = [q.model_dump()
                                                                   for q in input_questions]
-                            blocked_inputs = input_blocked_operations(project,
-                                input_questions, operation_ids=selection.source_conflicts)
+                            check_operations = {p.id: p.operation_id
+                                                for p in project.registry.definitions()}
+                            pending_only = {p['operation_id'] for p in pending_values
+                                if p['reason'] == 'NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED'
+                                and type(p['requested_value']) in {int, float}}
+                            pending_only.difference_update(selection.normal_operation_ids,
+                                (check_operations[c['policy_id']] for c in executable_checks))
+                            blocked_inputs = input_blocked_operations(project, input_questions,
+                                operation_ids=[*selection.source_conflicts, *pending_only])
                             summary["input_blocked_operations"] = blocked_inputs
                             summary["source_blocked_operations"] = input_blocked_operations(project,
                                 [], operation_ids=selection.source_conflicts)

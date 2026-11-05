@@ -1,0 +1,518 @@
+{
+  "schema": "agenttest.focus-reference-evidence.v1",
+  "parent_commit": "fce4744eb70fe0c1a28697a89b5e45437fe22540",
+  "freeze_sha256": "4e4abf33c86f0e8f7c277e99d76b1568c61a85d8533c059d0032350994de8db8",
+  "target": "CourseInsight isolated local Demo",
+  "reproduction": {
+    "kind": "offline synthetic proposals from original inputs and saved diagnostics",
+    "provider_output_available": false,
+    "model_calls": 0,
+    "target_requests": 0,
+    "diagnostics": [
+      {
+        "id": "R01_candidate",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_INPUT_NUMBER_CHANGED",
+          "fields": [
+            "requested_checks.0.exact_value",
+            "approved_checks.4"
+          ]
+        }
+      },
+      {
+        "id": "R02_candidate",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+          "fields": []
+        }
+      },
+      {
+        "id": "R03_candidate",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+          "fields": []
+        }
+      }
+    ]
+  },
+  "offline_preflight": [
+    {
+      "id": "F01",
+      "input_bound": 31264,
+      "ready": [
+        "listCourses",
+        "loginUser"
+      ],
+      "checks": [
+        {
+          "operation_id": "listCourses",
+          "name": "size",
+          "value": 104,
+          "statuses": [
+            400
+          ],
+          "roles": [
+            "tester"
+          ]
+        }
+      ],
+      "existing_resources": {},
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "model": "ecnu-max"
+    },
+    {
+      "id": "F02",
+      "input_bound": 34237,
+      "ready": [
+        "listAnalysisBatchResults",
+        "loginUser"
+      ],
+      "checks": [
+        {
+          "operation_id": "listAnalysisBatchResults",
+          "name": "size",
+          "value": 0,
+          "statuses": [
+            400
+          ],
+          "roles": [
+            "tester"
+          ]
+        }
+      ],
+      "existing_resources": {
+        "resource_baa94193065e7c73": {
+          "operation_id": "listAnalysisBatchResults",
+          "role": "tester",
+          "path": {
+            "batchId": 23
+          }
+        }
+      },
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "model": "ecnu-max"
+    }
+  ],
+  "live_scope": "Two new read-only requests via ordinary web submission. No prior paid positions replayed.",
+  "source_scope": "Live runtime used the new clause-level references. Final source also keeps the old decoder behavior for contexts without request atoms and boundary capabilities without a matching direction.",
+  "health_preflight": {
+    "method": "GET",
+    "path": "/api/health",
+    "status": 200,
+    "count": 2
+  },
+  "positions": [
+    {
+      "id": "F01",
+      "status": "NEEDS_REVIEW",
+      "taskId": "415f06e725464f538163ace85f1735b1",
+      "seconds": 10.031,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 8120,
+        "total_tokens": 8120,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 5641,
+            "request_bytes": 30752,
+            "request_sha256": "8c06b2fd4adaf0e270cf6bba51ecb9e5c072693bb851d715748c5b4707c1c163",
+            "response_bytes": 2536,
+            "input_token_upper_bound": 31264,
+            "input_tokens": 7623,
+            "output_tokens": 497,
+            "total_tokens": 8120,
+            "output_sha256": "473271777f6ee17596a650ef84dddd732489559a07060278f433393b75e93550",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "管理员验证课程列表 size=104 的上界拒绝，预期 HTTP 400。",
+      "configuration_sha256": "78e425540d6b55e6a2b5d05d1ae3bcaf57753afc34f33c4fd2d26a071751c99b",
+      "complete": false,
+      "checks_passed": null
+    },
+    {
+      "id": "F02",
+      "status": "FINISHED",
+      "taskId": "04414ebb0b314495a122e8547f6eaf6e",
+      "seconds": 29.892,
+      "waitMs": 0,
+      "usage": {
+        "requests": 4,
+        "model_calls": 2,
+        "known_tokens": 16040,
+        "total_tokens": 16040,
+        "usage_known": true
+      },
+      "requests": [
+        {
+          "runId": "9855df769675483a97e6d30e0c8f4fa8",
+          "operation": "loginUser",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "role": "tester",
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 251.652,
+          "responseSha256": "f14e6bb89db3b8a41683787b667b5b977500fa05118ce44ebcda47451876e073",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.code",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "runId": "9855df769675483a97e6d30e0c8f4fa8",
+          "operation": "listAnalysisBatchResults",
+          "method": "GET",
+          "path": "/api/analysis-batches/{batchId}/results",
+          "role": "tester",
+          "values": {
+            "path_parameters": {
+              "batchId": 23
+            },
+            "query": {
+              "page": 1,
+              "size": 4
+            },
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 731.773,
+          "responseSha256": "1320315ba593452c842dcbf8e38f051c16f4159d521a78799b5f57544dd9a47b",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.data.items",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "runId": "0a205398aff54c16a634cc4ba099f571",
+          "operation": "loginUser",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "role": "tester",
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 196.25,
+          "responseSha256": "253faed29cf4a3102731d34b0f1a287835df50b02d4b53c3287d84ff8c94c3e3",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.code",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "runId": "0a205398aff54c16a634cc4ba099f571",
+          "operation": "listAnalysisBatchResults",
+          "method": "GET",
+          "path": "/api/analysis-batches/{batchId}/results",
+          "role": "tester",
+          "values": {
+            "path_parameters": {
+              "batchId": 23
+            },
+            "query": {
+              "page": 1,
+              "size": 0
+            },
+            "body": {}
+          },
+          "status": 400,
+          "elapsedMs": 113.879,
+          "responseSha256": "6567bbcd3b90a0fc8b2ff2645c1a6b52a1888cede45a07e27b62af075da77bcb",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "APPROVED_NEGATIVE",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "pending": [],
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 15734,
+            "request_bytes": 33725,
+            "request_sha256": "7eccb0ed58dbd91d6b314fa4dee20a6cb626e0f044289fd80b45704517cf4f20",
+            "response_bytes": 2886,
+            "input_token_upper_bound": 34237,
+            "input_tokens": 8447,
+            "output_tokens": 573,
+            "total_tokens": 9020,
+            "output_sha256": "ea8031247f3ec8ea59a8a3d050e479284d46b30f61be3653aaede04bca815e41",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 3797,
+            "request_bytes": 27915,
+            "request_sha256": "cbd167d6f6ac0c9f56e15f38dfba494a1fa7e7d0f7a4709fdbf3bf14e00cdd62",
+            "response_bytes": 2692,
+            "input_token_upper_bound": 28427,
+            "input_tokens": 6484,
+            "output_tokens": 536,
+            "total_tokens": 7020,
+            "output_sha256": "52be3e1d4dcecd2ab8806862a1b589dbb1091884f7769e786b29eb55e80a36d2",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        }
+      ],
+      "request": "管理员读取分析结果批次 batchId=23。正常查询 page=1 且 size=4；对同一批次检查 size=0 返回 HTTP 400。",
+      "configuration_sha256": "64d28b14c25d7306bd8733585110e12462c44bb445dd7bf6e8a73e12e2597819",
+      "complete": true,
+      "checks_passed": true,
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "管理员读取分析结果批次 batchId=23",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "listAnalysisBatchResults",
+              "role": "tester"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "正常查询 page=1 且 size=4",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "listAnalysisBatchResults",
+              "role": "tester"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [
+            "expectation_8af474fe50af4fc2f469"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "对同一批次检查 size=0 返回 HTTP 400",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "listAnalysisBatchResults",
+              "role": "tester"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "listAnalysisBatchResults",
+              "role": "tester",
+              "path": {
+                "batchId": 23
+              }
+            }
+          ],
+          "response_checks": [
+            "expectation_8af474fe50af4fc2f469"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "input_requirements": [
+        {
+          "operation_id": "listAnalysisBatchResults",
+          "location": "path_parameters",
+          "name": "batchId",
+          "path": [],
+          "value": 23,
+          "source_quote": "管理员读取分析结果批次 batchId=23"
+        },
+        {
+          "operation_id": "listAnalysisBatchResults",
+          "location": "query",
+          "name": "page",
+          "path": [],
+          "value": 1,
+          "source_quote": "正常查询 page=1 且 size=4"
+        },
+        {
+          "operation_id": "listAnalysisBatchResults",
+          "location": "query",
+          "name": "size",
+          "path": [],
+          "value": 4,
+          "source_quote": "正常查询 page=1 且 size=4"
+        }
+      ],
+      "requested_checks": [
+        {
+          "policy_id": "web_rule_1_negative_4",
+          "source_quote": "对同一批次检查 size=0 返回 HTTP 400",
+          "exact_value": {
+            "value": 0
+          }
+        }
+      ],
+      "requirement_ledger": [
+        {
+          "name": "batchId",
+          "value": 23,
+          "source_quote": "batchId=23",
+          "start": 12,
+          "end": 22,
+          "deferred": false,
+          "candidate_operations": [
+            "listAnalysisBatchResults"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listAnalysisBatchResults"
+          ]
+        },
+        {
+          "name": "page",
+          "value": 1,
+          "source_quote": "page=1",
+          "start": 28,
+          "end": 34,
+          "deferred": false,
+          "candidate_operations": [
+            "listAnalysisBatchResults"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listAnalysisBatchResults"
+          ]
+        },
+        {
+          "name": "size",
+          "value": 4,
+          "source_quote": "size=4",
+          "start": 37,
+          "end": 43,
+          "deferred": false,
+          "candidate_operations": [
+            "listAnalysisBatchResults"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listAnalysisBatchResults"
+          ]
+        },
+        {
+          "name": "size",
+          "value": 0,
+          "source_quote": "size=0",
+          "start": 52,
+          "end": 58,
+          "deferred": false,
+          "candidate_operations": [
+            "listAnalysisBatchResults"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listAnalysisBatchResults"
+          ]
+        }
+      ]
+    }
+  ]
+}

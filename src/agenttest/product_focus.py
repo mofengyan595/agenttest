@@ -123,7 +123,9 @@ action, exception, permission, cleanup and content check. Additional advice neve
 
 request_atoms is the server's complete original-text partition. requirement_map needs EVERY
 source_id. required names actions with identity aliases, before edges and approved producer/consumer
-same_resource links; null identity means public/anonymous. Field clauses belong to their action,
+same_resource links; null identity means public/anonymous. For an existing fixed path ID, cite
+{resource_ref} from existing_resources; never invent a producer or use a self-edge. Field clauses
+belong to their action,
 not an extra request. response_checks cite the exact operator-owned response_expectations entries.
 Unknown requested rules require needs_review and a source-backed question; never invent an expected
 value. Inventory gaps may cite blocked_operation_ids matching blocked_operations instead of a
@@ -194,8 +196,11 @@ requested_checks must include EVERY explicitly requested approved negative as
 {check_ref,source_ref,exact_value[,exact_length]}. Missing-required, wrong-type, enum-outside and
 lower/upper boundaries are distinct. Numeric out-of-range is a boundary, not wrong-type. Preserve
 each explicit invalid literal and JSON type separately; do not combine scalars into arrays/strings
-or silently substitute a default bad value. Use exact_value={value:<LiteralValue>} for a specific
-invalid literal, null when only a kind is requested. Missing-required always has exact_value=null.
+or silently substitute a default bad value. For an explicit numeric field=value boundary, cite
+the exact clause in source_ref and set exact_value=null; the server resolves the named value.
+Do not retype the number or use a status code or another field's number. Keep test_normal=false
+if the valid fields merely accompany a negative request. Other exact literals use
+exact_value={value:<LiteralValue>}. Missing-required always has exact_value=null.
 For string length boundaries use exact_value=null and exact_length=requested integer; if only
 longer-than-maxLength/kind is specified, exact_length=null uses the approved invalid_length (N+1).
 invalid_length is generated data length, never the field's scalar value. Preserve explicit lengths
@@ -347,7 +352,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
                 "input_requirements", "input_questions", "requested_checks",
                 "expectation_questions", "source_conflicts", "normal_operation_ids")})
         wire.update(details)
-        decode_source_refs(wire, input_sources(context))
+        decode_source_refs(wire, input_sources(context), context)
         decode_input_slots(wire, context.get("input_fields", []))
         selection = FocusSelection.model_validate(dict(**wire, **scope,
             requirements=requirements,
@@ -398,9 +403,11 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     from agenttest.request_requirements import request_atoms
 
     context['request_atoms'] = request_atoms(context['user_task'])
-    from agenttest.request_requirements import response_expectations
+    from agenttest.request_requirements import existing_resource_index, response_expectations
 
     context['response_expectations'] = response_expectations(project)
+    if resources := existing_resource_index(project):
+        context['existing_resources'] = resources
     from agenttest.project_inventory import identity_ready
 
     context["managed_authentication"] = [dict(identity=alias,
@@ -481,12 +488,11 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         validate_input_questions(selection.input_questions, selection.input_requirements,
                                  context, selected)
         validate_expectation_questions(selection.expectation_questions, context, selected)
+        from agenttest.request_requirements import validate_requirement_links
         from agenttest.requirement_ledger import validate_assignment_coverage
 
-        selection.requirement_ledger = validate_assignment_coverage(context, selection)
-        from agenttest.request_requirements import validate_requirement_links
-
         validate_requirement_links(selection.requirements, context, selection)
+        selection.requirement_ledger = validate_assignment_coverage(context, selection)
         unavailable = {o["operation_id"] for o in context["unavailable_operations"]}
         if set(selection.blocked_operation_ids) - unavailable:
             raise ValueError("FOCUS_BLOCKED_OPERATION_NOT_IN_INVENTORY")

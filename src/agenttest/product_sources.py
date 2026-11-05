@@ -4,6 +4,8 @@ import re
 from copy import deepcopy
 
 from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.json_values import json_equal
+from agenttest.requirement_ledger import explicit_assignments
 
 
 def compact_sources(context):
@@ -124,12 +126,17 @@ def constrain_input_sources(properties, context, operation, fields):
             source_ids = confirmed_current if key == 'input_requirements' else current
             for source in (s for s in sources if s["source_id"] in source_ids):
                 direct = cited(branch, [source["source_id"]])
+                assignments = explicit_assignments(source["text"])
+                named = [a for a in assignments if a["name"] == (
+                    by_ref[reference]["path"] or [by_ref[reference]["name"]])[-1]]
                 if (key == "input_requirements"
                         and field_schema.get("type") in {"integer", "number"}
                         and (numbers := re.findall(r"-?\d+(?:\.\d+)?", source["text"]))):
                     values = []
-                    for token in dict.fromkeys(numbers):
-                        value = float(token) if "." in token else int(token)
+                    tokens = [a["value"] for a in named if not a["deferred"]] if named else [
+                        float(token) if "." in token else int(token)
+                        for token in dict.fromkeys(numbers)]
+                    for value in tokens:
                         try:
                             validate_value(value, field_schema)
                         except ValueError:
@@ -193,9 +200,72 @@ def constrain_input_sources(properties, context, operation, fields):
             array.pop("items", None)
 
 
-def decode_source_refs(wire, sources):
+def numeric_boundary_reference(check, quote):
+    """Identify a named numeric source and the single value matching this boundary side."""
+    from agenttest.negative import boundary_side
+
+    schema = check.get("field_constraints", {})
+    default = check.get("invalid_value")
+    if check.get("kind") != "boundary_outside" or type(default) not in {int, float}:
+        return 0, None
+    approved_side = boundary_side(default, schema)
+    if not approved_side:
+        return 0, None
+    matches = [a for a in explicit_assignments(quote) if a["name"] == check["name"]]
+    if len(matches) == 1 and not matches[0]["deferred"]:
+        value = matches[0]["value"]
+        if type(value) is int or type(value) is float and schema.get("type") == "number":
+            if boundary_side(value, schema) == approved_side:
+                return 1, value
+    return len(matches), None
+
+
+def constrain_numeric_check_sources(array, checks, context):
+    """Use the existing source reference as the numeric value reference in the model wire."""
+    if not context.get("request_atoms"):
+        return
+    sources = input_sources(context)
+    atoms = {a["text"] for a in context.get("request_atoms", [])
+             if not a["future_only"] and not a["constraint"]}
+    branches = []
+    for branch in array.get("items", {}).get("anyOf", []):
+        unchanged = []
+        for ref in branch["properties"]["check_ref"]["enum"]:
+            choices = [(s, *numeric_boundary_reference(checks[ref], s["text"])) for s in sources]
+            if not any(count and s['origin'].startswith('current') for s, count, _ in choices):
+                unchanged.append(ref)
+                continue
+            for identifiers, exact in (
+                ([s["source_id"] for s, _, value in choices if value is not None
+                  and s["text"] in atoms], dict(type="null")),
+                ([s["source_id"] for s, count, _ in choices if count != 1
+                  or s['origin'].startswith('previous')],
+                 branch["properties"]["exact_value"]),
+            ):
+                if identifiers:
+                    linked = deepcopy(branch)
+                    props = linked["properties"]
+                    props.pop("source_quote")
+                    props.update(check_ref=dict(type="string", enum=[ref]),
+                                 source_ref=dict(type="string", enum=identifiers),
+                                 exact_value=exact)
+                    linked["required"] = list(props)
+                    branches.append(linked)
+        if unchanged:
+            branch["properties"]["check_ref"]["enum"] = unchanged
+            branches.append(branch)
+    if branches:
+        array["items"] = {"anyOf": branches}
+    elif "items" in array:
+        array.pop("items")
+        array["maxItems"] = 0
+
+
+def decode_source_refs(wire, sources, context=None):
     index = {entry["source_id"]: entry["text"] for entry in sources}
     texts = literal_texts(sources)
+    checks = ({c["policy_id"]: c for c in context.get("approved_checks", [])}
+              if context and context.get("request_atoms") else {})
     for key in ("input_requirements", "input_questions", "requested_checks",
                 "expectation_questions"):
         entries = wire.get(key, [])
@@ -207,6 +277,18 @@ def decode_source_refs(wire, sources):
                     or entry["source_ref"] not in index):
                 raise ValidationFailure(Layer.MODEL, "FOCUS_SOURCE_REFERENCE_INVALID")
             entry["source_quote"] = index[entry.pop("source_ref")]
+            if key == "requested_checks" and (check := checks.get(entry.get("policy_id"))):
+                named, number = numeric_boundary_reference(check, entry["source_quote"])
+                if named and entry.get("exact_value") is None:
+                    if number is None or (context.get("request_atoms") and not any(
+                            a["text"] == entry["source_quote"] and not a["future_only"]
+                            and not a["constraint"] for a in context["request_atoms"])):
+                        raise ValidationFailure(Layer.MODEL, "FOCUS_NEGATIVE_SOURCE_INVALID")
+                    entry["exact_value"] = dict(value=number)
+                elif number is not None and isinstance(entry.get("exact_value"), dict):
+                    value = entry["exact_value"].get("value")
+                    if not json_equal(value, number) and value != str(number):
+                        raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_NUMBER_CHANGED")
             value = entry.get("value")
             if key == "input_requirements" and type(value) is dict and "text_ref" in value:
                 reference = value.get("text_ref")
