@@ -53,6 +53,7 @@ def check_index(project):
             continue
         details = dict(policy_id=policy.id, operation_id=policy.operation_id,
             location=approval.location, name=approval.name, kind=approval.kind,
+            roles=policy.roles,
             allow_value_variants=approval.allow_value_variants,
             expected_statuses=policy.assertions.status.codes)
         if approval.kind != "required_missing":
@@ -133,6 +134,38 @@ def validate_exact_source(value, quote):
             validate_exact_source(item, quote)
     else:
         _check_quote(value, {}, quote)
+
+
+def duplicates_boundary_check(requirement, value, checks, context, clauses):
+    """Separate an exact duplicate from ordinary inputs without creating a negative check."""
+    from agenttest.json_values import json_equal
+    from agenttest.requirement_ledger import explicit_assignments
+
+    def source_matches(quote):
+        return [a["source_quote"] for a in explicit_assignments(quote)
+                if a["name"] == requirement.name and not a["deferred"]
+                and json_equal(a["value"], value)]
+
+    source = source_matches(requirement.source_quote)
+    if requirement.path or len(source) != 1:
+        return False
+    roles = {action.role for clause in clauses if clause.source_quote == requirement.source_quote
+             and clause.disposition == "required" for action in clause.actions
+             if action.operation_id == requirement.operation_id}
+    index = {entry["policy_id"]: entry for entry in context.get("approved_checks", [])}
+    matches = []
+    for check in checks:
+        entry = index[check.policy_id]
+        exact = (literal_data(check.exact_value.value) if check.exact_value is not None
+                 else entry.get("invalid_value"))
+        if (entry["kind"] == "boundary_outside" and check.exact_length is None
+                and entry["operation_id"] == requirement.operation_id
+                and entry["location"] == requirement.location and entry["name"] == requirement.name
+                and requirement.source_quote in check.source_quote
+                and source_matches(check.source_quote) == source and json_equal(exact, value)
+                and (not clauses or len(roles) == 1 and roles == set(entry["roles"]))):
+            matches.append(entry)
+    return len(matches) == 1
 
 
 def partition_requested_checks(project, checks, *, input_requirements=(), input_questions=()):

@@ -45,12 +45,15 @@ class AttemptEvidence(BaseModel):
     response_sha256: str | None = None
     error_code: str | None = None
     response_projection: Literal["CSV_TABLE_V1", "CSV_INVALID"] | None = None
+    retry_after_seconds: int | None = Field(default=None, ge=0)
 
     @model_serializer(mode="wrap")
     def legacy_json_evidence(self, handler):
         data = handler(self)
         if self.response_projection is None:
             data.pop("response_projection", None)
+        if self.retry_after_seconds is None:
+            data.pop("retry_after_seconds", None)
         return data
 
 

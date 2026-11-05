@@ -1,0 +1,820 @@
+{
+  "schema": "agenttest.readonly-fix-evidence.v1",
+  "freeze_sha256": "23bc836a0934a8f99842a79ad641adee4054fc55a149c6dd029cadf4b077b86b",
+  "baseline_commit": "053f40f6e98cb82a7645ff865e665f6c53f8a913",
+  "candidate_scope": "2026-11-05 live source with boundary routing, CSV and 429 handling; the final commit also preserves original validation ordering for malformed types.",
+  "target": "CourseInsight isolated local Demo",
+  "historical_positions": {
+    "baseline": 24,
+    "candidate": 24,
+    "first_completion_baseline": 10,
+    "first_completion_candidate": 5
+  },
+  "login_schedule": {
+    "limits": {
+      "source": {
+        "maxRequests": 20,
+        "windowSeconds": 60
+      },
+      "account": {
+        "maxRequests": 10,
+        "windowSeconds": 300
+      }
+    },
+    "projected": {
+      "tester": 10
+    },
+    "projected_concentration": true,
+    "observed": 2,
+    "observed_429": 0
+  },
+  "health_preflight": {
+    "method": "GET",
+    "path": "/api/health",
+    "status": 200,
+    "count": 8,
+    "per_request_elapsed_ms": null
+  },
+  "positions": [
+    {
+      "id": "R01_baseline",
+      "status": "NEEDS_REVIEW",
+      "taskId": "a413630009414330871a4e55e37ac6d1",
+      "seconds": 16.165,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 8017,
+        "total_tokens": 8017,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型把明确输入关联到了其他字段，未发送业务请求；原文保留供核对。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_INPUT_FIELD_CHANGED",
+              "fields": [
+                "input_requirements.1.value",
+                "approved_input_fields.0"
+              ]
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 9312,
+            "request_bytes": 29895,
+            "request_sha256": "1994ff3e09629622702d37010a675b7658e12096516b2f8bfccd9ee53dcf5ec1",
+            "response_bytes": 3444,
+            "input_token_upper_bound": 30407,
+            "input_tokens": 7317,
+            "output_tokens": 700,
+            "total_tokens": 8017,
+            "output_sha256": "9995d0f33c710e2416125a72f4419fb9d6d14ba25fdebbf9985a75d78d2f87ad",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "用管理员身份只核对课程列表的上界：请求page=1且size=101，确认返回400。",
+      "configuration_sha256": "6734d451487e05cff2ac9e2850b3891dd3150520200366411d84894c1532a069",
+      "expected_logins": {
+        "tester": 1
+      }
+    },
+    {
+      "id": "R01_candidate",
+      "status": "NEEDS_REVIEW",
+      "taskId": "1123d7c3074343ed8e8096f830ef8c54",
+      "seconds": 12.855,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 7952,
+        "total_tokens": 7952,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型提取的数字与原文不一致，本次没有发送业务请求。请核对需求后安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_INPUT_NUMBER_CHANGED",
+              "fields": [
+                "requested_checks.0.exact_value",
+                "approved_checks.4"
+              ]
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 6672,
+            "request_bytes": 30303,
+            "request_sha256": "3bd372ffb86b3cf4b2b7c6517cd9af507c99c36eef9176d36d067684e232b86c",
+            "response_bytes": 2763,
+            "input_token_upper_bound": 30815,
+            "input_tokens": 7412,
+            "output_tokens": 540,
+            "total_tokens": 7952,
+            "output_sha256": "a199a6b9e1081c444c4bca437ae632ea6683453f7061e6468707ab88b6d0a70d",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "用管理员身份只核对课程列表的上界：请求page=1且size=101，确认返回400。",
+      "configuration_sha256": "6734d451487e05cff2ac9e2850b3891dd3150520200366411d84894c1532a069",
+      "expected_logins": {
+        "tester": 1
+      }
+    },
+    {
+      "id": "R02_candidate",
+      "status": "NEEDS_REVIEW",
+      "taskId": "904b3c2830694114926d72612069098b",
+      "seconds": 5,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 8587,
+        "total_tokens": 8587,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 3359,
+            "request_bytes": 31970,
+            "request_sha256": "d4a815dd663dfa204a885da1db274a88f9de7a684b61d956242733fe7b36ea5e",
+            "response_bytes": 3001,
+            "input_token_upper_bound": 32482,
+            "input_tokens": 7987,
+            "output_tokens": 600,
+            "total_tokens": 8587,
+            "output_sha256": "f1cd367e32fb47e896eab274444bf3cd027c93d8515ab69c50e7ead840d9f9b8",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "管理员读取批次22的分析结果，正常请求page=1且size=2；另外检查同批次page=1且size=0应返回400。",
+      "configuration_sha256": "37c0df976a7026da88601fbefe559c4db7d596fb05a26c06af521784b639ede3",
+      "expected_logins": {
+        "tester": 2
+      }
+    },
+    {
+      "id": "R02_baseline",
+      "status": "NEEDS_REVIEW",
+      "taskId": "f63e134817b74b45a27c7e8cee199e2c",
+      "seconds": 6.15,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 8498,
+        "total_tokens": 8498,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "openapi",
+              "code": "OPENAPI_VALUE_BOUND",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 4015,
+            "request_bytes": 31562,
+            "request_sha256": "9ca69b374ed5356ddeb3bd0ea10500882c4ca96d75bef754ef93202a27b3b0da",
+            "response_bytes": 2972,
+            "input_token_upper_bound": 32074,
+            "input_tokens": 7892,
+            "output_tokens": 606,
+            "total_tokens": 8498,
+            "output_sha256": "ffa52e149539512eba30f95865bd3124660298926865d853e8870a4f1aec4494",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "管理员读取批次22的分析结果，正常请求page=1且size=2；另外检查同批次page=1且size=0应返回400。",
+      "configuration_sha256": "37c0df976a7026da88601fbefe559c4db7d596fb05a26c06af521784b639ede3",
+      "expected_logins": {
+        "tester": 2
+      }
+    },
+    {
+      "id": "R03_baseline",
+      "status": "NEEDS_REVIEW",
+      "taskId": "b5eb9df587324b61aea337d718b8f55a",
+      "seconds": 8.558,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 9191,
+        "total_tokens": 9191,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 6250,
+            "request_bytes": 33334,
+            "request_sha256": "dd1c183058f4c4164ee6775a6a5d4c11cbe2a82ece3310fe61996a48009ae1da",
+            "response_bytes": 3578,
+            "input_token_upper_bound": 33846,
+            "input_tokens": 8443,
+            "output_tokens": 748,
+            "total_tokens": 9191,
+            "output_sha256": "7833655f3bd0b32cd34547648f01a9996a6476e1d9021e9443ad4b79bb5b2879",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "查询公开健康状态确认UP。管理员用page=-7检查课程列表返回400，若这个值没有授权，请说明并保留原值。",
+      "configuration_sha256": "b5039b794bea630b57ddb3ac18f861a57b1e261ad1d15ae13699b5a7eea6b897",
+      "expected_logins": {
+        "tester": 1
+      }
+    },
+    {
+      "id": "R03_candidate",
+      "status": "NEEDS_REVIEW",
+      "taskId": "8dde544ef8ea4761b59053c307ba4281",
+      "seconds": 13.772,
+      "waitMs": 0,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 9469,
+        "total_tokens": 9469,
+        "usage_known": true
+      },
+      "requests": [],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 11718,
+            "request_bytes": 33742,
+            "request_sha256": "ddfd73bd7422dc9d046f032aeb651dec58c087b3e6436199af479ed4f8f871c1",
+            "response_bytes": 4386,
+            "input_token_upper_bound": 34254,
+            "input_tokens": 8538,
+            "output_tokens": 931,
+            "total_tokens": 9469,
+            "output_sha256": "720558cf7ad8825afe493821b652f179cd49d8da6cdfaa9e2fd2e623abae5fe8",
+            "reason": "MODEL_INVALID_RESPONSE"
+          }
+        }
+      ],
+      "request": "查询公开健康状态确认UP。管理员用page=-7检查课程列表返回400，若这个值没有授权，请说明并保留原值。",
+      "configuration_sha256": "b5039b794bea630b57ddb3ac18f861a57b1e261ad1d15ae13699b5a7eea6b897",
+      "expected_logins": {
+        "tester": 1
+      }
+    },
+    {
+      "id": "R04_candidate",
+      "status": "FINISHED",
+      "taskId": "f3f9f9d8f4734ccdbcd18521cd4d5b67",
+      "seconds": 28.143,
+      "waitMs": 0,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 13140,
+        "total_tokens": 13140,
+        "usage_known": true
+      },
+      "requests": [
+        {
+          "runId": "6d218bc2d2ee4f1d92eb6707c0e3b7e2",
+          "operation": "loginUser",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "role": "tester",
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 2242.605,
+          "responseSha256": "d7b185cb15cf41805ea45db2034ac152366cb455066aa48e23f794c40ba3435e",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.code",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "runId": "6d218bc2d2ee4f1d92eb6707c0e3b7e2",
+          "operation": "exportAnalysisBatchResults",
+          "method": "GET",
+          "path": "/api/analysis-batches/{batchId}/export",
+          "role": "tester",
+          "values": {
+            "path_parameters": {
+              "batchId": 22
+            },
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 816.963,
+          "responseSha256": "c11ecbd74bc14a3c3ea6200488a34f625596b212f47d5a55b10664e30b5048ce",
+          "projection": "CSV_TABLE_V1",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.columns",
+              "passed": true
+            },
+            {
+              "selector": "$.row_count",
+              "passed": true
+            },
+            {
+              "selector": "$.rows[0].评论内容",
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "pending": [],
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 13422,
+            "request_bytes": 28648,
+            "request_sha256": "5c1b3431bc14c010d1e7ac68a61e9b7ce4568b141589cced5bb95499d510f98e",
+            "response_bytes": 2700,
+            "input_token_upper_bound": 29160,
+            "input_tokens": 6982,
+            "output_tokens": 517,
+            "total_tokens": 7499,
+            "output_sha256": "ea71ceb2b56b893f339b4b4d2886357badf0df7daa9a9080f2e7cc88d899c2f3",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 2953,
+            "request_bytes": 24302,
+            "request_sha256": "5ff82468080411e5377558dbf157e564b663c5157dad6df6e5d803dd358bfd74",
+            "response_bytes": 1622,
+            "input_token_upper_bound": 24814,
+            "input_tokens": 5371,
+            "output_tokens": 270,
+            "total_tokens": 5641,
+            "output_sha256": "ddf312c77c74dcdd76caf3226fdb4acbb10077e278f117ae759007b53ae6f881",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        }
+      ],
+      "request": "用管理员身份导出保留的批次22，核对 CSV 有两行数据，且第一行存在“评论内容”这一列。",
+      "configuration_sha256": "92999590a3453cec965f18d61d336d38c7ec30896361d938cac7e9cfbd0d58aa",
+      "expected_logins": {
+        "tester": 1
+      }
+    },
+    {
+      "id": "R04_baseline",
+      "status": "FINISHED",
+      "taskId": "701aa62286974cc685e71250b6a73bc7",
+      "seconds": 20.942,
+      "waitMs": 0,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 13247,
+        "total_tokens": 13247,
+        "usage_known": true
+      },
+      "requests": [
+        {
+          "runId": "a6b300a045e34dd3b300febcd61915dd",
+          "operation": "loginUser",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "role": "tester",
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 229.509,
+          "responseSha256": "62d5f0eb16d9d75b304bd8a50caaf8915045d4617abd283be3c1e98943a762d9",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.code",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "runId": "a6b300a045e34dd3b300febcd61915dd",
+          "operation": "exportAnalysisBatchResults",
+          "method": "GET",
+          "path": "/api/analysis-batches/{batchId}/export",
+          "role": "tester",
+          "values": {
+            "path_parameters": {
+              "batchId": 22
+            },
+            "query": {},
+            "body": {}
+          },
+          "status": 200,
+          "elapsedMs": 188.52,
+          "responseSha256": "c11ecbd74bc14a3c3ea6200488a34f625596b212f47d5a55b10664e30b5048ce",
+          "projection": "CSV_TABLE_V1",
+          "reason": "POLICY_EVALUATED",
+          "classification": "PASS",
+          "validation": "NORMAL_VALIDATED",
+          "checks": [
+            {
+              "selector": null,
+              "passed": true
+            },
+            {
+              "selector": "$.columns",
+              "passed": true
+            },
+            {
+              "selector": "$.row_count",
+              "passed": true
+            },
+            {
+              "selector": "$.rows[0].评论内容",
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "pending": [],
+      "questions": [],
+      "design": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 3468,
+            "request_bytes": 28355,
+            "request_sha256": "6089891e4da53546cf1f0836e80374a8e335a78914ee793f0c9dc629596dc23e",
+            "response_bytes": 3041,
+            "input_token_upper_bound": 28867,
+            "input_tokens": 7009,
+            "output_tokens": 624,
+            "total_tokens": 7633,
+            "output_sha256": "baeb8578999af3411c6ec096f81f954cced566fe64b0843c3cd7d643c262e022",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 9000,
+            "request_bytes": 24499,
+            "request_sha256": "915c14c06a9b11e6380b805b84d5556f77bdd0023f70813736710fbc8111adba",
+            "response_bytes": 1706,
+            "input_token_upper_bound": 25011,
+            "input_tokens": 5341,
+            "output_tokens": 273,
+            "total_tokens": 5614,
+            "output_sha256": "1de6d0d9732ef84bf41b84f745818a8f22a9f3cfa9ceddb24071ecaae4a0e170",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          }
+        }
+      ],
+      "request": "用管理员身份导出保留的批次22，核对 CSV 有两行数据，且第一行存在“评论内容”这一列。",
+      "configuration_sha256": "92999590a3453cec965f18d61d336d38c7ec30896361d938cac7e9cfbd0d58aa",
+      "expected_logins": {
+        "tester": 1
+      }
+    }
+  ],
+  "offline_preflight": {
+    "baseline": [
+      {
+        "id": "R01_baseline",
+        "ready": [
+          "loginUser",
+          "listCourses"
+        ],
+        "input_bound": 30407,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R02_baseline",
+        "ready": [
+          "listAnalysisBatchResults",
+          "loginUser"
+        ],
+        "input_bound": 32074,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R03_baseline",
+        "ready": [
+          "loginUser",
+          "listCourses",
+          "getHealth"
+        ],
+        "input_bound": 33846,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R04_baseline",
+        "ready": [
+          "exportAnalysisBatchResults",
+          "loginUser"
+        ],
+        "input_bound": 28867,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "N02_R1_candidate",
+        "result": "OPENAPI_VALUE_BOUND"
+      },
+      {
+        "id": "N02_R2_candidate",
+        "result": "OPENAPI_VALUE_BOUND"
+      }
+    ],
+    "candidate": [
+      {
+        "id": "R01_candidate",
+        "ready": [
+          "loginUser",
+          "listCourses"
+        ],
+        "input_bound": 30815,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R02_candidate",
+        "ready": [
+          "listAnalysisBatchResults",
+          "loginUser"
+        ],
+        "input_bound": 32482,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R03_candidate",
+        "ready": [
+          "loginUser",
+          "listCourses",
+          "getHealth"
+        ],
+        "input_bound": 34254,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "id": "R04_candidate",
+        "ready": [
+          "exportAnalysisBatchResults",
+          "loginUser"
+        ],
+        "input_bound": 29160,
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "model": "ecnu-max"
+      },
+      {
+        "layer": "policy",
+        "code": "CSV_ASSERTION_COLUMN_UNKNOWN",
+        "fields": [
+          "exportAnalysisBatchResults",
+          "$.rows[0].评价内容"
+        ]
+      },
+      {
+        "layer": "policy",
+        "code": "CSV_HEADER_EVIDENCE_REQUIRED",
+        "fields": [
+          "exportAnalysisBatchResults",
+          "$.rows[0].评论内容"
+        ]
+      },
+      {
+        "id": "N02_R1_candidate",
+        "result": "SELECTED",
+        "approved": 2,
+        "normal": [
+          [
+            "page",
+            1
+          ],
+          [
+            "size",
+            3
+          ]
+        ]
+      },
+      {
+        "id": "N02_R2_candidate",
+        "result": "SELECTED",
+        "approved": 2,
+        "normal": [
+          [
+            "page",
+            1
+          ],
+          [
+            "size",
+            3
+          ]
+        ]
+      }
+    ]
+  }
+}

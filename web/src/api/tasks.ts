@@ -301,6 +301,14 @@ export async function call<T>(
         OPENAPI_VALUE_BOUND: "输入数值超出了文档限制。",
       };
       const code = payload?.detail?.code;
+      if ((code === "CSV_HEADER_EVIDENCE_REQUIRED" || code === "CSV_ASSERTION_COLUMN_UNKNOWN") &&
+          Array.isArray(payload.detail.fields) && payload.detail.fields.length === 2) {
+        const [operation, selector] = payload.detail.fields;
+        const reason = code === "CSV_ASSERTION_COLUMN_UNKNOWN"
+          ? "断言列名不在已核对的 CSV 表头中。"
+          : "缺少已核对的 CSV 表头，请提供 $.columns 的完整列表。";
+        throw new Error(`${operation} ${selector}：${reason}`);
+      }
       const message =
         typeof code === "string" && Object.hasOwn(messages, code)
           ? messages[code]

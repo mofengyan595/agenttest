@@ -6,6 +6,9 @@ import json
 import os
 import re
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from math import ceil
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +46,18 @@ from agenttest.verifier import verify
 
 class ExecutionLimit(Exception):
     """A safety limit was reached, never evidence of a business defect."""
+
+
+def retry_after_seconds(header: str) -> int | None:
+    if header.isascii() and header.isdecimal() and len(header) <= 10:
+        return int(header)
+    if not header or len(header) > 64:
+        return None
+    try:
+        when = parsedate_to_datetime(header)
+        return max(0, ceil((when - datetime.now(timezone.utc)).total_seconds()))
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 class Executor:
@@ -418,6 +433,10 @@ class Executor:
             )
             if 300 <= status < 400:
                 raise ExecutionLimit("REDIRECT_BLOCKED")
+            if is_login and status == 429:
+                result.outcome = Outcome.TEST_INFRA_ERROR
+                result.reason = "LOGIN_RATE_LIMITED"
+                return body
             if poll:
                 progress = AssertionPolicy(
                     reviewed=True, source=policy.assertions.source,
@@ -492,6 +511,9 @@ class Executor:
                 response = await client.send(request, stream=True)
                 try:
                     evidence.status_code = response.status_code
+                    if response.status_code == 429:
+                        evidence.retry_after_seconds = retry_after_seconds(
+                            response.headers.get("retry-after", "").strip())
                     chunks = bytearray()
                     async for chunk in response.aiter_bytes(chunk_size=65536):
                         chunks.extend(chunk)

@@ -21,6 +21,59 @@ from agenttest.project_intake import IntakeInput
 from agenttest.report import Outcome, ReportStore
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("value,variants,expected", [(0, False, 422), (-2, True, 422),
+                                                     (-2, False, None)])
+async def test_focus_separates_duplicate_boundary_literal_from_normal_inputs(
+        tmp_path, value, variants, expected):
+    from agenttest.diagnostics import ValidationFailure
+    from agenttest.product_checks import partition_requested_checks
+    from agenttest.product_focus import select_focus
+
+    project, _ = read_project(variants)
+    approval = policy(project, kind="boundary_outside", value=0)
+    normal, invalid = "用limit=2读取报告", f"检查limit={value}会被拒绝"
+    calls = []
+
+    class FakeFocus:
+        async def generate(self, context):
+            return json.dumps(dict(interpretation="普通与边界分别执行", mode="selected",
+                operation_ids=["readReports"], normal_operation_ids=["readReports"],
+                question=None, pending_questions=[], not_covered=[],
+                requirements=[dict(source_id=atom["source_id"], source_quote=atom["text"],
+                    disposition="required", actions=[dict(operation_id="readReports", role=None)],
+                    before=[], same_resource=[]) for atom in context["request_atoms"]],
+                input_requirements=[dict(operation_id="readReports", location="query",
+                    name="limit", path=[], source_quote=quote, value=number)
+                    for quote, number in [(normal, 2), (invalid, value)]],
+                requested_checks=[dict(policy_id=approval.id, source_quote=invalid,
+                    exact_value=dict(value=value))] if calls == [] else []))
+
+    task = dict(current_request=f"{normal}；{invalid}。")
+    selection = await select_focus(project, FakeFocus(), task, environ={})
+    assert [item.value for item in selection.input_requirements] == [2]
+    assert selection.requested_checks[0].source_quote == invalid
+    assert [item["status"] for item in selection.requirement_ledger] == ["ACCOUNTED", "ACCOUNTED"]
+    executable, pending = partition_requested_checks(project,
+        [check.model_dump() for check in selection.requested_checks])
+    if expected is None:
+        assert not executable and pending[0]["reason"] == "NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED"
+    else:
+        assert executable and not pending
+
+        def target(request):
+            calls.append(dict(request.url.params))
+            return httpx.Response(expected)
+
+        report = await Executor(project.target, project.contract, ReportStore(tmp_path),
+            httpx.MockTransport(target), {}, project.registry).run(scenario(approval.id, value))
+        assert report.outcome == Outcome.PASS and calls == [dict(limit=str(value), order="asc")]
+    calls.append("drop negative reference")
+    with pytest.raises(ValidationFailure) as exc:
+        await select_focus(project, FakeFocus(), task, environ={})
+    assert exc.value.diagnostic.code == "OPENAPI_VALUE_BOUND"
+
+
 def read_project(variants=True):
     document = json.dumps(dict(openapi="3.0.3", info=dict(title="Reports", version="1"),
         paths={"/reports": {"get": dict(operationId="readReports", summary="读取报告列表",

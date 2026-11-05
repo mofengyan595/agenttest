@@ -388,6 +388,8 @@ export interface components {
             error_code?: string | null;
             /** Response Projection */
             response_projection?: ("CSV_TABLE_V1" | "CSV_INVALID") | null;
+            /** Retry After Seconds */
+            retry_after_seconds?: number | null;
         };
         /** CheckResult */
         CheckResult: {

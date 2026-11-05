@@ -169,6 +169,8 @@ def install_task_api(app, service):
             raise HTTPException(422, "服务端没有此授权配置，请重新选择。") from None
         except ValueError as exc:
             code = getattr(getattr(exc, "diagnostic", None), "code", str(exc))
+            if code in {"CSV_HEADER_EVIDENCE_REQUIRED", "CSV_ASSERTION_COLUMN_UNKNOWN"}:
+                raise HTTPException(422, dict(code=code, fields=exc.diagnostic.fields)) from None
             public_codes = {
                 "SELECT_UNIQUE_OPERATIONS", "ISOLATED_ENVIRONMENT_CONFIRMATION_REQUIRED",
                 "TARGET_AUTHORIZATION_REQUIRED", "WRITE_AUTHORIZATION_REQUIRED",

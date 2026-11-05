@@ -79,3 +79,45 @@ def test_unicode_table_columns_use_the_same_literal_selector_grammar():
     for path in ("$.rows[*].评分", "$.rows[?(@.评分)]", "$.rows[0]['评分']", "$.rows.1评分"):
         with pytest.raises(ValueError):
             validate_selector(path)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("headers,selector,expected", [
+    (["评论内容", "评分"], "$.rows[0].评论内容", None),
+    (["评论内容", "评分"], "$.rows[0].评价内容", "CSV_ASSERTION_COLUMN_UNKNOWN"),
+    (None, "$.rows[0].评论内容", "CSV_HEADER_EVIDENCE_REQUIRED"),
+    (["评论内容", "评论内容"], "$.rows[0].评论内容", "CSV_HEADER_EVIDENCE_REQUIRED"),
+])
+async def test_confirmed_csv_preflight_holds_unverified_paths_before_model_or_http(
+        tmp_path, headers, selector, expected):
+    from test_product_tasks import service
+
+    from agenttest.diagnostics import ValidationFailure
+    from agenttest.project_intake import IntakeInput
+
+    raw = json.dumps(dict(openapi="3.0.3", info=dict(title="Reports", version="1"),
+        paths={"/export": {"get": dict(operationId="exportReports", responses={
+            "200": dict(description="CSV", content={"text/csv": dict(schema=dict(
+                type="string", format="binary"))})})}}))
+    checks = [dict(select=selector, operator="exists")]
+    if headers is not None:
+        checks.append(dict(select="$.columns", expected=headers))
+    setup = GenericSetup.model_validate(dict(base_url="http://127.0.0.1:18999",
+        isolated_confirmed=True, assisted=True, operations=[dict(operation_id="exportReports",
+            alias="导出", statuses=[200], checks=checks)]))
+
+    def never(request):
+        pytest.fail("CSV intake must not call the model or target")
+
+    svc = service(tmp_path, never)
+    try:
+        payload = IntakeInput(name="导出", document=raw, generic=setup, confirmed=True)
+        if expected is None:
+            assert svc.intake.save(payload, "operator")["ready"]
+        else:
+            with pytest.raises(ValidationFailure, match=expected) as exc:
+                svc.intake.save(payload, "operator")
+            assert exc.value.diagnostic.fields == ["exportReports", selector]
+            assert not svc.intake.records()
+    finally:
+        await svc.close()

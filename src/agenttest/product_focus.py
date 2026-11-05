@@ -168,7 +168,11 @@ the cited source. Do not shorten, translate or retype them. Objects={object:[...
 arrays={array:[...]}.
 Documented enum/boolean/written-number conversion is allowed; free text remains literal. Status
 codes,
-operation numbers and INVALID values are not ordinary inputs. Never replace existing IDs with fresh
+operation numbers and INVALID values are not ordinary inputs.
+For an explicit out-of-range field, use requested_checks ONLY if its field, role and rejection
+rule are approved. Keep valid values for the same operation in input_requirements. If the invalid
+value has no matching approval, use a source-backed business_rule question and hold that check.
+Never replace existing IDs with fresh
 producer data. runtime_supplied_fields come from approved prior responses, not fillable literals:
 do not invent placeholder IDs or ask users to provide them. resource_dependencies identifies the
 producer/method/selector. GET/HEAD sources may read existing resources and remain approved runtime
@@ -356,10 +360,12 @@ class TestFocusModel(OpenAICompatiblePlanner):
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
         approved = (context["approved_ids"] if selection.mode == "all_ready"
                     else selection.operation_ids)
-        validate_requirements(selection.input_requirements, context, approved)
+        validate_requested_checks(selection.requested_checks, context, approved)
+        selection.input_requirements = validate_requirements(selection.input_requirements,
+            context, approved, requested_checks=selection.requested_checks,
+            clauses=selection.requirements)
         validate_input_questions(selection.input_questions, selection.input_requirements,
                                  context, approved)
-        validate_requested_checks(selection.requested_checks, context, approved)
         validate_expectation_questions(selection.expectation_questions, context, approved)
         if 'request_atoms' in context:
             from agenttest.request_requirements import validate_requirement_links
@@ -468,10 +474,12 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         if any(not any(f["operation_id"] == key and f.get("source_dependency")
                        for f in context["input_fields"]) for key in selection.source_conflicts):
             raise ValidationFailure(Layer.MODEL, "FOCUS_SOURCE_CHOICE_INVALID")
-        validate_requirements(selection.input_requirements, context, selected)
+        validate_requested_checks(selection.requested_checks, context, selected)
+        selection.input_requirements = validate_requirements(selection.input_requirements,
+            context, selected, requested_checks=selection.requested_checks,
+            clauses=selection.requirements)
         validate_input_questions(selection.input_questions, selection.input_requirements,
                                  context, selected)
-        validate_requested_checks(selection.requested_checks, context, selected)
         validate_expectation_questions(selection.expectation_questions, context, selected)
         from agenttest.requirement_ledger import validate_assignment_coverage
 

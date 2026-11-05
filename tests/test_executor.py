@@ -96,6 +96,49 @@ async def test_retry_reads_never_writes(tmp_path: Path, method: str, expected_ca
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("header,delay", [("17", 17), (None, None), ("malformed", None),
+    ("Wed, 21 Oct 2015 07:28:00 GMT", 0)])
+async def test_login_429_is_environment_block_and_keeps_original_attempt(tmp_path, header, delay):
+    from agenttest.generic_intake import GenericSetup, build_generic_project
+
+    login = Operation(operation_id="login", method="POST", path="/session", request_body={
+        "content": {"application/json": {"schema": {"type": "object", "properties": {
+            "username": {"type": "string"}, "password": {"type": "string"}},
+            "required": ["username", "password"]}}}})
+    read = Operation(operation_id="read", method="GET", path="/private", security=[{"bearer": []}])
+    contract = ContractSummary(version="3.1.0", operations=[login, read],
+        security_schemes={"bearer": {"type": "http", "scheme": "bearer"}})
+    config = GenericSetup.model_validate(dict(base_url="http://127.0.0.1:18998",
+        isolated_confirmed=True, roles=[dict(alias="reader", login_operation="login",
+            username_env="AGENTTEST_TARGET_USER", password_env="AGENTTEST_TARGET_PASS")],
+        operations=[dict(operation_id=op.operation_id, alias=op.operation_id, role="reader",
+            statuses=[200]) for op in [login, read]]))
+    environ = {"AGENTTEST_TARGET_USER": "local-fixture-account",
+               "AGENTTEST_TARGET_PASS": "local-fixture-password"}
+    project = build_generic_project("local", "{}", contract, config, environ=environ)
+    requests = []
+
+    def target(request):
+        requests.append(request.url.path)
+        return httpx.Response(429, content=b"original limit response",
+                              headers={"Retry-After": header} if header else {})
+
+    scenario = Scenario.model_validate(dict(name="protected read", steps=[dict(
+        id=op.operation_id, operation_id=op.operation_id, role="reader",
+        policy_id=f"web_rule_{i + 1}") for i, op in enumerate([login, read])]))
+    result = await Executor(project.target, contract, ReportStore(tmp_path),
+        httpx.MockTransport(target), environ, project.registry).run(scenario)
+    assert requests == ["/session"]
+    assert result.outcome == Outcome.TEST_INFRA_ERROR
+    step = result.steps[0]
+    assert step.reason == "LOGIN_RATE_LIMITED" and not step.checks
+    attempt, = step.attempts
+    assert attempt.status_code == 429 and attempt.response_sha256
+    assert attempt.retry_after_seconds == delay
+    assert all(value not in result.model_dump_json() for value in environ.values())
+
+
+@pytest.mark.asyncio
 async def test_request_budget_and_poll_exhaustion(tmp_path: Path) -> None:
     executor = setup(tmp_path, lambda req: httpx.Response(200, json={"state": "RUNNING"}),
                      max_requests=2)

@@ -121,10 +121,12 @@ def input_fields(project):
     return fields
 
 
-def validate_requirements(requirements, context, selected, *, allow_ambiguity_source=False):
+def validate_requirements(requirements, context, selected, *, allow_ambiguity_source=False,
+                          requested_checks=(), clauses=()):
     """Validate quoted provenance, approved slots and values, without granting authority."""
     request = context["user_task"]
     fields = context.get("input_fields", [])
+    normal = []
     for index, requirement in enumerate(requirements):
         current = requirement.model_dump()
         known_previous = any(
@@ -154,7 +156,20 @@ def validate_requirements(requirements, context, selected, *, allow_ambiguity_so
         if field is None:
             raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_SLOT_INVALID")
         value = literal_data(requirement.value)
-        validate_value(value, field["schema"])
+        duplicate = False
+        try:
+            validate_value(value, field["schema"])
+        except ValidationFailure as exc:
+            from agenttest.product_checks import duplicates_boundary_check
+
+            boundary_codes = {"OPENAPI_VALUE_BOUND", "OPENAPI_VALUE_EXCLUSIVE_BOUND",
+                              "OPENAPI_VALUE_FORMAT_BOUND", "OPENAPI_VALUE_LENGTH"}
+            duplicate = (exc.diagnostic.code in boundary_codes and duplicates_boundary_check(
+                requirement, value, requested_checks, context, clauses))
+            if not duplicate:
+                exc.diagnostic.fields = [f"input_requirements.{index}.value",
+                                         f"approved_input_fields.{fields.index(field)}"]
+                raise
         try:
             _check_quote(value, field["schema"], requirement.source_quote)
             from agenttest.requirement_ledger import explicit_assignments
@@ -169,6 +184,9 @@ def validate_requirements(requirements, context, selected, *, allow_ambiguity_so
                                      f"approved_input_fields.{fields.index(field)}"]
             raise
         # Repeated evidence is retained, but never becomes another execution step.
+        if not duplicate:
+            normal.append(requirement)
+    return normal
 
 
 def input_slot(field):

@@ -28,6 +28,7 @@ from agenttest.project_inventory import (
 )
 from agenttest.report import fingerprint
 from agenttest.request_validation import validate_value
+from agenttest.response_content import validate_csv_assertions
 from agenttest.safety import (
     ResourceCreation,
     ResourceLifecycle,
@@ -272,6 +273,8 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
     operations = {op.operation_id: op for op in contract.operations if op.operation_id}
     if set(ids) - operations.keys():
         raise ValueError("CONTRACT_OPERATION_UNKNOWN")
+    for item in selected:
+        validate_csv_assertions(operations[item.operation_id], item.statuses, item.checks)
     roles = {}
     for role in setup.roles:
         if setup.assisted and environ is not None and not identity_ready(role, environ):

@@ -766,6 +766,18 @@
               }
             ],
             "title": "Response Projection"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds"
           }
         },
         "type": "object",

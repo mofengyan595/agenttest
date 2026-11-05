@@ -360,6 +360,12 @@ class ProjectIntake:
                 if generic.assisted:
                     if not generic.isolated_confirmed:
                         raise ValueError("ISOLATED_ENVIRONMENT_CONFIRMATION_REQUIRED")
+                    from agenttest.response_content import validate_csv_assertions
+
+                    for item in generic.operations:
+                        if item.enabled and item.operation_id in operations:
+                            validate_csv_assertions(operations[item.operation_id],
+                                                    item.statuses, item.checks)
                     record["confirmed_setup_sha256"] = fingerprint(generic.model_dump())
                     record["confirmation"] = dict(source="WEB_OPERATOR_SESSION", actor=owner,
                         configuration_version=record["confirmed_setup_sha256"], at=time.time())
@@ -495,7 +501,13 @@ class ProjectIntake:
                 if not identity["ready"]:
                     missing.append("身份 " + identity["alias"] + " 缺少账号配置。"
                                    + identity["instruction"])
-        except (ValueError, OSError, KeyError):
+        except (ValueError, OSError, KeyError) as exc:
+            diagnostic = getattr(exc, "diagnostic", None)
+            if diagnostic and diagnostic.code in {
+                    "CSV_HEADER_EVIDENCE_REQUIRED", "CSV_ASSERTION_COLUMN_UNKNOWN"}:
+                operation, path = diagnostic.fields
+                missing.append(f"{operation} 的 {path} 需要按已核对的 CSV 表头检查列名。"
+                               "请提供与实际导出一致的 $.columns 完整列表。")
             missing.extend(dict.fromkeys(e["reason"] + " " + e["next_step"]
                 for e in complete_inventory["operations"] if e["state"] != "READY"))
             if not missing:
