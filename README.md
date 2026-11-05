@@ -27,9 +27,9 @@ AgentTest 是一个 Python API 测试平台。接入 OpenAPI 和已确认的业�
 <details>
 <summary>查看当前真实网页：原文对账、实际请求与未完成项</summary>
 
-![AgentTest实际网页：开发只读样例](docs/images/first-completion-desktop.png)
+![AgentTest实际网页：冻结候选的分页需求](docs/images/first-completion-frozen-desktop.png)
 
-这是本轮开发阶段的一次正常网页实测：真实模型与原CourseInsight，健康和课程列表2场景、3个HTTP请求、2次模型调用、17,746已知Token、0 UNKNOWN。页面中的3/26是该次实际接口覆盖，不是完整需求完成率，也不计入正式48位置对照。截图已核对，没有凭据或用户业务正文。
+这是2026-11-05冻结位置N01第2轮候选的实际页面：真实模型与原CourseInsight，实际查询两页列表并检查健康状态，5个HTTP请求、2次模型调用、14,642已知Token、0 UNKNOWN。3/26仅是本位置接口覆盖；这一条完成不能代表整体可靠性。截图没有凭据或用户业务正文；[未完成任务的窄屏页面](docs/images/first-completion-frozen-mobile.png)也保留。
 
 </details>
 
@@ -129,7 +129,7 @@ flowchart LR
 ## 当前证据与限制
 
 - 上一轮CourseInsight冻结首次完整完成 **3/10**，首次实际覆盖 **18/26** 接口；加入另行记录的复验后覆盖 **26/26**。后者仅说明该次特定接口覆盖，不能代替需求完成率或宣传任意项目全部接口可测。[分母、失败、用量及限制](docs/courseinsight-colleague-delivery.md)。
-- 本轮首次完成率增量仍在开发，尚未完成新的48位置真实对照，不能宣称可靠性提升。[本轮口径和进度](docs/first-completion-goal.md)。
+- 本轮48位置真实对照已执行：冻结基线 **10/24**、候选 **5/24** 完整首次完成，**没有改善**。8个位置含验收配置错误，7个位置发生登录限流，全部保留；这组观察不能支持可靠性提升或普遍效果结论。[逐项结果、成本与限制](docs/first-completion-delivery.md)。最终另有一处离线回归修复，未追加同批真实调用，也不将冻结分数改记到修复后版本。
 - 首次接入依赖操作员核对。自然语言理解、Schema、文件和轮询均有支持子集；不保证零配置、生产可用或任意项目适配。
 - 不提供跨服务回滚、未知写入恢复或任意资源自动清理。无删除接口的资源记录待清理，不绕过业务限制。
 - 超时与缺失用量分别保留，UNKNOWN不估算补齐。规划模型Token不等于被测系统自身AI成本；实际费用需供应商账单证据。
@@ -141,4 +141,4 @@ flowchart LR
 - 开始使用：[通用接入](docs/product-intake-guide.md)、[模拟体验](docs/web-intake-guide.md)、[真实模型配置](docs/model-configuration.md)。
 - 结果与回归：[固定回归](docs/regression-export.md)、[回归样例](examples/regressions/README.md)、[CourseInsight交付](docs/courseinsight-colleague-delivery.md)。
 - 设计与开发：[技术设计](docs/project-technical-summary.md)、[开发快检](docs/development-checks.md)、[MCP](docs/mcp-guide.md)。
-- 验收与历史：[本轮Goal](docs/first-completion-goal.md)、[进度索引](docs/progress.md)、[历史计划复用对照](docs/plan-reuse-final-results.md)。历史分数不重计为当前版本成绩。
+- 验收与历史：[本轮交付](docs/first-completion-delivery.md)、[本轮Goal](docs/first-completion-goal.md)、[进度索引](docs/progress.md)、[历史计划复用对照](docs/plan-reuse-final-results.md)。历史分数不重计为当前版本成绩。

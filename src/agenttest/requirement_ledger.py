@@ -60,6 +60,7 @@ def reconcile_assignments(context, selection):
                 if r.name == item['name'] and not r.path
                 and json_equal(literal_data(r.value), item['value'])
                 and item['source_quote'] in r.source_quote]
+            typed_gaps = []
             for requested in selection.requested_checks:
                 check = checks.get(requested.policy_id, {})
                 value = (literal_data(requested.exact_value.value)
@@ -67,6 +68,15 @@ def reconcile_assignments(context, selection):
                 if (check.get('name') == item['name'] and json_equal(value, item['value'])
                         and item['source_quote'] in requested.source_quote):
                     matched.append(check['operation_id'])
+                elif (check.get('name') == item['name'] and requested.exact_value is not None
+                        and item['source_quote'] in requested.source_quote
+                        and check.get('kind') == 'boundary_outside'
+                        and check.get('field_constraints', {}).get('type') in {'integer', 'number'}
+                        and type(item['value']) in {int, float} and type(value) is str
+                        and value == str(item['value'])):
+                    # The existing negative gate holds this type-changed check locally.
+                    # Keep the raw obligation unresolved; never coerce it or stop unrelated work.
+                    typed_gaps.append(requested.policy_id)
             for requirement in selection.requirements:
                 if item['source_quote'] not in requirement.source_quote:
                     continue
@@ -79,6 +89,9 @@ def reconcile_assignments(context, selection):
                         matched.append(rule['operation_id'])
             if matched:
                 entry.update(status='ACCOUNTED', matched_operations=sorted(set(matched)))
+            elif typed_gaps:
+                entry.update(status='NEEDS_REVIEW', pending_checks=typed_gaps,
+                             reason='NEGATIVE_VALUE_TYPE_CHANGED')
             elif any(q.operation_id in candidates and item['source_quote'] in q.source_quote
                      for q in [*selection.input_questions, *selection.expectation_questions]):
                 entry['status'] = 'NEEDS_REVIEW'

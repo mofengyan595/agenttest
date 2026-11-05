@@ -23,6 +23,11 @@ UNKNOWN遵循现有默认停止及操作者例外规则，不推断、不补齐�
 
 ## 当前检查点
 
+2026-11-05：冻结候选`c1682f5`的48位置全部执行，基线10/24、候选5/24，质量目标未达到。
+8个位置有验收配置错误，7个位置发生登录限流，全部保留，没有追加同批调用。
+详见[本轮交付、逐条证据及限制](first-completion-delivery.md)。
+以下为开发前检查点的保留记录，不作为最终成绩。
+
 README组织参考已阅读的[Browser Use](https://github.com/browser-use/browser-use#readme)、
 [Dify](https://github.com/langgenius/dify#readme)、[Schemathesis](https://github.com/schemathesis/schemathesis#readme)：
 用途介绍、实际演示、快速开始和文档导航；没有引入其效果数字、用户背书或能力声明。
