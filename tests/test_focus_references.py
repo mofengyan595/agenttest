@@ -7,6 +7,7 @@ from uuid import uuid4
 import httpx
 import pytest
 from jsonschema import Draft202012Validator
+from test_negative_values import case as report_case
 from test_negative_values import policy, read_project
 from test_product_design import settings
 from test_product_tasks import finished, response, service
@@ -38,6 +39,103 @@ def wire(operations, requirements):
     return dict(interpretation='按原文和已确认配置核对', blocked_operations={},
         scope=dict(mode='selected', operations=operations, question=None),
         requirement_map=requirements)
+
+
+@pytest.mark.parametrize(('text', 'actions', 'missing'), [
+    ('查询资料', [], ['actions']),
+    ('查询同一资料', [dict(operation_id='read', role=None)], ['same_resource']),
+    ('完成后查询资料', [dict(operation_id='read', role=None)], ['before']),
+    ('完成后查询同一资料', [], ['actions', 'same_resource', 'before']),
+])
+def test_missing_witness_diagnostic_names_clause_and_fields(text, actions, missing):
+    context = ctx(text)
+    proposal = wire(dict(create=None, read=bundle(), delete=None), {
+        'request_1': clause('read', actions=actions),
+    })
+    with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_WITNESS_MISSING') as exc:
+        FocusModel(settings(), profile='generic')._decode_output(json.dumps(proposal), context)
+    fields = [f'requirement_map.request_1.{field}' for field in missing]
+    assert exc.value.diagnostic.fields == fields
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(('request_text', 'variants', 'explicit'), [
+    ('匿名检查 readReports 的 limit=9 上界，预期 HTTP 422。', True, True),
+    ('匿名检查 readReports 的 limit=9 上界，预期 HTTP 403。', True, False),
+    ('匿名检查 readReports 的 limit=9 下界，预期 HTTP 422。', True, False),
+    ('匿名检查 readReports 的 limit=9 或 limit=8 上界。', True, False),
+    ('匿名检查 readReports 的 limit=9 上界。再检查 limit=8 上界。', True, False),
+    ('匿名检查 readReports 的 limit=9 上界，预期 HTTP 422。', False, False),
+])
+async def test_only_unique_approved_values_get_actions(request_text, variants, explicit):
+    from agenttest.product_focus import select_focus
+
+    project, _ = read_project(variants=variants)
+    model = FocusModel(settings(), profile='generic')
+
+    class Capture:
+        async def generate(self, context):
+            clauses = {a['source_id']: clause('readReports', actions=[])
+                       for a in context['request_atoms']}
+            proposal = wire(dict(readReports=bundle()), clauses)
+            assert bool(context.get('boundary_links')) == explicit
+            if explicit:
+                payload = json.loads(model.prepare_request(context))
+                schema = payload['response_format']['json_schema']['schema']
+                assert Draft202012Validator(schema).is_valid(proposal)
+            return model._decode_output(json.dumps(proposal), context)
+
+    if not explicit:
+        with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_WITNESS_MISSING'):
+            await select_focus(project, Capture(), dict(current_request=request_text), environ={})
+        return
+    result = await select_focus(project, Capture(), dict(current_request=request_text), environ={})
+    assert [[a.operation_id for a in r.actions] for r in result.requirements] == [
+        ['readReports'], ['readReports']]
+    assert len(result.requested_checks) == 1 and result.requested_checks[0].exact_value.value == 9
+
+
+@pytest.mark.asyncio
+async def test_confirmed_boundary_sends_exact_negative(tmp_path, monkeypatch):
+    project, setup = read_project()
+    approved = policy(project, kind='boundary_outside', value=4)
+
+    def focus(request):
+        context = json.loads(json.loads(request.content)['messages'][1]['content'])
+        assert context['boundary_links'][0]['explicit']
+        return response(wire(dict(readReports=bundle()), {
+            a['source_id']: clause('readReports', actions=[]) for a in context['request_atoms']}))
+
+    def designer(request):
+        context = json.loads(json.loads(request.content)['messages'][1]['content'])
+        check, = context['requested_checks']
+        assert check['policy_id'] == approved.id and check['exact_value'] == {'value': 9}
+        negative = report_case(approved.id)['plan']['steps'][0]
+        return response(dict(interpretation='执行已确认边界', relevant=True, questions=[],
+            not_covered=[], cases=[], required_cases={approved.id: dict(title='核对上界拒绝',
+                before=[], check=negative, after=[])}))
+
+    sent = []
+
+    def target(request):
+        sent.append((request.method, dict(request.url.params)))
+        return httpx.Response(422)
+
+    monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(target))
+    svc = service(tmp_path, designer)
+    svc.focus_factory = lambda _: FocusModel(settings(), transport=httpx.MockTransport(focus),
+                                             profile='generic')
+    try:
+        saved = svc.intake.save(IntakeInput(name='已确认上界', document=project.document.decode(),
+                                           generic=setup, confirmed=True), 'operator')
+        text = '匿名检查 readReports 的 limit=9 上界，预期 HTTP 422。'
+        row = await svc.submit('operator', saved['id'], text, uuid4().hex)
+        done = await finished(svc, row)
+        assert done['summary']['complete'] and done['summary']['checks_passed']
+        assert done['summary']['coverage']['executed_requested_checks'] == 1
+        assert sent == [('GET', {'limit': '9', 'order': 'asc'})]
+    finally:
+        await svc.close()
 
 
 def test_named_boundary_wire_resolves_value_without_retyping_or_reusing_status():

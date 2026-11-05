@@ -43,10 +43,17 @@ def constrain_operation_bundles(schema, context):
     shared, operation_properties = {}, {}
     index = context.get("approved_checks", [])
     local_checks = operation_checks(index)
+    from agenttest.boundary_obligations import explicit_boundary_actions
     from agenttest.request_requirements import future_only_operations
 
     future = future_only_operations(context)
+    actions = explicit_boundary_actions(context)
+    mandatory = {action['operation_id'] for action in actions.values()}
+    standalone = bool(actions) and len(actions) == len(context.get('request_atoms', []))
     for operation in context["approved_ids"]:
+        if operation in future or standalone and operation not in mandatory:
+            operation_properties[operation] = dict(type='null')
+            continue
         all_fields = [f for f in context.get("input_fields", []) if f["operation_id"] == operation]
         fields = [f for f in all_fields if not f.get("source_dependency")]
         local = dict(properties=deepcopy(templates), **{"$defs": schema["$defs"]})
@@ -94,8 +101,11 @@ def constrain_operation_bundles(schema, context):
                 branch["required"] = list(branch["properties"])
             constrain_numeric_check_sources(local["properties"]["requested_checks"],
                                             local_checks[operation], context)
+        if standalone:
+            local['properties']['requested_checks'] = dict(type='array', maxItems=0)
+        normal = dict(type='boolean', enum=[False]) if standalone else dict(type='boolean')
         bundle = dict(type="object", additionalProperties=False,
-                      properties={**local["properties"], "test_normal": dict(type="boolean"),
+                      properties={**local["properties"], "test_normal": normal,
                           "existing_resource": dict(
                           type="boolean", enum=[False, True] if len(fields) != len(all_fields)
                           else [False])},
@@ -105,10 +115,9 @@ def constrain_operation_bundles(schema, context):
             name = f"FocusOperation{len(shared) + 1}"
             schema["$defs"][name] = bundle
             shared[key] = name
-        operation_properties[operation] = dict(anyOf=[dict(type="null"),
-            {"$ref": "#/$defs/" + shared[key]}])
-        if operation in future:
-            operation_properties[operation] = dict(type='null')
+        operation_ref = {"$ref": "#/$defs/" + shared[key]}
+        operation_properties[operation] = (operation_ref if operation in mandatory
+            else dict(anyOf=[dict(type="null"), operation_ref]))
     return dict(type="object", additionalProperties=False,
                 properties=operation_properties, required=list(operation_properties))
 

@@ -1,0 +1,310 @@
+{
+  "schema": "agenttest.explicit-boundary-evidence.v1",
+  "parent_commit": "d89ff327856f8e02d871111f19d6d884cce261c7",
+  "freeze_sha256": "83a22bcf61bc7b0a1e247c7c9c134364bf69463d767b63d57f5c2995855b9054",
+  "target": "CourseInsight isolated local Demo",
+  "offline_reproduction": {
+    "id": "F01",
+    "kind": "synthetic proposal from original input and configuration",
+    "original": {
+      "layer": "model",
+      "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+      "fields": []
+    },
+    "model_calls": 0,
+    "target_requests": 0,
+    "clauses": [
+      {
+        "source_id": "request_1",
+        "text": "管理员验证课程列表 size=104 的上界拒绝",
+        "same_resource": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "预期 HTTP 400",
+        "same_resource": false,
+        "ordered": false
+      }
+    ],
+    "reproduced": {
+      "layer": "model",
+      "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+      "fields": []
+    }
+  },
+  "offline_preflight": [
+    {
+      "mode": "diagnostic",
+      "id": "F01",
+      "model_calls": 0,
+      "target_requests": 0,
+      "boundary_link": {
+        "source_id": "request_1",
+        "source_quote": "管理员验证课程列表 size=104 的上界拒绝",
+        "status_source_id": "request_2",
+        "operation_id": "listCourses",
+        "role": "tester",
+        "policy_id": "web_rule_2_negative_5",
+        "value": 104,
+        "explicit": false
+      },
+      "input_bound": 31756,
+      "diagnostic": {
+        "layer": "model",
+        "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+        "fields": [
+          "requirement_map.request_2.actions"
+        ]
+      }
+    },
+    {
+      "mode": "linked",
+      "id": "F01",
+      "model_calls": 0,
+      "target_requests": 0,
+      "boundary_link": {
+        "source_id": "request_1",
+        "source_quote": "管理员验证课程列表 size=104 的上界拒绝",
+        "status_source_id": "request_2",
+        "operation_id": "listCourses",
+        "role": "tester",
+        "policy_id": "web_rule_2_negative_5",
+        "value": 104,
+        "explicit": false
+      },
+      "input_bound": 31756,
+      "requested_checks": [
+        {
+          "policy_id": "web_rule_2_negative_5",
+          "source_quote": "管理员验证课程列表 size=104 的上界拒绝",
+          "exact_value": {
+            "value": 104
+          }
+        }
+      ]
+    },
+    {
+      "mode": "preflight",
+      "id": "B01",
+      "model_calls": 0,
+      "target_requests": 0,
+      "boundary_link": {
+        "source_id": "request_1",
+        "source_quote": "用 tester 身份只检查 listCourses 的 size=107 上界拒绝",
+        "status_source_id": "request_2",
+        "operation_id": "listCourses",
+        "role": "tester",
+        "policy_id": "web_rule_2_negative_5",
+        "value": 107,
+        "explicit": true
+      },
+      "input_bound": 27117,
+      "requested_checks": [
+        {
+          "policy_id": "web_rule_2_negative_5",
+          "source_quote": "用 tester 身份只检查 listCourses 的 size=107 上界拒绝",
+          "exact_value": {
+            "value": 107
+          }
+        }
+      ]
+    }
+  ],
+  "health_preflight": {
+    "method": "GET",
+    "path": "/api/health",
+    "status": 200,
+    "count": 1
+  },
+  "position": {
+    "id": "B01",
+    "status": "FINISHED",
+    "taskId": "710d67b8060f4bf396e4ca3a899649f8",
+    "seconds": 25.492,
+    "waitMs": 0,
+    "usage": {
+      "requests": 2,
+      "model_calls": 2,
+      "known_tokens": 12556,
+      "total_tokens": 12556,
+      "usage_known": true
+    },
+    "requests": [
+      {
+        "runId": "6164846f3f1f48f4af56fabcb7dafae6",
+        "operation": "loginUser",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "role": "tester",
+        "values": {
+          "path_parameters": {},
+          "query": {},
+          "body": {}
+        },
+        "status": 200,
+        "elapsedMs": 225.26,
+        "responseSha256": "7851eaa5aa8b7122c47f7ec2f31b7d939928c83f860f81c26c492c1a17426d9b",
+        "reason": "POLICY_EVALUATED",
+        "classification": "PASS",
+        "validation": "NORMAL_VALIDATED",
+        "checks": [
+          {
+            "selector": null,
+            "passed": true
+          },
+          {
+            "selector": "$.code",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "runId": "6164846f3f1f48f4af56fabcb7dafae6",
+        "operation": "listCourses",
+        "method": "GET",
+        "path": "/api/courses",
+        "role": "tester",
+        "values": {
+          "path_parameters": {},
+          "query": {
+            "page": 1,
+            "size": 107
+          },
+          "body": {}
+        },
+        "status": 400,
+        "elapsedMs": 136.447,
+        "responseSha256": "51f3d176252518c98d2baf7183c1f01342f547cc0fc87b888ed9ac37d77540cf",
+        "reason": "POLICY_EVALUATED",
+        "classification": "PASS",
+        "validation": "APPROVED_NEGATIVE",
+        "checks": [
+          {
+            "selector": null,
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "pending": [],
+    "questions": [],
+    "design": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 8422,
+          "request_bytes": 26605,
+          "request_sha256": "0091a0532331b33d20e78aceb773579a670bd6e9de980c0df31e44237a4d224a",
+          "response_bytes": 2076,
+          "input_token_upper_bound": 27117,
+          "input_tokens": 6105,
+          "output_tokens": 359,
+          "total_tokens": 6464,
+          "output_sha256": "03c7015b8ec56f6716df03a3d5c6afe02ee9ad33cf5b0c720736176375b98138",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        }
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 6265,
+          "request_bytes": 25813,
+          "request_sha256": "02b91fa51ec52f03b73e349696ace444444b419867060928e9d600a40fa30039",
+          "response_bytes": 1493,
+          "input_token_upper_bound": 26325,
+          "input_tokens": 5845,
+          "output_tokens": 247,
+          "total_tokens": 6092,
+          "output_sha256": "f1d529790df6d78e46eb017140c1922c9048b1ee606b41caf897523f96ffaca3",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        }
+      }
+    ],
+    "request": "用 tester 身份只检查 listCourses 的 size=107 上界拒绝，预期 HTTP 400。",
+    "configuration_sha256": "59b97849138a07e5fdbcf42bc921d913a56ac0b3501e4886432b9a7b51313acb",
+    "complete": true,
+    "checks_passed": true,
+    "requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "用 tester 身份只检查 listCourses 的 size=107 上界拒绝",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "listCourses",
+            "role": "tester"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "预期 HTTP 400",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "listCourses",
+            "role": "tester"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "requested_checks": [
+      {
+        "policy_id": "web_rule_2_negative_5",
+        "source_quote": "用 tester 身份只检查 listCourses 的 size=107 上界拒绝",
+        "exact_value": {
+          "value": 107
+        }
+      }
+    ],
+    "requirement_ledger": [
+      {
+        "name": "size",
+        "value": 107,
+        "source_quote": "size=107",
+        "start": 29,
+        "end": 37,
+        "deferred": false,
+        "candidate_operations": [
+          "listCourses"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "listCourses"
+        ]
+      }
+    ],
+    "configured_rejection": {
+      "kind": "http_status",
+      "selector": null,
+      "passed": true,
+      "expected": [
+        400
+      ],
+      "actual": 400
+    }
+  }
+}

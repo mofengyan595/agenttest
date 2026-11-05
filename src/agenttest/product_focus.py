@@ -123,7 +123,11 @@ action, exception, permission, cleanup and content check. Additional advice neve
 
 request_atoms is the server's complete original-text partition. requirement_map needs EVERY
 source_id. required names actions with identity aliases, before edges and approved producer/consumer
-same_resource links; null identity means public/anonymous. For an existing fixed path ID, cite
+same_resource links; null identity means public/anonymous.
+For boundary_links with explicit=true, the server supplies the exact check and action for the
+listed source_id and any status_source_id. Mark these clauses required with actions=[] and select
+the listed operation. Do not repeat these requested_checks. Keep any independently requested order
+and resource references. For an existing fixed path ID, cite
 {resource_ref} from existing_resources; never invent a producer or use a self-edge. Field clauses
 belong to their action,
 not an extra request. response_checks cite the exact operator-owned response_expectations entries.
@@ -250,7 +254,11 @@ class TestFocusModel(OpenAICompatiblePlanner):
         expectation["required"].remove("operation_id")
         choices = constrain_operation_bundles(schema, context)
         scopes = []
-        for mode in ("selected", "all_ready", "needs_information", "no_current_action"):
+        from agenttest.boundary_obligations import explicit_boundary_actions
+
+        modes = ("selected",) if explicit_boundary_actions(context) else (
+            "selected", "all_ready", "needs_information", "no_current_action")
+        for mode in modes:
             fields = dict(mode=dict(type="string", enum=[mode]),
                 operations=choices if mode == "selected" else dict(type="object",
                     properties={}, additionalProperties=False),
@@ -297,6 +305,9 @@ class TestFocusModel(OpenAICompatiblePlanner):
                       field for field in fields if field.get("source_dependency")]),
                   "approved_checks": public_check_groups(context.get("approved_checks", [])),
                   "input_sources": sources, "literal_texts": literal_texts(sources)}
+        if context.get('boundary_links'):
+            public['boundary_links'] = [{k: v for k, v in link.items()
+                if k not in {'policy_id', 'source_quote'}} for link in context['boundary_links']]
         if context.get('response_expectations'):
             # Field facts already have closed catalog references; do not send two full copies.
             catalog = context['response_expectations']
@@ -359,6 +370,9 @@ class TestFocusModel(OpenAICompatiblePlanner):
             operation_ids=selected_ids,
             blocked_operation_ids=[key for key, value in blocked.items() if value],
             pending_questions=[], not_covered=[]))
+        from agenttest.boundary_obligations import bind_boundary_actions
+
+        bind_boundary_actions(selection, context)
         self.proposed_question_count = (len(selection.input_questions) +
             len(selection.expectation_questions) + int(selection.mode == 'needs_information'))
         if set(selection.normal_operation_ids) - set(selection.operation_ids):
@@ -461,6 +475,10 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         "input_requirements", [])
     context["unavailable_operations"] = [o for o in (inventory or {}).get("operations", [])
                                          if o["state"] != "READY"]
+    from agenttest.boundary_obligations import bind_boundary_actions, boundary_links
+
+    if links := boundary_links(project, context):
+        context['boundary_links'] = links
     _public_metadata(context)
     vault = CredentialVault(project.target, environ)
     try:
@@ -472,6 +490,7 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         if vault.contains_secret(selection.model_dump()):
             raise ValueError("FOCUS_OUTPUT_CONTAINS_CREDENTIAL")
         _public_metadata(selection.model_dump())
+        bind_boundary_actions(selection, context)
         if set(selection.operation_ids) - set(project.target.allowed_operations):
             raise ValueError("FOCUS_OPERATION_NOT_APPROVED")
         selected = (context["approved_ids"] if selection.mode == "all_ready"

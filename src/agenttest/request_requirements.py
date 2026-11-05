@@ -208,6 +208,8 @@ def constrain_question_sources(schema, sources, context):
 
 def requirement_schema(context):
     """A closed slot for every source clause; no free-form 'fully covered' boolean."""
+    from agenttest.boundary_obligations import explicit_boundary_actions
+
     operations = context['approved_ids']
     unavailable = [o['operation_id'] for o in context.get('unavailable_operations', [])]
     roles = [None, *[entry['identity'] for entry in context.get('managed_authentication', [])]]
@@ -234,10 +236,14 @@ def requirement_schema(context):
     resource = {'$ref': '#/$defs/RequestResource'}
     shared = {}
     properties = {}
+    trusted_actions = explicit_boundary_actions(context)
     for atom in context.get('request_atoms', []):
         branches = []
+        trusted = trusted_actions.get(atom['source_id'])
         dispositions = (['deferred'] if atom.get('future_only') else ['required', 'needs_review',
             *(['constraint'] if atom['constraint'] else [])])
+        if trusted is not None:
+            dispositions = ['required']
         for disposition in dispositions:
             props = dict(disposition=dict(type='string', enum=[disposition]),
                 actions=dict(type='array', items=action, minItems=1 if disposition == 'required'
@@ -257,6 +263,8 @@ def requirement_schema(context):
                     items=dict(type='string', enum=unavailable), maxItems=30)
                     if unavailable and disposition == 'needs_review' else
                     dict(type='array', maxItems=0)))
+            if trusted is not None:
+                props['actions'] = dict(type='array', maxItems=0)
             if disposition == 'deferred':
                 for key in ('before', 'same_resource', 'response_checks',
                             'forbidden_operation_ids', 'blocked_operation_ids'):
@@ -327,6 +335,25 @@ def validate_requirement_links(requirements, context, selection):
     if (set(selection.operation_ids) | set(selection.blocked_operation_ids)) & (
             future_only_operations(context)):
         raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_OPERATION_SELECTED')
+    for item in requirements:
+        atom = atoms[item.source_id]
+        if (item.source_quote != atom['text'] or item.disposition not in {
+                'required', 'deferred', 'needs_review', 'constraint'}):
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_SOURCE_INVALID')
+        if atom.get('future_only') and item.disposition != 'deferred':
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
+        if item.disposition == 'required':
+            missing_witnesses = [field for field, missing in (
+                ('actions', not item.actions),
+                ('same_resource', atom['same_resource'] and not (
+                    item.same_resource or item.existing_resources)),
+                ('before', atom['ordered'] and not item.before),
+            ) if missing]
+            if missing_witnesses:
+                error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')
+                error.diagnostic.fields = [f'requirement_map.{atom["source_id"]}.{field}'
+                                           for field in missing_witnesses]
+                raise error
     mapped = {action.operation_id for item in requirements
               if item.disposition in {'required', 'needs_review'} for action in item.actions}
     mapped.update(r.operation_id for r in selection.input_requirements)
@@ -372,11 +399,6 @@ def validate_requirement_links(requirements, context, selection):
     pending_boundaries = pending_numeric_boundaries(selection, checks)
     for item in requirements:
         atom = atoms[item.source_id]
-        if (item.source_quote != atom['text'] or item.disposition not in {
-                'required', 'deferred', 'needs_review', 'constraint'}):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_SOURCE_INVALID')
-        if atom.get('future_only') and item.disposition != 'deferred':
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
         if item.disposition == 'deferred':
             if (not atom['future'] or item.actions or item.before or item.same_resource
                     or item.existing_resources
@@ -394,10 +416,6 @@ def validate_requirement_links(requirements, context, selection):
         if item.blocked_operation_ids and (item.disposition != 'needs_review' or
                 set(item.blocked_operation_ids) - set(selection.blocked_operation_ids)):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
-        if item.disposition == 'required' and (not item.actions or
-                atom['same_resource'] and not (item.same_resource or item.existing_resources) or
-                atom['ordered'] and not item.before):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')
         if any(a.operation_id not in selected or a.role not in roles for a in item.actions):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ACTION_INVALID')
         if any(r.earlier == r.later or r.earlier not in context['approved_ids']
