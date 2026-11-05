@@ -41,6 +41,66 @@ def wire(operations, requirements):
         requirement_map=requirements)
 
 
+@pytest.mark.asyncio
+async def test_rule_only_question_does_not_trigger_model_proposed_sampling(tmp_path, monkeypatch):
+    project, setup = read_project()
+    text = '报告列表是否承诺按标题升序排列并把缺少的排序规则告诉我。'
+
+    def focus(request):
+        context = json.loads(json.loads(request.content)['messages'][1]['content'])
+        atom, = context['request_atoms']
+        source = next(s['source_id'] for s in context['input_sources'] if s['text'] == atom['text'])
+        question = dict(kind='business_rule', role=None, status_choices=[], source_ref=source,
+                        requested_behavior='核对报告排序承诺', question='确认报告按什么字段排序？')
+        return response(wire(dict(readReports=bundle(test_normal=True,
+            expectation_questions=[question])), {atom['source_id']: clause('readReports')}))
+
+    def unexpected(_):
+        pytest.fail('A contract-only question must not call the designer or target')
+
+    monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(unexpected))
+    svc = service(tmp_path, unexpected)
+    svc.focus_factory = lambda _: FocusModel(settings(), transport=httpx.MockTransport(focus),
+                                             profile='generic')
+    try:
+        saved = svc.intake.save(IntakeInput(name='排序待确认', document=project.document.decode(),
+                                           generic=setup, confirmed=True), 'operator')
+        row = await svc.submit('operator', saved['id'], text, uuid4().hex)
+        result = await finished(svc, row)
+        summary = result['summary']
+        assert not summary['complete'] and summary['context_usage']['requests'] == 0
+        assert summary['expectation_blocked_operations'] == ['readReports']
+        assert summary['questions'][0]['operation_id'] == 'readReports'
+    finally:
+        await svc.close()
+
+
+def test_rule_only_login_is_removed_from_primary_and_kept_for_independent_reads():
+    from types import SimpleNamespace
+
+    from agenttest.product_focus import FocusSelection, rule_review_scope
+    from agenttest.request_requirements import request_atoms
+
+    rule = '报表接口有没有明确约定按标题排序'
+    actions = [dict(operation_id=op, role='tester') for op in ('login', 'reports')]
+    project = SimpleNamespace(contract=SimpleNamespace(operations=[
+        SimpleNamespace(operation_id='reports', method='GET')]),
+        target=SimpleNamespace(roles={'tester': SimpleNamespace(login_operation='login')}),
+        registry=SimpleNamespace(definitions=lambda: [
+            SimpleNamespace(id='read_reports', operation_id='reports', roles=['tester'])]))
+    for execute in (False, True):
+        requirements = [dict(source_id=a['source_id'], source_quote=a['text'],
+            **clause('reports', actions=actions)) for a in request_atoms(
+                rule + ('。实际读取报表一遍。' if execute else ''))]
+        selection = FocusSelection(interpretation='已确认读取和排序问题', mode='selected',
+            operation_ids=['login', 'reports'], question=None, pending_questions=[], not_covered=[],
+            requirements=requirements, expectation_questions=[dict(operation_id='reports',
+                source_quote=rule, question='请确认报告标题排序规则',
+                requested_behavior='排序规则')])
+        expected = (set(), set()) if execute else ({'reports'}, {'login'})
+        assert rule_review_scope(project, selection) == expected
+
+
 @pytest.mark.parametrize(('text', 'actions', 'missing'), [
     ('查询资料', [], ['actions']),
     ('查询同一资料', [dict(operation_id='read', role=None)], ['same_resource']),

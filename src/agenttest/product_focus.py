@@ -86,6 +86,34 @@ def validate_expectation_questions(questions, context, selected):
         seen.add(key)
 
 
+def rule_review_scope(project, selection):
+    """A question about a contract does not require sampling the endpoint."""
+    reads = {op.operation_id for op in project.contract.operations if op.method in {'GET', 'HEAD'}}
+    current = {r.source_quote for r in selection.requirements}
+    questions = [q for q in selection.expectation_questions
+        if q.kind == 'business_rule' and q.operation_id in reads and q.source_quote in current
+        and re.search(r'是否(?:承诺|保证|(?:明确)?约定)|(?:有没有|有无)(?:明确的?)?约定',
+                      q.source_quote)
+        and not re.search(r'实际\s*(?:执行|调用|请求|查询|读取|发起)|发(?:一)?次请求|'
+                          r'(?:查询|读取|查|读|跑|测)一遍|(?:先|再|并|顺便|同时|另外)'
+                          r'\s*(?:请|帮我)?\s*(?:查询|读取|请求|调用|执行|导出|登录)',
+                          q.source_quote)]
+    if not questions:
+        return set(), set()
+    quotes = {q.source_quote for q in questions}
+    independent = {a.operation_id for r in selection.requirements
+                   if r.disposition == 'required' and r.source_quote not in quotes
+                   for a in r.actions}
+    independent_checks = {c.policy_id for c in selection.requested_checks
+                          if c.source_quote not in quotes}
+    policies = project.registry.definitions()
+    independent.update(p.operation_id for p in policies if p.id in independent_checks)
+    blocked = {q.operation_id for q in questions} - independent
+    logins = {project.target.roles[role].login_operation for p in policies
+              if p.operation_id in blocked for role in p.roles if role in project.target.roles}
+    return blocked, logins - independent - {None}
+
+
 class FocusSelection(StrictModel):
     interpretation: str = Field(min_length=4, max_length=500, pattern=r".*[\u4e00-\u9fff].*")
     mode: Literal["selected", "all_ready", "needs_information", "no_current_action"]
@@ -131,7 +159,10 @@ and resource references. For an existing fixed path ID, cite
 {resource_ref} from existing_resources; never invent a producer or use a self-edge. Field clauses
 belong to their action,
 not an extra request. response_checks cite the exact operator-owned response_expectations entries.
-Unknown requested rules require needs_review and a source-backed question; never invent an expected
+For a continuation that checks response contents, cite the reviewed field references and keep the
+preceding read and identity. A question about whether a rule is guaranteed is not a request to
+sample an endpoint. Preserve any separately requested read. Unknown requested rules require
+needs_review and a source-backed question; never invent an expected
 value. Inventory gaps may cite blocked_operation_ids matching blocked_operations instead of a
 business question. Only explicit prohibitions/scope directives use constraint, with zero actions
 and forbidden_operation_ids. Never downgrade requested negatives/permissions/cleanup to directives.

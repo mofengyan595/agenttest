@@ -1,0 +1,2830 @@
+{
+  "schema": "agenttest.readonly-acceptance.v1",
+  "target": "CourseInsight isolated local Demo",
+  "first": {
+    "phase": "six_first_submissions",
+    "freeze_sha256": "9afacc0a8607c45b8d63e70736f694b5cf2769c29f04ad76db6151c2fecdc6ff",
+    "source_commit": "957773f176565e4b337b890a71f58fad833d59c9",
+    "model_calls": 11,
+    "known_tokens": 74308,
+    "target_requests": 11,
+    "logins": 5,
+    "health_preflights": 6,
+    "outcomes": {
+      "execution": {
+        "passed": 3,
+        "total": 4
+      },
+      "guard": {
+        "passed": 1,
+        "total": 2
+      }
+    },
+    "positions": [
+      {
+        "id": "A01",
+        "status": "FINISHED",
+        "taskId": "efff3eeb1703465eb72db37700b9c050",
+        "seconds": 20.516,
+        "waitMs": 0,
+        "usage": {
+          "requests": 2,
+          "model_calls": 2,
+          "known_tokens": 13581,
+          "total_tokens": 13581,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "21df2a3bf55d452aaafc8dec77fb4185",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 236.582,
+            "responseSha256": "7b5ff38e57465cedd1962edc89248c09ea897325cf835963407f50f0ca88f7b1",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "21df2a3bf55d452aaafc8dec77fb4185",
+            "operation": "listCourses",
+            "method": "GET",
+            "path": "/api/courses",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {
+                "page": 3,
+                "size": 2
+              },
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 159.964,
+            "responseSha256": "a62ce6c78833a45e574721dce8fda5ea15abfa879edf0001f39efdabd1e5ae0b",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              },
+              {
+                "selector": "$.data.items",
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [],
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 6875,
+              "request_bytes": 29189,
+              "request_sha256": "d47218d319753ab05b67dc94554fe9ad171cd29a105e46f2420a09579ccd3c2b",
+              "response_bytes": 3616,
+              "input_token_upper_bound": 29701,
+              "input_tokens": 7095,
+              "output_tokens": 752,
+              "total_tokens": 7847,
+              "output_sha256": "f2e6b1ea7d78dc71eed0ae50d65e76d8b4d05263e758b46180c00df1f353f900",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 4032,
+              "request_bytes": 24603,
+              "request_sha256": "a5f409fb5fba0b3c6a3e902d75025567dcf2b5f75f62ed3467a533ff8fcd5d44",
+              "response_bytes": 1594,
+              "input_token_upper_bound": 25115,
+              "input_tokens": 5469,
+              "output_tokens": 265,
+              "total_tokens": 5734,
+              "output_sha256": "747dbbc71cbfcf2cbcac26fb77c1531d254c56e4ed071002db4781a391413a46",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "帮我翻到课程列表第三页，每页显示两门，看看列表能不能正常读出来。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "listCourses",
+              "query": {
+                "page": 3,
+                "size": 2
+              },
+              "status": 200,
+              "checks": [
+                "$.code",
+                "$.data.items"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "1db5bcda27de6a770c27af7239635474b030e7964265b26c23577d30b1e7d713",
+        "reported_complete": true,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "loginUser",
+              "listCourses"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "listCourses",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "location": "query",
+                "value": 3
+              },
+              {
+                "name": "size",
+                "location": "query",
+                "value": 2
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              },
+              {
+                "select": "$.data.items",
+                "operator": "exists",
+                "expected": null
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "帮我翻到课程列表第三页",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "response_checks": [],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_2",
+              "source_quote": "每页显示两门",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "response_checks": [],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_3",
+              "source_quote": "看看列表能不能正常读出来",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "listCourses"
+                }
+              ],
+              "same_resource": [],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_e8e56bc7e1a51b78a565",
+                "expectation_d975a827c42b233651ee"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "page",
+              "path": [],
+              "value": 3,
+              "source_quote": "帮我翻到课程列表第三页"
+            },
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "size",
+              "path": [],
+              "value": 2,
+              "source_quote": "每页显示两门"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "FULL_COMPLETION",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      },
+      {
+        "id": "A02",
+        "status": "FINISHED",
+        "taskId": "b184f40a44874bb59be70627ecb516ce",
+        "seconds": 21.586,
+        "waitMs": 0,
+        "usage": {
+          "requests": 4,
+          "model_calls": 2,
+          "known_tokens": 13901,
+          "total_tokens": 13901,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "d4e18d188a59433fbb6ced5f4a92dfa6",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 148.012,
+            "responseSha256": "840a242b66599cb024f05f338e14fd5988a341b49bf648cc7c1b044edd37bfd1",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "d4e18d188a59433fbb6ced5f4a92dfa6",
+            "operation": "listCourses",
+            "method": "GET",
+            "path": "/api/courses",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {
+                "page": 1,
+                "size": 4
+              },
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 108.315,
+            "responseSha256": "dafd1e6f7ac8a040e51112c53c3d9917361bdc42a32e311cc2175af58c3c204b",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              },
+              {
+                "selector": "$.data.items",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "7770d442084c4fee8107767fa916b86c",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 163.619,
+            "responseSha256": "842230d5205b354e45118cb46dd127336f631eb3d4f089c2572b698dd720e41d",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "7770d442084c4fee8107767fa916b86c",
+            "operation": "listCourses",
+            "method": "GET",
+            "path": "/api/courses",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {
+                "page": 1,
+                "size": 0
+              },
+              "body": {}
+            },
+            "status": 400,
+            "elapsedMs": 73.348,
+            "responseSha256": "6567bbcd3b90a0fc8b2ff2645c1a6b52a1888cede45a07e27b62af075da77bcb",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "APPROVED_NEGATIVE",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [],
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 8640,
+              "request_bytes": 29372,
+              "request_sha256": "0aefef218721e2b7e67bf5bdf296a7f75aade02e37164abb47554c8a6032fd6f",
+              "response_bytes": 2560,
+              "input_token_upper_bound": 29884,
+              "input_tokens": 7086,
+              "output_tokens": 486,
+              "total_tokens": 7572,
+              "output_sha256": "f9d371ac1ee783722e2c4ac318c6c34e4cab82fa3afdd427a499f1019fb6e3a8",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 7531,
+              "request_bytes": 26260,
+              "request_sha256": "ac3236f9c6e8d4bf8a64aa87fa800db268ba2db5b9659410bec254fc6758c519",
+              "response_bytes": 2075,
+              "input_token_upper_bound": 26772,
+              "input_tokens": 5958,
+              "output_tokens": 371,
+              "total_tokens": 6329,
+              "output_sha256": "f2cf166e2bfda63b1789817e68f62e9349a0f89b632d3fcaa8d71e85d62c9226",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "课程列表用每页四条正常查一次并用每页零条查一次确认会拒绝。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "listCourses",
+              "query": {
+                "page": 1,
+                "size": 4
+              },
+              "status": 200,
+              "checks": [
+                "$.code",
+                "$.data.items"
+              ]
+            },
+            {
+              "operation": "listCourses",
+              "query": {
+                "page": 1,
+                "size": 0
+              },
+              "status": 400,
+              "validation": "APPROVED_NEGATIVE"
+            }
+          ]
+        },
+        "configuration_sha256": "e940249d85a5ce88b2b4fed1d116a10f5026933c095d9f228c8a752b6973d24d",
+        "reported_complete": true,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "loginUser",
+              "listCourses"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "listCourses",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "location": "query",
+                "value": 1
+              },
+              {
+                "name": "size",
+                "location": "query",
+                "value": 4,
+                "negative_enabled": true
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              },
+              {
+                "select": "$.data.items",
+                "operator": "exists",
+                "expected": null
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "课程列表用每页四条正常查一次并用每页零条查一次确认会拒绝",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "listCourses"
+                }
+              ],
+              "same_resource": [],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_e8e56bc7e1a51b78a565",
+                "expectation_d975a827c42b233651ee"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "page",
+              "path": [],
+              "value": 1,
+              "source_quote": "课程列表用每页四条正常查一次并用每页零条查一次确认会拒绝"
+            },
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "size",
+              "path": [],
+              "value": 4,
+              "source_quote": "课程列表用每页四条正常查一次并用每页零条查一次确认会拒绝"
+            }
+          ],
+          "requested_checks": [
+            {
+              "policy_id": "web_rule_2_negative_2",
+              "source_quote": "课程列表用每页四条正常查一次并用每页零条查一次确认会拒绝。",
+              "exact_value": {
+                "value": 0
+              }
+            }
+          ],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "FULL_COMPLETION",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      },
+      {
+        "id": "A03",
+        "status": "NEEDS_REVIEW",
+        "taskId": "459950efbeb94f7ca89d9ca882cff339",
+        "seconds": 4.005,
+        "waitMs": 0,
+        "usage": {
+          "requests": 0,
+          "model_calls": 1,
+          "known_tokens": 7328,
+          "total_tokens": 7328,
+          "usage_known": true
+        },
+        "requests": [],
+        "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "REJECTED",
+            "reason": "MODEL_INVALID_RESPONSE",
+            "model_call": {
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+                "fields": [
+                  "requirement_map.request_2.actions"
+                ]
+              },
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 2922,
+              "request_bytes": 28065,
+              "request_sha256": "f9ff7227e1ab761694af735ea6ac822dbf4222b34133681fa3f2e250aa711426",
+              "response_bytes": 2508,
+              "input_token_upper_bound": 28577,
+              "input_tokens": 6841,
+              "output_tokens": 487,
+              "total_tokens": 7328,
+              "output_sha256": "36830ec5e6a99d19ee3c42405ac80582d84fd6a524b67a4c6c393f941c3a8cee",
+              "reason": "MODEL_INVALID_RESPONSE"
+            }
+          }
+        ],
+        "request": "帮我看一下批次23现在是否已经完成，并核对成功条数是一条。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "getAnalysisBatch",
+              "path": {
+                "batchId": 23
+              },
+              "status": 200,
+              "checks": [
+                "$.data.status",
+                "$.data.successCount"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "70cb90892901491e30e6b9f150d5dd63cba93c317cd2d7792165e15b05cdabb0",
+        "reported_complete": false,
+        "reported_checks_passed": null,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "getAnalysisBatch",
+              "loginUser"
+            ],
+            "status": "NOT_EXECUTED",
+            "reason": "测试重点尚未可靠确认。"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "getAnalysisBatch",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "batchId",
+                "location": "path_parameters",
+                "value": 23
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.data.status",
+                "operator": "equals",
+                "expected": "COMPLETED"
+              },
+              {
+                "select": "$.data.successCount",
+                "operator": "equals",
+                "expected": 1
+              }
+            ]
+          }
+        ],
+        "audit": {
+          "classification": "NOT_COMPLETED",
+          "reasons": [
+            "MISSING_EXPECTED_REQUEST_OR_ASSERTION",
+            "WORKFLOW_NOT_COMPLETE"
+          ],
+          "missing": [
+            {
+              "operation": "getAnalysisBatch",
+              "path": {
+                "batchId": 23
+              },
+              "status": 200,
+              "checks": [
+                "$.data.status",
+                "$.data.successCount"
+              ]
+            }
+          ],
+          "unmatched": []
+        }
+      },
+      {
+        "id": "A04",
+        "status": "FINISHED",
+        "taskId": "b305a3d4d6ec45758676e987d8c6cbe7",
+        "seconds": 13.913,
+        "waitMs": 0,
+        "usage": {
+          "requests": 2,
+          "model_calls": 2,
+          "known_tokens": 13469,
+          "total_tokens": 13469,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "c36aca8dccc649b983aebd8c84e7ce7b",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 151.691,
+            "responseSha256": "8802dec1ff33bba57b803dcb086a6614ceb0d56a87264863762bf1be3dabff9e",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "c36aca8dccc649b983aebd8c84e7ce7b",
+            "operation": "exportAnalysisBatchResults",
+            "method": "GET",
+            "path": "/api/analysis-batches/{batchId}/export",
+            "role": "tester",
+            "values": {
+              "path_parameters": {
+                "batchId": 25
+              },
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 100.714,
+            "responseSha256": "e96db03a96a19bece1503b5796b1065edbaf66dca6c71bacc14020176048dce7",
+            "projection": "CSV_TABLE_V1",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.columns",
+                "passed": true
+              },
+              {
+                "selector": "$.row_count",
+                "passed": true
+              },
+              {
+                "selector": "$.rows[0].任务状态",
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [],
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 3094,
+              "request_bytes": 29332,
+              "request_sha256": "32acc7e842fad2af6652a6fb9d604855c30753999551d2b93801d04c367ad4a9",
+              "response_bytes": 3061,
+              "input_token_upper_bound": 29844,
+              "input_tokens": 7187,
+              "output_tokens": 631,
+              "total_tokens": 7818,
+              "output_sha256": "325a2bea709d500fa59c143b21665745369d20723059ed92b182643dfbb6cf30",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 8000,
+              "request_bytes": 24787,
+              "request_sha256": "a9f51f9d5bdf72163b762daa33d0e406792745abb49d5b67fc96a5618effc683",
+              "response_bytes": 1730,
+              "input_token_upper_bound": 25299,
+              "input_tokens": 5377,
+              "output_tokens": 274,
+              "total_tokens": 5651,
+              "output_sha256": "efe2bec5d7b9dcd1ce49aa950a1bbdf9dae0e1c4eead208244ab377d2aedc2f3",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "导出批次25的结果，核对有没有三行数据，以及第一行的任务状态是不是 SUCCESS。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "exportAnalysisBatchResults",
+              "path": {
+                "batchId": 25
+              },
+              "status": 200,
+              "projection": "CSV_TABLE_V1",
+              "checks": [
+                "$.columns",
+                "$.row_count",
+                "$.rows[0].任务状态"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "cfe6161de8251f63a26d68d65c5ccffc681384ce8ddad50c93841df0af0a041f",
+        "reported_complete": true,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "exportAnalysisBatchResults",
+              "loginUser"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "exportAnalysisBatchResults",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "batchId",
+                "location": "path_parameters",
+                "value": 25
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.columns",
+                "expected": [
+                  "任务ID",
+                  "评论ID",
+                  "评论内容",
+                  "评分",
+                  "任务状态",
+                  "重试次数",
+                  "语言",
+                  "情感",
+                  "置信度",
+                  "风险等级",
+                  "关键词",
+                  "主题",
+                  "教学建议",
+                  "失败原因",
+                  "完成时间"
+                ]
+              },
+              {
+                "select": "$.row_count",
+                "operator": "equals",
+                "expected": 3
+              },
+              {
+                "select": "$.rows[0].任务状态",
+                "operator": "equals",
+                "expected": "SUCCESS"
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "exportAnalysisBatchResults"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "exportAnalysisBatchResults"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "导出批次25的结果",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "exportAnalysisBatchResults"
+                }
+              ],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 25
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_3944c7badf404495b45b"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_2",
+              "source_quote": "核对有没有三行数据",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 25
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_52d0a6079da6245d2f8b"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_3",
+              "source_quote": "以及第一行的任务状态是不是 SUCCESS",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "exportAnalysisBatchResults",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 25
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_334d50467c4ccfc91b7b"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "exportAnalysisBatchResults",
+              "location": "path_parameters",
+              "name": "batchId",
+              "path": [],
+              "value": 25,
+              "source_quote": "导出批次25的结果"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "FULL_COMPLETION",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      },
+      {
+        "id": "A05",
+        "status": "FINISHED",
+        "taskId": "07f35c912cd94dc09bf49f33c7bee004",
+        "seconds": 16.568,
+        "waitMs": 0,
+        "usage": {
+          "requests": 2,
+          "model_calls": 2,
+          "known_tokens": 13018,
+          "total_tokens": 13018,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "a65045a7cd0b4a2b9ccfce83cc39cb47",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 152.654,
+            "responseSha256": "712e73f0f29541ba8b079c3e56de10d5b2380d10aab29a7304b75462802a8dd0",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "a65045a7cd0b4a2b9ccfce83cc39cb47",
+            "operation": "listCourses",
+            "method": "GET",
+            "path": "/api/courses",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {
+                "page": 1,
+                "size": 3
+              },
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 69.4,
+            "responseSha256": "c8b822632fc50935c0c1f48ddc2270502e83368e646457801a897f4cbc21fc29",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              },
+              {
+                "selector": "$.data.items",
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [],
+        "questions": [
+          {
+            "id": "question_7c785ff250e6d6ab4e4d",
+            "operation_id": "listCourses",
+            "question": "课程列表接口是否承诺按课程名称升序排列？如果不是，请给出实际的排序规则。",
+            "requested_behavior": "确认课程列表的排序承诺及实际排序规则",
+            "kind": "clarification",
+            "role": null,
+            "status_choices": []
+          }
+        ],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 9000,
+              "request_bytes": 27569,
+              "request_sha256": "2b13b35c2dde895e8fc4e0d84df3339547b4e9296517e007abd9bf0d35cf6a42",
+              "response_bytes": 2852,
+              "input_token_upper_bound": 28081,
+              "input_tokens": 6569,
+              "output_tokens": 530,
+              "total_tokens": 7099,
+              "output_sha256": "e1fce7db094a721d905dba3262bb6564d4272eb64bcbfae47c31fc634299e9f0",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 3953,
+              "request_bytes": 24708,
+              "request_sha256": "a64c3889554da2cce90cfab46591b0b33cd21c5836511d2c7043c29bd717ebd9",
+              "response_bytes": 2313,
+              "input_token_upper_bound": 25220,
+              "input_tokens": 5506,
+              "output_tokens": 413,
+              "total_tokens": 5919,
+              "output_sha256": "986f9edb2d61ee5af27215169682791a0f9ebf472a84735014a42111cbded756",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我。",
+        "expected": {
+          "kind": "guard",
+          "gap": "missing_sort_order_rule",
+          "steps": [],
+          "no_target_requests": true
+        },
+        "configuration_sha256": "84475d80e7f159080de6b09911172fcfed191846dfec4f83f6b9153abbe44ddc",
+        "reported_complete": false,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "loginUser",
+              "listCourses"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "listCourses",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "location": "query",
+                "value": 1
+              },
+              {
+                "name": "size",
+                "location": "query",
+                "value": 3
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              },
+              {
+                "select": "$.data.items",
+                "operator": "exists",
+                "expected": null
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "listCourses"
+                }
+              ],
+              "same_resource": [],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_e8e56bc7e1a51b78a565",
+                "expectation_d975a827c42b233651ee"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "page",
+              "path": [],
+              "value": 1,
+              "source_quote": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我"
+            },
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "size",
+              "path": [],
+              "value": 3,
+              "source_quote": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [
+            {
+              "operation_id": "listCourses",
+              "question": "课程列表接口是否承诺按课程名称升序排列？如果不是，请给出实际的排序规则。",
+              "requested_behavior": "确认课程列表的排序承诺及实际排序规则",
+              "source_quote": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我",
+              "kind": "business_rule",
+              "role": null,
+              "status_choices": []
+            }
+          ],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "GUARD_NOT_COMPLETED",
+          "reasons": [
+            "UNREQUESTED_TARGET_ACTIVITY"
+          ],
+          "missing": [],
+          "unmatched": [
+            {
+              "operation": "listCourses",
+              "status": 200,
+              "values": {
+                "path_parameters": {},
+                "query": {
+                  "page": 1,
+                  "size": 3
+                },
+                "body": {}
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "A06",
+        "status": "FINISHED",
+        "taskId": "c49b9b167ba54f8f9de833993695630c",
+        "seconds": 16.133,
+        "waitMs": 0,
+        "usage": {
+          "requests": 1,
+          "model_calls": 2,
+          "known_tokens": 13011,
+          "total_tokens": 13011,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "07105f989add45a1a966745aca016987",
+            "operation": "getHealth",
+            "method": "GET",
+            "path": "/api/health",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 65.452,
+            "responseSha256": "647a83cca85203d6d4eb07eea84ef6eb91d5c6482eaff2ac8bb65a342b9f2946",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.status",
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [
+          {
+            "policy_id": "web_rule_2_negative_2",
+            "operation_id": "listCourses",
+            "field": "page",
+            "requested_value": -11,
+            "reason": "NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED"
+          }
+        ],
+        "questions": [
+          {
+            "id": "negative_value_254c3d32fd489e088f0d",
+            "operation_id": "listCourses",
+            "question": "page 的指定异常值尚未执行。尚未授权同类异常取值变化。请在项目的补充信息中开启该范围。",
+            "requested_behavior": "保留指定异常值，不用默认错误值替换",
+            "kind": "clarification",
+            "role": null,
+            "status_choices": []
+          }
+        ],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 10312,
+              "request_bytes": 30999,
+              "request_sha256": "0b5ef6c34e5c74891da045835589dd1f4befd30bb8bcf5b9133251574c437996",
+              "response_bytes": 2452,
+              "input_token_upper_bound": 31511,
+              "input_tokens": 7669,
+              "output_tokens": 448,
+              "total_tokens": 8117,
+              "output_sha256": "462a352b24059ea5588ae9f7d9767963a91580d60fa05797c4cf7636d76bcbba",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 2844,
+              "request_bytes": 21600,
+              "request_sha256": "cb05f29041e3218d398b85ba9b6d4356b82e3e7075408feee7a0cf2cab9796a4",
+              "response_bytes": 1640,
+              "input_token_upper_bound": 22112,
+              "input_tokens": 4633,
+              "output_tokens": 261,
+              "total_tokens": 4894,
+              "output_sha256": "1753779248d2d91791fac1b84e08ec6658cc4d7df7ffb61808055ea6fe4a2356",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "课程列表用 page=-11 测试是否拒绝。独立看一下公开健康状态是否正常。",
+        "expected": {
+          "kind": "guard",
+          "gap": "unapproved_page",
+          "requested_value": -11,
+          "steps": [
+            {
+              "operation": "getHealth",
+              "status": 200,
+              "checks": [
+                "$.status"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "547db36569be86bcd5a93f240799acbd692762b67d6cb9d78450181491773548",
+        "reported_complete": false,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "getHealth"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "listCourses",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "location": "query",
+                "value": 1,
+                "negative_enabled": true
+              },
+              {
+                "name": "size",
+                "location": "query",
+                "value": 3
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              },
+              {
+                "select": "$.data.items",
+                "operator": "exists",
+                "expected": null
+              }
+            ]
+          },
+          {
+            "operation_id": "getHealth",
+            "role": null,
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.status",
+                "operator": "equals",
+                "expected": "UP"
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "listCourses",
+            "getHealth"
+          ],
+          "normal_operation_ids": [
+            "getHealth"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "课程列表用 page=-11 测试是否拒绝",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "response_checks": [],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_2",
+              "source_quote": "独立看一下公开健康状态是否正常",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "getHealth",
+                  "role": null
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "response_checks": [
+                "expectation_0f0267c4ff4672b2fea2"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [],
+          "requested_checks": [
+            {
+              "policy_id": "web_rule_2_negative_2",
+              "source_quote": "课程列表用 page=-11 测试是否拒绝",
+              "exact_value": {
+                "value": -11
+              }
+            }
+          ],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "CORRECTLY_HELD",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      }
+    ],
+    "preflight": [
+      {
+        "id": "A01",
+        "ready": [
+          "listCourses",
+          "loginUser"
+        ],
+        "input_bound": 29701,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      },
+      {
+        "id": "A02",
+        "ready": [
+          "listCourses",
+          "loginUser"
+        ],
+        "input_bound": 29884,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": [
+          {
+            "operation_id": "listCourses",
+            "name": "size",
+            "roles": [
+              "tester"
+            ],
+            "expected_statuses": [
+              400
+            ],
+            "allow_value_variants": false,
+            "invalid_value": 0
+          },
+          {
+            "operation_id": "listCourses",
+            "name": "size",
+            "roles": [
+              "tester"
+            ],
+            "expected_statuses": [
+              400
+            ],
+            "allow_value_variants": false,
+            "invalid_value": 101
+          }
+        ]
+      },
+      {
+        "id": "A03",
+        "ready": [
+          "getAnalysisBatch",
+          "loginUser"
+        ],
+        "input_bound": 28577,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      },
+      {
+        "id": "A04",
+        "ready": [
+          "exportAnalysisBatchResults",
+          "loginUser"
+        ],
+        "input_bound": 29844,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      },
+      {
+        "id": "A05",
+        "ready": [
+          "listCourses",
+          "loginUser"
+        ],
+        "input_bound": 28081,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      },
+      {
+        "id": "A06",
+        "ready": [
+          "getHealth",
+          "listCourses",
+          "loginUser"
+        ],
+        "input_bound": 31511,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": [
+          {
+            "operation_id": "listCourses",
+            "name": "page",
+            "roles": [
+              "tester"
+            ],
+            "expected_statuses": [
+              400
+            ],
+            "allow_value_variants": false,
+            "invalid_value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "offline_reproduction": [
+    {
+      "id": "A03",
+      "kind": "synthetic_draft_matching_saved_diagnostic",
+      "diagnostic": {
+        "layer": "model",
+        "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+        "fields": [
+          "requirement_map.request_2.actions"
+        ]
+      }
+    },
+    {
+      "id": "A05",
+      "kind": "saved_focus_replay",
+      "expectation_question": {
+        "operation_id": "listCourses",
+        "question": "课程列表接口是否承诺按课程名称升序排列？如果不是，请给出实际的排序规则。",
+        "requested_behavior": "确认课程列表的排序承诺及实际排序规则",
+        "source_quote": "请确认课程列表是否承诺按课程名称升序排列并把缺少的排序规则告诉我",
+        "kind": "business_rule",
+        "role": null,
+        "status_choices": []
+      },
+      "primaries": [
+        "loginUser",
+        "listCourses"
+      ]
+    }
+  ],
+  "offline_patched_replay": [
+    {
+      "id": "A03",
+      "linked_action": {
+        "operation_id": "getAnalysisBatch",
+        "role": "tester"
+      },
+      "kept_checks": [
+        "expectation_f1e5427270dcf5dfe989"
+      ]
+    },
+    {
+      "id": "A05",
+      "held": [
+        "listCourses",
+        "loginUser"
+      ],
+      "questions": 1
+    }
+  ],
+  "retest": {
+    "phase": "new_targeted_retests",
+    "freeze_sha256": "e1c14ff50f3a37b86d813ff4943d44598aa4345da377d1515026750a99d36367",
+    "parent_commit": "957773f176565e4b337b890a71f58fad833d59c9",
+    "source_patch_sha256": "c11dd2725f55f66c8b66139cad5fa35235b13dc1a7947ae978a87922fc46cdcc",
+    "model_calls": 3,
+    "known_tokens": 20397,
+    "target_requests": 1,
+    "logins": 1,
+    "health_preflights": 2,
+    "outcomes": {
+      "execution": {
+        "passed": 0,
+        "total": 1
+      },
+      "guard": {
+        "passed": 1,
+        "total": 1
+      }
+    },
+    "positions": [
+      {
+        "id": "T01",
+        "status": "FINISHED",
+        "taskId": "48dd9f3fb0374b6a8b8749d79b63076d",
+        "seconds": 74.703947,
+        "seconds_source": "TASK_TIMINGS_TOTAL",
+        "evidence_source": "PERSISTED_TASK_AND_RUN_REPORT_READ_ONLY",
+        "original_capture_failure": "TASK_RESULT_READ_NETWORK_RESET",
+        "waitMs": 0,
+        "usage": {
+          "requests": 1,
+          "model_calls": 2,
+          "known_tokens": 13024,
+          "total_tokens": 13024,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "fe4ff83a3c8d46558e98fd3b274f684e",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": null,
+            "elapsedMs": 10272.696,
+            "responseSha256": null,
+            "projection": null,
+            "reason": "ReadTimeout",
+            "classification": "TEST_INFRA_ERROR",
+            "validation": "NORMAL_VALIDATED",
+            "checks": []
+          }
+        ],
+        "reason": null,
+        "pending": [],
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "interpretation": "用户要求以 tester 身份先登录，再查询批次 22 的进度并核对状态为 COMPLETED、成功记录数为 2；使用已有的固定路径资源 batchId=22。",
+            "elapsed_ms": 4334.148,
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 3344.0,
+              "request_bytes": 28402,
+              "request_sha256": "de2e0fde500acd81bef6fb4a24cb435a2d91173eaf5d7b2ad1132882a76afd4d",
+              "response_bytes": 2713,
+              "input_token_upper_bound": 28914,
+              "input_tokens": 6913,
+              "output_tokens": 544,
+              "total_tokens": 7457,
+              "output_sha256": "8d1d5e4124135a4f99129e0627d3dd684828534aa466fa26914afd5fa5b33d13",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            },
+            "proposed_question_count": 0
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "interpretation": "本次需求是：以 tester 身份登录后读取批次 22 的进度，核实其状态为已完成，并核对成功记录数为两条。已批准的规则明确批次 22 返回 200、业务码 0、状态 COMPLETED、成功数 2，因此可用一个包含登录和读取的完整流程覆盖。",
+            "elapsed_ms": 5617.99,
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 4125.0,
+              "request_bytes": 24090,
+              "request_sha256": "45d83f352ad47b227b80799b9b42f1d563c1024adfbbd971a74b58336ff4f6a2",
+              "response_bytes": 1530,
+              "input_token_upper_bound": 24602,
+              "input_tokens": 5319,
+              "output_tokens": 248,
+              "total_tokens": 5567,
+              "output_sha256": "b001a088700c6598956617a06615cb617fbcd2dea9b53689845d02b0b20393bf",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            },
+            "plan_construction": [
+              {
+                "encoding": "UNORDERED_APPROVED_NODES_V1",
+                "proposed_nodes": 2,
+                "constructed_nodes": 2,
+                "managed_authentication_nodes": 0,
+                "dependency_edges": 1,
+                "independent_contexts": 1
+              }
+            ],
+            "construction_ms": 0.503
+          }
+        ],
+        "request": "帮我看看批次22是否已经跑完，并核对成功记录总数是不是两条。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "getAnalysisBatch",
+              "path": {
+                "batchId": 22
+              },
+              "status": 200,
+              "checks": [
+                "$.data.status",
+                "$.data.successCount"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "e928a21dd6ad9a3a4ee2f56213031aa8d7cc65e659664359aff3f2d65f16363e",
+        "reported_complete": false,
+        "reported_checks_passed": false,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "getAnalysisBatch",
+              "loginUser"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "getAnalysisBatch",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "batchId",
+                "location": "path_parameters",
+                "value": 22
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.data.status",
+                "operator": "equals",
+                "expected": "COMPLETED"
+              },
+              {
+                "select": "$.data.successCount",
+                "operator": "equals",
+                "expected": 2
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "getAnalysisBatch"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "getAnalysisBatch"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "帮我看看批次22是否已经跑完",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "getAnalysisBatch"
+                }
+              ],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 22
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_d885e9c38428a596fb41"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_2",
+              "source_quote": "并核对成功记录总数是不是两条",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester"
+                }
+              ],
+              "before": [],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 22
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_cf197c70bd4dbf30118b"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "getAnalysisBatch",
+              "location": "path_parameters",
+              "name": "batchId",
+              "path": [],
+              "value": 22,
+              "source_quote": "帮我看看批次22是否已经跑完"
+            },
+            {
+              "operation_id": "getAnalysisBatch",
+              "location": "path_parameters",
+              "name": "batchId",
+              "path": [],
+              "value": 22,
+              "source_quote": "并核对成功记录总数是不是两条"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "NOT_COMPLETED",
+          "reasons": [
+            "MISSING_EXPECTED_REQUEST_OR_ASSERTION",
+            "LOGIN_NOT_PASSED",
+            "WORKFLOW_NOT_COMPLETE"
+          ],
+          "missing": [
+            {
+              "operation": "getAnalysisBatch",
+              "path": {
+                "batchId": 22
+              },
+              "status": 200,
+              "checks": [
+                "$.data.status",
+                "$.data.successCount"
+              ]
+            }
+          ],
+          "unmatched": []
+        }
+      },
+      {
+        "id": "T02",
+        "status": "FINISHED",
+        "taskId": "1fa9265b74224742b3d185b0189bf5bb",
+        "seconds": 23.475,
+        "waitMs": 0,
+        "usage": {
+          "requests": 0,
+          "model_calls": 1,
+          "known_tokens": 7373,
+          "total_tokens": 7373,
+          "usage_known": true
+        },
+        "requests": [],
+        "reason": "业务规则待确认。本轮没有安排业务请求。",
+        "pending": [],
+        "questions": [
+          {
+            "id": "question_54f643ef7750a97eef93",
+            "operation_id": "listCourses",
+            "question": "课程列表是否明确约定按教师姓名排序？当前缺少哪条排序规则（例如排序字段名、升降序、默认排序）？",
+            "requested_behavior": "确认课程列表按教师姓名排序的规则是否存在及缺失内容",
+            "kind": "clarification",
+            "role": null,
+            "status_choices": []
+          }
+        ],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 15000,
+              "request_bytes": 27870,
+              "request_sha256": "97cf1388f834815a12a33c1ebc97b9259010a2ddae5e0be49db4c41737f2e68c",
+              "response_bytes": 3743,
+              "input_token_upper_bound": 28382,
+              "input_tokens": 6632,
+              "output_tokens": 741,
+              "total_tokens": 7373,
+              "output_sha256": "cf80149504126b1f8378bad1f7a66e030cae87fead6321a89109ec0372c83ef0",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "课程列表有没有明确约定按教师姓名排序并告诉我缺少哪条排序规则。",
+        "expected": {
+          "kind": "guard",
+          "gap": "missing_sort_order_rule",
+          "steps": [],
+          "no_target_requests": true,
+          "question_subject": "教师姓名"
+        },
+        "configuration_sha256": "84475d80e7f159080de6b09911172fcfed191846dfec4f83f6b9153abbe44ddc",
+        "reported_complete": false,
+        "reported_checks_passed": false,
+        "groups": [],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "listCourses",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "location": "query",
+                "value": 1
+              },
+              {
+                "name": "size",
+                "location": "query",
+                "value": 3
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              },
+              {
+                "select": "$.data.items",
+                "operator": "exists",
+                "expected": null
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "listCourses"
+          ],
+          "normal_operation_ids": [
+            "listCourses"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "课程列表有没有明确约定按教师姓名排序并告诉我缺少哪条排序规则",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "listCourses",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "listCourses"
+                }
+              ],
+              "same_resource": [],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_e8e56bc7e1a51b78a565",
+                "expectation_d975a827c42b233651ee"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "page",
+              "path": [],
+              "value": 1,
+              "source_quote": "课程列表有没有明确约定按教师姓名排序并告诉我缺少哪条排序规则"
+            },
+            {
+              "operation_id": "listCourses",
+              "location": "query",
+              "name": "size",
+              "path": [],
+              "value": 3,
+              "source_quote": "课程列表有没有明确约定按教师姓名排序并告诉我缺少哪条排序规则"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [
+            {
+              "operation_id": "listCourses",
+              "question": "课程列表是否明确约定按教师姓名排序？当前缺少哪条排序规则（例如排序字段名、升降序、默认排序）？",
+              "requested_behavior": "确认课程列表按教师姓名排序的规则是否存在及缺失内容",
+              "source_quote": "课程列表有没有明确约定按教师姓名排序并告诉我缺少哪条排序规则",
+              "kind": "business_rule",
+              "role": null,
+              "status_choices": []
+            }
+          ],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "CORRECTLY_HELD",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      }
+    ],
+    "preflight": [
+      {
+        "id": "T01",
+        "ready": [
+          "getAnalysisBatch",
+          "loginUser"
+        ],
+        "input_bound": 28914,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      },
+      {
+        "id": "T02",
+        "ready": [
+          "listCourses",
+          "loginUser"
+        ],
+        "input_bound": 28382,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      }
+    ]
+  },
+  "transport_recovery": {
+    "T01": "Recovered original task and run report after one browser result read reset.",
+    "T02": "Continued the original unsubmitted position after confirming T01 model usage.",
+    "continuation_sha256": "ce3d364759d9c750463d41d50b582d59bb5d8206756492a3628377f26025d717"
+  },
+  "environment_followup": {
+    "phase": "environment_followup",
+    "freeze_sha256": "56a4136b9e4dfdb9640899d93a2397c22f56301f8dbb63f8488edc27c4a787c2",
+    "parent_commit": "957773f176565e4b337b890a71f58fad833d59c9",
+    "source_patch_sha256": "c11dd2725f55f66c8b66139cad5fa35235b13dc1a7947ae978a87922fc46cdcc",
+    "model_calls": 2,
+    "known_tokens": 13090,
+    "target_requests": 2,
+    "logins": 1,
+    "health_preflights": 1,
+    "outcomes": {
+      "execution": {
+        "passed": 1,
+        "total": 1
+      },
+      "guard": {
+        "passed": 0,
+        "total": 0
+      }
+    },
+    "positions": [
+      {
+        "id": "T03",
+        "status": "FINISHED",
+        "taskId": "22e18f3565764813804c30af2b44dc33",
+        "seconds": 38.677,
+        "waitMs": 0,
+        "usage": {
+          "requests": 2,
+          "model_calls": 2,
+          "known_tokens": 13090,
+          "total_tokens": 13090,
+          "usage_known": true
+        },
+        "requests": [
+          {
+            "runId": "83c242e3af0443ef9255b6276960ae09",
+            "operation": "loginUser",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "role": "tester",
+            "values": {
+              "path_parameters": {},
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 1885.674,
+            "responseSha256": "68d03ce996a1c5af83a70e86c50930a610a743c8a03fc6f11f234c7385731d7f",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.code",
+                "passed": true
+              }
+            ]
+          },
+          {
+            "runId": "83c242e3af0443ef9255b6276960ae09",
+            "operation": "getAnalysisBatch",
+            "method": "GET",
+            "path": "/api/analysis-batches/{batchId}",
+            "role": "tester",
+            "values": {
+              "path_parameters": {
+                "batchId": 25
+              },
+              "query": {},
+              "body": {}
+            },
+            "status": 200,
+            "elapsedMs": 1740.451,
+            "responseSha256": "abd98426d432eb9694be07a4b71ad031cf326b1d269a042cff7c5106494d4823",
+            "reason": "POLICY_EVALUATED",
+            "classification": "PASS",
+            "validation": "NORMAL_VALIDATED",
+            "checks": [
+              {
+                "selector": null,
+                "passed": true
+              },
+              {
+                "selector": "$.data.status",
+                "passed": true
+              },
+              {
+                "selector": "$.data.successCount",
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "pending": [],
+        "questions": [],
+        "design": [
+          {
+            "group_id": "focus",
+            "status": "SELECTED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 9047,
+              "request_bytes": 28366,
+              "request_sha256": "b508fb8a4514e1860036e2a139534aa40aaddd5f730a534da85c4f4613822094",
+              "response_bytes": 3941,
+              "input_token_upper_bound": 28878,
+              "input_tokens": 6817,
+              "output_tokens": 800,
+              "total_tokens": 7617,
+              "output_sha256": "8d7207c89aa89b5497f7ef3dd0cc1df83224983698b19056cd2f0ba95421a536",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          },
+          {
+            "group_id": "group_1",
+            "status": "PROPOSED",
+            "model_call": {
+              "diagnostic": null,
+              "calls": 1,
+              "model_name": "ecnu-max",
+              "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+              "http_status": 200,
+              "elapsed_ms": 6031,
+              "request_bytes": 23992,
+              "request_sha256": "ae55d6b0b9f7f1411a4786d1c43e5da2a8ec091265771dbc75dfa502e518e0de",
+              "response_bytes": 1639,
+              "input_token_upper_bound": 24504,
+              "input_tokens": 5229,
+              "output_tokens": 244,
+              "total_tokens": 5473,
+              "output_sha256": "85125f59dcdc03f2fd78d8fd0585936db68b25eadd443a498d44644551104468",
+              "reason": "MODEL_OUTPUT_RECEIVED"
+            }
+          }
+        ],
+        "request": "帮我看看批次25是否已结束，并核对成功记录是不是三条。",
+        "expected": {
+          "kind": "execution",
+          "steps": [
+            {
+              "operation": "getAnalysisBatch",
+              "path": {
+                "batchId": 25
+              },
+              "status": 200,
+              "checks": [
+                "$.data.status",
+                "$.data.successCount"
+              ]
+            }
+          ]
+        },
+        "configuration_sha256": "6a2fb50ac6df688dc3cedf59fd9a4efb34d9338f5c89095166fc7d73879accdf",
+        "reported_complete": true,
+        "reported_checks_passed": true,
+        "groups": [
+          {
+            "id": "group_1",
+            "primary": [
+              "getAnalysisBatch",
+              "loginUser"
+            ],
+            "status": "DESIGNED"
+          }
+        ],
+        "configured_operations": [
+          {
+            "operation_id": "loginUser",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [],
+            "checks": [
+              {
+                "select": "$.code",
+                "operator": "equals",
+                "expected": 0
+              }
+            ]
+          },
+          {
+            "operation_id": "getAnalysisBatch",
+            "role": "tester",
+            "statuses": [
+              200
+            ],
+            "arguments": [
+              {
+                "name": "batchId",
+                "location": "path_parameters",
+                "value": 25
+              }
+            ],
+            "checks": [
+              {
+                "select": "$.data.status",
+                "operator": "equals",
+                "expected": "COMPLETED"
+              },
+              {
+                "select": "$.data.successCount",
+                "operator": "equals",
+                "expected": 3
+              }
+            ]
+          }
+        ],
+        "focus": {
+          "operation_ids": [
+            "loginUser",
+            "getAnalysisBatch"
+          ],
+          "normal_operation_ids": [
+            "loginUser",
+            "getAnalysisBatch"
+          ],
+          "requirements": [
+            {
+              "source_id": "request_1",
+              "source_quote": "帮我看看批次25是否已结束",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "getAnalysisBatch"
+                }
+              ],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 25
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_d885e9c38428a596fb41"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            },
+            {
+              "source_id": "request_2",
+              "source_quote": "并核对成功记录是不是三条",
+              "disposition": "required",
+              "actions": [
+                {
+                  "operation_id": "loginUser",
+                  "role": "tester"
+                },
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester"
+                }
+              ],
+              "before": [
+                {
+                  "earlier": "loginUser",
+                  "later": "getAnalysisBatch"
+                }
+              ],
+              "same_resource": [],
+              "existing_resources": [
+                {
+                  "operation_id": "getAnalysisBatch",
+                  "role": "tester",
+                  "path": {
+                    "batchId": 25
+                  }
+                }
+              ],
+              "response_checks": [
+                "expectation_b6f4c870642674875a18",
+                "expectation_2f91b49140046e190f84"
+              ],
+              "forbidden_operation_ids": [],
+              "blocked_operation_ids": []
+            }
+          ],
+          "input_requirements": [
+            {
+              "operation_id": "getAnalysisBatch",
+              "location": "path_parameters",
+              "name": "batchId",
+              "path": [],
+              "value": 25,
+              "source_quote": "帮我看看批次25是否已结束"
+            }
+          ],
+          "requested_checks": [],
+          "expectation_questions": [],
+          "source_conflicts": []
+        },
+        "audit": {
+          "classification": "FULL_COMPLETION",
+          "reasons": [],
+          "missing": [],
+          "unmatched": []
+        }
+      }
+    ],
+    "preflight": [
+      {
+        "id": "T03",
+        "ready": [
+          "getAnalysisBatch",
+          "loginUser"
+        ],
+        "input_bound": 28878,
+        "model": "ecnu-max",
+        "budget": {
+          "max_model_calls": 4,
+          "max_readonly_investigations": 2,
+          "max_input_tokens": 60000,
+          "max_output_tokens": 8192,
+          "max_total_tokens": 70000,
+          "suite_max_model_calls": 9,
+          "suite_max_total_tokens": 500000
+        },
+        "explicit_links": [],
+        "approved_boundary_rules": []
+      }
+    ]
+  }
+}

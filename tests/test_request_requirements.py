@@ -62,6 +62,31 @@ def test_original_partition_keeps_quoted_punctuation_offsets_and_every_clause():
         '参数使用[1,2]', '读取后清理']
 
 
+@pytest.mark.parametrize(('method', 'role', 'continuation', 'linked'), [
+    ('GET', 'owner', '并核对成功条数是一条', True),
+    ('GET', 'other', '并核对成功条数是一条', False),
+    ('POST', 'owner', '并核对成功条数是一条', False),
+    ('GET', 'owner', '并核对同一资源的成功条数', False),
+    ('GET', 'owner', '另查询下一批次的成功条数', False),
+])
+def test_response_continuation_requires_reviewed_rule_and_matching_read_identity(
+        method, role, continuation, linked):
+    context = ctx(f'读取批次23，{continuation}。')
+    context['grouped_index'] = [dict(operations=[dict(id='read', method=method)])]
+    context['response_expectations'] = dict(count=dict(operation_id='read', policy_id='read',
+        roles=[role], select='$.successCount', operator='equals', expected=1))
+    first, second = context['request_atoms']
+    chosen = selection([link(first), link(second, actions=[], response_checks=['count'])])
+    if linked:
+        validate_requirement_links(chosen.requirements, context, chosen)
+        assert chosen.requirements[1].actions == chosen.requirements[0].actions
+        validate_plan_requirements(design([step('read', 'read')]), chosen.requirements,
+                                   ['read'], context['response_expectations'])
+    else:
+        with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_WITNESS_MISSING'):
+            validate_requirement_links(chosen.requirements, context, chosen)
+
+
 def test_future_unavailable_write_does_not_become_a_current_configuration_question():
     from agenttest.request_requirements import future_only_operations
 

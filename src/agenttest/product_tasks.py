@@ -173,7 +173,7 @@ class ProductTasks:
                         checkpoint()
                     if (context.get("current_request", text) != DEFAULT_ROUND
                             and svc.focus_factory is not None):
-                        from agenttest.product_focus import select_focus
+                        from agenttest.product_focus import rule_review_scope, select_focus
 
                         raw_focus = svc.focus_factory(project)
                         focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
@@ -254,8 +254,13 @@ class ProductTasks:
                                 and type(p['requested_value']) in {int, float}}
                             pending_only.difference_update(selection.normal_operation_ids,
                                 (check_operations[c['policy_id']] for c in executable_checks))
+                            rule_reads, rule_logins = rule_review_scope(project, selection)
+                            if rule_reads:
+                                summary['expectation_blocked_operations'] = sorted(
+                                    rule_reads | rule_logins)
                             blocked_inputs = input_blocked_operations(project, input_questions,
-                                operation_ids=[*selection.source_conflicts, *pending_only])
+                                operation_ids=[*selection.source_conflicts, *pending_only,
+                                               *rule_reads])
                             summary["input_blocked_operations"] = blocked_inputs
                             summary["source_blocked_operations"] = input_blocked_operations(project,
                                 [], operation_ids=selection.source_conflicts)
@@ -351,8 +356,11 @@ class ProductTasks:
                             selected_ids = [op for op in selected_ids if
                                 selection.operation_sources.get(op) != 'TRUSTED_PREREQUISITE']
                         summary["groups"] = design_groups(project, operation_ids=[
-                            op for op in selected_ids if op not in blocked_inputs],
+                            op for op in selected_ids if op not in blocked_inputs
+                            and op not in rule_logins],
                             requirement_links=selection.requirements)
+                        if rule_reads and not summary['groups']:
+                            summary['reason'] = '业务规则待确认。本轮没有安排业务请求。'
                         checkpoint()
                     for position, group in enumerate(summary["groups"]):
                         guard()

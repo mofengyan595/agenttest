@@ -98,8 +98,25 @@ def resource_mentioned(resource, quote):
 
 def response_expectations(project):
     return {f'expectation_{fingerprint([p.id, field.model_dump()])[:20]}': dict(
-        policy_id=p.id, operation_id=p.operation_id, **field.model_dump())
+        policy_id=p.id, operation_id=p.operation_id,
+        roles=p.roles if p.assertions.reviewed else [], **field.model_dump())
         for p in project.registry.definitions() if not p.negative for field in p.assertions.fields}
+
+
+def bind_response_continuation(item, atom, previous, catalog, read_operations):
+    """Attach an approved response check to the adjacent read under the same identity."""
+    if (item.disposition != 'required' or item.actions or not item.response_checks
+            or atom['future'] or atom['constraint'] or atom['same_resource'] or atom['ordered']
+            or previous is None or previous.disposition != 'required'
+            or not re.match(r'(?:并(?:且|顺便)?|以及|同时|顺便|再)\s*(?:请)?\s*'
+                            r'(?:核对|确认|检查|验证)', item.source_quote)):
+        return
+    rules = [catalog.get(ref, {}) for ref in item.response_checks]
+    choices = [action for action in previous.actions if action.operation_id in read_operations
+               and all(r.get('operation_id') == action.operation_id
+                       and action.role in r.get('roles', []) for r in rules)]
+    if len(choices) == 1:
+        item.actions = choices
 
 
 def future_clause(text):
@@ -335,13 +352,20 @@ def validate_requirement_links(requirements, context, selection):
     if (set(selection.operation_ids) | set(selection.blocked_operation_ids)) & (
             future_only_operations(context)):
         raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_OPERATION_SELECTED')
-    for item in requirements:
-        atom = atoms[item.source_id]
+    catalog = context.get('response_expectations', {})
+    read_operations = {o['id'] for group in context.get('grouped_index', [])
+                       for o in group['operations'] if o['method'] in {'GET', 'HEAD'}} & selected
+    by_source = {item.source_id: item for item in requirements}
+    previous = None
+    for atom in atoms.values():
+        item = by_source[atom['source_id']]
         if (item.source_quote != atom['text'] or item.disposition not in {
                 'required', 'deferred', 'needs_review', 'constraint'}):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_SOURCE_INVALID')
         if atom.get('future_only') and item.disposition != 'deferred':
             raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
+        bind_response_continuation(item, atom, previous, catalog, read_operations)
+        previous = item
         if item.disposition == 'required':
             missing_witnesses = [field for field, missing in (
                 ('actions', not item.actions),
@@ -360,7 +384,6 @@ def validate_requirement_links(requirements, context, selection):
     checks = {c['policy_id']: c for c in context.get('approved_checks', [])}
     mapped.update(checks[r.policy_id]['operation_id'] for r in selection.requested_checks
                   if r.policy_id in checks)
-    catalog = context.get('response_expectations', {})
     mapped.update(catalog[ref]['operation_id'] for item in requirements
                   for ref in item.response_checks
                   if ref in catalog)

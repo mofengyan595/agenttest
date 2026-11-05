@@ -17,6 +17,11 @@ assert.equal(sha256, (await readFile(path.join(out, "freeze.sha256"), "utf8")).t
 assert.match(freeze.target, /^http:\/\/127\.0\.0\.1:\d+$/);
 const save = (file, data) => writeFile(path.join(out, file), JSON.stringify(data, null, 2) + "\n",
   {flag: "wx"});
+// Playwright may include request headers in errors. Keep only a closed reason in the receipt.
+const evidenceFailure = error => error instanceof Error && /ECONNRESET|socket hang up/i.test(error.message)
+  ? "NETWORK_RESET" : error instanceof Error && error.name === "TimeoutError"
+    ? "EVIDENCE_TIMEOUT" : "EVIDENCE_UNAVAILABLE";
+const evidenceRead = {maxRetries: 2, timeout: 30_000};
 const logins = new LoginSchedule(freeze.login_limits);
 const projected = freeze.positions.reduce((result, item) => {
   for (const [account, count] of Object.entries(item.expected_logins)) {
@@ -95,7 +100,8 @@ try {
       assert.equal(submitted.status(), 202);
       let terminal;
       while (Date.now() - start < 700_000) {
-        const current = await (await context.request.get(`${origin}/api/tasks/${taskId}`)).json();
+        const current = await (await context.request.get(`${origin}/api/tasks/${taskId}`,
+          evidenceRead)).json();
         if (["FINISHED", "NEEDS_REVIEW", "INTERRUPTED", "FAILED", "CANCELLED"].includes(current.status)) {
           terminal = current;
           break;
@@ -109,7 +115,7 @@ try {
       const requests = [];
       for (const {run_id: runId} of summary.cases || []) {
         if (!runId) continue;
-        const result = await context.request.get(`${origin}/api/runs/${runId}`);
+        const result = await context.request.get(`${origin}/api/runs/${runId}`, evidenceRead);
         assert.equal(result.status(), 200);
         const report = await result.json();
         await save(`${slot}/run-${runId}.json`, report);
@@ -148,8 +154,9 @@ try {
       }
     } catch (error) {
       stop = "MISSING_EVIDENCE_DO_NOT_REPLAY";
-      records.push({id: slot, taskId, status: stop, reason: String(error)});
-      console.error(slot, String(error));
+      const reason = evidenceFailure(error);
+      records.push({id: slot, taskId, status: stop, reason});
+      console.error(slot, reason);
     } finally {
       await context.close();
     }
