@@ -1,0 +1,287 @@
+{
+  "freeze_sha256": "663cfe8cb252d8fe61e73372749910aae4dcc05cc0975dbe1a18b2f61c5f43e3",
+  "baseline": "742fb2edc1700e6f31a92b104a88cd3d2fd17a2c",
+  "candidate": "f2e44a40e538c59733d5ab6e816aa66b02d1b631",
+  "stop": null,
+  "aggregate": {
+    "baseline": {
+      "statuses": {
+        "FINISHED": 2,
+        "NEEDS_REVIEW": 1
+      },
+      "execution_denominator": 2,
+      "hold_denominator": 1,
+      "audited_positions": 3,
+      "audited_obligations": 8,
+      "planned_obligations": 8,
+      "complete": 2,
+      "correct_holds": 0,
+      "false_refusals": 0,
+      "silent_obligations": 1,
+      "unauthorized_attempts": 0,
+      "target_attempts": 4,
+      "target_retries": 0,
+      "infra_attempts": 0,
+      "model_calls": 5,
+      "known_tokens": 25972,
+      "unknown_positions": 0,
+      "median_elapsed_ms": 18142,
+      "coalesced_read_cases": 0,
+      "joined_read_cases": 0
+    },
+    "candidate": {
+      "statuses": {
+        "FINISHED": 3
+      },
+      "execution_denominator": 2,
+      "hold_denominator": 1,
+      "audited_positions": 3,
+      "audited_obligations": 8,
+      "planned_obligations": 8,
+      "complete": 2,
+      "correct_holds": 1,
+      "false_refusals": 0,
+      "silent_obligations": 0,
+      "unauthorized_attempts": 0,
+      "target_attempts": 5,
+      "target_retries": 0,
+      "infra_attempts": 0,
+      "model_calls": 6,
+      "known_tokens": 30920,
+      "unknown_positions": 0,
+      "median_elapsed_ms": 18257,
+      "coalesced_read_cases": 0,
+      "joined_read_cases": 0
+    }
+  },
+  "positions": [
+    {
+      "id": "R01_r1_baseline",
+      "taskId": "00842a8db02342ef9ceca2a4005d8bc0",
+      "status": "FINISHED",
+      "elapsed_ms": 18142,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": true,
+      "category": "explicit_repeat",
+      "full_execution": true,
+      "correct_hold": false,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 0,
+      "target_retries": 0,
+      "obligation_denominator": 4,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 9951,
+        "total_tokens": 9951,
+        "usage_known": true
+      },
+      "design_diagnostics": [],
+      "missing_content_evidence": [],
+      "verified_steps": [
+        true,
+        true
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    },
+    {
+      "id": "R02_r1_baseline",
+      "taskId": "38038e3c13d14ed8b80f476b102faf7d",
+      "status": "FINISHED",
+      "elapsed_ms": 17747,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": true,
+      "category": "explicit_repeat",
+      "full_execution": true,
+      "correct_hold": false,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 0,
+      "target_retries": 0,
+      "obligation_denominator": 2,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 10097,
+        "total_tokens": 10097,
+        "usage_known": true
+      },
+      "design_diagnostics": [],
+      "missing_content_evidence": [],
+      "verified_steps": [
+        true,
+        true
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    },
+    {
+      "id": "R03_r1_baseline",
+      "taskId": "a0f47a1e0d17424ea3930c65b521a12d",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 18226,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false,
+      "category": "hold_content",
+      "full_execution": false,
+      "correct_hold": false,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 1,
+      "target_retries": 0,
+      "obligation_denominator": 2,
+      "usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 5924,
+        "total_tokens": 5924,
+        "usage_known": true
+      },
+      "design_diagnostics": [
+        "MODEL_INVALID_RESPONSE"
+      ],
+      "held_requested_scope": true,
+      "missing_content_evidence": [],
+      "verified_steps": [
+        false
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [
+        {
+          "group": "focus",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+            "fields": []
+          }
+        }
+      ],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    },
+    {
+      "id": "R01_r1_candidate",
+      "taskId": "237eace8613d49b9a39d0b5d609f2704",
+      "status": "FINISHED",
+      "elapsed_ms": 18257,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": true,
+      "category": "explicit_repeat",
+      "full_execution": true,
+      "correct_hold": false,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 0,
+      "target_retries": 0,
+      "obligation_denominator": 4,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 9973,
+        "total_tokens": 9973,
+        "usage_known": true
+      },
+      "design_diagnostics": [],
+      "missing_content_evidence": [],
+      "verified_steps": [
+        true,
+        true
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    },
+    {
+      "id": "R02_r1_candidate",
+      "taskId": "bc95957d90b74d43ad7d138a5b83a2d5",
+      "status": "FINISHED",
+      "elapsed_ms": 18181,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": true,
+      "category": "explicit_repeat",
+      "full_execution": true,
+      "correct_hold": false,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 0,
+      "target_retries": 0,
+      "obligation_denominator": 2,
+      "usage": {
+        "requests": 2,
+        "model_calls": 2,
+        "known_tokens": 10074,
+        "total_tokens": 10074,
+        "usage_known": true
+      },
+      "design_diagnostics": [],
+      "missing_content_evidence": [],
+      "verified_steps": [
+        true,
+        true
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    },
+    {
+      "id": "R03_r1_candidate",
+      "taskId": "0ce9df9e3bc845eb977c42a86f91f7cf",
+      "status": "FINISHED",
+      "elapsed_ms": 24527,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false,
+      "category": "hold_content",
+      "full_execution": false,
+      "correct_hold": true,
+      "unnecessary_questions": 0,
+      "infra_attempts": 0,
+      "unauthorized_attempts": 0,
+      "silent_obligations": 0,
+      "target_retries": 0,
+      "obligation_denominator": 2,
+      "usage": {
+        "requests": 1,
+        "model_calls": 2,
+        "known_tokens": 10873,
+        "total_tokens": 10873,
+        "usage_known": true
+      },
+      "design_diagnostics": [],
+      "held_requested_scope": true,
+      "missing_content_evidence": [],
+      "verified_steps": [
+        true
+      ],
+      "false_refusal": false,
+      "model_diagnostics": [],
+      "joined_read_cases": 0,
+      "coalesced_read_cases": 0
+    }
+  ]
+}
