@@ -128,6 +128,37 @@ def explicit_response_continuation(atom, entries):
                         r'(?:核对|确认|检查|验证)\s*(?:响应(?:中的?)?\s*)?', prefix)
 
 
+def approved_response_predicate(entry, action, catalog):
+    from agenttest.requirement_ledger import response_predicate_matches
+
+    return any(rule['operation_id'] == action.operation_id and action.role in rule['roles']
+               and response_predicate_matches(entry, rule) for rule in catalog.values())
+
+
+def explicit_response_gap(entries, action, catalog):
+    return any(entry['selector'] is not None and entry['operator'] is not None
+               and not approved_response_predicate(entry, action, catalog) for entry in entries)
+
+
+_REPEAT_READ = re.compile(r'^(?:请\s*)?(?:连续|重复)\s*(?:读取|查询|请求|调用)\s*'
+                          r'([2-9]|[1-9][0-9]+|[二两三四五六七八九十])\s*次')
+
+
+def explicit_read_repetitions(item, read_operations):
+    """Recognize an explicit count for one already mapped, read-only action."""
+    if (item.disposition != 'required' or len(item.actions) != 1
+            or item.actions[0].operation_id not in read_operations):
+        return None
+    match = _REPEAT_READ.match(item.source_quote)
+    if match is None or re.match(r'\s*(?:或|以上|以下|到|至|[~～])',
+                                 item.source_quote[match.end():]):
+        return None
+    number = match[1]
+    if number.isascii():
+        return int(number)
+    return 2 if number == '两' else '零一二三四五六七八九十'.index(number)
+
+
 def future_clause(text):
     future = re.search(r'以后|下次|将来|未来', text)
     if future is None:
@@ -365,7 +396,6 @@ def validate_requirement_links(requirements, context, selection):
     from agenttest.requirement_ledger import (
         explicit_http_statuses,
         explicit_response_checks,
-        response_predicate_matches,
     )
 
     text = context.get('user_task', '')
@@ -387,13 +417,13 @@ def validate_requirement_links(requirements, context, selection):
         if atom.get('future_only') and item.disposition != 'deferred':
             raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
         entries = predicates.get(atom['source_id'])
-        if (item.disposition == 'required' and not item.actions and previous is not None
-                and previous.disposition == 'required' and len(previous.actions) == 1):
+        if (not item.actions and previous is not None and previous.disposition == 'required'
+                and len(previous.actions) == 1 and previous.actions[0].operation_id
+                in read_operations):
             action = previous.actions[0]
-            fields_match = entries and explicit_response_continuation(atom, entries) and all(any(
-                    r['operation_id'] == action.operation_id and action.role in r['roles']
-                    and response_predicate_matches(entry, r) for r in catalog.values())
-                    for entry in entries)
+            field_scope = entries and explicit_response_continuation(atom, entries)
+            fields_match = field_scope and all(approved_response_predicate(entry, action, catalog)
+                                               for entry in entries)
             status = statuses.get(atom['source_id'])
             status_matches = (status and previous.source_id == status['preceding_source_id']
                 and not any(q.source_quote in previous.source_quote for q in
@@ -401,7 +431,9 @@ def validate_requirement_links(requirements, context, selection):
                     rule['operation_id'] == action.operation_id and action.role in rule['roles']
                     and rule.get('statuses') == [status['expected']]
                     for rule in context.get('confirmed_response_checks', [])))
-            if action.operation_id in read_operations and (fields_match or status_matches):
+            if (item.disposition == 'required' and (fields_match or status_matches)
+                    or item.disposition == 'needs_review' and field_scope
+                    and explicit_response_gap(entries, action, catalog)):
                 item.actions = previous.actions
         bind_response_continuation(item, atom, previous, catalog, read_operations)
         previous = item
@@ -480,9 +512,14 @@ def validate_requirement_links(requirements, context, selection):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
         if any(a.operation_id not in selected or a.role not in roles for a in item.actions):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ACTION_INVALID')
-        if any(r.earlier == r.later or r.earlier not in context['approved_ids']
-               or r.later not in selected for r in item.before):
+        repeated = None if atom['ordered'] else explicit_read_repetitions(item, read_operations)
+        if any(r.earlier not in context['approved_ids'] or r.later not in selected
+               or r.earlier == r.later and (repeated is None
+                   or r.later != item.actions[0].operation_id) for r in item.before):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INVALID')
+        if repeated is not None:
+            # The literal count is verified before execution. A self-edge cannot represent it.
+            item.before = [order for order in item.before if order.earlier != order.later]
         if any((r.producer, r.consumer) not in resources for r in item.same_resource):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
         for resource in item.existing_resources:
@@ -510,8 +547,11 @@ def validate_requirement_links(requirements, context, selection):
         boundary_gap = any(item.source_quote in quote and item.actions and all(
             a.operation_id == operation and a.role in check_roles for a in item.actions)
             for quote, operation, check_roles in pending_boundaries)
-        has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or
-                   selection.mode == 'needs_information' and selection.question)
+        predicate_gap = (item.disposition == 'needs_review' and len(item.actions) == 1
+            and item.actions[0].operation_id in read_operations and explicit_response_gap(
+                predicates.get(item.source_id, ()), item.actions[0], catalog))
+        has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or predicate_gap
+                   or selection.mode == 'needs_information' and selection.question)
         if item.disposition == 'needs_review' and not has_gap:
             # An unresolved clause is not silently accepted as a completed requirement.
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
@@ -533,7 +573,8 @@ def pending_numeric_boundaries(selection, checks):
     return result
 
 
-def validate_plan_requirements(design, requirements, primary, expectations=None):
+def validate_plan_requirements(design, requirements, primary, expectations=None, *,
+                               read_operations=()):
     """Check actions, identities, same-resource bindings and order before business HTTP."""
     scenarios = [case.plan.scenario() for case in design.cases]
     steps = [step for scenario in scenarios for step in scenario.steps]
@@ -547,6 +588,23 @@ def validate_plan_requirements(design, requirements, primary, expectations=None)
             if action.operation_id in primary and not any(
                     s.operation_id == action.operation_id and s.role == action.role for s in steps):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_IDENTITY_ACTION_MISSING')
+        repetitions = explicit_read_repetitions(item, read_operations)
+        if repetitions is not None and item.actions[0].operation_id in primary:
+            action = item.actions[0]
+            matching = [s for s in steps if s.operation_id == action.operation_id
+                        and s.role == action.role]
+            code = None
+            if len(matching) != repetitions:
+                code = 'DESIGN_REQUIRED_READ_COUNT_MISMATCH'
+            elif len({fingerprint(s.model_dump(exclude={'id'})) for s in matching}) != 1 or any(
+                    arg.from_step is not None for s in matching
+                    for location in (s.body, s.query, s.path_parameters)
+                    for arg in location.values()):
+                code = 'DESIGN_REQUIRED_READ_INPUT_CHANGED'
+            if code:
+                error = ValidationFailure(Layer.MODEL, code)
+                error.diagnostic.fields = [f'requirement_map.{item.source_id}']
+                raise error
         for resource in item.existing_resources:
             if resource.operation_id not in primary:
                 continue

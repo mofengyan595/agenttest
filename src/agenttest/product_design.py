@@ -675,7 +675,9 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
 
         source_requirements = [RequestRequirement.model_validate(r) for r in request_requirements]
         validate_plan_requirements(design, source_requirements, group['primary'],
-                                   response_expectations(project))
+                                   response_expectations(project), read_operations={
+                                       op.operation_id for op in project.contract.operations
+                                       if op.method in {'GET', 'HEAD'}})
         validate_http_status_witnesses(design, group['primary'], source_requirements,
                                        http_status_requirements, policies,
                                        context['requested_checks'])

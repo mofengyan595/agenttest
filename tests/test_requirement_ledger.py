@@ -93,6 +93,7 @@ def test_approved_negative_is_accounted_without_creating_a_new_expectation():
     ('$.items 数量为 2', '', 'NEEDS_REVIEW', []),
     ('$.items 非空', '；检查健康', 'NEEDS_REVIEW', ['/health']),
     ('$.items 数量为 3', '；检查健康', 'NEEDS_REVIEW', ['/health']),
+    ('$.items 数量为 4', '；检查健康', 'NEEDS_REVIEW', ['/health']),
     ('只用未确认的方式检查记录', '；检查健康', 'NEEDS_REVIEW', ['/health']),
 ])
 @pytest.mark.asyncio
@@ -108,6 +109,7 @@ async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypat
     seen = []
     review_only = assertion.startswith('只用')
     question_only = review_only or '数量为 3' in assertion
+    predicate_only = '数量为 4' in assertion
 
     def target(request):
         seen.append(request.url.path)
@@ -124,12 +126,14 @@ async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypat
                 before=[], same_resource=[], response_checks=[])
                 for atom in context['request_atoms']]
             questions = []
-            if question_only:
+            if question_only or predicate_only:
                 pending = requirements[0 if review_only else 1]
                 pending.update(disposition='needs_review', actions=pending['actions']
                                if review_only else [])
-                questions.append(dict(operation_id='records', question='请确认规则依据',
-                    requested_behavior='核对尚未获准的检查', source_quote=pending['source_quote']))
+                if question_only:
+                    questions.append(dict(operation_id='records', question='请确认规则依据',
+                        requested_behavior='核对尚未获准的检查',
+                        source_quote=pending['source_quote']))
             return FocusSelection(interpretation='核对记录', mode='selected',
                 operation_ids=operations, normal_operation_ids=(['health'] if review_only
                     else operations), question=None, pending_questions=[], not_covered=[],

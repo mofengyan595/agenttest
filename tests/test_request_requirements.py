@@ -111,6 +111,47 @@ def test_exact_adjacent_read_check_uses_same_reviewed_action(predicate, status, 
             validate_requirement_links(chosen.requirements, context, chosen)
 
 
+def test_explicit_repeated_read_uses_distinct_identical_steps_instead_of_a_self_edge():
+    context = ctx('连续查询两次预约详情。')
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
+    repeated = link(context['request_atoms'][0], before=[dict(earlier='read', later='read')])
+    chosen = selection([repeated])
+    validate_requirement_links(chosen.requirements, context, chosen)
+    assert repeated.before == []
+    validate_requirement_links(chosen.requirements, context, chosen)
+    first = step('first', 'read')
+    second = step('second', 'read')
+    validate_plan_requirements(design([first], [second]), [repeated], ['read'],
+                               read_operations={'read'})
+    with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_READ_COUNT_MISMATCH'):
+        validate_plan_requirements(design([first]), [repeated], ['read'],
+                                   read_operations={'read'})
+    with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_READ_INPUT_CHANGED'):
+        validate_plan_requirements(design([first], [{**second, 'policy_id': 'another'}]),
+                                   [repeated], ['read'], read_operations={'read'})
+
+
+@pytest.mark.parametrize(('text', 'method'), [('查询预约详情。', 'GET'),
+                                            ('重复请求两次预约详情。', 'POST')])
+def test_unproven_or_mutating_self_order_is_still_rejected(text, method):
+    context = ctx(text)
+    context['grouped_index'] = [dict(operations=[dict(id='read', method=method)])]
+    fact = link(context['request_atoms'][0], before=[dict(earlier='read', later='read')])
+    with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_ORDER_INVALID'):
+        validate_requirement_links([fact], context, selection([fact]))
+
+
+def test_approved_explicit_predicate_cannot_be_replaced_by_an_unproven_gap():
+    context = ctx('读取预约，核对 $.count 等于 2。')
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
+    context['response_expectations'] = dict(count=dict(operation_id='read', policy_id='read',
+        roles=['owner'], select='$.count', operator='equals', expected=2))
+    first, second = context['request_atoms']
+    items = [link(first), link(second, disposition='needs_review', actions=[])]
+    with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE'):
+        validate_requirement_links(items, context, selection(items))
+
+
 def test_future_unavailable_write_does_not_become_a_current_configuration_question():
     from agenttest.request_requirements import future_only_operations
 

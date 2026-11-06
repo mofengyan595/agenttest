@@ -786,6 +786,9 @@ class ProductTasks:
         reasons.update({op: "本次指定了已有资源，当前配置要求使用前置接口产生的数据；"
                             "相关请求暂停，请补充允许的数据来源。"
                         for op in summary.get("source_blocked_operations", [])})
+        reasons.update({op: "原文指定的响应检查缺少已确认的规则；该读取暂停。"
+                        for item in summary.get('response_requirements', [])
+                        for op in item.get('blocked_operations', [])})
         messages = dict(MODEL_TIMEOUT="模型生成方案时超时，此组没有执行。",
             MODEL_INVALID_RESPONSE="模型方案未通过格式校验，此组没有执行。",
             MODEL_TOKEN_BUDGET="本组资料超过模型输入预算，未发送模型或业务请求。",
@@ -804,6 +807,8 @@ class ProductTasks:
             DESIGN_NEGATIVE_CASE_OUTSIDE_REQUIRED=(
                 "模型在普通场景中混入异常方案，此组没有执行。"),
             DESIGN_DUPLICATE_READ_SCENARIO="模型重复安排了相同的只读场景，此组没有执行。",
+            DESIGN_REQUIRED_READ_COUNT_MISMATCH="方案没有保留原文指定的读取次数，此组没有执行。",
+            DESIGN_REQUIRED_READ_INPUT_CHANGED="重复读取的策略或输入不一致，此组没有执行。",
             DESIGN_REQUESTED_CHECKS_MISSING="模型方案遗漏了明确指定的异常检查，此组没有执行。",
             DESIGN_CHECK_BATCH_LIMIT="本组指定的异常检查超过12项，请分批安排；此组没有执行。",
             DESIGN_REQUESTED_CHECK_NOT_APPROVED="指定检查没有对应的已批准能力，此组没有执行。",
