@@ -139,7 +139,7 @@ def test_wire_selection_is_a_closed_set_and_mode_question_branches_are_consisten
     valid = dict(interpretation="新建后读取同一资源", scope=dict(mode="selected",
         operations={key: dict(input_requirements=[], input_questions=[],
                              requested_checks=[], expectation_questions=[],
-                  test_normal=False, existing_resource=False)
+                  test_normal=False)
                     for key in ("create", "read")}, question=None),
         blocked_operations=dict(private=True))
     assert validator.is_valid(valid)
@@ -168,7 +168,7 @@ def test_wire_selection_is_a_closed_set_and_mode_question_branches_are_consisten
             question=None)}), context)
     sparse = {**valid, "scope": dict(mode="selected", operations=dict(create=None, read=dict(
         input_requirements=[], input_questions=[], requested_checks=[], expectation_questions=[],
-        test_normal=False, existing_resource=False)),
+        test_normal=False)),
         question=None)}
     assert validator.is_valid(sparse)
     decoded = json.loads(model._decode_output(json.dumps(sparse), context))
@@ -186,6 +186,22 @@ def test_duplicate_wire_operation_keys_are_rejected_instead_of_repaired():
     assert error.value.diagnostic.code == "JSON_DUPLICATE_KEY"
 
 
+def test_fixed_input_wire_does_not_ask_for_a_dynamic_source_choice():
+    model = FocusModel(settings(), profile='generic')
+    context = dict(approved_ids=['read'], user_task='读取固定预约记录')
+    schema = json.loads(model.prepare_request(context))['response_format']['json_schema']['schema']
+    bundle = dict(input_requirements=[], input_questions=[], requested_checks=[],
+                  expectation_questions=[], test_normal=True)
+    wire = dict(interpretation='读取已确认的预约记录', blocked_operations={},
+                scope=dict(mode='selected', operations=dict(read=bundle), question=None))
+    assert Draft202012Validator(schema).is_valid(wire)
+    decoded = json.loads(model._decode_output(json.dumps(wire), context))
+    assert decoded['source_conflicts'] == []
+    bundle['existing_resource'] = True
+    with pytest.raises(ValueError, match='FOCUS_SOURCE_CHOICE_INVALID'):
+        model._decode_output(json.dumps(wire), context)
+
+
 def test_business_question_is_owned_by_its_operation_and_operator_source():
     from agenttest.product_focus import ExpectationQuestion, validate_expectation_questions
 
@@ -196,7 +212,7 @@ def test_business_question_is_owned_by_its_operation_and_operator_source():
     question = dict(question="创建后应在多少秒内通知？", requested_behavior="通知送达时间",
                     source_ref="source_1", kind="business_rule", role=None, status_choices=[])
     bundle = dict(input_requirements=[], input_questions=[], requested_checks=[],
-                  expectation_questions=[question], test_normal=False, existing_resource=False)
+                  expectation_questions=[question], test_normal=False)
     wire = dict(interpretation="创建后基本检查，未知通知期限补问", scope=dict(mode="selected",
         operations=dict(insertJob=bundle, readJob=None), question=None), blocked_operations={})
     assert Draft202012Validator(schema).is_valid(wire)
@@ -266,7 +282,7 @@ def test_permission_question_is_actionable_and_cannot_repeat_a_confirmed_role():
         question="reader读取他人资源应返回403还是404？", requested_behavior="跨身份资源访问",
         source_ref="source_1")
     bundle = dict(input_requirements=[], input_questions=[], requested_checks=[],
-                  expectation_questions=[question], test_normal=False, existing_resource=False)
+                  expectation_questions=[question], test_normal=False)
     wire = dict(interpretation="补问跨身份读取的预期状态", scope=dict(mode="selected",
         operations=dict(readJob=bundle), question=None), blocked_operations={})
     model = FocusModel(settings(), profile="generic")
@@ -300,7 +316,7 @@ def test_operation_owned_fields_and_checks_cannot_reference_an_unselected_interf
     model = FocusModel(settings(), profile="generic")
     body = json.loads(model.prepare_request(context))
     validator = Draft202012Validator(body["response_format"]["json_schema"]["schema"])
-    bundle = dict(test_normal=False, existing_resource=False, input_requirements=[dict(
+    bundle = dict(test_normal=False, input_requirements=[dict(
         field_ref="query/active", value=True,
         source_ref="source_1")], input_questions=[], expectation_questions=[],
         requested_checks=[dict(
@@ -338,7 +354,7 @@ def test_forty_four_identical_operations_share_format_without_losing_any_operati
     choices = {key: None for key in operations}
     choices["read17"] = dict(input_requirements=[dict(
         field_ref="query/limit", value=2, source_ref="source_1")],
-        input_questions=[], expectation_questions=[], test_normal=False, existing_resource=False,
+        input_questions=[], expectation_questions=[], test_normal=False,
         requested_checks=[dict(
             check_ref="check_1", source_ref="source_1", exact_value=None)])
     wire = dict(interpretation="检查第17个接口的有效值和下界外值", scope=dict(mode="selected",

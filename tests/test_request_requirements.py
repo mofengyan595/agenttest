@@ -87,6 +87,30 @@ def test_response_continuation_requires_reviewed_rule_and_matching_read_identity
             validate_requirement_links(chosen.requirements, context, chosen)
 
 
+@pytest.mark.parametrize('predicate,status,role,linked', [
+    ('核对 $.count 等于 2', 200, 'owner', True),
+    ('确认 HTTP 404', 404, 'owner', True),
+    ('确认 HTTP 404', 200, 'owner', False),
+    ('确认 HTTP 404', 404, 'other', False),
+    ('确认 HTTP 404 或 403', 404, 'owner', False),
+])
+def test_exact_adjacent_read_check_uses_same_reviewed_action(predicate, status, role, linked):
+    context = ctx(f'读取预约记录，{predicate}。')
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
+    context['confirmed_response_checks'] = [dict(operation_id='read', roles=[role],
+                                                statuses=[status])]
+    context['response_expectations'] = dict(count=dict(operation_id='read', policy_id='read',
+        roles=['owner'], select='$.count', operator='equals', expected=2))
+    first, second = context['request_atoms']
+    chosen = selection([link(first), link(second, actions=[])])
+    if linked:
+        validate_requirement_links(chosen.requirements, context, chosen)
+        assert chosen.requirements[1].actions == chosen.requirements[0].actions
+    else:
+        with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_WITNESS_MISSING'):
+            validate_requirement_links(chosen.requirements, context, chosen)
+
+
 def test_future_unavailable_write_does_not_become_a_current_configuration_question():
     from agenttest.request_requirements import future_only_operations
 
@@ -360,7 +384,7 @@ def test_twelve_original_clauses_fit_existing_focus_budget_with_full_closed_vali
         for i, atom in enumerate(context['request_atoms'])}
     wire = dict(interpretation='逐项核对十二段原文的读取要求', scope=dict(mode='selected',
         operations={op: dict(input_requirements=[], input_questions=[], requested_checks=[],
-            expectation_questions=[], test_normal=True, existing_resource=False)
+            expectation_questions=[], test_normal=True)
             for op in operations},
         question=None), blocked_operations={}, requirement_map=maps)
     validator = Draft202012Validator(schema)

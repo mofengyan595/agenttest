@@ -104,12 +104,11 @@ def constrain_operation_bundles(schema, context):
         if standalone:
             local['properties']['requested_checks'] = dict(type='array', maxItems=0)
         normal = dict(type='boolean', enum=[False]) if standalone else dict(type='boolean')
-        bundle = dict(type="object", additionalProperties=False,
-                      properties={**local["properties"], "test_normal": normal,
-                          "existing_resource": dict(
-                          type="boolean", enum=[False, True] if len(fields) != len(all_fields)
-                          else [False])},
-                      required=[*BUNDLE_KEYS, "existing_resource", "test_normal"])
+        properties = {**local['properties'], 'test_normal': normal}
+        if len(fields) != len(all_fields):
+            properties['existing_resource'] = dict(type='boolean')
+        bundle = dict(type='object', additionalProperties=False, properties=properties,
+                      required=list(properties))
         key = fingerprint(bundle)
         if key not in shared:
             name = f"FocusOperation{len(shared) + 1}"
@@ -132,19 +131,24 @@ def decode_operation_bundles(operations, context):
     for operation, bundle in operations.items():
         if bundle is None:
             continue
-        if type(bundle) is not dict or set(bundle) != {
-                *BUNDLE_KEYS, "existing_resource", "test_normal"}:
+        if type(bundle) is not dict or set(bundle) - {'existing_resource'} != {
+                *BUNDLE_KEYS, 'test_normal'}:
             raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_SELECTION_INVALID")
         if type(bundle["test_normal"]) is not bool:
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
         if bundle["test_normal"]:
             result["normal_operation_ids"].append(operation)
         selected.append(operation)
-        existing = bundle["existing_resource"]
         has_source = any(f["operation_id"] == operation and f.get("source_dependency")
                          for f in fields.values())
+        if has_source and 'existing_resource' not in bundle:
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_WIRE_SELECTION_INVALID')
+        # Existing receipts may still carry the old explicit false for fixed-input operations.
+        existing = bundle.get('existing_resource', False)
         if type(existing) is not bool or existing and not has_source:
-            raise ValidationFailure(Layer.MODEL, "FOCUS_SOURCE_CHOICE_INVALID")
+            error = ValidationFailure(Layer.MODEL, 'FOCUS_SOURCE_CHOICE_INVALID')
+            error.diagnostic.fields = ['scope.operations.*.existing_resource']
+            raise error
         if existing:
             result["source_conflicts"].append(operation)
         for key in BUNDLE_KEYS:

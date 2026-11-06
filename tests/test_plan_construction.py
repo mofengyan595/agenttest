@@ -54,6 +54,23 @@ def test_state_prerequisite_and_source_order_construct_before_first_validation()
         construct_plan(dict(name='missing', steps=[node('r', 'read')]), ctx)
 
 
+@pytest.mark.parametrize('method', ['GET', 'POST'])
+def test_single_approved_read_prerequisite_can_join_two_proposed_cases(method):
+    ctx = context()
+    ctx['operations'] = [dict(id='health', method=method), dict(id='read', method='GET')]
+    next(p for p in ctx['policies'] if p['id'] == 'read')['prerequisite_policy_ids'] = ['health']
+    wire = dict(cases=[dict(title='独立提议', kind='normal', plan=dict(name=op,
+        steps=[node('check', op)])) for op in ('read', 'health')])
+    if method == 'POST':
+        with pytest.raises(ValidationFailure, match='CONSTRUCTION_PREREQUISITE_AMBIGUOUS'):
+            construct_design(wire, ctx)
+    else:
+        records = construct_design(wire, ctx)
+        case, = wire['cases']
+        assert [step['operation_id'] for step in case['plan']['steps']] == ['health', 'read']
+        assert records[0]['joined_read_cases'] == 2
+
+
 def test_all_identities_finish_reading_before_cleanup_without_picking_one_predecessor():
     ctx = context()
     ctx['policies'][2]['roles'].append('other')

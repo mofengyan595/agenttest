@@ -310,7 +310,7 @@ def test_boundary_and_enum_values_keep_their_wire_types_without_coercion():
         p, kind="boundary_outside", value=0).id)
     check = dict(check_ref=reference, source_ref="source_1", exact_value=dict(value=-2))
     bundle = dict(input_requirements=[], input_questions=[], expectation_questions=[],
-                  requested_checks=[check], test_normal=False, existing_resource=False)
+                  requested_checks=[check], test_normal=False)
     wire = dict(interpretation="按文档检查明确指定的下界值", scope=dict(mode="selected",
         operations=dict(readReports=bundle), question=None), blocked_operations={})
     assert validator.is_valid(wire)

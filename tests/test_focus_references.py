@@ -31,7 +31,7 @@ def clause(operation, role=None, **overrides):
 
 def bundle(**overrides):
     return dict(dict(input_requirements=[], input_questions=[], requested_checks=[],
-                     expectation_questions=[], existing_resource=False, test_normal=False),
+                     expectation_questions=[], test_normal=False),
                 **overrides)
 
 

@@ -124,7 +124,7 @@ def explicit_response_continuation(atom, entries):
     if atom['future'] or atom['constraint'] or atom['same_resource'] or atom['ordered']:
         return False
     prefix = atom['text'][:entries[0]['start'] - atom['start']]
-    return re.fullmatch(r'(?:并(?:且|顺便)?|以及|同时|顺便|再)\s*(?:请)?\s*'
+    return re.fullmatch(r'(?:(?:并(?:且|顺便)?|以及|同时|顺便|再)\s*)?(?:请)?\s*'
                         r'(?:核对|确认|检查|验证)\s*(?:响应(?:中的?)?\s*)?', prefix)
 
 
@@ -362,11 +362,19 @@ def validate_requirement_links(requirements, context, selection):
             future_only_operations(context)):
         raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_OPERATION_SELECTED')
     catalog = context.get('response_expectations', {})
-    from agenttest.requirement_ledger import explicit_response_checks, response_predicate_matches
+    from agenttest.requirement_ledger import (
+        explicit_http_statuses,
+        explicit_response_checks,
+        response_predicate_matches,
+    )
 
+    text = context.get('user_task', '')
     predicates = {}
-    for entry in explicit_response_checks(context.get('user_task', '')):
+    for entry in explicit_response_checks(text):
         predicates.setdefault(entry['source_id'], []).append(entry)
+    statuses = {entry['source_id']: entry for entry in explicit_http_statuses(text)
+                if entry.get('preceding_source_id')
+                and entry['reason'] == 'HTTP_STATUS_UNWITNESSED'}
     read_operations = {o['id'] for group in context.get('grouped_index', [])
                        for o in group['operations'] if o['method'] in {'GET', 'HEAD'}} & selected
     by_source = {item.source_id: item for item in requirements}
@@ -379,14 +387,21 @@ def validate_requirement_links(requirements, context, selection):
         if atom.get('future_only') and item.disposition != 'deferred':
             raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
         entries = predicates.get(atom['source_id'])
-        if (entries and not item.actions and previous is not None
-                and previous.disposition == 'required' and len(previous.actions) == 1
-                and explicit_response_continuation(atom, entries)):
+        if (item.disposition == 'required' and not item.actions and previous is not None
+                and previous.disposition == 'required' and len(previous.actions) == 1):
             action = previous.actions[0]
-            if action.operation_id in read_operations and all(any(
+            fields_match = entries and explicit_response_continuation(atom, entries) and all(any(
                     r['operation_id'] == action.operation_id and action.role in r['roles']
                     and response_predicate_matches(entry, r) for r in catalog.values())
-                    for entry in entries):
+                    for entry in entries)
+            status = statuses.get(atom['source_id'])
+            status_matches = (status and previous.source_id == status['preceding_source_id']
+                and not any(q.source_quote in previous.source_quote for q in
+                            selection.requested_checks) and any(
+                    rule['operation_id'] == action.operation_id and action.role in rule['roles']
+                    and rule.get('statuses') == [status['expected']]
+                    for rule in context.get('confirmed_response_checks', [])))
+            if action.operation_id in read_operations and (fields_match or status_matches):
                 item.actions = previous.actions
         bind_response_continuation(item, atom, previous, catalog, read_operations)
         previous = item

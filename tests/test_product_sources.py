@@ -112,7 +112,7 @@ def test_numeric_default_without_matching_provenance_is_closed_before_generation
     model = TestFocusModel(settings(), profile="generic")
     wire = dict(interpretation="按已确认配置准备资源并检查删除限制。", scope=dict(mode="selected",
         operations=dict(create=dict(input_requirements=[], input_questions=[], requested_checks=[],
-            expectation_questions=[], test_normal=True, existing_resource=False)), question=None),
+            expectation_questions=[], test_normal=True)), question=None),
         blocked_operations={})
     schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
     validator = Draft202012Validator(schema)
@@ -140,7 +140,7 @@ def test_singleton_input_does_not_offer_an_impossible_two_choice_question():
             name="text", path=[], schema=dict(type="string", enum=["fixed synthetic text"]))])
     wire = dict(interpretation="使用已确认内容提交本轮资源。", scope=dict(mode="selected",
         operations=dict(submit=dict(input_requirements=[], input_questions=[], requested_checks=[],
-            expectation_questions=[], test_normal=True, existing_resource=False)), question=None),
+            expectation_questions=[], test_normal=True)), question=None),
         blocked_operations={})
     model = TestFocusModel(settings(), profile="generic")
     schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
@@ -174,8 +174,8 @@ def test_numeric_generation_is_bound_to_its_exact_source_before_provider_call(
     entry = dict(field_ref="query/amount", value=valid, source_ref="source_1")
     wire = dict(interpretation="核对明确请求的读取内容。", scope=dict(mode="selected",
         operations=dict(read=dict(input_requirements=[entry], input_questions=[],
-            requested_checks=[], expectation_questions=[], test_normal=True,
-            existing_resource=False)), question=None), blocked_operations={})
+            requested_checks=[], expectation_questions=[], test_normal=True)), question=None),
+        blocked_operations={})
     assert validator.is_valid(wire)
     entry["value"] = invalid
     assert not validator.is_valid(wire)

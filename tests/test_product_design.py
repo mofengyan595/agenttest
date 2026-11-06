@@ -417,13 +417,17 @@ async def test_negative_traffic_never_satisfies_a_required_normal_request():
     assert len(result.cases) == 2
 
 
-def test_identical_ordinary_reads_cannot_create_new_scenarios_by_renaming_steps():
+@pytest.mark.asyncio
+@pytest.mark.parametrize('task,varied,count', [
+    ('读取报告并核对已确认规则', False, 1),
+    ('分别读取两次报告', False, 2),
+    ('读取报告并核对已确认规则', True, 2),
+])
+async def test_read_coalescing_preserves_distinct_and_explicit_repeat_cases(task, varied, count):
     import copy
 
     from test_negative_values import case as read_case
     from test_negative_values import read_project
-
-    from agenttest.product_design import TestDesign, validate_distinct_setups
 
     proj, _ = read_project()
     base = next(p for p in proj.registry.definitions() if not p.negative)
@@ -431,14 +435,57 @@ def test_identical_ordinary_reads_cannot_create_new_scenarios_by_renaming_steps(
     repeated = copy.deepcopy(first)
     repeated["title"] = "换一个标题仍是相同请求"
     repeated["plan"]["steps"][0]["id"] = "renamed"
-    design = TestDesign.model_validate(dict(interpretation="两个名称不能产生额外覆盖",
-        cases=[first, repeated], questions=[], not_covered=[]))
-    with pytest.raises(ValueError, match="DESIGN_DUPLICATE_READ_SCENARIO"):
-        validate_distinct_setups(proj, design)
-    repeated["plan"]["steps"][0]["arguments"][0]["value"] = 2
-    varied = TestDesign.model_validate(dict(interpretation="不同合法输入是不同场景",
-        cases=[first, repeated], questions=[], not_covered=[]))
-    validate_distinct_setups(proj, varied)
+    if varied:
+        repeated['plan']['steps'][0]['arguments'][0]['value'] = 2
+
+    class Model:
+        async def generate(self, context):
+            return json.dumps(dict(interpretation='逐项安排已确认的报告读取',
+                                   cases=[first, repeated], questions=[], not_covered=[]))
+
+    design = await propose_design(proj, task, design_groups(proj)[0], Model(), environ={},
+                                  remaining_requests=10, inventory_total=1)
+    assert len(design.cases) == count
+    assert design._coalesced_read_cases == 2 - count
+
+
+@pytest.mark.parametrize('change', ['identity', 'ordered'])
+def test_read_coalescing_does_not_remove_identity_or_order_obligations(change):
+    from copy import deepcopy
+
+    from test_negative_values import case as read_case
+    from test_negative_values import read_project
+
+    from agenttest.product_design import TestDesign, coalesce_read_cases
+
+    proj, _ = read_project()
+    policy = next(p for p in proj.registry.definitions() if not p.negative)
+    first = read_case(policy.id)
+    repeated = deepcopy(first)
+    requirements = []
+    if change == 'identity':
+        repeated['plan']['steps'][0]['role'] = 'another_identity'
+    else:
+        requirements = [dict(source_id='request_1', disposition='required', actions=[],
+            before=[dict(earlier='start', later=policy.operation_id)], same_resource=[])]
+    design = TestDesign(interpretation='比较不同上下文的报告读取', cases=[first, repeated],
+                        questions=[], not_covered=[])
+    coalesce_read_cases(proj, design, '读取报告', requirements, [])
+    assert len(design.cases) == 2
+
+
+def test_read_coalescing_keeps_separate_snapshots_in_a_mixed_plan():
+    from agenttest.product_design import TestDesign, coalesce_read_cases
+
+    proj, _ = project()
+    policy = next(p for p in proj.registry.definitions() if p.operation_id == 'readJob')
+    read = dict(title='读取任务状态', kind='normal', plan=dict(name='snapshot', steps=[dict(
+        id='read', operation_id='readJob', role=None, policy_id=policy.id, arguments=[])]))
+    design = TestDesign(interpretation='读取状态并创建任务', cases=[read, case(), read],
+                        questions=[], not_covered=[])
+    coalesce_read_cases(proj, design, '检查状态以及创建任务', [], [])
+    assert len(design.cases) == 3
+    assert design._coalesced_read_cases == 0
 
 
 def test_a_negative_category_without_a_negative_policy_stops_before_execution():

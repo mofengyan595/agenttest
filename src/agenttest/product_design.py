@@ -1,6 +1,7 @@
 """Bounded model test design using existing model transport and trusted policy catalogs."""
 
 import asyncio
+import re
 from copy import deepcopy
 from dataclasses import replace
 from typing import Literal
@@ -15,6 +16,7 @@ from agenttest.onboarding import _public_metadata
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context
 from agenttest.policies import NeedsReview, PolicyRegistry
+from agenttest.report import fingerprint
 from agenttest.safety import StrictModel
 
 
@@ -56,6 +58,7 @@ class TestDesign(StrictModel):
     questions: list[DesignQuestion] = Field(max_length=8)
     not_covered: list[str] = Field(max_length=20)
     suggestions: list[str] = Field(default_factory=list, max_length=10)
+    _coalesced_read_cases: int = PrivateAttr(default=0)
 
 
 class DesignOmission(StrictModel):
@@ -645,6 +648,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                 raise ValueError("DESIGN_OPERATION_OUTSIDE_GROUP")
             if len(scenario.steps) > remaining_requests:
                 raise ValueError("DESIGN_STEP_BUDGET_EXCEEDED")
+        coalesce_read_cases(project, design, context['user_task'], request_requirements,
+                            (*http_status_requirements, *response_requirements))
         validate_design_inputs(project, design, requirements,
                                normal_operation_ids=context["required_normal_operations"],
                                source_requirements=request_requirements)
@@ -718,36 +723,66 @@ def validate_negative_preparation(project, design):
                 raise ValidationFailure(Layer.DEPENDENCY, "DESIGN_NEGATIVE_UNNEEDED_WRITE")
 
 
+def coalesce_read_cases(project, design, text, requirements, explicit_checks):
+    """Collapse equal standalone reads before checking the surviving plan's obligations."""
+    operations = {op.operation_id: op.method for op in project.contract.operations}
+    if any(operations.get(step.operation_id) not in {'GET', 'HEAD', 'OPTIONS'}
+           for case in design.cases for step in case.plan.steps):
+        return
+    if re.search(r'重复|再次|再(?:查|读|调用|请求)|重新(?:查|读)|分别|间隔|先后|前后|'
+                 r'(?:[2-9]|[1-9]\d+|[二两三四五六七八九十]+)次|'
+                 r'\b(?:repeat|twice|again|times)\b', text, re.I):
+        return
+    from agenttest.request_requirements import explicit_response_continuation, request_atoms
+
+    atoms = {atom['source_id']: atom for atom in request_atoms(text)}
+    check_sources = {check['source_id'] for check in explicit_checks
+        if check['source_id'] in atoms and (check.get('preceding_source_id') or
+            'selector' in check and explicit_response_continuation(atoms[check['source_id']],
+                                                                  [check]))}
+    mentioned, preserve = set(), set()
+    for item in requirements:
+        for pair in item['before']:
+            preserve.update((pair['earlier'], pair['later']))
+        for pair in item['same_resource']:
+            preserve.update((pair['producer'], pair['consumer']))
+        if item['disposition'] == 'required' and item['source_id'] not in check_sources:
+            current = {action['operation_id'] for action in item['actions']}
+            preserve.update(current & mentioned)
+            mentioned.update(current)
+    policies = {policy.id: policy for policy in project.registry.definitions()}
+    seen, surviving = set(), []
+    for case in design.cases:
+        steps = case.plan.steps
+        if len(steps) == 1 and case.kind != 'negative':
+            step = steps[0]
+            policy = policies.get(step.policy_id)
+            if (operations.get(step.operation_id) in {'GET', 'HEAD'}
+                    and step.operation_id not in preserve and policy and not policy.negative
+                    and not policy.poll and not policy.prerequisite_policy_ids
+                    and all(a.from_step is None for a in step.arguments)):
+                signature = case.plan.scenario().steps[0].model_dump(exclude={'id'})
+                key = fingerprint([case.kind, signature])
+                if key in seen:
+                    continue
+                seen.add(key)
+        surviving.append(case)
+    design._coalesced_read_cases = len(design.cases) - len(surviving)
+    design.cases = surviving
+
+
 def validate_distinct_setups(project, design):
     """Reject repeated identical successful resource setups across ordinary cases, not login."""
-    from agenttest.report import fingerprint
-
     operations = {o.operation_id: o for o in project.contract.operations}
     policies = {p.id: p for p in project.registry.definitions()}
     logins = {identity.login_operation for identity in project.target.roles.values()
               if identity.login_operation is not None}
     seen = set()
-    read_cases = set()
     for case in design.cases:
         # A controlled negative may need its own isolated setup. This is planned preparation,
         # distinct from duplicating an ordinary successful lifecycle or replaying a write.
         if any(policies[s.policy_id].negative for s in case.plan.steps if s.policy_id in policies):
             continue
-        if all(operations[s.operation_id].method in {"GET", "HEAD", "OPTIONS"}
-               or s.operation_id in logins for s in case.plan.steps
-               if s.operation_id in operations):
-            from agenttest.llm_planner import literal_data
-
-            positions = {s.id: i for i, s in enumerate(case.plan.steps)}
-            signature = [dict(operation=s.operation_id, policy=s.policy_id, role=s.role,
-                arguments=sorted([dict(location=a.location, name=a.name,
-                    value=literal_data(a.value), source=positions.get(a.from_step), select=a.select)
-                    for a in s.arguments], key=lambda a: (a["location"], a["name"])))
-                for s in case.plan.steps]
-            key = fingerprint(signature)
-            if key in read_cases:
-                raise ValidationFailure(Layer.MODEL, "DESIGN_DUPLICATE_READ_SCENARIO")
-            read_cases.add(key)
         current = set()
         for step in case.plan.steps:
             if (step.operation_id not in operations or step.policy_id not in policies

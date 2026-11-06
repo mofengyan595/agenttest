@@ -320,6 +320,9 @@ class ProductTasks:
                         except (PlannerFailure, ValueError, TimeoutError) as exc:
                             if hasattr(exc, "requirement_ledger"):
                                 summary["requirement_ledger"] = exc.requirement_ledger
+                            diagnostic = getattr(exc, 'diagnostic', None)
+                            if diagnostic is not None:
+                                focus_record['diagnostic'] = diagnostic.model_dump(mode='json')
                             focus_record.update(status="REJECTED", reason=getattr(
                                 exc, "reason", None) or getattr(
                                     getattr(exc, "diagnostic", None), "code", None)
@@ -464,6 +467,8 @@ class ProductTasks:
                                 timeout=getattr(getattr(raw_model, "_settings", None),
                                                 "timeout", 30.0) + 1)
                             record.update(status="PROPOSED", interpretation=design.interpretation)
+                            if design._coalesced_read_cases:
+                                record['coalesced_read_cases'] = design._coalesced_read_cases
                             if not design.relevant:
                                 record["outside_focus_notes"] = design.not_covered
                             group["status"] = "DESIGNED" if design.relevant else "OUTSIDE_FOCUS"
@@ -486,6 +491,8 @@ class ProductTasks:
                                     "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW"}:
                                 reason = exc.args[0]
                             diagnostic = getattr(exc, "diagnostic", None)
+                            if diagnostic is not None:
+                                record['diagnostic'] = diagnostic.model_dump(mode='json')
                             if isinstance(exc, ValidationError):
                                 from agenttest.diagnostics import Layer, schema_diagnostic
 
@@ -496,7 +503,6 @@ class ProductTasks:
                                 reason = diagnostic.code
                             if reason in {'DESIGN_REQUIRED_HTTP_STATUS_MISSING',
                                           'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING'}:
-                                record['diagnostic'] = diagnostic.model_dump(mode='json')
                                 for entry in summary.get('http_status_requirements', []):
                                     if f"requirement_map.{entry['source_id']}" in diagnostic.fields:
                                         entry['status'] = 'NEEDS_REVIEW'

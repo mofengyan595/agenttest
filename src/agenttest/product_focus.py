@@ -187,7 +187,8 @@ work.
 scope={mode,operations,question}. selected operations is the CLOSED table of EVERY approved ID:
 unselected=null;
 selected={input_requirements,input_questions,requested_checks,expectation_questions,
-existing_resource,test_normal}. All arrays exist, possibly empty. Select every requested interface
+test_normal, and existing_resource only for runtime-supplied inputs}. All arrays exist,
+possibly empty. Select every requested interface
 ONCE: repeated reads, roles, scenarios and different values share its one bundle. Design arranges
 repeated steps and order later. Dependencies/logins are deterministic prerequisites, not independent
 test expansion. test_normal=true only when an ordinary valid action is requested; negatives do not
@@ -489,7 +490,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     context["confirmed_response_checks"] = [dict(operation_id=p.operation_id, roles=p.roles,
         statuses=p.assertions.status.codes if p.assertions.status else [],
         fields=[f.model_dump() for f in p.assertions.fields])
-        for p in project.registry.definitions() if not p.negative]
+        for p in policies.values() if not p.negative and p.assertions.reviewed
+        and p.assertions.source.strip()]
     confirmed = [p for p in project.registry.definitions() if not p.negative
                  and operations[p.operation_id].method in {"GET", "HEAD", "OPTIONS"}
                  and any(role is not None for role in p.roles)]

@@ -37,7 +37,7 @@ def test_focus_wire_keeps_boolean_and_number_types_and_groups_repeated_fields():
     validator = Draft202012Validator(request["response_format"]["json_schema"]["schema"])
     proposal = dict(interpretation="检查指定目录参数", scope=dict(mode="selected",
         operations=dict(readB=None, readA=dict(input_questions=[], requested_checks=[],
-            test_normal=False, existing_resource=False, expectation_questions=[],
+            test_normal=False, expectation_questions=[],
             input_requirements=[dict(field_ref="query/active", value=True,
                                      source_ref="source_1")])),
         question=None), blocked_operations={})
@@ -76,7 +76,7 @@ def test_followup_source_refs_are_field_and_value_specific():
     wire = dict(interpretation="保留周二，使用本次明确选择的标题", scope=dict(mode="selected",
         operations=dict(create=dict(input_requirements=[title, day], input_questions=[],
             requested_checks=[], expectation_questions=[],
-                  test_normal=False, existing_resource=False)),
+                  test_normal=False)),
         question=None),
         blocked_operations={})
     validator = Draft202012Validator(schema)
@@ -107,7 +107,7 @@ def test_followup_recovers_unextracted_old_data_but_not_an_unanswered_choice():
     model = TestFocusModel(settings(), profile="generic")
     schema = json.loads(model.prepare_request(context))["response_format"]["json_schema"]["schema"]
     wire = dict(interpretation="使用新标题，并从原始交代中恢复周二", scope=dict(mode="selected",
-        operations=dict(create=dict(test_normal=True, existing_resource=False,
+        operations=dict(create=dict(test_normal=True,
             input_requirements=[dict(field_ref="body/title", value="竹林", source_ref="source_1"),
                 dict(field_ref="body/day", value="Tuesday", source_ref="source_2"),
                 dict(field_ref="body/count", value=2, source_ref="source_2")],

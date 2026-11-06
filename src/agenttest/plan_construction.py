@@ -52,7 +52,7 @@ def construct_plan(plan, context):
         for node in protected:
             if node['id'] != existing[0]['id']:
                 edges[node['id']].add(existing[0]['id'])
-    for node in nodes.values():
+    for index, node in enumerate(nodes.values()):
         for argument in node['arguments']:
             source = argument.get('from_step')
             if source is not None:
@@ -62,7 +62,9 @@ def construct_plan(plan, context):
         for prerequisite in policies[node['policy_id']].get('prerequisite_policy_ids', []):
             producers = [n['id'] for n in nodes.values() if n['policy_id'] == prerequisite]
             if not producers:
-                raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_PREREQUISITE_AMBIGUOUS')
+                error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_PREREQUISITE_AMBIGUOUS')
+                error.diagnostic.fields = [f'plan.steps.{index}.policy_id']
+                raise error
             edges[node['id']].update(producers)
     for requirement in context.get('request_requirements', []):
         if requirement['disposition'] != 'required':
@@ -119,10 +121,43 @@ def construct_plan(plan, context):
         node_dependencies={key: sorted(value) for key, value in edges.items()})
 
 
+def join_read_prerequisite(cases, context):
+    """Join a unique approved predecessor pair before assigning execution contexts."""
+    if len(cases) != 2 or not all(isinstance(case, dict) and case.get('kind') in {
+            'normal', 'flow', 'permission'} and isinstance(case.get('plan'), dict)
+            and isinstance(case['plan'].get('steps'), list) and len(case['plan']['steps']) == 1
+            for case in cases):
+        return cases
+    from agenttest.product_design import DesignCase
+
+    steps = [DesignCase.model_validate(case).plan.steps[0] for case in cases]
+    methods = {op['id']: op['method'] for op in context.get('operations', [])}
+    policies = {p['id']: p for p in context.get('policies', [])}
+    if steps[0].role != steps[1].role or any(
+            methods.get(step.operation_id) not in {'GET', 'HEAD'}
+            or step.policy_id not in policies or policies[step.policy_id].get('negative_test')
+            or any(arg.from_step is not None for arg in step.arguments) for step in steps):
+        return cases
+    for consumer, producer in ((0, 1), (1, 0)):
+        if steps[producer].policy_id not in policies[steps[consumer].policy_id].get(
+                'prerequisite_policy_ids', []):
+            continue
+        primary = cases[consumer]
+        predecessor = steps[producer].model_dump(mode='json')
+        if predecessor['id'] == steps[consumer].id:
+            predecessor['id'] = ('linked_predecessor' if steps[consumer].id != 'linked_predecessor'
+                                 else 'linked_prerequisite')
+        return [{**primary, 'plan': {**primary['plan'], 'steps': [predecessor,
+                                                                  *primary['plan']['steps']]}}]
+    return cases
+
+
 def construct_design(wire, context, *, construction_chains=()):
     records, cases = [], []
     chains = dict(construction_chains)
-    for proposed_index, case in enumerate(wire.get('cases', [])):
+    proposed = wire.get('cases', [])
+    joined = join_read_prerequisite(proposed, context) if not chains else proposed
+    for proposed_index, case in enumerate(joined):
         plan, record = construct_plan(case['plan'], {**context,
             'composed_negative_chain': chains.get(proposed_index, [])})
         edges = {key: set(value) for key, value in record.pop('node_dependencies').items()}
@@ -160,6 +195,8 @@ def construct_design(wire, context, *, construction_chains=()):
                     current['kind'] = 'normal'
             cases.append(current)
         record['independent_contexts'] = len(components)
+        if joined is not proposed:
+            record['joined_read_cases'] = len(proposed)
         records.append(record)
     wire['cases'] = cases
     return records
