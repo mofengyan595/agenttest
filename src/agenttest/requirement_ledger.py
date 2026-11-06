@@ -80,19 +80,25 @@ def response_predicate_matches(entry, rule):
         rule['operator'] == 'exists' or json_equal(rule['expected'], entry['expected']))
 
 
-def unresolved_response_operations(ledger, requirements, project, requested):
+def unresolved_response_operations(ledger, selection, project, requested):
     """Hold the linked component when an explicit response check lacks an approved rule."""
     from agenttest.request_requirements import response_expectations
 
     catalog = response_expectations(project)
-    by_source = {item.source_id: item for item in requirements}
+    by_source = {item.source_id: item for item in selection.requirements}
     blocked = set()
     for entry in ledger:
         item = by_source[entry['source_id']]
-        if not item.actions or item.disposition not in {'required', 'needs_review'}:
+        if item.disposition not in {'required', 'needs_review'}:
             continue
         operations = {action.operation_id for action in item.actions}
         entry['actions'] = [action.model_dump() for action in item.actions]
+        if item.disposition == 'needs_review':
+            operations.update(question.operation_id for question in selection.expectation_questions
+                              if question.kind == 'business_rule'
+                              and question.source_quote == item.source_quote)
+        if not operations:
+            continue
         if item.disposition == 'required' and len(item.actions) == 1:
             action = item.actions[0]
             if (any(r['source_quote'] in item.source_quote for r in requested)
@@ -104,6 +110,7 @@ def unresolved_response_operations(ledger, requirements, project, requested):
                 continue
         entry['reason'] = ('RESPONSE_SCOPE_AMBIGUOUS' if len(item.actions) > 1 else
                            'RESPONSE_CHECK_NOT_APPROVED' if entry['selector'] else entry['reason'])
+        entry['blocked_operations'] = sorted(operations)
         blocked.update(operations)
     return blocked
 

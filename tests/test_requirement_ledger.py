@@ -88,9 +88,12 @@ def test_approved_negative_is_accounted_without_creating_a_new_expectation():
 
 @pytest.mark.parametrize('assertion,extra,status,requests', [
     ('$.items 存在', '', 'PASS', ['/records']),
+    ('$.items 存在', '', 'ASSERTION_FAILED', ['/records', '/records']),
     ('$.items 非空', '', 'NEEDS_REVIEW', []),
     ('$.items 数量为 2', '', 'NEEDS_REVIEW', []),
     ('$.items 非空', '；检查健康', 'NEEDS_REVIEW', ['/health']),
+    ('$.items 数量为 3', '；检查健康', 'NEEDS_REVIEW', ['/health']),
+    ('只用未确认的方式检查记录', '；检查健康', 'NEEDS_REVIEW', ['/health']),
 ])
 @pytest.mark.asyncio
 async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypatch, assertion,
@@ -103,34 +106,45 @@ async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypat
     from agenttest.report import ModelCallStats
 
     seen = []
+    review_only = assertion.startswith('只用')
+    question_only = review_only or '数量为 3' in assertion
 
     def target(request):
         seen.append(request.url.path)
-        return httpx.Response(200, json={'items': []})
+        return httpx.Response(200, json={} if status == 'ASSERTION_FAILED' else {'items': []})
 
     class Focus:
         stats = ModelCallStats(calls=1, input_tokens=1, output_tokens=1, total_tokens=2)
 
         async def generate(self, context):
             operations = ['records', 'health'] if extra else ['records']
+            requirements = [dict(source_id=atom['source_id'], source_quote=atom['text'],
+                disposition='required', actions=[dict(operation_id=(
+                    'health' if '健康' in atom['text'] else 'records'), role=None)],
+                before=[], same_resource=[], response_checks=[])
+                for atom in context['request_atoms']]
+            questions = []
+            if question_only:
+                pending = requirements[0 if review_only else 1]
+                pending.update(disposition='needs_review', actions=pending['actions']
+                               if review_only else [])
+                questions.append(dict(operation_id='records', question='请确认规则依据',
+                    requested_behavior='核对尚未获准的检查', source_quote=pending['source_quote']))
             return FocusSelection(interpretation='核对记录', mode='selected',
-                operation_ids=operations, normal_operation_ids=operations,
-                question=None, pending_questions=[], not_covered=[],
-                requirements=[dict(source_id=atom['source_id'], source_quote=atom['text'],
-                    disposition='required', actions=[dict(operation_id=(
-                        'health' if '健康' in atom['text'] else 'records'), role=None)],
-                    before=[], same_resource=[], response_checks=[])
-                    for atom in context['request_atoms']]).model_dump_json()
+                operation_ids=operations, normal_operation_ids=(['health'] if review_only
+                    else operations), question=None, pending_questions=[], not_covered=[],
+                expectation_questions=questions, requirements=requirements).model_dump_json()
 
     class Design:
         stats = Focus.stats
 
         async def generate(self, context):
-            return json.dumps(dict(interpretation='核对记录', cases=[dict(title='读取记录',
-                kind='normal', plan=dict(name='records', steps=[dict(id='read',
-                    operation_id=context['policies'][0]['operation_id'],
-                    policy_id=context['policies'][0]['id'],
-                    role=None, arguments=[])]))], questions=[], not_covered=[]))
+            cases = [dict(title='读取记录', kind='normal', plan=dict(name='records', steps=[dict(
+                id='read', operation_id=policy['operation_id'], policy_id=policy['id'],
+                role=None, arguments=[])])) for policy in context['policies']
+                if policy['operation_id'] in context['primary_operations']]
+            return json.dumps(dict(interpretation='核对记录', cases=cases, questions=[],
+                                   not_covered=[]))
 
     monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(target))
     svc = service(tmp_path, lambda _: pytest.fail('unexpected model'))
@@ -153,17 +167,23 @@ async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypat
         saved = svc.intake.save(IntakeInput(name='记录', document=document, confirmed=True,
             generic=dict(base_url='http://127.0.0.1:18998', isolated_confirmed=True,
                 assisted=True, operations=operations)), 'operator')
-        result = await finished(svc, await svc.submit('operator', saved['id'],
-            f'读取记录，并验证 {assertion}{extra}。', 'response-witness'))
+        text = (assertion if review_only else f'读取记录，并验证 {assertion}') + extra + '。'
+        result = await finished(svc, await svc.submit('operator', saved['id'], text,
+                                                      'response-witness'))
         summary = result['summary']
         assert seen == requests, summary.get('design_records')
-        assert summary['complete'] is (status == 'PASS')
+        assert summary['complete'] is (status in {'PASS', 'ASSERTION_FAILED'})
+        if review_only:
+            assert summary['input_blocked_operations'] == ['records']
+            return
+        assert summary['checks_passed'] is (status == 'PASS')
         entry, = summary['response_requirements']
         assert entry['status'] == status
         assert entry['source_id'] == 'request_2'
-        if status == 'PASS':
+        if status in {'PASS', 'ASSERTION_FAILED'}:
             witness, = entry['witnesses']
             assert witness['run_id'] and witness['policy_id'] and witness['step_id'] == 'read'
+            assert witness['status'] == status
     finally:
         await svc.close()
 

@@ -179,7 +179,11 @@ class ProductTasks:
                         checkpoint()
                     if (context.get("current_request", text) != DEFAULT_ROUND
                             and svc.focus_factory is not None):
-                        from agenttest.product_focus import rule_review_scope, select_focus
+                        from agenttest.product_focus import (
+                            review_only_operations,
+                            rule_review_scope,
+                            select_focus,
+                        )
 
                         status_requirements = explicit_http_statuses(context["current_request"])
                         if status_requirements:
@@ -274,13 +278,14 @@ class ProductTasks:
                                 (check_operations[c['policy_id']] for c in executable_checks))
                             rule_reads, rule_logins = rule_review_scope(project, selection)
                             response_blocked = unresolved_response_operations(response_requirements,
-                                selection.requirements, project, executable_checks)
+                                selection, project, executable_checks)
                             if rule_reads:
                                 summary['expectation_blocked_operations'] = sorted(
                                     rule_reads | rule_logins)
                             blocked_inputs = input_blocked_operations(project, input_questions,
                                 operation_ids=[*selection.source_conflicts, *pending_only,
-                                               *rule_reads, *rule_logins, *response_blocked],
+                                               *rule_reads, *rule_logins, *response_blocked,
+                                               *review_only_operations(selection)],
                                 requirement_links=selection.requirements)
                             summary["input_blocked_operations"] = blocked_inputs
                             summary["source_blocked_operations"] = input_blocked_operations(project,

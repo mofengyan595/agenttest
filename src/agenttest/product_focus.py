@@ -114,6 +114,16 @@ def rule_review_scope(project, selection):
     return blocked, logins - independent - {None}
 
 
+def review_only_operations(selection):
+    """A business-rule gap cannot fall back to a normal request for that operation."""
+    pending = {item.source_quote for item in selection.requirements
+               if item.disposition == 'needs_review'}
+    blocked = {question.operation_id for question in selection.expectation_questions
+               if question.kind == 'business_rule' and question.source_quote in pending}
+    return blocked - {action.operation_id for item in selection.requirements
+                      if item.disposition == 'required' for action in item.actions}
+
+
 class FocusSelection(StrictModel):
     interpretation: str = Field(min_length=4, max_length=500, pattern=r".*[\u4e00-\u9fff].*")
     mode: Literal["selected", "all_ready", "needs_information", "no_current_action"]

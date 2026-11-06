@@ -42,7 +42,7 @@ async function position(round, arm, item) {
   const started = Date.now();
   let stage = "PROJECT_INTAKE", taskId;
   try {
-    await page.goto(origin + "/projects");
+    await page.goto(origin + "/");
     const session = await (await page.request.get(origin + "/api/task-session", evidence)).json();
     const response = await page.request.post(origin + "/api/project-intake", {
       headers: {Origin: origin, "x-agenttest-csrf": session.csrf_token},

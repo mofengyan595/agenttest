@@ -14,6 +14,27 @@ from agenttest.product_focus import TestFocusModel as FocusModel
 from agenttest.project_intake import IntakeInput
 
 
+def test_review_only_operation_does_not_hold_separately_requested_normal_check():
+    from agenttest.product_focus import review_only_operations
+
+    def requirement(source_id, quote, disposition, operation):
+        return dict(source_id=source_id, source_quote=quote, disposition=disposition,
+                    actions=[dict(operation_id=operation, role=None)], before=[], same_resource=[])
+
+    selection = FocusSelection(interpretation='检查常规和待确认范围', mode='selected',
+        operation_ids=['list', 'health', 'details'], normal_operation_ids=['list', 'health'],
+        question=None, pending_questions=[], not_covered=[], expectation_questions=[
+            dict(operation_id=operation, source_quote=quote, question='请确认本次规则依据',
+                 requested_behavior='核对规则') for operation, quote in (
+                ('list', '另查未批准的列表参数'), ('details', '未批准的详情检查'))], requirements=[
+            requirement('request_1', '正常读取列表', 'required', 'list'),
+            requirement('request_2', '另查未批准的列表参数', 'needs_review', 'list'),
+            requirement('request_3', '核对健康', 'required', 'health'),
+            requirement('request_4', '未批准的详情检查', 'needs_review', 'details'),
+        ])
+    assert review_only_operations(selection) == {'details'}
+
+
 def focus_response(selection, request, *, approved_checks=()):
     from agenttest.product_focus_wire import operation_checks
 

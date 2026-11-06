@@ -8,3 +8,6 @@ docs/demo-evidence/pocketbase-live-summary.json text eol=lf
 # Frozen evidence metadata and cold scorer use canonical text on both CI platforms.
 docs/evidence/first-completion-20261105/*.json text eol=lf
 docs/evidence/first-completion-20261105/*.py text eol=lf
+docs/evidence/requirement-witness-20261106/*.json text eol=lf
+scripts/audit_requirement_witness_comparison.py text eol=lf
+scripts/run_requirement_witness_comparison.mjs text eol=lf
