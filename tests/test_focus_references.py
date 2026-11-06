@@ -42,6 +42,56 @@ def wire(operations, requirements):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(('expected', 'actual', 'state', 'sent_count'), [
+    (201, 200, 'NEEDS_REVIEW', 0),
+    (200, 200, 'PASS', 1),
+    (200, 422, 'ASSERTION_FAILED', 2),  # Existing read-only investigation follows the failure.
+])
+async def test_explicit_http_status_requires_an_approved_assertion_and_real_evidence(
+        tmp_path, monkeypatch, expected, actual, state, sent_count):
+    project, setup = read_project()
+    normal = next(p for p in project.registry.definitions() if not p.negative)
+
+    def focus(_):
+        return response(wire(dict(readReports=bundle(test_normal=True)), {
+            'request_1': clause('readReports'), 'request_2': clause('readReports'),
+        }))
+
+    def designer(_):
+        return response(dict(interpretation='读取报告并核对状态', questions=[], not_covered=[],
+                             cases=[report_case(normal.id)]))
+
+    sent = []
+
+    def target(request):
+        sent.append(request.url.path)
+        return httpx.Response(actual, json={'ok': True})
+
+    monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(target))
+    svc = service(tmp_path, designer)
+    svc.focus_factory = lambda _: FocusModel(settings(), transport=httpx.MockTransport(focus),
+                                             profile='generic')
+    try:
+        saved = svc.intake.save(IntakeInput(name='状态见证', document=project.document.decode(),
+                                           generic=setup, confirmed=True), 'operator')
+        row = await svc.submit('operator', saved['id'], f'读取报告，确认 HTTP {expected}。',
+                               uuid4().hex)
+        summary = (await finished(svc, row))['summary']
+        assert len(sent) == sent_count
+        status, = summary['http_status_requirements']
+        assert status['source_id'] == 'request_2' and status['expected'] == expected
+        assert status['status'] == state
+        assert summary['complete'] is (sent_count > 0)
+        assert summary['checks_passed'] is (state == 'PASS')
+        if sent_count:
+            witness, = status['witnesses']
+            assert witness['actual'] == actual and witness['step_id'] == 'read'
+            assert witness['run_id'] == summary['cases'][0]['run_id']
+    finally:
+        await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_rule_only_question_does_not_trigger_model_proposed_sampling(tmp_path, monkeypatch):
     project, setup = read_project()
     text = '报告列表是否承诺按标题升序排列并把缺少的排序规则告诉我。'

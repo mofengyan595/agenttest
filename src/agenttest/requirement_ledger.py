@@ -12,6 +12,104 @@ _ASSIGNMENT = re.compile(
     r'(?P<value>"(?:[^"\\]|\\.)*"|“[^”]*”|\'[^\']*\'|'
     r'-?\d+(?:\.\d+)?|true|false|null)(?![A-Za-z0-9_]|\.\d)')
 
+_STATUS = re.compile(
+    r'(?<![A-Za-z0-9_])(?:HTTP(?:\s*状态码)?|状态码)\s*(?:为|是|[:：=＝])?\s*'
+    r'(?P<code>[1-5][0-9]{2})(?![A-Za-z0-9_]|\.\d)', re.I)
+_QUOTED = re.compile(r'"(?:[^"\\]|\\.)*"|“[^”]*”|「[^」]*」|\'[^\']*\'|`[^`]*`')
+_STATUS_ALTERNATIVE = re.compile(r'^\s*(?:或(?:者)?|/|、|至|到|[-–])\s*(?:HTTP\s*)?\d', re.I)
+_STATUS_UNCERTAIN = re.compile(r'(?:不是|并非|不应(?:当)?|不会|不能|不得)\s*(?:返回\s*)?$')
+_STATUS_PREFIX = re.compile(r'(?:并(?:且)?\s*)?(?:确认|检查|核对|验证|预期)?\s*(?:返回\s*)?')
+
+
+def explicit_http_statuses(text):
+    """Extract literal status requirements and keep unsupported alternatives visible."""
+    from agenttest.request_requirements import request_atoms
+
+    ledger = []
+    atoms = request_atoms(text)
+    for index, atom in enumerate(atoms):
+        if atom['future_only'] or atom['constraint']:
+            continue
+        source = atom['text']
+        plain = _QUOTED.sub(lambda m: ' ' * len(m.group()), source)
+        matches = list(_STATUS.finditer(plain))
+        for match in matches:
+            ambiguous = (len(matches) != 1 or _STATUS_ALTERNATIVE.match(plain[match.end():])
+                         or _STATUS_UNCERTAIN.search(plain[:match.start()]))
+            ledger.append(dict(source_id=atom['source_id'], source_quote=source,
+                start=atom['start'] + match.start(), end=atom['start'] + match.end(),
+                expected=int(match['code']), status='NEEDS_REVIEW', witnesses=[],
+                reason='HTTP_STATUS_SCOPE_AMBIGUOUS' if ambiguous else 'HTTP_STATUS_UNWITNESSED'))
+            if (index and not plain[match.end():].strip()
+                    and _STATUS_PREFIX.fullmatch(plain[:match.start()])):
+                ledger[-1]['preceding_source_id'] = atoms[index - 1]['source_id']
+    return ledger
+
+
+def validate_http_status_witnesses(design, primary, requirements, ledger, policies, requested):
+    """Require a step with an exact reviewed assertion under the clause's action and role."""
+    by_source = {item.source_id: item for item in requirements if item.disposition == 'required'}
+    for entry in ledger:
+        item = by_source.get(entry['source_id'])
+        if item is None or not any(a.operation_id in primary for a in item.actions):
+            continue
+        previous = by_source.get(entry.get('preceding_source_id'))
+        sources = [item.source_quote]
+        if previous and previous.actions == item.actions:
+            sources.append(previous.source_quote)
+        negative_ids = {r['policy_id'] for r in requested
+                        if any(r['source_quote'] in source for source in sources)}
+        matched = []
+        if (len(item.actions) == 1 and entry['reason'] != 'HTTP_STATUS_SCOPE_AMBIGUOUS'
+                and (previous is None or previous.actions == item.actions)):
+            action = item.actions[0]
+            for case in design.cases:
+                for step in case.plan.steps:
+                    policy = policies.get(step.policy_id)
+                    if (policy and step.operation_id == policy.operation_id == action.operation_id
+                            and step.role == action.role and step.role in policy.roles
+                            and (not negative_ids or step.policy_id in negative_ids)
+                            and policy.assertions.reviewed and policy.assertions.source.strip()
+                            and policy.assertions.status
+                            and policy.assertions.status.codes == [entry['expected']]):
+                        matched.append((case, step))
+        if not matched:
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_HTTP_STATUS_MISSING')
+            error.diagnostic.fields = [f'requirement_map.{item.source_id}']
+            raise error
+        for case, step in matched:
+            case._http_status_steps.setdefault(item.source_id, []).append(dict(
+                step_id=step.id, operation_id=step.operation_id, role=step.role,
+                policy_id=step.policy_id))
+
+
+def record_http_status_evidence(summary, case_row, report=None):
+    """Only trusted execution checks can advance a planned status obligation."""
+    steps = {step.step_id: step for step in report.steps} if report else {}
+    for entry in summary.get('http_status_requirements', []):
+        witnesses = case_row.get('http_status_steps', {}).get(entry['source_id'], [])
+        for planned in witnesses:
+            witness = next((w for w in entry['witnesses'] if w['case_id'] == case_row['case_id']
+                            and w['step_id'] == planned['step_id']), None)
+            if witness is None:
+                witness = dict(planned, case_id=case_row['case_id'], status='PLANNED')
+                entry['witnesses'].append(witness)
+            if report:
+                witness['run_id'] = report.run_id
+            step = steps.get(witness['step_id'])
+            if step and step.attempts:
+                witness['status'] = 'EXECUTED'
+                check = next((c for c in step.checks if c.kind == 'http_status'
+                              and c.expected == [entry['expected']]), None)
+                if check is not None:
+                    witness.update(actual=check.actual,
+                                   status='PASS' if check.passed else 'ASSERTION_FAILED')
+        states = {w['status'] for w in entry['witnesses']}
+        if states:
+            entry.pop('reason', None)
+            entry['status'] = next(state for state in (
+                'ASSERTION_FAILED', 'EXECUTED', 'PASS', 'PLANNED') if state in states)
+
 
 def explicit_assignments(text):
     """Recognize only field=scalar syntax, retaining offsets and deferred evidence.

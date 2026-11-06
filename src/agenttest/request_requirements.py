@@ -99,7 +99,8 @@ def resource_mentioned(resource, quote):
 def response_expectations(project):
     return {f'expectation_{fingerprint([p.id, field.model_dump()])[:20]}': dict(
         policy_id=p.id, operation_id=p.operation_id,
-        roles=p.roles if p.assertions.reviewed else [], **field.model_dump())
+        roles=p.roles if p.assertions.reviewed and p.assertions.source.strip() else [],
+        **field.model_dump())
         for p in project.registry.definitions() if not p.negative for field in p.assertions.fields}
 
 
@@ -454,7 +455,12 @@ def validate_requirement_links(requirements, context, selection):
             if (item.disposition != 'required' or action not in item.actions or not anchored
                     or resource.model_dump() not in configured_resources):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
-        if any(ref not in context.get('response_expectations', {}) for ref in item.response_checks):
+        if any(ref not in catalog for ref in item.response_checks):
+            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
+        if item.disposition == 'required' and any(not any(
+                a.operation_id == catalog[ref]['operation_id']
+                and a.role in catalog[ref]['roles'] for a in item.actions)
+                for ref in item.response_checks):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
         human_gap = any(item.source_quote in q.source_quote or q.source_quote in item.source_quote
                         for q in [*selection.input_questions, *selection.expectation_questions])
@@ -518,7 +524,9 @@ def validate_plan_requirements(design, requirements, primary, expectations=None)
             if rule is None:
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_RESPONSE_UNKNOWN')
             if rule['operation_id'] in primary and not any(
-                    s.policy_id == rule['policy_id'] for s in steps):
+                    s.operation_id == rule['operation_id'] and s.policy_id == rule['policy_id']
+                    and s.role in rule['roles'] and any(a.operation_id == s.operation_id
+                        and a.role == s.role for a in item.actions) for s in steps):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_RESPONSE_CHECK_MISSING')
         for order in item.before:
             if order.later not in primary:

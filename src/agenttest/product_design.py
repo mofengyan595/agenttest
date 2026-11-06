@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import replace
 from typing import Literal
 
-from pydantic import Field, model_serializer, model_validator
+from pydantic import Field, PrivateAttr, model_serializer, model_validator
 
 from agenttest.credentials import CredentialVault
 from agenttest.diagnostics import Layer, ValidationFailure
@@ -22,6 +22,7 @@ class DesignCase(StrictModel):
     title: str = Field(min_length=1, max_length=100, pattern=r".*[\u4e00-\u9fff].*")
     kind: Literal["normal", "boundary", "negative", "permission", "flow"]
     plan: GenericPlannerDraft
+    _http_status_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
 
     @model_validator(mode="after")
     def nonempty(self):
@@ -519,7 +520,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          group_http_budget=None, must_be_relevant=False, input_requirements=(),
                          requested_checks=(), handled_questions=(), pending_negative_values=(),
                          allow_new_questions=True, normal_operation_ids=(),
-                         allow_optional_negatives=True, request_requirements=()):
+                         allow_optional_negatives=True, request_requirements=(),
+                         http_status_requirements=()):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -660,10 +662,14 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
             response_expectations,
             validate_plan_requirements,
         )
+        from agenttest.requirement_ledger import validate_http_status_witnesses
 
-        validate_plan_requirements(design,
-            [RequestRequirement.model_validate(r) for r in request_requirements], group['primary'],
-            response_expectations(project))
+        source_requirements = [RequestRequirement.model_validate(r) for r in request_requirements]
+        validate_plan_requirements(design, source_requirements, group['primary'],
+                                   response_expectations(project))
+        validate_http_status_witnesses(design, group['primary'], source_requirements,
+                                       http_status_requirements, policies,
+                                       context['requested_checks'])
         operations = {s.operation_id for c in design.cases for s in c.plan.steps}
         if (must_be_relevant and set(group["primary"]) - operations
                 and not design.questions and not design.not_covered):

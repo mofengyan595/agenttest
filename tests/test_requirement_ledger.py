@@ -4,7 +4,11 @@ import pytest
 
 from agenttest.diagnostics import ValidationFailure
 from agenttest.product_focus import FocusSelection
-from agenttest.requirement_ledger import explicit_assignments, validate_assignment_coverage
+from agenttest.requirement_ledger import (
+    explicit_assignments,
+    explicit_http_statuses,
+    validate_assignment_coverage,
+)
 
 
 def selection(**kwargs):
@@ -58,6 +62,15 @@ def test_parser_preserves_scalar_type_source_offsets_and_identifier_boundaries()
     items = explicit_assignments(text)
     assert [x['value'] for x in items] == [0, 'x', True, None]
     assert all(text[x['start']:x['end']] == x['source_quote'] for x in items)
+
+
+def test_status_parser_preserves_current_literals_and_marks_alternatives_unresolved():
+    text = ('核对消息“HTTP 500”，返回200条，确认状态码为 201；'
+            '检查 HTTP 200 或 204；下次再验证 HTTP 422。')
+    exact, ambiguous = explicit_http_statuses(text)
+    assert (exact['expected'], ambiguous['expected']) == (201, 200)
+    assert text[exact['start']:exact['end']] == '状态码为 201'
+    assert ambiguous['reason'] == 'HTTP_STATUS_SCOPE_AMBIGUOUS'
 
 
 def test_approved_negative_is_accounted_without_creating_a_new_expectation():

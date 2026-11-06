@@ -260,7 +260,7 @@ def test_same_resource_means_one_producer_in_one_context_for_all_consumers():
 
 def test_content_expectation_requires_existing_policy_and_never_creates_an_assertion():
     requirement = link(ctx('核对返回名称')['request_atoms'][0], response_checks=['approved_name'])
-    catalog = dict(approved_name=dict(operation_id='read', policy_id='check_name',
+    catalog = dict(approved_name=dict(operation_id='read', policy_id='check_name', roles=['owner'],
                                      select='$.name', operator='equals', expected='原文'))
     original = deepcopy(catalog)
     with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_RESPONSE_UNKNOWN'):
@@ -270,6 +270,25 @@ def test_content_expectation_requires_existing_policy_and_never_creates_an_asser
     validate_plan_requirements(design([step('r', 'read', policy='check_name')]),
                                [requirement], ['read'], catalog)
     assert catalog == original
+
+
+def test_response_check_cannot_borrow_a_step_from_another_identity():
+    requirement = link(ctx('用 owner 核对返回名称')['request_atoms'][0],
+                       response_checks=['approved_name'])
+    catalog = dict(approved_name=dict(operation_id='read', policy_id='check_name',
+                                     roles=['owner', 'other']))
+    proposed = design([step('r', 'read'), step('other', 'read', role='other', policy='check_name')])
+    with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_RESPONSE_CHECK_MISSING'):
+        validate_plan_requirements(proposed, [requirement], ['read'], catalog)
+
+
+def test_focus_cannot_attach_a_response_check_to_an_unrelated_action():
+    context = ctx('核对读取内容')
+    context['response_expectations'] = dict(content=dict(operation_id='delete',
+                                                        policy_id='delete', roles=['owner']))
+    chosen = selection([link(context['request_atoms'][0], response_checks=['content'])])
+    with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_RESPONSE_INVALID'):
+        validate_requirement_links(chosen.requirements, context, chosen)
 
 
 def test_prohibition_is_not_an_executable_action_or_optional_coverage_escape():
@@ -354,7 +373,8 @@ def test_twelve_original_clauses_fit_existing_focus_budget_with_full_closed_vali
 def test_source_backed_content_and_necessary_login_are_not_unrequested_test_expansion():
     context = ctx('核对读取内容')
     context['approved_ids'].append('login')
-    context['response_expectations'] = dict(content=dict(operation_id='read', policy_id='read'))
+    context['response_expectations'] = dict(content=dict(operation_id='read', policy_id='read',
+                                                        roles=['owner']))
     context['confirmed_response_checks'] = [dict(operation_id='read', roles=['owner'])]
     context['managed_authentication'][0]['login_operation'] = 'login'
     current = selection()
