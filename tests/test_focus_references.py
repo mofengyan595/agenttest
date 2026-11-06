@@ -92,6 +92,60 @@ async def test_explicit_http_status_requires_an_approved_assertion_and_real_evid
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+async def test_unapproved_status_holds_only_the_linked_read(tmp_path, monkeypatch, disposition):
+    from agenttest.generic_intake import IntakeOperation
+
+    project, setup = read_project()
+    document = json.loads(project.document)
+    document['paths']['/health'] = {'get': dict(operationId='health', responses={
+        '200': dict(description='up')})}
+    setup.operations.append(IntakeOperation(operation_id='health', alias='健康', statuses=[200]))
+
+    def focus(_):
+        raw = wire(dict(readReports=bundle(test_normal=True), health=bundle(test_normal=True)), {
+            'request_1': clause('readReports'),
+            'request_2': clause('readReports', disposition=disposition, actions=[]),
+            'request_3': clause('health'),
+        })
+        return response(raw)
+
+    def designer(request):
+        context = json.loads(json.loads(request.content)['messages'][1]['content'])
+        assert context['primary_operations'] == ['health']
+        policy, = context['policies']
+        return response(dict(interpretation='读取独立健康接口', questions=[], not_covered=[],
+            cases=[dict(title='独立健康读取', kind='normal', plan=dict(name='health', steps=[
+                dict(id='check', operation_id='health', role=None, policy_id=policy['id'],
+                     arguments=[])]))]))
+
+    sent = []
+
+    def target(request):
+        sent.append(request.url.path)
+        return httpx.Response(200, json={})
+
+    monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(target))
+    svc = service(tmp_path, designer)
+    svc.focus_factory = lambda _: FocusModel(settings(), transport=httpx.MockTransport(focus),
+                                             profile='generic')
+    try:
+        saved = svc.intake.save(IntakeInput(name='状态局部阻塞', document=json.dumps(document),
+                                           generic=setup, confirmed=True), 'operator')
+        row = await svc.submit('operator', saved['id'],
+            '读取报告列表，确认 HTTP 418；另查健康接口。', uuid4().hex)
+        summary = (await finished(svc, row))['summary']
+        assert sent == ['/health']
+        status, = summary['http_status_requirements']
+        assert status['status'] == 'NEEDS_REVIEW'
+        assert status['reason'] == 'HTTP_STATUS_NOT_APPROVED'
+        assert status['blocked_operations'] == ['readReports']
+        assert not summary['complete']
+    finally:
+        await svc.close()
+
+
+@pytest.mark.asyncio
 async def test_rule_only_question_does_not_trigger_model_proposed_sampling(tmp_path, monkeypatch):
     project, setup = read_project()
     text = '报告列表是否承诺按标题升序排列并把缺少的排序规则告诉我。'

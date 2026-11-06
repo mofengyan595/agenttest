@@ -105,6 +105,7 @@ def constrain_input_sources(properties, context, operation, fields):
     from agenttest.request_validation import validate_value
 
     sources = input_sources(context)
+    quoted_texts = literal_texts(sources)
     current = [s["source_id"] for s in sources if s["origin"] == "current"]
     confirmed_current = list(current)
     if 'request_atoms' in context:
@@ -122,13 +123,14 @@ def constrain_input_sources(properties, context, operation, fields):
         branches = []
         for branch in array.get("items", {}).get("anyOf", []):
             reference = branch["properties"]["field_ref"]["enum"][0]
-            field_schema = by_ref[reference]["schema"]
+            field = by_ref[reference]
+            field_schema = field["schema"]
+            name = (field["path"] or [field["name"]])[-1]
             source_ids = confirmed_current if key == 'input_requirements' else current
             for source in (s for s in sources if s["source_id"] in source_ids):
                 direct = cited(branch, [source["source_id"]])
                 assignments = explicit_assignments(source["text"])
-                named = [a for a in assignments if a["name"] == (
-                    by_ref[reference]["path"] or [by_ref[reference]["name"]])[-1]]
+                named = [a for a in assignments if a["name"] == name]
                 if (key == "input_requirements"
                         and field_schema.get("type") in {"integer", "number"}
                         and (numbers := re.findall(r"-?\d+(?:\.\d+)?", source["text"]))):
@@ -147,12 +149,15 @@ def constrain_input_sources(properties, context, operation, fields):
                     if not values:
                         continue
                     direct["properties"]["value"] = dict(enum=values)
-                if (key == "input_requirements"
-                        and by_ref[reference]["schema"].get("type") == "string"):
+                if key == "input_requirements" and field_schema.get("type") == "string":
                     choices = []
-                    for identifier, value in literal_texts(sources).items():
+                    for identifier, value in quoted_texts.items():
+                        assigned_to = {a["name"] for a in assignments if not a["deferred"]
+                                       and json_equal(a["value"], value)}
+                        if value not in source["text"] or (assigned_to and name not in assigned_to):
+                            continue
                         try:
-                            validate_value(value, by_ref[reference]["schema"])
+                            validate_value(value, field_schema)
                         except ValueError:
                             continue
                         choices.append(identifier)
@@ -164,7 +169,6 @@ def constrain_input_sources(properties, context, operation, fields):
                 branches.append(direct)
             if key != "input_requirements":
                 continue
-            field = by_ref[reference]
             prior = [p for p in context.get("previous_input_requirements", [])
                      if p["operation_id"] == operation
                      and input_slot(p).split("/", 1)[1] == reference]

@@ -5,6 +5,7 @@ import pytest
 from agenttest.diagnostics import ValidationFailure
 from agenttest.product_sources import (
     compact_sources,
+    constrain_input_sources,
     decode_source_refs,
     input_sources,
     literal_texts,
@@ -34,6 +35,30 @@ def test_quoted_text_references_copy_exact_punctuation_and_reject_wrong_source()
         with pytest.raises(ValidationFailure, match="FOCUS_INPUT_SOURCE_INVALID"):
             decode_source_refs(dict(input_requirements=[dict(value=value,
                 source_ref="source_1")]), sources)
+
+
+def test_quoted_path_reference_schema_keeps_the_source_and_field_together():
+    from jsonschema import Draft202012Validator
+
+    from agenttest.request_requirements import request_atoms
+
+    quote = '查 owner="team"、repo="register"；用另一个身份查同一仓库。'
+    context = dict(user_task=quote, request_atoms=request_atoms(quote))
+    fields = [dict(operation_id="read", location="path_parameters", name=name, path=[],
+                   schema=dict(type="string")) for name in ("owner", "repo")]
+    branches = [dict(type="object", additionalProperties=False,
+        properties=dict(field_ref=dict(enum=["path_parameters/" + field["name"]]),
+                        source_quote=dict(type="string"), value=dict(type="string")),
+        required=["field_ref", "source_quote", "value"]) for field in fields]
+    schema = dict(input_requirements=dict(type="array", items=dict(anyOf=branches)),
+                  input_questions=dict(type="array"))
+    constrain_input_sources(schema, context, "read", fields)
+    validator = Draft202012Validator(schema["input_requirements"])
+    entry = dict(field_ref="path_parameters/repo", source_ref="source_2",
+                 value=dict(text_ref="text_2"))
+    assert validator.is_valid([entry])
+    assert not validator.is_valid([{**entry, "source_ref": "source_3"}])
+    assert not validator.is_valid([{**entry, "value": dict(text_ref="text_1")}])
 
 
 def test_shared_design_sources_preserve_values_authority_and_original_validation_context():

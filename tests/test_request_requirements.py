@@ -90,11 +90,12 @@ def test_response_continuation_requires_reviewed_rule_and_matching_read_identity
 @pytest.mark.parametrize('predicate,status,role,linked', [
     ('核对 $.count 等于 2', 200, 'owner', True),
     ('确认 HTTP 404', 404, 'owner', True),
-    ('确认 HTTP 404', 200, 'owner', False),
-    ('确认 HTTP 404', 404, 'other', False),
+    ('确认 HTTP 404', 200, 'owner', True),
+    ('确认 HTTP 404', 404, 'other', True),
     ('确认 HTTP 404 或 403', 404, 'owner', False),
 ])
-def test_exact_adjacent_read_check_uses_same_reviewed_action(predicate, status, role, linked):
+def test_exact_adjacent_read_check_uses_same_action_without_borrowing_identity(
+        predicate, status, role, linked):
     context = ctx(f'读取预约记录，{predicate}。')
     context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
     context['confirmed_response_checks'] = [dict(operation_id='read', roles=[role],
@@ -139,6 +140,53 @@ def test_unproven_or_mutating_self_order_is_still_rejected(text, method):
     fact = link(context['request_atoms'][0], before=[dict(earlier='read', later='read')])
     with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_ORDER_INVALID'):
         validate_requirement_links([fact], context, selection([fact]))
+
+
+@pytest.mark.parametrize('variant', ['same', 'wrong_path', 'wrong_role', 'unanchored',
+                                      'ambiguous', 'explicit_conflict'])
+def test_fixed_path_can_cross_identities_only_with_a_unique_prior_resource(variant):
+    text = '用 owner 读取资源 id=22；用 other 读取同一资源。'
+    if variant == 'unanchored':
+        text = text.replace('资源 id=22', '资源')
+    elif variant == 'ambiguous':
+        text = '用 owner 读取资源 id=23；' + text
+    elif variant == 'explicit_conflict':
+        text = text.replace('同一资源', '同一资源 id=23')
+    context = ctx(text)
+    owner = dict(operation_id='read', role='owner', path={'id': 22})
+    other = dict(operation_id='read', role='other', path={'id': 22})
+    context['existing_resources'] = {'owner': owner, 'other': other, 'owner23': {
+        **owner, 'path': {'id': 23}}}
+    *anchors, last = context['request_atoms']
+    selected_ref = ({**other, 'path': {'id': 23}} if variant == 'wrong_path'
+                    else owner if variant == 'wrong_role' else other)
+    requirements = [link(atom) for atom in anchors] + [link(last,
+        actions=[dict(operation_id='read', role='other')], existing_resources=[selected_ref])]
+    if variant == 'same':
+        validate_requirement_links(requirements, context, selection(requirements))
+        assert requirements[-1].existing_resources[0].model_dump() == other
+    else:
+        with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_RESOURCE_INVALID'):
+            validate_requirement_links(requirements, context, selection(requirements))
+
+
+def test_repeated_read_keeps_real_order_and_all_occurrences_witness_it():
+    context = ctx('连续读取两次预约，然后检查状态。')
+    context['approved_ids'].append('state')
+    context['grouped_index'] = [dict(operations=[dict(id=op, method='GET')
+                                               for op in ('read', 'state')])]
+    repeat, final = context['request_atoms']
+    facts = [link(repeat, before=[dict(earlier='read', later='read')]),
+        link(final, actions=[dict(operation_id='state', role='owner')],
+             before=[dict(earlier='read', later='state')])]
+    validate_requirement_links(facts, context, selection(facts))
+    first, second, state = step('r1', 'read'), step('r2', 'read'), step('s', 'state')
+    validate_plan_requirements(design([first, second, state]), facts, ['read', 'state'],
+                               read_operations={'read', 'state'})
+    for broken in (design([first, state, second]), design([first, state], [second])):
+        with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_ORDER_MISSING'):
+            validate_plan_requirements(broken, facts, ['read', 'state'],
+                                       read_operations={'read', 'state'})
 
 
 def test_approved_explicit_predicate_cannot_be_replaced_by_an_unproven_gap():

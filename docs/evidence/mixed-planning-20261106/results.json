@@ -1,0 +1,1440 @@
+{
+  "freeze_sha256": "71af85deb0439bd1abf611e83abfc2149b37c8def99855117ab13ce81c0e7bf7",
+  "stop": null,
+  "arms": {
+    "baseline": {
+      "execution_denominator": 8,
+      "hold_denominator": 8,
+      "audited_obligations": 60,
+      "planned_obligations": 60,
+      "statuses": {
+        "NEEDS_REVIEW": 6,
+        "FINISHED": 10
+      },
+      "complete": 4,
+      "false_refusals": 4,
+      "correct_holds": 4,
+      "silent_obligations": 16,
+      "unauthorized_attempts": 0,
+      "scope_violations": 2,
+      "target_requests": 22,
+      "target_retries": 0,
+      "infra_attempts": 0,
+      "model_calls": 26,
+      "known_tokens": 150623,
+      "unknown_positions": 0,
+      "median_elapsed_ms": 18329.5,
+      "positions": [
+        {
+          "id": "M01_r1_baseline",
+          "taskId": "aa9366434f394985b5eeb331b370af31",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 12842,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6705,
+            "total_tokens": 6705,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_SOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M01_r2_baseline",
+          "taskId": "4716ebd92cb14df2b5d42a6aa24eb015",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 9261,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6705,
+            "total_tokens": 6705,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_SOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M02_r1_baseline",
+          "taskId": "7a2f3984dd1d4777b5e58121e6720c86",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 15665,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 7243,
+            "total_tokens": 7243,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M02_r2_baseline",
+          "taskId": "74a7280ef8ed498baa8ff64ad01b3daf",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 12355,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 7107,
+            "total_tokens": 7107,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M03_r1_baseline",
+          "taskId": "fa9acd411de7476bbe1b70514a84abcf",
+          "status": "FINISHED",
+          "elapsed_ms": 23893,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 3,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 5,
+          "usage": {
+            "requests": 3,
+            "model_calls": 2,
+            "known_tokens": 11651,
+            "total_tokens": 11651,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M03_r2_baseline",
+          "taskId": "d43bfdab0c69444289da43438c79a920",
+          "status": "FINISHED",
+          "elapsed_ms": 27287,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 3,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 5,
+          "usage": {
+            "requests": 3,
+            "model_calls": 2,
+            "known_tokens": 11596,
+            "total_tokens": 11596,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M04_r1_baseline",
+          "taskId": "804050ab1ba04afbb29999e30da5850e",
+          "status": "FINISHED",
+          "elapsed_ms": 23832,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 4,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 6,
+          "usage": {
+            "requests": 4,
+            "model_calls": 2,
+            "known_tokens": 10248,
+            "total_tokens": 10248,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M04_r2_baseline",
+          "taskId": "ec98c7852fdc4bf588f17e8d8b4b01f1",
+          "status": "FINISHED",
+          "elapsed_ms": 17521,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 4,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 6,
+          "usage": {
+            "requests": 4,
+            "model_calls": 2,
+            "known_tokens": 10234,
+            "total_tokens": 10234,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M05_r1_baseline",
+          "taskId": "b70617d0a5cd416cb481ea3977837891",
+          "status": "FINISHED",
+          "elapsed_ms": 19900,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 2,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 2,
+            "model_calls": 2,
+            "known_tokens": 12141,
+            "total_tokens": 12141,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": false,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 1,
+          "unexpected_attempts": 1
+        },
+        {
+          "id": "M05_r2_baseline",
+          "taskId": "c6b06c8c7a294388b56d8a34d6848231",
+          "status": "FINISHED",
+          "elapsed_ms": 20870,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 2,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 2,
+            "model_calls": 2,
+            "known_tokens": 12089,
+            "total_tokens": 12089,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": false,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 1,
+          "unexpected_attempts": 1
+        },
+        {
+          "id": "M06_r1_baseline",
+          "taskId": "e6433cad37084965b9893db2d2459dc9",
+          "status": "FINISHED",
+          "elapsed_ms": 21325,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 9841,
+            "total_tokens": 9841,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M06_r2_baseline",
+          "taskId": "170320484c4d4e36b96c9f5e6ef843ec",
+          "status": "FINISHED",
+          "elapsed_ms": 19138,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 9755,
+            "total_tokens": 9755,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M07_r1_baseline",
+          "taskId": "d5e143ef756c40f19193becb7f1b6572",
+          "status": "FINISHED",
+          "elapsed_ms": 34551,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_content",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11733,
+            "total_tokens": 11733,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M07_r2_baseline",
+          "taskId": "526fac329ff244bcad5d34352ac32512",
+          "status": "FINISHED",
+          "elapsed_ms": 16702,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_content",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11379,
+            "total_tokens": 11379,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M08_r1_baseline",
+          "taskId": "4efa57a66eb04ec398e42892bd92f47f",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 7187,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "hold_input",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 2,
+          "target_retries": 0,
+          "obligation_denominator": 2,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6044,
+            "total_tokens": 6044,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_FIELD_CHANGED",
+                "fields": [
+                  "input_requirements.0.value",
+                  "approved_input_fields.1"
+                ]
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M08_r2_baseline",
+          "taskId": "d375a971357a4ce583edbd3685fa8fe8",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 9534,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "hold_input",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 2,
+          "target_retries": 0,
+          "obligation_denominator": 2,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6152,
+            "total_tokens": 6152,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_FIELD_CHANGED",
+                "fields": [
+                  "input_requirements.0.value",
+                  "approved_input_fields.1"
+                ]
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        }
+      ]
+    },
+    "candidate": {
+      "execution_denominator": 8,
+      "hold_denominator": 8,
+      "audited_obligations": 60,
+      "planned_obligations": 60,
+      "statuses": {
+        "NEEDS_REVIEW": 5,
+        "FINISHED": 11
+      },
+      "complete": 5,
+      "false_refusals": 3,
+      "correct_holds": 6,
+      "silent_obligations": 12,
+      "unauthorized_attempts": 0,
+      "scope_violations": 0,
+      "target_requests": 23,
+      "target_retries": 0,
+      "infra_attempts": 0,
+      "model_calls": 27,
+      "known_tokens": 155486,
+      "unknown_positions": 0,
+      "median_elapsed_ms": 18085.5,
+      "positions": [
+        {
+          "id": "M01_r1_candidate",
+          "taskId": "efa4c252f033419b9d61311128f5e606",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 12643,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6697,
+            "total_tokens": 6697,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_SOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M01_r2_candidate",
+          "taskId": "7216a049c3f141a6828505d105006fab",
+          "status": "FINISHED",
+          "elapsed_ms": 19793,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 3,
+          "complete": true,
+          "category": "cross_identity",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 3,
+            "model_calls": 2,
+            "known_tokens": 13362,
+            "total_tokens": 13362,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M02_r1_candidate",
+          "taskId": "a7c7b5b00ff046cb88fa0adbec7a1ed4",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 16843,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 7345,
+            "total_tokens": 7345,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_SOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M02_r2_candidate",
+          "taskId": "4bdc0e4317074450a2085a6c59c7f1dd",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 13619,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "cross_identity",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 3,
+          "target_retries": 0,
+          "obligation_denominator": 4,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 7151,
+            "total_tokens": 7151,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false,
+            false,
+            false
+          ],
+          "false_refusal": true,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_INPUT_SOURCE_INVALID",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M03_r1_candidate",
+          "taskId": "f1f7d595ccfd4620a325be44646419d9",
+          "status": "FINISHED",
+          "elapsed_ms": 22694,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 3,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 5,
+          "usage": {
+            "requests": 3,
+            "model_calls": 2,
+            "known_tokens": 11584,
+            "total_tokens": 11584,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M03_r2_candidate",
+          "taskId": "166578b596b54c118905d411b8367758",
+          "status": "FINISHED",
+          "elapsed_ms": 27399,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 3,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 5,
+          "usage": {
+            "requests": 3,
+            "model_calls": 2,
+            "known_tokens": 11630,
+            "total_tokens": 11630,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M04_r1_candidate",
+          "taskId": "d5d11a9c3c76417893c3c4cbfac25baa",
+          "status": "FINISHED",
+          "elapsed_ms": 23678,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 4,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 6,
+          "usage": {
+            "requests": 4,
+            "model_calls": 2,
+            "known_tokens": 10200,
+            "total_tokens": 10200,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M04_r2_candidate",
+          "taskId": "b745a67fe6184a9a985fe2ff49a98ab2",
+          "status": "FINISHED",
+          "elapsed_ms": 17491,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 4,
+          "complete": true,
+          "category": "explicit_repeat",
+          "full_execution": true,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 6,
+          "usage": {
+            "requests": 4,
+            "model_calls": 2,
+            "known_tokens": 10187,
+            "total_tokens": 10187,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0,
+          "ordered": true
+        },
+        {
+          "id": "M05_r1_candidate",
+          "taskId": "8b38df643e23463599a71fd3121440bf",
+          "status": "FINISHED",
+          "elapsed_ms": 21052,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11439,
+            "total_tokens": 11439,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M05_r2_candidate",
+          "taskId": "69197648b8284b799a30a2d210ebeb52",
+          "status": "FINISHED",
+          "elapsed_ms": 15861,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11057,
+            "total_tokens": 11057,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M06_r1_candidate",
+          "taskId": "7b879cac5ff54c2a999ebdce49113335",
+          "status": "FINISHED",
+          "elapsed_ms": 18680,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 9778,
+            "total_tokens": 9778,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M06_r2_candidate",
+          "taskId": "04847ebe140d42abbe839ceceabbfcd2",
+          "status": "FINISHED",
+          "elapsed_ms": 22965,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_status",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 9849,
+            "total_tokens": 9849,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M07_r1_candidate",
+          "taskId": "71fee9b7bfa44c95afbe4b1c9eb6292a",
+          "status": "FINISHED",
+          "elapsed_ms": 38313,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_content",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11926,
+            "total_tokens": 11926,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M07_r2_candidate",
+          "taskId": "d524749e47ea4df09bbbd2a03db280b9",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 8934,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "hold_content",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 1,
+          "target_retries": 0,
+          "obligation_denominator": 3,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 6001,
+            "total_tokens": 6001,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "MODEL_SCHEMA_TYPE_OR_CONSTRAINT",
+                "fields": [
+                  "*"
+                ]
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M08_r1_candidate",
+          "taskId": "77b9e364df084e16b5ab36bafccca2b5",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 7116,
+          "model_calls": 1,
+          "usage_known": true,
+          "requests": 0,
+          "complete": false,
+          "category": "hold_input",
+          "full_execution": false,
+          "correct_hold": false,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 2,
+          "target_retries": 0,
+          "obligation_denominator": 2,
+          "usage": {
+            "requests": 0,
+            "model_calls": 1,
+            "known_tokens": 5995,
+            "total_tokens": 5995,
+            "usage_known": true
+          },
+          "design_diagnostics": [
+            "MODEL_INVALID_RESPONSE"
+          ],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            false
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [
+            {
+              "group": "focus",
+              "reason": "MODEL_INVALID_RESPONSE",
+              "diagnostic": {
+                "layer": "model",
+                "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+                "fields": []
+              }
+            }
+          ],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        },
+        {
+          "id": "M08_r2_candidate",
+          "taskId": "9c09c35c0b084cffbbdf871fbcc0fe2f",
+          "status": "FINISHED",
+          "elapsed_ms": 14823,
+          "model_calls": 2,
+          "usage_known": true,
+          "requests": 1,
+          "complete": false,
+          "category": "hold_input",
+          "full_execution": false,
+          "correct_hold": true,
+          "unnecessary_questions": 0,
+          "infra_attempts": 0,
+          "unauthorized_attempts": 0,
+          "silent_obligations": 0,
+          "target_retries": 0,
+          "obligation_denominator": 2,
+          "usage": {
+            "requests": 1,
+            "model_calls": 2,
+            "known_tokens": 11285,
+            "total_tokens": 11285,
+            "usage_known": true
+          },
+          "design_diagnostics": [],
+          "held_requested_scope": true,
+          "missing_content_evidence": [],
+          "verified_steps": [
+            true
+          ],
+          "false_refusal": false,
+          "model_diagnostics": [],
+          "joined_read_cases": 0,
+          "coalesced_read_cases": 0,
+          "scope_violations": 0,
+          "unexpected_attempts": 0
+        }
+      ]
+    }
+  }
+}

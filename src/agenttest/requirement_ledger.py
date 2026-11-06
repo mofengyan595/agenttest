@@ -175,6 +175,48 @@ def explicit_http_statuses(text):
     return ledger
 
 
+def scoped_read_status(entry, by_source, reads, requested, *, inherited=None):
+    """Resolve one literal status on a mapped read, excluding negative checks."""
+    item = by_source[entry['source_id']]
+    if (entry['reason'] != 'HTTP_STATUS_UNWITNESSED'
+            or item.disposition not in {'required', 'needs_review'}):
+        return None
+    actions = item.actions or ([inherited] if inherited is not None else [])
+    if len(actions) != 1 or actions[0].operation_id not in reads:
+        return None
+    sources = [item.source_quote]
+    if preceding := entry.get('preceding_source_id'):
+        previous = by_source[preceding]
+        if previous.disposition != 'required' or previous.actions != actions:
+            return None
+        sources.append(previous.source_quote)
+    if any(r['source_quote'] in source for r in requested for source in sources):
+        return None
+    return actions[0]
+
+
+def unresolved_http_status_operations(ledger, selection, project):
+    """Hold the component of an unambiguous read status lacking a reviewed rule."""
+    reads = {op.operation_id for op in project.contract.operations
+             if op.method in {'GET', 'HEAD'}
+             and op.operation_id in project.target.allowed_operations}
+    by_source = {item.source_id: item for item in selection.requirements}
+    requested = [check.model_dump() for check in selection.requested_checks]
+    policies = project.registry.definitions()
+    blocked = set()
+    for entry in ledger:
+        action = scoped_read_status(entry, by_source, reads, requested)
+        if action is None or any(p.operation_id == action.operation_id and action.role in p.roles
+            and not p.negative and p.assertions.reviewed and p.assertions.source.strip()
+            and p.assertions.status and p.assertions.status.codes == [entry['expected']]
+            for p in policies):
+            continue
+        entry.update(status='NEEDS_REVIEW', reason='HTTP_STATUS_NOT_APPROVED',
+                     actions=[action.model_dump()], blocked_operations=[action.operation_id])
+        blocked.add(action.operation_id)
+    return blocked
+
+
 def validate_http_status_witnesses(design, primary, requirements, ledger, policies, requested):
     """Require a step with an exact reviewed assertion under the clause's action and role."""
     by_source = {item.source_id: item for item in requirements if item.disposition == 'required'}

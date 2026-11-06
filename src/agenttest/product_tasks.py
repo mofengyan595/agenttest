@@ -17,6 +17,7 @@ from agenttest.requirement_ledger import (
     explicit_http_statuses,
     explicit_response_checks,
     record_requirement_evidence,
+    unresolved_http_status_operations,
     unresolved_response_operations,
 )
 from agenttest.task_store import TERMINAL, TaskConflict
@@ -279,12 +280,15 @@ class ProductTasks:
                             rule_reads, rule_logins = rule_review_scope(project, selection)
                             response_blocked = unresolved_response_operations(response_requirements,
                                 selection, project, executable_checks)
+                            status_blocked = unresolved_http_status_operations(
+                                status_requirements, selection, project)
                             if rule_reads:
                                 summary['expectation_blocked_operations'] = sorted(
                                     rule_reads | rule_logins)
                             blocked_inputs = input_blocked_operations(project, input_questions,
                                 operation_ids=[*selection.source_conflicts, *pending_only,
                                                *rule_reads, *rule_logins, *response_blocked,
+                                               *status_blocked,
                                                *review_only_operations(selection)],
                                 requirement_links=selection.requirements)
                             summary["input_blocked_operations"] = blocked_inputs
@@ -788,6 +792,9 @@ class ProductTasks:
                         for op in summary.get("source_blocked_operations", [])})
         reasons.update({op: "原文指定的响应检查缺少已确认的规则；该读取暂停。"
                         for item in summary.get('response_requirements', [])
+                        for op in item.get('blocked_operations', [])})
+        reasons.update({op: "原文指定的 HTTP 状态码缺少已确认的断言；该读取暂停。"
+                        for item in summary.get('http_status_requirements', [])
                         for op in item.get('blocked_operations', [])})
         messages = dict(MODEL_TIMEOUT="模型生成方案时超时，此组没有执行。",
             MODEL_INVALID_RESPONSE="模型方案未通过格式校验，此组没有执行。",

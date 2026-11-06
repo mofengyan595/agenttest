@@ -96,6 +96,30 @@ def resource_mentioned(resource, quote):
     return True
 
 
+def prior_fixed_path(resource, item, requirements, atoms, configured):
+    """Resolve an explicit same-resource reference across configured read identities."""
+    from agenttest.requirement_ledger import explicit_assignments
+
+    if not re.search(r'同一(?:个|条|份)?(?:资源|仓库|记录|条目|项目|对象|预约|宠物|专科|兽医)'
+                     r'(?=\s*(?:$|并|确认|验证|核对|返回|检查))', item.source_quote):
+        return False
+    if any(a['name'] in resource.path and not a['deferred']
+           and not json_equal(a['value'], resource.path[a['name']])
+           for a in explicit_assignments(item.source_quote)):
+        return False
+    paths = set()
+    for candidate in configured:
+        if candidate['operation_id'] != resource.operation_id or candidate['role'] == resource.role:
+            continue
+        witness = ExistingResource.model_validate(candidate)
+        action = RequiredAction(operation_id=witness.operation_id, role=witness.role)
+        if any(prior.disposition == 'required' and action in prior.actions
+               and atoms[prior.source_id]['start'] < atoms[item.source_id]['start']
+               and resource_mentioned(witness, prior.source_quote) for prior in requirements):
+            paths.add(fingerprint(witness.path))
+    return paths == {fingerprint(resource.path)}
+
+
 def response_expectations(project):
     return {f'expectation_{fingerprint([p.id, field.model_dump()])[:20]}': dict(
         policy_id=p.id, operation_id=p.operation_id,
@@ -396,6 +420,7 @@ def validate_requirement_links(requirements, context, selection):
     from agenttest.requirement_ledger import (
         explicit_http_statuses,
         explicit_response_checks,
+        scoped_read_status,
     )
 
     text = context.get('user_task', '')
@@ -403,11 +428,11 @@ def validate_requirement_links(requirements, context, selection):
     for entry in explicit_response_checks(text):
         predicates.setdefault(entry['source_id'], []).append(entry)
     statuses = {entry['source_id']: entry for entry in explicit_http_statuses(text)
-                if entry.get('preceding_source_id')
-                and entry['reason'] == 'HTTP_STATUS_UNWITNESSED'}
+                if entry['reason'] == 'HTTP_STATUS_UNWITNESSED'}
     read_operations = {o['id'] for group in context.get('grouped_index', [])
                        for o in group['operations'] if o['method'] in {'GET', 'HEAD'}} & selected
     by_source = {item.source_id: item for item in requirements}
+    requested = [check.model_dump() for check in selection.requested_checks]
     previous = None
     for atom in atoms.values():
         item = by_source[atom['source_id']]
@@ -425,15 +450,14 @@ def validate_requirement_links(requirements, context, selection):
             fields_match = field_scope and all(approved_response_predicate(entry, action, catalog)
                                                for entry in entries)
             status = statuses.get(atom['source_id'])
-            status_matches = (status and previous.source_id == status['preceding_source_id']
-                and not any(q.source_quote in previous.source_quote for q in
-                            selection.requested_checks) and any(
-                    rule['operation_id'] == action.operation_id and action.role in rule['roles']
-                    and rule.get('statuses') == [status['expected']]
-                    for rule in context.get('confirmed_response_checks', [])))
-            if (item.disposition == 'required' and (fields_match or status_matches)
+            status_continuation = (status
+                and status.get('preceding_source_id') == previous.source_id
+                and scoped_read_status(status, by_source, read_operations, requested,
+                                       inherited=action) is not None)
+            if (item.disposition == 'required' and fields_match
                     or item.disposition == 'needs_review' and field_scope
-                    and explicit_response_gap(entries, action, catalog)):
+                    and explicit_response_gap(entries, action, catalog)
+                    or item.disposition in {'required', 'needs_review'} and status_continuation):
                 item.actions = previous.actions
         bind_response_continuation(item, atom, previous, catalog, read_operations)
         previous = item
@@ -512,10 +536,13 @@ def validate_requirement_links(requirements, context, selection):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
         if any(a.operation_id not in selected or a.role not in roles for a in item.actions):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ACTION_INVALID')
-        repeated = None if atom['ordered'] else explicit_read_repetitions(item, read_operations)
+        repeated = explicit_read_repetitions(item, read_operations)
         if any(r.earlier not in context['approved_ids'] or r.later not in selected
                or r.earlier == r.later and (repeated is None
-                   or r.later != item.actions[0].operation_id) for r in item.before):
+                   or r.later != item.actions[0].operation_id
+                   or atom['ordered'] and not any(
+                       edge.earlier != edge.later and r.later in (edge.earlier, edge.later)
+                       for edge in item.before)) for r in item.before):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INVALID')
         if repeated is not None:
             # The literal count is verified before execution. A self-edge cannot represent it.
@@ -527,8 +554,10 @@ def validate_requirement_links(requirements, context, selection):
             anchored = any(prior.disposition == 'required' and action in prior.actions
                 and atoms[prior.source_id]['start'] <= atom['start']
                 and resource_mentioned(resource, prior.source_quote) for prior in requirements)
-            if (item.disposition != 'required' or action not in item.actions or not anchored
-                    or resource.model_dump() not in configured_resources):
+            if (item.disposition != 'required' or action not in item.actions
+                    or resource.model_dump() not in configured_resources
+                    or not (anchored or prior_fixed_path(
+                        resource, item, requirements, atoms, configured_resources))):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
         if any(ref not in catalog for ref in item.response_checks):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
@@ -550,7 +579,15 @@ def validate_requirement_links(requirements, context, selection):
         predicate_gap = (item.disposition == 'needs_review' and len(item.actions) == 1
             and item.actions[0].operation_id in read_operations and explicit_response_gap(
                 predicates.get(item.source_id, ()), item.actions[0], catalog))
+        status = statuses.get(item.source_id)
+        status_action = (scoped_read_status(status, by_source, read_operations, requested)
+                         if item.disposition == 'needs_review' and status else None)
+        status_gap = status_action is not None and not any(
+            rule['operation_id'] == status_action.operation_id
+            and status_action.role in rule['roles'] and rule['statuses'] == [status['expected']]
+            for rule in context.get('confirmed_response_checks', []))
         has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or predicate_gap
+                   or status_gap
                    or selection.mode == 'needs_information' and selection.question)
         if item.disposition == 'needs_review' and not has_gap:
             # An unresolved clause is not silently accepted as a completed requirement.
@@ -579,6 +616,12 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
     scenarios = [case.plan.scenario() for case in design.cases]
     steps = [step for scenario in scenarios for step in scenario.steps]
     expectations = expectations or {}
+    repeated = {}
+    for item in requirements:
+        count = explicit_read_repetitions(item, read_operations)
+        if count is not None:
+            action = item.actions[0]
+            repeated.setdefault(action.operation_id, {})[action.role] = count
     for item in requirements:
         if any(s.operation_id in item.forbidden_operation_ids for s in steps):
             raise ValidationFailure(Layer.MODEL, 'DESIGN_FORBIDDEN_ACTION_PROPOSED')
@@ -627,9 +670,8 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
         for order in item.before:
             if order.later not in primary:
                 continue
-            if not any(any(s.operation_id == order.earlier for s in scenario.steps[:position])
-                for scenario in scenarios for position, step in enumerate(scenario.steps)
-                if step.operation_id == order.later):
+            if not any(read_order_witness(scenario.steps, order, repeated)
+                       for scenario in scenarios):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_MISSING')
         producers = {r.producer for r in item.same_resource if r.consumer in primary}
         for producer in producers:
@@ -642,3 +684,19 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
                 if source.operation_id == producer)
             if not matched:
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_SAME_RESOURCE_WITNESS_MISSING')
+
+
+def read_order_witness(steps, order, repeated):
+    positions = []
+    for operation in (order.earlier, order.later):
+        counts = repeated.get(operation, {})
+        matches = [(i, step.role) for i, step in enumerate(steps)
+                   if step.operation_id == operation and (not counts or step.role in counts)]
+        if not matches or any(sum(role == actual for _, actual in matches) != count
+                              for role, count in counts.items()):
+            return False
+        positions.append([i for i, _ in matches])
+    earlier, later = positions
+    left = max(earlier) if order.earlier in repeated else min(earlier)
+    right = min(later) if order.later in repeated else max(later)
+    return left < right
