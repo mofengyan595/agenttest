@@ -7,6 +7,12 @@ const names: Record<string, string> = {
   UNAUTHORIZED: "未获授权",
   UNSUPPORTED: "暂不支持",
 };
+const responseBasis = {
+  OPERATOR_RULE: "已填写响应字段及业务规则依据",
+  DOCUMENT_FIELDS: "有响应字段检查，业务规则依据待补充",
+  STATUS_ONLY: "仅配置状态码，响应内容待补充",
+  UNCONFIGURED: "待配置响应预期",
+};
 
 export function ProjectInventory({ value }: { value: Inventory }) {
   const [filter, setFilter] = useState("all");
@@ -55,6 +61,7 @@ export function ProjectInventory({ value }: { value: Inventory }) {
               <span>
                 {names[o.state] || o.state}：{o.reason}
               </span>
+              {o.response_basis && <span>{responseBasis[o.response_basis]}</span>}
               {o.state !== "READY" && <span>下一步：{o.next_step}</span>}
             </li>
           ))}

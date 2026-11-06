@@ -51,6 +51,8 @@ export function ProductResult({
   const cases = result.cases || [];
   const rejectedDesigns = result.design_records?.filter((r) => r.status === "REJECTED") || [];
   const checks = cases.flatMap((c) => (c.evidence || []).flatMap((e) => e.checks || []));
+  const explicitChecks = [...(result.http_status_requirements || []),
+    ...(result.response_requirements || [])];
   const statusOnly = checks.length > 0 && checks.every((c) => c.kind === "http_status");
   const completed = result.coverage?.completed_scenarios ?? cases.filter((c) =>
     c.status === "FINISHED" && ["PASS", "ASSERTION_FAILED"].includes(c.outcome || "") &&
@@ -100,6 +102,21 @@ export function ProductResult({
           <q>{item.source_quote}</q>：{{ACCOUNTED: "已对应到规划", UNACCOUNTED: "规划漏项",
             UNKNOWN_FIELD: "字段含义待核对", DEFERRED: "留待未来，本轮不执行",
             NEEDS_REVIEW: "相关输入或规则待补充"}[item.status]}
+        </li>)}</ul>
+      </details>}
+      {!!explicitChecks.length && <details open>
+        <summary>显式响应检查与执行证据</summary>
+        <ul>{explicitChecks.map((item, index) => <li key={index}>
+          <q>{item.source_quote}</q>{item.selector && <code>{item.selector}</code>}
+          <p>{{NEEDS_REVIEW: "待确认", NOT_EXECUTED: "未执行", PLANNED: "已规划，未执行",
+            EXECUTED: "已发送请求，缺少断言结果", PASS: "检查通过",
+            ASSERTION_FAILED: "实际响应未通过检查"}[item.status]}</p>
+          {item.reason === "RESPONSE_SELECTOR_UNRESOLVED" && <p>待确认具体响应字段。</p>}
+          {item.reason === "RESPONSE_CHECK_NOT_APPROVED" && <p>缺少已确认的匹配断言。</p>}
+          {item.witnesses.map((w, i) => <p key={i}>
+            {w.operation_id} · {w.role || "匿名"} · {w.step_id}
+            {w.run_id && <> · <Link to={`/runs/${w.run_id}`}>查看运行证据</Link></>}
+          </p>)}
         </li>)}</ul>
       </details>}
       {statusOnly && <p className="finding-card">

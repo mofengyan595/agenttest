@@ -49,13 +49,23 @@ def validate_input_questions(questions, requirements, context, selected):
                 allow_ambiguity_source=True)
 
 
-def input_blocked_operations(project, questions, *, operation_ids=()):
+def input_blocked_operations(project, questions, *, operation_ids=(), requirement_links=()):
     """Hold the uncertain operation and its dependency consumers, leaving others runnable."""
     blocked = {q.operation_id for q in questions} | set(operation_ids)
     policies = {p.id: p for p in project.registry.definitions()}
+    dependencies = [(p.operation_id, policies[key].operation_id) for p in policies.values()
+                    for key in p.prerequisite_policy_ids if key in policies]
+    for item in requirement_links:
+        if item.disposition == 'required':
+            dependencies.extend((r.later, r.earlier) for r in item.before)
+            dependencies.extend((r.consumer, r.producer) for r in item.same_resource)
+    # A held deletion cannot satisfy a configured lifecycle for a new resource.
+    dependencies.extend((r.create_operation, r.delete_operation)
+                        for r in project.target.resource_lifecycles)
     changed = True
     while changed:
         before = len(blocked)
+        blocked.update(consumer for consumer, producer in dependencies if producer in blocked)
         for policy in policies.values():
             if (any(r.source_policy_id in policies and
                    policies[r.source_policy_id].operation_id in blocked

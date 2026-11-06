@@ -1,5 +1,7 @@
 """Omissions are checked against the original request, including unselected fields."""
 
+import json
+
 import pytest
 
 from agenttest.diagnostics import ValidationFailure
@@ -84,6 +86,88 @@ def test_approved_negative_is_accounted_without_creating_a_new_expectation():
         validate_assignment_coverage(ctx, chosen)
 
 
+@pytest.mark.parametrize('assertion,extra,status,requests', [
+    ('$.items 存在', '', 'PASS', ['/records']),
+    ('$.items 非空', '', 'NEEDS_REVIEW', []),
+    ('$.items 数量为 2', '', 'NEEDS_REVIEW', []),
+    ('$.items 非空', '；检查健康', 'NEEDS_REVIEW', ['/health']),
+])
+@pytest.mark.asyncio
+async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypatch, assertion,
+                                                            extra, status, requests):
+    import httpx
+    from test_product_tasks import finished, service
+
+    from agenttest.product_focus import FocusSelection
+    from agenttest.project_intake import IntakeInput
+    from agenttest.report import ModelCallStats
+
+    seen = []
+
+    def target(request):
+        seen.append(request.url.path)
+        return httpx.Response(200, json={'items': []})
+
+    class Focus:
+        stats = ModelCallStats(calls=1, input_tokens=1, output_tokens=1, total_tokens=2)
+
+        async def generate(self, context):
+            operations = ['records', 'health'] if extra else ['records']
+            return FocusSelection(interpretation='核对记录', mode='selected',
+                operation_ids=operations, normal_operation_ids=operations,
+                question=None, pending_questions=[], not_covered=[],
+                requirements=[dict(source_id=atom['source_id'], source_quote=atom['text'],
+                    disposition='required', actions=[dict(operation_id=(
+                        'health' if '健康' in atom['text'] else 'records'), role=None)],
+                    before=[], same_resource=[], response_checks=[])
+                    for atom in context['request_atoms']]).model_dump_json()
+
+    class Design:
+        stats = Focus.stats
+
+        async def generate(self, context):
+            return json.dumps(dict(interpretation='核对记录', cases=[dict(title='读取记录',
+                kind='normal', plan=dict(name='records', steps=[dict(id='read',
+                    operation_id=context['policies'][0]['operation_id'],
+                    policy_id=context['policies'][0]['id'],
+                    role=None, arguments=[])]))], questions=[], not_covered=[]))
+
+    monkeypatch.setattr(httpx, 'AsyncHTTPTransport', lambda **_: httpx.MockTransport(target))
+    svc = service(tmp_path, lambda _: pytest.fail('unexpected model'))
+    svc.focus_factory = lambda _: Focus()
+    svc.designer_factory = lambda _: Design()
+    try:
+        paths = {'/records': dict(get=dict(operationId='records', responses={
+                '200': dict(description='ok', content={'application/json': dict(schema=dict(
+                    type='object', properties={'items': dict(type='array', items=dict(
+                        type='string'))}))})}))}
+        operations = [dict(operation_id='records', alias='读取记录',
+            statuses=[200], check_source='已核对记录结构', checks=[dict(
+                select='$.items', operator='exists')])]
+        if extra:
+            paths['/health'] = dict(get=dict(operationId='health', responses={
+                '200': dict(description='ok')}))
+            operations.append(dict(operation_id='health', alias='检查健康', statuses=[200]))
+        document = json.dumps(dict(openapi='3.0.3', info=dict(title='Records', version='1'),
+                                   paths=paths))
+        saved = svc.intake.save(IntakeInput(name='记录', document=document, confirmed=True,
+            generic=dict(base_url='http://127.0.0.1:18998', isolated_confirmed=True,
+                assisted=True, operations=operations)), 'operator')
+        result = await finished(svc, await svc.submit('operator', saved['id'],
+            f'读取记录，并验证 {assertion}{extra}。', 'response-witness'))
+        summary = result['summary']
+        assert seen == requests, summary.get('design_records')
+        assert summary['complete'] is (status == 'PASS')
+        entry, = summary['response_requirements']
+        assert entry['status'] == status
+        assert entry['source_id'] == 'request_2'
+        if status == 'PASS':
+            witness, = entry['witnesses']
+            assert witness['run_id'] and witness['policy_id'] and witness['step_id'] == 'read'
+    finally:
+        await svc.close()
+
+
 @pytest.mark.asyncio
 async def test_all_cases_are_validated_before_first_business_write(tmp_path, monkeypatch):
     import httpx
@@ -130,6 +214,7 @@ def test_trusted_state_chain_stays_in_one_context_across_batch_boundary():
     from agenttest.contracts import load_openapi
     from agenttest.generic_intake import GenericSetup, build_generic_project
     from agenttest.product_design import design_groups
+    from agenttest.product_inputs import input_blocked_operations
 
     document = json.dumps(dict(openapi='3.0.3', info=dict(title='State chain', version='1'),
         paths={f'/r{i}': dict(get=dict(operationId=f'read{i}', responses={
@@ -146,3 +231,5 @@ def test_trusted_state_chain_stays_in_one_context_across_batch_boundary():
     # Selecting the terminal read still requires its entire trusted chain.
     assert set(design_groups(proj, operation_ids=['read6'])[0]['operations']) == {
         f'read{i}' for i in range(7)}
+    assert input_blocked_operations(proj, [], operation_ids=['read0']) == [
+        f'read{i}' for i in range(7)]

@@ -171,6 +171,15 @@ async def test_analysis_is_readonly_csrf_protected_and_confirmation_cannot_be_fo
             assert not analysis["execution_authorized"]
             assert [o["operation_id"] for o in analysis["operations"]] == [
                 "insertObject", "fetchObject"]
+            preview = (await client.post("/api/project-intake/analyze", headers=headers,
+                json={"document": document(), "generic": setup().model_copy(
+                    update={"allow_mutations": False}).model_dump()})).json()
+            assert preview["model_calls"] == preview["http_requests"] == 0
+            assert not preview["execution_authorized"]
+            operations = preview['inventory']['operations']
+            assert [o['state'] for o in operations] == ['UNAUTHORIZED', 'NEEDS_INPUT']
+            assert operations[1]['response_basis'] == 'DOCUMENT_FIELDS'
+            assert 'insertObject' in operations[1]['reason']
             assert svc.intake.list() == []
             saved = svc.intake.save(IntakeInput(name="Saved contract", document=document(),
                 generic=setup()), "unit-owner")

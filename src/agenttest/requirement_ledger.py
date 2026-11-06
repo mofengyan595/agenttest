@@ -6,6 +6,7 @@ import re
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.json_values import json_equal
 from agenttest.llm_planner import literal_data
+from agenttest.selectors import validate_selector
 
 _ASSIGNMENT = re.compile(
     r'(?<![A-Za-z0-9_.])(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*[=＝]\s*'
@@ -19,6 +20,127 @@ _QUOTED = re.compile(r'"(?:[^"\\]|\\.)*"|“[^”]*”|「[^」]*」|\'[^\']*\'|
 _STATUS_ALTERNATIVE = re.compile(r'^\s*(?:或(?:者)?|/|、|至|到|[-–])\s*(?:HTTP\s*)?\d', re.I)
 _STATUS_UNCERTAIN = re.compile(r'(?:不是|并非|不应(?:当)?|不会|不能|不得)\s*(?:返回\s*)?$')
 _STATUS_PREFIX = re.compile(r'(?:并(?:且)?\s*)?(?:确认|检查|核对|验证|预期)?\s*(?:返回\s*)?')
+_RESPONSE_PATH = re.compile(r'(?<![A-Za-z0-9_.])\$(?:\.[^\W\d]\w*|\[\d{1,6}\])*(?![\w.\[])')
+_RESPONSE_EQUAL = re.compile(r'\s*(?:==?|＝|等于|应为)\s*(.+?)\s*$')
+_RESPONSE_COUNT = re.compile(
+    r'\s*(?:数量|条数|长度)\s*(?:为|是|[=＝])\s*([0-9]{1,8})\s*(?:条|项)?\s*$')
+_RESPONSE_VERB = re.compile(r'响应|返回|确认|核对|检查|验证|断言')
+
+
+def explicit_response_checks(text):
+    """Capture bounded JSONPath predicates and common unscoped nonempty requests."""
+    from agenttest.request_requirements import request_atoms
+
+    entries = []
+    for atom in request_atoms(text):
+        if atom['future_only'] or atom['constraint']:
+            continue
+        source = atom['text']
+        plain = _QUOTED.sub(lambda match: ' ' * len(match.group()), source)
+        for match in _RESPONSE_PATH.finditer(plain):
+            prefix, tail = source[:match.start()], source[match.end():]
+            operator, expected = None, None
+            if re.fullmatch(r'\s*(?:应)?存在\s*', tail):
+                operator = 'exists'
+            elif re.fullmatch(r'\s*(?:应)?(?:非空|不为空)\s*', tail):
+                operator = 'nonempty'
+            elif count := _RESPONSE_COUNT.fullmatch(tail):
+                operator, expected = 'count', int(count[1])
+            elif equal := _RESPONSE_EQUAL.fullmatch(tail):
+                literals = explicit_assignments('v=' + equal[1])
+                if literals and literals[0]['end'] == len(equal[1]) + 2:
+                    operator, expected = 'equals', literals[0]['value']
+            if operator is None and not _RESPONSE_VERB.search(prefix):
+                continue
+            try:
+                selector = validate_selector(match.group())
+            except ValueError:
+                selector = None
+            entries.append(dict(id=f'response_{len(entries) + 1}', source_id=atom['source_id'],
+                source_quote=source, start=atom['start'] + match.start(), end=atom['end'],
+                selector=selector, operator=operator, expected=expected, witnesses=[],
+                status='NEEDS_REVIEW', reason='RESPONSE_CHECK_UNWITNESSED'))
+        # Plain-language nonempty is actionable only when the selector is explicit.
+        if not _RESPONSE_PATH.search(plain) and (match := re.search(
+                r'(?:列表|数组|结果集)\s*(?:应当|应该|应)?\s*(?:非空|不为空)', plain)):
+            entries.append(dict(id=f'response_{len(entries) + 1}', source_id=atom['source_id'],
+                source_quote=source, start=atom['start'] + match.start(),
+                end=atom['start'] + match.end(), selector=None, operator='nonempty',
+                expected=None, witnesses=[], status='NEEDS_REVIEW',
+                reason='RESPONSE_SELECTOR_UNRESOLVED'))
+    return entries
+
+
+def response_predicate_matches(entry, rule):
+    if rule['select'] != entry['selector']:
+        return False
+    if entry['operator'] == 'nonempty':
+        return rule['operator'] == 'count' and rule['expected'] > 0
+    return rule['operator'] == entry['operator'] and (
+        rule['operator'] == 'exists' or json_equal(rule['expected'], entry['expected']))
+
+
+def unresolved_response_operations(ledger, requirements, project, requested):
+    """Hold the linked component when an explicit response check lacks an approved rule."""
+    from agenttest.request_requirements import response_expectations
+
+    catalog = response_expectations(project)
+    by_source = {item.source_id: item for item in requirements}
+    blocked = set()
+    for entry in ledger:
+        item = by_source[entry['source_id']]
+        if not item.actions or item.disposition not in {'required', 'needs_review'}:
+            continue
+        operations = {action.operation_id for action in item.actions}
+        entry['actions'] = [action.model_dump() for action in item.actions]
+        if item.disposition == 'required' and len(item.actions) == 1:
+            action = item.actions[0]
+            if (any(r['source_quote'] in item.source_quote for r in requested)
+                    or any(rule['operation_id'] == action.operation_id
+                           and action.role in rule['roles']
+                           and response_predicate_matches(entry, rule)
+                           for rule in catalog.values())):
+                entry['status'] = 'NOT_EXECUTED'
+                continue
+        entry['reason'] = ('RESPONSE_SCOPE_AMBIGUOUS' if len(item.actions) > 1 else
+                           'RESPONSE_CHECK_NOT_APPROVED' if entry['selector'] else entry['reason'])
+        blocked.update(operations)
+    return blocked
+
+
+def validate_response_witnesses(design, primary, requirements, ledger, policies, requested):
+    """Match explicit predicates to reviewed assertions on the same case step and identity."""
+    by_source = {item.source_id: item for item in requirements if item.disposition == 'required'}
+    for entry in ledger:
+        item = by_source.get(entry['source_id'])
+        if item is None or not any(action.operation_id in primary for action in item.actions):
+            continue
+        negative_ids = {r['policy_id'] for r in requested if r['source_quote'] in item.source_quote}
+        found = False
+        if len(item.actions) == 1:
+            action = item.actions[0]
+            for case in design.cases:
+                for step in case.plan.steps:
+                    policy = policies.get(step.policy_id)
+                    if (policy is None or step.operation_id != action.operation_id
+                            or policy.operation_id != action.operation_id
+                            or step.role != action.role
+                            or step.role not in policy.roles or not policy.assertions.reviewed
+                            or not policy.assertions.source.strip()
+                            or (policy.id not in negative_ids if negative_ids
+                                else policy.negative)):
+                        continue
+                    for index, field in enumerate(policy.assertions.fields):
+                        if response_predicate_matches(entry, field.model_dump()):
+                            found = True
+                            case._response_steps.setdefault(entry['id'], []).append(dict(
+                                step_id=step.id, operation_id=step.operation_id, role=step.role,
+                                policy_id=step.policy_id, check_kind=field.operator,
+                                check_index=index + int(policy.assertions.status is not None)))
+        if not found:
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING')
+            error.diagnostic.fields = [f'requirement_map.{item.source_id}']
+            raise error
 
 
 def explicit_http_statuses(text):
@@ -83,14 +205,18 @@ def validate_http_status_witnesses(design, primary, requirements, ledger, polici
                 policy_id=step.policy_id))
 
 
-def record_http_status_evidence(summary, case_row, report=None):
-    """Only trusted execution checks can advance a planned status obligation."""
+def record_requirement_evidence(summary, case_row, report=None):
+    """Only checks in the primary execution report can advance a planned obligation."""
     steps = {step.step_id: step for step in report.steps} if report else {}
-    for entry in summary.get('http_status_requirements', []):
-        witnesses = case_row.get('http_status_steps', {}).get(entry['source_id'], [])
+    obligations = [(entry, case_row.get('http_status_steps', {}).get(entry['source_id'], []))
+                   for entry in summary.get('http_status_requirements', [])]
+    obligations += [(entry, case_row.get('response_steps', {}).get(entry['id'], []))
+                    for entry in summary.get('response_requirements', [])]
+    for entry, witnesses in obligations:
         for planned in witnesses:
             witness = next((w for w in entry['witnesses'] if w['case_id'] == case_row['case_id']
-                            and w['step_id'] == planned['step_id']), None)
+                            and w['step_id'] == planned['step_id']
+                            and w.get('check_index') == planned.get('check_index')), None)
             if witness is None:
                 witness = dict(planned, case_id=case_row['case_id'], status='PLANNED')
                 entry['witnesses'].append(witness)
@@ -99,8 +225,15 @@ def record_http_status_evidence(summary, case_row, report=None):
             step = steps.get(witness['step_id'])
             if step and step.attempts:
                 witness['status'] = 'EXECUTED'
-                check = next((c for c in step.checks if c.kind == 'http_status'
-                              and c.expected == [entry['expected']]), None)
+                if 'check_index' in witness:
+                    index = witness['check_index']
+                    check = step.checks[index] if index < len(step.checks) else None
+                    if check and (check.kind != witness['check_kind']
+                                  or check.selector != entry['selector']):
+                        check = None
+                else:
+                    check = next((c for c in step.checks if c.kind == 'http_status'
+                                  and c.expected == [entry['expected']]), None)
                 if check is not None:
                     witness.update(actual=check.actual,
                                    status='PASS' if check.passed else 'ASSERTION_FAILED')

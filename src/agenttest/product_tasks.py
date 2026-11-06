@@ -13,7 +13,12 @@ from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
 from agenttest.product_design import design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, fingerprint
-from agenttest.requirement_ledger import explicit_http_statuses, record_http_status_evidence
+from agenttest.requirement_ledger import (
+    explicit_http_statuses,
+    explicit_response_checks,
+    record_requirement_evidence,
+    unresolved_response_operations,
+)
 from agenttest.task_store import TERMINAL, TaskConflict
 
 DEFAULT_ROUND = "安排一轮测试，优先正常请求、参数边界、已批准的身份检查与跨接口流程，并说明遗漏。"
@@ -179,6 +184,9 @@ class ProductTasks:
                         status_requirements = explicit_http_statuses(context["current_request"])
                         if status_requirements:
                             summary["http_status_requirements"] = status_requirements
+                        response_requirements = explicit_response_checks(context["current_request"])
+                        if response_requirements:
+                            summary["response_requirements"] = response_requirements
                         raw_focus = svc.focus_factory(project)
                         focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
                                                     ledger, guard)
@@ -265,12 +273,15 @@ class ProductTasks:
                             pending_only.difference_update(selection.normal_operation_ids,
                                 (check_operations[c['policy_id']] for c in executable_checks))
                             rule_reads, rule_logins = rule_review_scope(project, selection)
+                            response_blocked = unresolved_response_operations(response_requirements,
+                                selection.requirements, project, executable_checks)
                             if rule_reads:
                                 summary['expectation_blocked_operations'] = sorted(
                                     rule_reads | rule_logins)
                             blocked_inputs = input_blocked_operations(project, input_questions,
                                 operation_ids=[*selection.source_conflicts, *pending_only,
-                                               *rule_reads])
+                                               *rule_reads, *rule_logins, *response_blocked],
+                                requirement_links=selection.requirements)
                             summary["input_blocked_operations"] = blocked_inputs
                             summary["source_blocked_operations"] = input_blocked_operations(project,
                                 [], operation_ids=selection.source_conflicts)
@@ -351,7 +362,9 @@ class ProductTasks:
                                               summary=summary)
                             return
                         if selection.mode == 'no_current_action':
-                            summary.update(complete=True, checks_passed=False,
+                            unresolved = status_requirements or response_requirements
+                            summary.update(complete=not unresolved,
+                                checks_passed=False,
                                 reason='本轮仅包含未来动作或范围约束，没有安排当前业务请求。',
                                 groups=[])
                             self.coverage(summary)
@@ -432,6 +445,7 @@ class ProductTasks:
                                     'requirements', []),
                                 http_status_requirements=summary.get(
                                     'http_status_requirements', []),
+                                response_requirements=summary.get('response_requirements', []),
                                 pending_negative_values=summary.get("pending_negative_values", []),
                                 project_notes=project_record.get("business_notes", ""),
                                 group_http_budget=suggested,
@@ -475,7 +489,8 @@ class ProductTasks:
                                     exc, Layer.DSL).model_dump(mode="json")
                             if diagnostic and diagnostic.code == "DESIGN_REQUESTED_CHECKS_MISSING":
                                 reason = diagnostic.code
-                            if reason == 'DESIGN_REQUIRED_HTTP_STATUS_MISSING':
+                            if reason in {'DESIGN_REQUIRED_HTTP_STATUS_MISSING',
+                                          'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING'}:
                                 record['diagnostic'] = diagnostic.model_dump(mode='json')
                                 for entry in summary.get('http_status_requirements', []):
                                     if f"requirement_map.{entry['source_id']}" in diagnostic.fields:
@@ -531,7 +546,9 @@ class ProductTasks:
                                 plan_source="MODEL_SUGGESTION", task_satisfied=None)
                             if case._http_status_steps:
                                 case_row['http_status_steps'] = case._http_status_steps
-                                record_http_status_evidence(summary, case_row)
+                            if case._response_steps:
+                                case_row['response_steps'] = case._response_steps
+                            record_requirement_evidence(summary, case_row)
                             summary["cases"].append(case_row)
                             checkpoint()
                             if any(s.operation_id in clarification_operations
@@ -636,7 +653,7 @@ class ProductTasks:
                             from agenttest.product_checks import executed_policies
 
                             case_row["executed_policy_ids"] = executed_policies(report)
-                            record_http_status_evidence(summary, case_row, report)
+                            record_requirement_evidence(summary, case_row, report)
                             if report.outcome != Outcome.PASS:
                                 case_row["reason"] = {
                                     Outcome.ASSERTION_FAILED: "响应不符合已确认的预期。",
@@ -650,8 +667,9 @@ class ProductTasks:
                             if report.outcome == Outcome.PASS and report.completed:
                                 self.retain(row, text, scenario, project, report, case_row)
                             checkpoint()
-                status_states = {item['status']
-                                 for item in summary.get('http_status_requirements', [])}
+                status_states = {item['status'] for key in (
+                    'http_status_requirements', 'response_requirements')
+                    for item in summary.get(key, [])}
                 summary["complete"] = bool(summary["cases"]) and all(
                     c.get("outcome") in {"PASS", "ASSERTION_FAILED"}
                     and c.get("executed_steps") == c.get("planned_steps")
@@ -835,7 +853,7 @@ class ProductTasks:
                     from agenttest.product_checks import executed_policies
 
                     case["executed_policy_ids"] = executed_policies(report)
-                    record_http_status_evidence(summary, case, report)
+                    record_requirement_evidence(summary, case, report)
             summary.update(reason=reason, complete=False, context_usage=ledger.summary(),
                            sent_requests_may_have_completed=ledger.requests > 0)
             self.coverage(summary)

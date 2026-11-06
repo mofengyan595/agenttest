@@ -224,7 +224,8 @@ def inventory(contract, setup, environ=None):
     configured = {item.operation_id: item for item in setup.operations}
     entries = []
     for op, suggestion in zip(contract.operations, suggestions, strict=True):
-        state, reason, next_step = (operation_reason(op, configured.get(op.operation_id), setup,
+        item = configured.get(op.operation_id)
+        state, reason, next_step = (operation_reason(op, item, setup,
             environ, contract.version) if suggestion["supported"] else (
                 "NEEDS_INPUT" if not op.operation_id or not suggestion["statuses"]
                 else "UNSUPPORTED", suggestion["reason"],
@@ -233,7 +234,10 @@ def inventory(contract, setup, environ=None):
                 "保留在清单中，使用专用工具或补充支持。"))
         entries.append(dict(operation_id=op.operation_id, method=op.method, path=op.path,
             summary=op.summary, group=op.path.strip("/").split("/")[0] or "根路径",
-            state=state, reason=reason, next_step=next_step))
+            state=state, reason=reason, next_step=next_step,
+            response_basis=('OPERATOR_RULE' if item and item.checks and item.check_source
+                            else 'DOCUMENT_FIELDS' if item and item.checks
+                            else 'STATUS_ONLY' if item and item.statuses else 'UNCONFIGURED')))
     # Dependencies with a blocked producer cannot be ready even if their own data is configured.
     for _ in range(len(entries)):
         states = {e["operation_id"]: e["state"] for e in entries}

@@ -13,6 +13,7 @@ from fastapi import HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import Field
 
+from agenttest.generic_intake import GenericSetup
 from agenttest.plan_json import bounded_json
 from agenttest.report import fingerprint
 from agenttest.safety import StrictModel
@@ -39,6 +40,7 @@ class ExportRequest(StrictModel):
 class ContractIntakeRequest(StrictModel):
     document: str = Field(default="", max_length=1_000_000)
     project_id: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_-]{0,39}$")
+    generic: GenericSetup | None = None
 
 
 class FixedRunRequest(ExportRequest):
@@ -133,15 +135,20 @@ def install_task_api(app, service):
         owner(request, True)
         if not enabled().generic_intake:
             raise HTTPException(409, "Generic intake requires the configured workspace")
-        payload = await body(request, ContractIntakeRequest, 1_100_000)
+        payload = await body(request, ContractIntakeRequest, 2_000_000)
         from agenttest.generic_intake import analyze_contract
+        from agenttest.project_inventory import inventory
 
         try:
             document = payload.document
             if not document and payload.project_id:
                 document = enabled().intake.record(payload.project_id)["document"]
-            return dict(operations=analyze_contract(enabled().intake.document(document)),
-                        execution_authorized=False, model_calls=0, http_requests=0)
+            contract = enabled().intake.document(document)
+            result = dict(operations=analyze_contract(contract), execution_authorized=False,
+                          model_calls=0, http_requests=0)
+            if payload.generic is not None:
+                result['inventory'] = inventory(contract, payload.generic, enabled().environ)
+            return result
         except (ValueError, OSError, KeyError):
             raise HTTPException(422, "Invalid or unsupported OpenAPI document") from None
 

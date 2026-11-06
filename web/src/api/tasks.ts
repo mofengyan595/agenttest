@@ -33,6 +33,8 @@ export interface GoalTask {
       deferred: boolean; candidate_operations: string[]; matched_operations?: string[];
       status: "ACCOUNTED" | "UNACCOUNTED" | "UNKNOWN_FIELD" | "DEFERRED" | "NEEDS_REVIEW";
     }[];
+    http_status_requirements?: WitnessedRequirement[];
+    response_requirements?: WitnessedRequirement[];
     inventory?: ProjectInventory;
     questions?: {
       confirmed_statuses?: number[];
@@ -243,6 +245,16 @@ export interface GoalTask {
   };
 }
 
+interface WitnessedRequirement {
+  source_id: string;
+  source_quote: string;
+  selector?: string | null;
+  status: "NEEDS_REVIEW" | "NOT_EXECUTED" | "PLANNED" | "EXECUTED" | "PASS" | "ASSERTION_FAILED";
+  reason?: string;
+  witnesses: {case_id: string; step_id: string; operation_id: string; role: string | null;
+    run_id?: string; status: string}[];
+}
+
 export const taskTerminal = (state: string) =>
   ["FINISHED", "NEEDS_REVIEW", "CANCELLED", "INTERRUPTED"].includes(state);
 
@@ -429,6 +441,7 @@ export interface ProjectInventory {
     state: string;
     reason: string;
     next_step: string;
+    response_basis?: "OPERATOR_RULE" | "DOCUMENT_FIELDS" | "STATUS_ONLY" | "UNCONFIGURED";
   }[];
 }
 export interface IntakeProfile {
@@ -573,11 +586,11 @@ export const intakeApi = {
       status,
       project_version: version,
     }),
-  analyze: (csrf: string, document: string, project_id?: string) =>
-    call<{ operations: ContractOperation[] }>(
+  analyze: (csrf: string, document: string, project_id?: string, generic?: GenericSetup) =>
+    call<{ operations: ContractOperation[]; inventory?: ProjectInventory }>(
       "/api/project-intake/analyze",
       csrf,
-      { document, ...(project_id ? {project_id} : {}) },
+      { document, ...(project_id ? {project_id} : {}), ...(generic ? {generic} : {}) },
     ),
   read: () => call<IntakeCatalog>("/api/project-intake"),
   save: (csrf: string, payload: IntakePayload, id?: string) =>

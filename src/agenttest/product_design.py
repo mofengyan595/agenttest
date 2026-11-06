@@ -23,6 +23,7 @@ class DesignCase(StrictModel):
     kind: Literal["normal", "boundary", "negative", "permission", "flow"]
     plan: GenericPlannerDraft
     _http_status_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
+    _response_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
 
     @model_validator(mode="after")
     def nonempty(self):
@@ -521,7 +522,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          requested_checks=(), handled_questions=(), pending_negative_values=(),
                          allow_new_questions=True, normal_operation_ids=(),
                          allow_optional_negatives=True, request_requirements=(),
-                         http_status_requirements=()):
+                         http_status_requirements=(), response_requirements=()):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -662,7 +663,10 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
             response_expectations,
             validate_plan_requirements,
         )
-        from agenttest.requirement_ledger import validate_http_status_witnesses
+        from agenttest.requirement_ledger import (
+            validate_http_status_witnesses,
+            validate_response_witnesses,
+        )
 
         source_requirements = [RequestRequirement.model_validate(r) for r in request_requirements]
         validate_plan_requirements(design, source_requirements, group['primary'],
@@ -670,6 +674,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
         validate_http_status_witnesses(design, group['primary'], source_requirements,
                                        http_status_requirements, policies,
                                        context['requested_checks'])
+        validate_response_witnesses(design, group['primary'], source_requirements,
+                                    response_requirements, policies, context['requested_checks'])
         operations = {s.operation_id for c in design.cases for s in c.plan.steps}
         if (must_be_relevant and set(group["primary"]) - operations
                 and not design.questions and not design.not_covered):

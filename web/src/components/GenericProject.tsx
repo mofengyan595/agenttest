@@ -6,9 +6,11 @@ import {
   type GenericSetup,
   type GenericRole,
   type GenericArgument,
+  type ProjectInventory as Inventory,
 } from "../api/tasks";
 import { Notice } from "./ui";
 import { InputValue } from "./InputValue";
+import { ProjectInventory } from "./ProjectInventory";
 
 function scalar(text: string): unknown {
   try {
@@ -116,12 +118,14 @@ export function GenericProject({
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
   const [extraFields, setExtraFields] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{setup: GenericSetup; inventory: Inventory} | null>(null);
   const revision = useRef(0);
   useEffect(() => {
     revision.current++;
     setOperations([]);
     setBusy(false);
     setError("");
+    setPreview(null);
     return () => {
       revision.current++;
     };
@@ -206,6 +210,22 @@ export function GenericProject({
     }
   }
 
+  async function previewCoverage() {
+    if (!value) return;
+    const current = ++revision.current;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await intakeApi.analyze(csrf, document, projectId, value);
+      if (current === revision.current && result.inventory)
+        setPreview({setup: value, inventory: result.inventory});
+    } catch {
+      if (current === revision.current) setError("暂时无法预览，请核对当前配置。");
+    } finally {
+      if (current === revision.current) setBusy(false);
+    }
+  }
+
   function update(change: Partial<GenericSetup>) {
     if (value) onChange({ ...value, ...change });
   }
@@ -234,7 +254,13 @@ export function GenericProject({
             ? "更新接口建议（保留配置）"
             : "读取接口并配置"}
       </button>
+      {value && <button type="button" disabled={disabled || busy || !csrf}
+        onClick={() => void previewCoverage()}>预览接口就绪情况</button>}
       {error && <Notice error>{error}</Notice>}
+      {preview && preview.setup === value && <>
+        <p>按当前填写内容预览。保存并确认后才能开始测试，业务预期仍需逐项核对。</p>
+        <ProjectInventory value={preview.inventory} />
+      </>}
       {operations.some((o) => !o.supported) && <details>
         <summary>暂不支持的接口（{operations.filter((o) => !o.supported).length}）</summary>
         {operations.filter((o) => !o.supported).map((o) => (
