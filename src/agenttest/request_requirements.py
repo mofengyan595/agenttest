@@ -252,6 +252,38 @@ def question_source_texts(context):
         q['source_quote'] for q in context.get('previous_expectation_questions', [])}
 
 
+def permission_source_texts(context, operation, role):
+    """A permission question needs the named actor in its own current or validated source."""
+    previous = {q['source_quote'] for q in context.get('previous_expectation_questions', [])
+                if q['operation_id'] == operation and q.get('kind') == 'permission'
+                and q.get('role') == role}
+    pattern = r'(?<![A-Za-z0-9_-])' + re.escape(role) + r'(?![A-Za-z0-9_-])'
+    return {text for text in question_source_texts(context)
+            if re.search(pattern, text) or text in previous or re.search(
+                r'另一(?:个)?(?:身份|用户|账号)|其他(?:身份|用户|账号)|他人|别人|跨身份|跨用户',
+                text)}
+
+
+def fixed_resource_sources(context, atom):
+    """Offer fixed paths witnessed locally, in an adjacent check, or by an explicit anaphor."""
+    from agenttest.requirement_ledger import explicit_response_checks
+
+    preceding = [prior for prior in context.get('request_atoms', [])
+                 if prior['start'] < atom['start']
+                 and not prior['future_only'] and not prior['constraint']]
+    sources = [atom]
+    if atom['same_resource']:
+        sources.extend(preceding)
+    else:
+        checks = [entry for entry in explicit_response_checks(context['user_task'])
+                  if entry['source_id'] == atom['source_id']]
+        if checks and explicit_response_continuation(atom, checks) and preceding:
+            sources.append(preceding[-1])
+    return [key for key, data in context.get('existing_resources', {}).items()
+            if any(resource_mentioned(ExistingResource.model_validate(data), source['text'])
+                   for source in sources)]
+
+
 def future_only_operations(context):
     """Keep explicit future-only mutation verbs out of the current selection grammar."""
     atoms = context.get('request_atoms', [])
@@ -277,7 +309,9 @@ def constrain_question_sources(schema, sources, context):
                 props['expectation_questions'] = dict(type='array', maxItems=0)
             if all(key in props for key in ('requested_behavior', 'question', 'source_ref')):
                 if references:
-                    props['source_ref'] = dict(type='string', enum=references)
+                    allowed = set(props['source_ref'].get('enum', references))
+                    props['source_ref'] = dict(type='string',
+                                              enum=[ref for ref in references if ref in allowed])
             for value in node.values():
                 visit(value)
         elif isinstance(node, list):
@@ -305,20 +339,18 @@ def requirement_schema(context):
                         consumer=dict(type='string', enum=consumers)),
         required=['producer', 'consumer'])
         for producer, consumers in resource_edges(context).items()]
-    if existing := context.get('existing_resources'):
-        resource_choices.append(dict(type='object', additionalProperties=False,
-            properties=dict(resource_ref=dict(type='string', enum=list(existing))),
-            required=['resource_ref']))
     definitions = dict(RequestAction=action, RequestOrder=order)
-    if resource_choices:
-        definitions['RequestResource'] = dict(anyOf=resource_choices)
     action = {'$ref': '#/$defs/RequestAction'}
     order = {'$ref': '#/$defs/RequestOrder'}
-    resource = {'$ref': '#/$defs/RequestResource'}
     shared = {}
     properties = {}
     trusted_actions = explicit_boundary_actions(context)
     for atom in context.get('request_atoms', []):
+        choices = list(resource_choices)
+        if references := fixed_resource_sources(context, atom):
+            choices.append(dict(type='object', additionalProperties=False,
+                properties=dict(resource_ref=dict(type='string', enum=references)),
+                required=['resource_ref']))
         branches = []
         trusted = trusted_actions.get(atom['source_id'])
         dispositions = (['deferred'] if atom.get('future_only') else ['required', 'needs_review',
@@ -331,9 +363,9 @@ def requirement_schema(context):
                              else 0, maxItems=20 if disposition != 'deferred' else 0),
                 before=dict(type='array', items=order, minItems=int(
                     disposition == 'required' and atom['ordered']), maxItems=20),
-                same_resource=(dict(type='array', items=resource, minItems=int(
+                same_resource=(dict(type='array', items=dict(anyOf=choices), minItems=int(
                     disposition == 'required' and atom['same_resource']), maxItems=20)
-                    if resource_choices else dict(type='array', maxItems=0)),
+                    if choices else dict(type='array', maxItems=0)),
                 response_checks=(dict(type='array', items=dict(type='string', enum=list(
                     context['response_expectations'])), maxItems=30)
                     if context.get('response_expectations') else dict(type='array', maxItems=0)),
@@ -380,14 +412,18 @@ def decode_requirements(wire, context):
     for key, value in wire.items():
         if (type(value) is not dict or 'existing_resources' in value
                 or type(value.get('same_resource')) is not list):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+            error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+            error.diagnostic.fields = [f'requirement_map.{key}.same_resource']
+            raise error
         links, existing = [], []
-        for relation in value['same_resource']:
+        for index, relation in enumerate(value['same_resource']):
             if type(relation) is dict and 'resource_ref' in relation:
                 ref = relation['resource_ref']
                 if (set(relation) != {'resource_ref'} or type(ref) is not str
                         or ref not in resources):
-                    raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                    error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                    error.diagnostic.fields = [f'requirement_map.{key}.same_resource.{index}']
+                    raise error
                 existing.append(resources[ref])
             else:
                 links.append(relation)
@@ -418,12 +454,15 @@ def validate_requirement_links(requirements, context, selection):
         raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_OPERATION_SELECTED')
     catalog = context.get('response_expectations', {})
     from agenttest.requirement_ledger import (
+        data_reference_candidates,
+        explicit_data_references,
         explicit_http_statuses,
         explicit_response_checks,
         scoped_read_status,
     )
 
     text = context.get('user_task', '')
+    data_references = explicit_data_references(text)
     predicates = {}
     for entry in explicit_response_checks(text):
         predicates.setdefault(entry['source_id'], []).append(entry)
@@ -547,18 +586,26 @@ def validate_requirement_links(requirements, context, selection):
         if repeated is not None:
             # The literal count is verified before execution. A self-edge cannot represent it.
             item.before = [order for order in item.before if order.earlier != order.later]
-        if any((r.producer, r.consumer) not in resources for r in item.same_resource):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
-        for resource in item.existing_resources:
+        for index, relation in enumerate(item.same_resource):
+            if (relation.producer, relation.consumer) not in resources:
+                error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                error.diagnostic.fields = [
+                    f'requirement_map.{item.source_id}.same_resource.{index}']
+                raise error
+        for index, resource in enumerate(item.existing_resources):
             action = RequiredAction(operation_id=resource.operation_id, role=resource.role)
-            anchored = any(prior.disposition == 'required' and action in prior.actions
+            anchored = any(prior.disposition in {'required', 'needs_review'}
+                and action in prior.actions
                 and atoms[prior.source_id]['start'] <= atom['start']
                 and resource_mentioned(resource, prior.source_quote) for prior in requirements)
-            if (item.disposition != 'required' or action not in item.actions
+            if (item.disposition not in {'required', 'needs_review'} or action not in item.actions
                     or resource.model_dump() not in configured_resources
                     or not (anchored or prior_fixed_path(
                         resource, item, requirements, atoms, configured_resources))):
-                raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
+                error.diagnostic.fields = [
+                    f'requirement_map.{item.source_id}.existing_resources.{index}']
+                raise error
         if any(ref not in catalog for ref in item.response_checks):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
         if item.disposition == 'required' and any(not any(
@@ -586,8 +633,11 @@ def validate_requirement_links(requirements, context, selection):
             rule['operation_id'] == status_action.operation_id
             and status_action.role in rule['roles'] and rule['statuses'] == [status['expected']]
             for rule in context.get('confirmed_response_checks', []))
+        data_gap = any(entry['source_id'] == item.source_id and not data_reference_candidates(
+            entry, requirements, context.get('resource_dependencies', []))
+            for entry in data_references)
         has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or predicate_gap
-                   or status_gap
+                   or status_gap or data_gap
                    or selection.mode == 'needs_information' and selection.question)
         if item.disposition == 'needs_review' and not has_gap:
             # An unresolved clause is not silently accepted as a completed requirement.

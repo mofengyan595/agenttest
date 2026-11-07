@@ -25,10 +25,12 @@ _RESPONSE_EQUAL = re.compile(r'\s*(?:==?|＝|等于|应为)\s*(.+?)\s*$')
 _RESPONSE_COUNT = re.compile(
     r'\s*(?:数量|条数|长度)\s*(?:为|是|[=＝])\s*([0-9]{1,8})\s*(?:条|项)?\s*$')
 _RESPONSE_VERB = re.compile(r'响应|返回|确认|核对|检查|验证|断言')
+_DATA_PREFIX = re.compile(r'(?:用|使用|将|根据)(?:本次|这次|该|上述|前述)?响应(?:中的?|的)?\s*$')
+_DATA_TAIL = re.compile(r'\s*(?:读取|查询|调用|作为.{0,40}(?:参数|输入|读取|查询))')
 
 
-def explicit_response_checks(text):
-    """Capture bounded JSONPath predicates and common unscoped nonempty requests."""
+def explicit_data_references(text):
+    """Recognize bounded response-to-input syntax without granting binding authority."""
     from agenttest.request_requirements import request_atoms
 
     entries = []
@@ -36,9 +38,33 @@ def explicit_response_checks(text):
         if atom['future_only'] or atom['constraint']:
             continue
         source = atom['text']
+        plain = _QUOTED.sub(lambda m: ' ' * len(m.group()), source)
+        for match in _RESPONSE_PATH.finditer(plain):
+            if (_DATA_PREFIX.search(plain[:match.start()])
+                    and _DATA_TAIL.match(plain[match.end():])):
+                entries.append(dict(id=f'data_{len(entries) + 1}', source_id=atom['source_id'],
+                    source_quote=source, start=atom['start'] + match.start(),
+                    end=atom['start'] + match.end(), selector=match.group(), witnesses=[],
+                    status='NEEDS_REVIEW', reason='DATA_SOURCE_NOT_APPROVED'))
+    return entries
+
+
+def explicit_response_checks(text):
+    """Capture bounded JSONPath predicates and common unscoped nonempty requests."""
+    from agenttest.request_requirements import request_atoms
+
+    entries = []
+    data_offsets = {entry['start'] for entry in explicit_data_references(text)}
+    for atom in request_atoms(text):
+        if atom['future_only'] or atom['constraint']:
+            continue
+        source = atom['text']
         plain = _QUOTED.sub(lambda match: ' ' * len(match.group()), source)
         for match in _RESPONSE_PATH.finditer(plain):
             prefix, tail = source[:match.start()], source[match.end():]
+            if (atom['start'] + match.start() in data_offsets
+                    and not re.search(r'验证|断言|确认|核对|检查', tail)):
+                continue
             operator, expected = None, None
             if re.fullmatch(r'\s*(?:应)?存在\s*', tail):
                 operator = 'exists'
@@ -69,6 +95,92 @@ def explicit_response_checks(text):
                 expected=None, witnesses=[], status='NEEDS_REVIEW',
                 reason='RESPONSE_SELECTOR_UNRESOLVED'))
     return entries
+
+
+def data_reference_candidates(entry, requirements, dependencies):
+    """Bind the explicit consumer to the immediately preceding sourced producer and roles."""
+    from agenttest.policies import dependency_roles_match
+
+    items = sorted(requirements, key=lambda item: int(item.source_id.removeprefix('request_')))
+    index = next((i for i, item in enumerate(items) if item.source_id == entry['source_id']), -1)
+    if index < 1:
+        return []
+    consumer, producer = items[index], items[index - 1]
+    if (consumer.disposition not in {'required', 'needs_review'}
+            or producer.disposition != 'required'
+            or len(consumer.actions) != 1 or len(producer.actions) != 1):
+        return []
+    use, source = consumer.actions[0], producer.actions[0]
+    return [dict(edge, source_role=source.role, role=use.role) for edge in dependencies
+        if edge['operation_id'] == use.operation_id and use.role in edge.get('roles', ())
+        and edge['from_operation'] == source.operation_id
+        and source.role in edge.get('source_roles', ()) and edge['selector'] == entry['selector']
+        and dependency_roles_match(source.role, use.role, edge['role_relation'])]
+
+
+def resource_input_dependencies(project):
+    policies = {p.id: p for p in project.registry.definitions()}
+    methods = {o.operation_id: o.method for o in project.contract.operations}
+    return [dict(operation_id=p.operation_id, roles=p.roles, policy_id=p.id,
+        location=r.location, name=r.name, selector=r.source_selector,
+        source_policy_id=r.source_policy_id,
+        from_operation=policies[r.source_policy_id].operation_id,
+        from_method=methods[policies[r.source_policy_id].operation_id],
+        source_roles=policies[r.source_policy_id].roles, role_relation=r.role_relation)
+        for p in policies.values() if not p.negative for r in p.binding_rules
+        if r.source_policy_id in policies]
+
+
+def unresolved_data_operations(ledger, selection, project):
+    dependencies = resource_input_dependencies(project)
+    by_source = {item.source_id: item for item in selection.requirements}
+    blocked = set()
+    for entry in ledger:
+        item = by_source[entry['source_id']]
+        candidates = data_reference_candidates(entry, selection.requirements, dependencies)
+        entry['actions'] = [a.model_dump() for a in item.actions]
+        if candidates and item.disposition == 'required':
+            entry.update(status='NOT_EXECUTED', approved_bindings=candidates,
+                         reason='DATA_SOURCE_NOT_EXECUTED')
+        else:
+            operations = {a.operation_id for a in item.actions} | set(item.blocked_operation_ids)
+            if not operations:
+                raise ValidationFailure(Layer.MODEL, 'FOCUS_DATA_SOURCE_SCOPE_MISSING')
+            entry['blocked_operations'] = sorted(operations)
+            blocked.update(operations)
+    return blocked
+
+
+def validate_data_witnesses(design, primary, ledger):
+    """Require the exact approved input reference, never infer or repair a model binding."""
+    for entry in ledger:
+        bindings = [r for r in entry.get('approved_bindings', []) if r['operation_id'] in primary]
+        if not bindings:
+            continue
+        found = False
+        for case in design.cases:
+            steps = {s.id: s for s in case.plan.steps}
+            for step in case.plan.steps:
+                for edge in bindings:
+                    if (step.operation_id != edge['operation_id']
+                            or step.policy_id != edge['policy_id']
+                            or step.role != edge['role']):
+                        continue
+                    for argument in step.arguments:
+                        source = steps.get(argument.from_step)
+                        if (argument.location == edge['location'] and argument.name == edge['name']
+                                and argument.select == entry['selector'] and source is not None
+                                and source.policy_id == edge['source_policy_id']
+                                and source.operation_id == edge['from_operation']
+                                and source.role == edge['source_role']):
+                            found = True
+                            case._data_source_steps.setdefault(entry['id'], []).append(dict(
+                                step_id=step.id, source_step_id=source.id,
+                                operation_id=step.operation_id, policy_id=step.policy_id,
+                                role=step.role, selector=argument.select,
+                                location=argument.location, name=argument.name))
+        if not found:
+            raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_DATA_SOURCE_MISSING')
 
 
 def response_predicate_matches(entry, rule):
@@ -291,6 +403,20 @@ def record_requirement_evidence(summary, case_row, report=None):
             entry.pop('reason', None)
             entry['status'] = next(state for state in (
                 'ASSERTION_FAILED', 'EXECUTED', 'PASS', 'PLANNED') if state in states)
+    for entry in summary.get('data_references', []):
+        for planned in case_row.get('data_source_steps', {}).get(entry['id'], []):
+            witness = next((w for w in entry['witnesses'] if w['case_id'] == case_row['case_id']
+                            and w['step_id'] == planned['step_id']), None)
+            if witness is None:
+                witness = dict(planned, case_id=case_row['case_id'], status='PLANNED')
+                entry['witnesses'].append(witness)
+            source, consumer = steps.get(witness['source_step_id']), steps.get(witness['step_id'])
+            if report and source and source.attempts and consumer and consumer.attempts:
+                witness.update(status='EXECUTED', run_id=report.run_id)
+        if entry['witnesses']:
+            entry['status'] = ('EXECUTED' if all(w['status'] == 'EXECUTED'
+                for w in entry['witnesses']) else 'PLANNED')
+            entry.pop('reason', None)
 
 
 def explicit_assignments(text):
@@ -331,8 +457,11 @@ def reconcile_assignments(context, selection):
         candidates.update(c['operation_id'] for c in responses.values()
                           if c.get('select', '').rsplit('.', 1)[-1] == item['name'])
         entry = dict(**item, candidate_operations=sorted(candidates), status='UNACCOUNTED')
+        held = held_assignment_source(context, selection, item)
         if item['deferred']:
             entry['status'] = 'DEFERRED'
+        elif held is not None:
+            entry.update(held, status='NEEDS_REVIEW', reason='OPERATION_NOT_READY')
         elif not candidates:
             entry['status'] = 'UNKNOWN_FIELD'
         else:
@@ -381,6 +510,31 @@ def reconcile_assignments(context, selection):
                 entry['status'] = 'NEEDS_REVIEW'
         ledger.append(entry)
     return ledger
+
+
+def held_assignment_source(context, selection, assignment):
+    """Retain a uniquely sourced unavailable input; never add an executable slot."""
+    from agenttest.request_requirements import request_atoms
+
+    atoms = {a['source_id']: a for a in request_atoms(context['user_task'])}
+    unavailable = {o['operation_id'] for o in context.get('unavailable_operations', [])}
+    candidates = []
+    for requirement in selection.requirements:
+        atom = atoms.get(requirement.source_id)
+        if (requirement.disposition != 'needs_review' or atom is None
+                or requirement.source_quote != atom['text']
+                or not atom['start'] <= assignment['start'] < assignment['end'] <= atom['end']):
+            continue
+        blocked = unavailable & set(selection.blocked_operation_ids) & set(
+            requirement.blocked_operation_ids)
+        candidates.extend(dict(source_id=requirement.source_id, **field)
+            for field in context.get('unavailable_input_fields', [])
+            if field['operation_id'] in blocked and field['name'] == assignment['name'])
+    if len(candidates) != 1:
+        return None
+    field = candidates[0]
+    return dict(source_id=field['source_id'], operation_id=field['operation_id'],
+                location=field['location'], candidate_operations=[field['operation_id']])
 
 
 def validate_assignment_coverage(context, selection):

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="8.063" timestamp="2026-11-07T14:55:01.250342+08:00" hostname="LAPTOP-BB1O6551"><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy" time="1.087"><failure message="AssertionError: assert [] == [('/detail/2', False)]&#10;  &#10;  Right contains one more item: ('/detail/2', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-red-valid/test_pending_permission_cannot0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022050C85690&gt;
+
+    @pytest.mark.asyncio
+    async def test_pending_permission_cannot_be_replaced_by_anonymous_policy(tmp_path, monkeypatch):
+        done, sent, contexts, _ = await run_mixed(tmp_path, monkeypatch, 'permission')
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False)]
+E       AssertionError: assert [] == [('/detail/2', False)]
+E         
+E         Right contains one more item: ('/detail/2', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_p0.py:111: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_dynamic_response_reference_is_not_an_assertion" time="3.657"><failure message="AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/2', False)]&#10;  &#10;  Right contains one more item: ('/status/2', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-red-valid/test_dynamic_response_referenc0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022050D0C810&gt;
+
+    @pytest.mark.asyncio
+    async def test_dynamic_response_reference_is_not_an_assertion(tmp_path, monkeypatch):
+        done, sent, _, _ = await run_mixed(tmp_path, monkeypatch, 'data')
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False), ('/status/2', False)]
+E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/2', False)]
+E         
+E         Right contains one more item: ('/status/2', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_p0.py:120: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_unavailable_operation_keeps_input_pending_and_independent_read_runs" time="0.600"><failure message="AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '读取详情 detailId=2；独立读取状态 statusId=2。', 'scope': 'project', ...}&#10;assert 'NEEDS_REVIEW' == 'FINISHED'&#10;  &#10;  - FINISHED&#10;  + NEEDS_REVIEW">tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-red-valid/test_unavailable_operation_kee0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022050D5F650&gt;
+
+    @pytest.mark.asyncio
+    async def test_unavailable_operation_keeps_input_pending_and_independent_read_runs(
+            tmp_path, monkeypatch):
+        done, sent, _, text = await run_mixed(tmp_path, monkeypatch, 'blocked')
+&gt;       assert done['status'] == 'FINISHED', done['summary']
+E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '读取详情 detailId=2；独立读取状态 statusId=2。', 'scope': 'project', ...}
+E       assert 'NEEDS_REVIEW' == 'FINISHED'
+E         
+E         - FINISHED
+E         + NEEDS_REVIEW
+
+tests\test_mixed_planning_p0.py:129: AssertionError</failure></testcase></testsuite></testsuites>

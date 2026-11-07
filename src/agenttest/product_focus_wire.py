@@ -44,7 +44,7 @@ def constrain_operation_bundles(schema, context):
     index = context.get("approved_checks", [])
     local_checks = operation_checks(index)
     from agenttest.boundary_obligations import explicit_boundary_actions
-    from agenttest.request_requirements import future_only_operations
+    from agenttest.request_requirements import future_only_operations, permission_source_texts
 
     future = future_only_operations(context)
     actions = explicit_boundary_actions(context)
@@ -68,11 +68,17 @@ def constrain_operation_bundles(schema, context):
         expectation["required"] = list(props)
         questions = [expectation]
         roles = context.get("permission_question_roles", {}).get(operation, [])
-        if roles:
+        for role in roles:
+            sources = (permission_source_texts(context, operation, role)
+                       if 'request_atoms' in context else None)
+            if sources is not None and not sources:
+                continue
             permission = deepcopy(expectation)
             props = permission["properties"]
             props["kind"] = dict(type="string", enum=["permission"])
-            props["role"] = dict(type="string", enum=roles)
+            props["role"] = dict(type="string", enum=[role])
+            if sources is not None:
+                props["source_quote"] = dict(type="string", enum=sorted(sources))
             props["requested_behavior"]["maxLength"] = 140
             props["status_choices"] = dict(type="array", minItems=2, maxItems=2,
                                            items=dict(type="integer", enum=[403, 404]))

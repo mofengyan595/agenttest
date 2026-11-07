@@ -14,9 +14,11 @@ from agenttest.llm_planner import PlannerFailure
 from agenttest.product_design import design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, fingerprint
 from agenttest.requirement_ledger import (
+    explicit_data_references,
     explicit_http_statuses,
     explicit_response_checks,
     record_requirement_evidence,
+    unresolved_data_operations,
     unresolved_http_status_operations,
     unresolved_response_operations,
 )
@@ -181,6 +183,7 @@ class ProductTasks:
                     if (context.get("current_request", text) != DEFAULT_ROUND
                             and svc.focus_factory is not None):
                         from agenttest.product_focus import (
+                            permission_review_scope,
                             review_only_operations,
                             rule_review_scope,
                             select_focus,
@@ -192,6 +195,9 @@ class ProductTasks:
                         response_requirements = explicit_response_checks(context["current_request"])
                         if response_requirements:
                             summary["response_requirements"] = response_requirements
+                        data_references = explicit_data_references(context['current_request'])
+                        if data_references:
+                            summary['data_references'] = data_references
                         raw_focus = svc.focus_factory(project)
                         focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
                                                     ledger, guard)
@@ -278,10 +284,18 @@ class ProductTasks:
                             pending_only.difference_update(selection.normal_operation_ids,
                                 (check_operations[c['policy_id']] for c in executable_checks))
                             rule_reads, rule_logins = rule_review_scope(project, selection)
+                            permission_blocked, planning_requirements, action_scope, holds = (
+                                permission_review_scope(selection))
+                            summary['planning_requirements'] = planning_requirements
+                            summary['permission_action_scope'] = action_scope
+                            if holds:
+                                summary['permission_requirements'] = holds
                             response_blocked = unresolved_response_operations(response_requirements,
                                 selection, project, executable_checks)
                             status_blocked = unresolved_http_status_operations(
                                 status_requirements, selection, project)
+                            data_blocked = unresolved_data_operations(data_references,
+                                                                     selection, project)
                             if rule_reads:
                                 summary['expectation_blocked_operations'] = sorted(
                                     rule_reads | rule_logins)
@@ -289,6 +303,8 @@ class ProductTasks:
                                 operation_ids=[*selection.source_conflicts, *pending_only,
                                                *rule_reads, *rule_logins, *response_blocked,
                                                *status_blocked,
+                                               *permission_blocked,
+                                               *data_blocked,
                                                *review_only_operations(selection)],
                                 requirement_links=selection.requirements)
                             summary["input_blocked_operations"] = blocked_inputs
@@ -374,7 +390,8 @@ class ProductTasks:
                                               summary=summary)
                             return
                         if selection.mode == 'no_current_action':
-                            unresolved = status_requirements or response_requirements
+                            unresolved = (status_requirements or response_requirements
+                                          or data_references)
                             summary.update(complete=not unresolved,
                                 checks_passed=False,
                                 reason='本轮仅包含未来动作或范围约束，没有安排当前业务请求。',
@@ -453,8 +470,10 @@ class ProductTasks:
                                 input_requirements=summary.get("focus", {}).get(
                                     "input_requirements", []),
                                 requested_checks=executable_checks,
-                                request_requirements=summary.get('focus', {}).get(
-                                    'requirements', []),
+                                request_requirements=summary.get('planning_requirements',
+                                    summary.get('focus', {}).get('requirements', [])),
+                                permission_action_scope=summary.get('permission_action_scope'),
+                                data_references=summary.get('data_references', []),
                                 http_status_requirements=summary.get(
                                     'http_status_requirements', []),
                                 response_requirements=summary.get('response_requirements', []),
@@ -563,6 +582,8 @@ class ProductTasks:
                                 case_row['http_status_steps'] = case._http_status_steps
                             if case._response_steps:
                                 case_row['response_steps'] = case._response_steps
+                            if case._data_source_steps:
+                                case_row['data_source_steps'] = case._data_source_steps
                             record_requirement_evidence(summary, case_row)
                             summary["cases"].append(case_row)
                             checkpoint()
@@ -691,7 +712,8 @@ class ProductTasks:
                     for c in summary["cases"]
                 ) and not summary["questions"] and not summary["not_covered"] and all(
                     g.get("status") in {"DESIGNED", "OUTSIDE_FOCUS"} for g in summary["groups"]
-                ) and status_states <= {'PASS', 'ASSERTION_FAILED'}
+                ) and status_states <= {'PASS', 'ASSERTION_FAILED'} and all(
+                    entry['status'] == 'EXECUTED' for entry in summary.get('data_references', []))
                 summary["checks_passed"] = bool(summary["cases"]) and all(
                     c.get("outcome") == "PASS" for c in summary["cases"]
                 ) and status_states <= {'PASS'}
@@ -796,6 +818,13 @@ class ProductTasks:
         reasons.update({op: "原文指定的 HTTP 状态码缺少已确认的断言；该读取暂停。"
                         for item in summary.get('http_status_requirements', [])
                         for op in item.get('blocked_operations', [])})
+        reasons.update({op: "原文指定的数据来源与已批准的接口、身份或字段绑定不一致；相关读取暂停。"
+                        for item in summary.get('data_references', [])
+                        for op in item.get('blocked_operations', [])})
+        reasons.update({item['operation_id']: "该原文分项的身份权限预期待确认；不能用其他身份代替。"
+                        for item in summary.get('permission_requirements', [])
+                        if not summary.get('permission_action_scope', {}).get(
+                            item['operation_id'])})
         messages = dict(MODEL_TIMEOUT="模型生成方案时超时，此组没有执行。",
             MODEL_INVALID_RESPONSE="模型方案未通过格式校验，此组没有执行。",
             MODEL_TOKEN_BUDGET="本组资料超过模型输入预算，未发送模型或业务请求。",

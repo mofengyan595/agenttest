@@ -430,7 +430,8 @@ async def test_focus_receives_read_dependency_provenance_without_literal_id_auth
         async def generate(self, context):
             assert context["resource_dependencies"] == [dict(operation_id="readExport",
                 location="path_parameters", name="id", from_operation="readHeader",
-                from_method="GET", selector="$.id", roles=[None])]
+                from_method="GET", selector="$.id", roles=[None], policy_id='web_rule_2',
+                source_policy_id='web_rule_1', source_roles=[None], role_relation='anonymous')]
             assert context["input_fields"][0]["source_dependency"]
             return FocusSelection(interpretation="先查询已确认报表，再用响应编号导出。",
                 mode="selected",

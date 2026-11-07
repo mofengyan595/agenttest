@@ -44,16 +44,16 @@ class ExpectationQuestion(StrictModel):
         return self
 
 
-def validate_expectation_questions(questions, context, selected):
+def validate_expectation_questions(questions, context, selected, *, requirements=()):
     """Unknown business expectations carry operator evidence, never execution authority."""
     seen = set()
     for question in questions:
-        previous = any(question.operation_id == q.get("operation_id")
+        validated_previous = any(question.operation_id == q.get("operation_id")
             and question.kind == q.get("kind", "business_rule") and question.role == q.get("role")
             and question.source_quote in q.get("source_quote", "")
             for q in context.get("previous_expectation_questions", []))
-        previous = previous or any(question.source_quote in text
-                                   for text in context.get("previous_requests", []))
+        previous = validated_previous or any(question.source_quote in text
+                                            for text in context.get("previous_requests", []))
         key = (question.operation_id, question.kind,
                question.role if question.kind == "permission" else question.requested_behavior)
         if (question.operation_id not in selected or key in seen
@@ -63,10 +63,22 @@ def validate_expectation_questions(questions, context, selected):
                 context.get("permission_question_roles", {}).get(question.operation_id, [])):
             raise ValidationFailure(Layer.MODEL, "FOCUS_EXPECTATION_QUESTION_INVALID")
         if 'request_atoms' in context:
-            from agenttest.request_requirements import question_source_texts
+            from agenttest.request_requirements import (
+                permission_source_texts,
+                question_source_texts,
+            )
 
             if question.source_quote not in question_source_texts(context):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_QUESTION_SOURCE_NOT_CURRENT')
+            if question.kind == 'permission' and (
+                    question.source_quote not in permission_source_texts(
+                        context, question.operation_id, question.role)
+                    or not (validated_previous or any(
+                        item.source_quote == question.source_quote and any(
+                            action.operation_id == question.operation_id
+                            and action.role == question.role for action in item.actions)
+                        for item in requirements))):
+                raise ValidationFailure(Layer.MODEL, 'FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION')
         readiness = context.get('managed_authentication', [])
         confirmed = [r for r in context.get('confirmed_response_checks', [])
                      if r['operation_id'] == question.operation_id]
@@ -122,6 +134,31 @@ def review_only_operations(selection):
                if question.kind == 'business_rule' and question.source_quote in pending}
     return blocked - {action.operation_id for item in selection.requirements
                       if item.disposition == 'required' for action in item.actions}
+
+
+def permission_review_scope(selection):
+    """A pending permission is a sourced actor question, not permission to sample a public rule."""
+    questions = [q for q in selection.expectation_questions if q.kind == 'permission']
+    scopes = {q.operation_id: set() for q in questions}
+    planning, pending = [], []
+    for item in selection.requirements:
+        own = [q for q in questions if q.source_quote == item.source_quote]
+        explicit_anonymous = bool(re.search(r'匿名\s*(?:读取|查询|请求|调用)', item.source_quote))
+        actions = [a for a in item.actions if not any(q.operation_id == a.operation_id
+            and not (a.role is None and explicit_anonymous) for q in own)]
+        for action in actions if item.disposition == 'required' else []:
+            if action.operation_id in scopes:
+                # A same-clause anonymous read must be explicit, never inferred from a policy.
+                if not own or action.role is None and explicit_anonymous:
+                    scopes[action.operation_id].add(action.role)
+        for question in own:
+            pending.append(dict(source_id=item.source_id, source_quote=item.source_quote,
+                operation_id=question.operation_id, role=question.role, status='NEEDS_REVIEW',
+                reason='PERMISSION_EXPECTATION_NOT_APPROVED'))
+        planning.append(item.model_copy(update=dict(actions=actions,
+            disposition='needs_review' if own and not actions else item.disposition)).model_dump())
+    return {op for op, roles in scopes.items() if not roles}, planning, {
+        op: sorted(roles, key=lambda role: role or '') for op, roles in scopes.items()}, pending
 
 
 class FocusSelection(StrictModel):
@@ -427,7 +464,8 @@ class TestFocusModel(OpenAICompatiblePlanner):
             clauses=selection.requirements)
         validate_input_questions(selection.input_questions, selection.input_requirements,
                                  context, approved)
-        validate_expectation_questions(selection.expectation_questions, context, approved)
+        validate_expectation_questions(selection.expectation_questions, context, approved,
+                                       requirements=selection.requirements)
         if 'request_atoms' in context:
             from agenttest.request_requirements import validate_requirement_links
 
@@ -478,12 +516,9 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     context["execution_prerequisites"] = [dict(operation_id=p.operation_id,
         after_operation=policies[key].operation_id) for p in policies.values()
         for key in p.prerequisite_policy_ids if key in policies]
-    context["resource_dependencies"] = [dict(operation_id=p.operation_id,
-        location=r.location, name=r.name, from_operation=policies[r.source_policy_id].operation_id,
-        from_method=operations[policies[r.source_policy_id].operation_id].method,
-        selector=r.source_selector, roles=p.roles)
-        for p in policies.values() if not p.negative for r in p.binding_rules
-        if r.source_policy_id in policies]
+    from agenttest.requirement_ledger import resource_input_dependencies
+
+    context['resource_dependencies'] = resource_input_dependencies(project)
     from agenttest.product_checks import check_index
 
     context["approved_checks"] = check_index(project)
@@ -518,6 +553,12 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         "input_requirements", [])
     context["unavailable_operations"] = [o for o in (inventory or {}).get("operations", [])
                                          if o["state"] != "READY"]
+    unavailable = {o['operation_id'] for o in context['unavailable_operations']}
+    # Schema facts for held inputs are separate from approved executable input slots.
+    context['unavailable_input_fields'] = [dict(operation_id=op.operation_id,
+        location='path_parameters' if p['in'] == 'path' else 'query', name=p['name'])
+        for op in project.contract.operations if op.operation_id in unavailable
+        for p in op.parameters if p.get('in') in {'path', 'query'}]
     from agenttest.boundary_obligations import bind_boundary_actions, boundary_links
 
     if links := boundary_links(project, context):
@@ -549,7 +590,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
             clauses=selection.requirements)
         validate_input_questions(selection.input_questions, selection.input_requirements,
                                  context, selected)
-        validate_expectation_questions(selection.expectation_questions, context, selected)
+        validate_expectation_questions(selection.expectation_questions, context, selected,
+                                       requirements=selection.requirements)
         from agenttest.request_requirements import validate_requirement_links
         from agenttest.requirement_ledger import validate_assignment_coverage
 

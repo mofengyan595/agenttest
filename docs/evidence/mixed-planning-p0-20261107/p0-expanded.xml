@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="22" time="25.374" timestamp="2026-11-07T15:00:32.211555+08:00" hostname="LAPTOP-BB1O6551"><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy[needs_review]" time="3.392" /><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy[required]" time="2.732" /><testcase classname="tests.test_mixed_planning_p0" name="test_separately_requested_anonymous_read_is_not_held" time="4.167" /><testcase classname="tests.test_mixed_planning_p0" name="test_pending_role_is_not_repaired_into_the_public_policy" time="0.817" /><testcase classname="tests.test_mixed_planning_p0" name="test_dynamic_response_reference_is_not_an_assertion[False]" time="2.768" /><testcase classname="tests.test_mixed_planning_p0" name="test_dynamic_response_reference_is_not_an_assertion[True]" time="0.014"><failure message="ModuleNotFoundError: No module named 'agenttest.assertions'">tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-p0-expanded/test_dynamic_response_referenc1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000023691150290&gt;
+dual_use = True
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('dual_use', [False, True])
+    async def test_dynamic_response_reference_is_not_an_assertion(tmp_path, monkeypatch, dual_use):
+&gt;       done, sent, _, text = await run_mixed(tmp_path, monkeypatch, 'data', dual_use=dual_use)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_mixed_planning_p0.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-p0-expanded/test_dynamic_response_referenc1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000023691150290&gt;
+fault = 'data', extra = '', bad_plan = False, disposition = 'needs_review'
+data_selector = '$.link.id', dual_use = True
+
+    async def run_mixed(tmp_path, monkeypatch, fault, *, extra='', bad_plan=False,
+                        disposition='needs_review', data_selector='$.link.id', dual_use=False):
+        document, setup = read_setup()
+        sent, contexts = [], []
+        if fault == 'permission':
+            setup.roles = [IntakeRole(alias='reviewer', bearer_env='AGENTTEST_TARGET_REVIEWER')]
+            setup.operations[0].role = 'reviewer'
+            parsed = json.loads(document)
+            parsed['paths']['/status'] = parsed['paths'].pop('/status/{statusId}')
+            parsed['paths']['/status']['get']['parameters'] = []
+            document = json.dumps(parsed)
+            setup.operations[1].arguments = []
+            text = ('reviewer 读取状态时应该返回 403 还是 404；'
+                    '独立读取详情 detailId=2。' + extra)
+        elif fault == 'data':
+            setup.operations[1].arguments = [IntakeArgument(location='path_parameters', name='statusId',
+                source_operation='detail', selector='$.link.id')]
+            text = ('先读取详情 detailId=2；' + ('验证 $.link.id 存在；' if dual_use else '')
+                    + f'再用这次响应的 {data_selector} 读取状态。' + extra)
+            if dual_use:
+&gt;               from agenttest.assertions import FieldAssertion
+E               ModuleNotFoundError: No module named 'agenttest.assertions'
+
+tests\test_mixed_planning_p0.py:46: ModuleNotFoundError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[unapproved_source]" time="2.295" /><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[unapproved_check]" time="2.398" /><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[bad_binding]" time="0.914" /><testcase classname="tests.test_mixed_planning_p0" name="test_unavailable_operation_keeps_input_pending_and_independent_read_runs" time="2.511" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_and_predicate_classification_is_per_occurrence" time="0.004" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[source_op]" time="0.003" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[source_role]" time="0.003" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[use_role]" time="0.003" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[selector]" time="0.003" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[relation]" time="0.003" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[none]" time="0.004" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[source]" time="0.004" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[unavailable]" time="0.004" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[slot]" time="0.009" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[ambiguous]" time="0.004" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[collision]" time="0.005" /></testsuite></testsuites>

@@ -85,8 +85,10 @@ def constrain_source_refs(schema, sources):
         if isinstance(node, dict):
             properties = node.get("properties", {})
             if "source_quote" in properties:
-                properties.pop("source_quote")
-                properties["source_ref"] = dict(type="string", enum=identifiers)
+                quotes = properties.pop("source_quote").get("enum")
+                choices = ([entry["source_id"] for entry in sources if entry["text"] in quotes]
+                           if quotes is not None else identifiers)
+                properties["source_ref"] = dict(type="string", enum=choices)
                 node["required"] = ["source_ref" if k == "source_quote" else k
                                     for k in node["required"]]
             for child in node.values():

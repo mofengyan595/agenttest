@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="31" time="24.012" timestamp="2026-11-07T15:05:29.806359+08:00" hostname="LAPTOP-BB1O6551"><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy[needs_review]" time="2.710" /><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy[required]" time="2.013" /><testcase classname="tests.test_mixed_planning_p0" name="test_separately_requested_anonymous_read_is_not_held" time="3.083" /><testcase classname="tests.test_mixed_planning_p0" name="test_pending_role_is_not_repaired_into_the_public_policy" time="0.960" /><testcase classname="tests.test_mixed_planning_p0" name="test_dynamic_response_reference_is_not_an_assertion[False]" time="2.277" /><testcase classname="tests.test_mixed_planning_p0" name="test_dynamic_response_reference_is_not_an_assertion[True]" time="1.921" /><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[unapproved_source]" time="2.402" /><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[unapproved_check]" time="2.109" /><testcase classname="tests.test_mixed_planning_p0" name="test_unapproved_data_or_assertions_are_never_replaced[bad_binding]" time="0.780" /><testcase classname="tests.test_mixed_planning_p0" name="test_unavailable_operation_keeps_input_pending_and_independent_read_runs" time="2.054" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_and_predicate_classification_is_per_occurrence" time="0.002" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[source_op]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[source_role]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[use_role]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[selector]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_reference_does_not_borrow_another_producer_or_identity[relation]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[none]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[source]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[unavailable]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[slot]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[ambiguous]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_held_input_requires_exact_source_operation_and_unique_schema_slot[collision]" time="0.002" /><testcase classname="tests.test_mixed_planning_p0" name="test_data_plan_witness_retains_exact_identity_and_binding[none]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type&#10;cases.1.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">fault = 'none'
+
+    @pytest.mark.parametrize('fault', ['none', 'source_role', 'consumer_role', 'selector', 'producer'])
+    def test_data_plan_witness_retains_exact_identity_and_binding(fault):
+&gt;       proposal = design(step('producer', 'detail', role='owner', policy='detail_policy'),
+            step('consumer', 'status', role='reviewer', source='producer', policy='status_policy'))
+
+tests\test_mixed_planning_p0.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 'producer', 'operation_id': 'detail', 'role': 'owner', 'policy_id': 'detail_policy', ...}, {'id': 'consumer', 'operation_id': 'status', 'role': 'reviewer', 'policy_id': 'status_policy', ...})
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+E       cases.1.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_data_plan_witness_retains_exact_identity_and_binding[source_role]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type&#10;cases.1.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">fault = 'source_role'
+
+    @pytest.mark.parametrize('fault', ['none', 'source_role', 'consumer_role', 'selector', 'producer'])
+    def test_data_plan_witness_retains_exact_identity_and_binding(fault):
+&gt;       proposal = design(step('producer', 'detail', role='owner', policy='detail_policy'),
+            step('consumer', 'status', role='reviewer', source='producer', policy='status_policy'))
+
+tests\test_mixed_planning_p0.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 'producer', 'operation_id': 'detail', 'role': 'owner', 'policy_id': 'detail_policy', ...}, {'id': 'consumer', 'operation_id': 'status', 'role': 'reviewer', 'policy_id': 'status_policy', ...})
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+E       cases.1.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_data_plan_witness_retains_exact_identity_and_binding[consumer_role]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type&#10;cases.1.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">fault = 'consumer_role'
+
+    @pytest.mark.parametrize('fault', ['none', 'source_role', 'consumer_role', 'selector', 'producer'])
+    def test_data_plan_witness_retains_exact_identity_and_binding(fault):
+&gt;       proposal = design(step('producer', 'detail', role='owner', policy='detail_policy'),
+            step('consumer', 'status', role='reviewer', source='producer', policy='status_policy'))
+
+tests\test_mixed_planning_p0.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 'producer', 'operation_id': 'detail', 'role': 'owner', 'policy_id': 'detail_policy', ...}, {'id': 'consumer', 'operation_id': 'status', 'role': 'reviewer', 'policy_id': 'status_policy', ...})
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+E       cases.1.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_data_plan_witness_retains_exact_identity_and_binding[selector]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type&#10;cases.1.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">fault = 'selector'
+
+    @pytest.mark.parametrize('fault', ['none', 'source_role', 'consumer_role', 'selector', 'producer'])
+    def test_data_plan_witness_retains_exact_identity_and_binding(fault):
+&gt;       proposal = design(step('producer', 'detail', role='owner', policy='detail_policy'),
+            step('consumer', 'status', role='reviewer', source='producer', policy='status_policy'))
+
+tests\test_mixed_planning_p0.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 'producer', 'operation_id': 'detail', 'role': 'owner', 'policy_id': 'detail_policy', ...}, {'id': 'consumer', 'operation_id': 'status', 'role': 'reviewer', 'policy_id': 'status_policy', ...})
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+E       cases.1.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_data_plan_witness_retains_exact_identity_and_binding[producer]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type&#10;cases.1.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">fault = 'producer'
+
+    @pytest.mark.parametrize('fault', ['none', 'source_role', 'consumer_role', 'selector', 'producer'])
+    def test_data_plan_witness_retains_exact_identity_and_binding(fault):
+&gt;       proposal = design(step('producer', 'detail', role='owner', policy='detail_policy'),
+            step('consumer', 'status', role='reviewer', source='producer', policy='status_policy'))
+
+tests\test_mixed_planning_p0.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 'producer', 'operation_id': 'detail', 'role': 'owner', 'policy_id': 'detail_policy', ...}, {'id': 'consumer', 'operation_id': 'status', 'role': 'reviewer', 'policy_id': 'status_policy', ...})
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'producer', 'opera...olicy', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+E       cases.1.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 'consumer', 'opera...er', 'select': '$.id'}]}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_mixed_planning_p0" name="test_permission_pending_source_cannot_add_another_actor[False]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_permission_pending_source_cannot_add_another_actor[True]" time="0.001" /><testcase classname="tests.test_mixed_planning_p0" name="test_permission_scope_rejects_a_model_that_ignores_generation_constraints" time="0.005"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for TestDesign&#10;cases.0.plan.steps&#10;  Input should be a valid list [type=list_type, input_value={'id': 's', 'operation_id...ule_2', 'arguments': []}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/list_type">@pytest.mark.asyncio
+    async def test_permission_scope_rejects_a_model_that_ignores_generation_constraints():
+        from agenttest.contracts import load_openapi
+        from agenttest.generic_intake import build_generic_project
+        from agenttest.product_design import design_groups, propose_design
+    
+        document, setup = read_setup()
+        project = build_generic_project('scope', document, load_openapi(document), setup)
+    
+        class UntrustedDesign:
+            async def generate(self, context):
+                # Anonymous is approved globally, but this sourced pending scope allows no reader.
+                assert not any(p['operation_id'] == 'status' for p in context['policies'])
+                proposal = design(step('s', 'status', role=None, policy='web_rule_2'))
+                return proposal.model_dump_json()
+    
+        with pytest.raises(ValidationFailure, match='DESIGN_PERMISSION_SCOPE_NOT_REQUESTED'):
+&gt;           await propose_design(project, '确认身份权限预期', design_groups(project)[0],
+                UntrustedDesign(), environ={}, remaining_requests=5, inventory_total=2,
+                permission_action_scope=dict(status=[]))
+
+tests\test_mixed_planning_p0.py:343: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\agenttest\product_design.py:615: in propose_design
+    raw = await model.generate(context)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_mixed_planning_p0.py:339: in generate
+    proposal = design(step('s', 'status', role=None, policy='web_rule_2'))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cases = ({'id': 's', 'operation_id': 'status', 'role': None, 'policy_id': 'web_rule_2', ...},)
+
+    def design(*cases):
+&gt;       return Design(interpretation='逐项执行原文要求', cases=[dict(title='检查原文要求', kind='flow',
+            plan=dict(name='case', steps=steps)) for steps in cases], questions=[], not_covered=[])
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TestDesign
+E       cases.0.plan.steps
+E         Input should be a valid list [type=list_type, input_value={'id': 's', 'operation_id...ule_2', 'arguments': []}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/list_type
+
+tests\test_request_requirements.py:48: ValidationError</failure></testcase><testcase classname="tests.test_product_focus" name="test_focus_receives_read_dependency_provenance_without_literal_id_authority" time="0.009" /></testsuite></testsuites>

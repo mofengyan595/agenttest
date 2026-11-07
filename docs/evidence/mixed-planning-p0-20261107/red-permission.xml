@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="7.728" timestamp="2026-11-07T14:55:58.145891+08:00" hostname="LAPTOP-BB1O6551"><testcase classname="tests.test_mixed_planning_p0" name="test_pending_permission_cannot_be_replaced_by_anonymous_policy" time="4.531"><failure message="AssertionError: assert [('/detail/2'...atus', False)] == [('/detail/2', False)]&#10;  &#10;  Left contains one more item: ('/status', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('D:/Desktop/project/agenttest/runs/mixed-planning-p0-20261107/temp-red-permission/test_pending_permission_cannot0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001F0E4B09C10&gt;
+
+    @pytest.mark.asyncio
+    async def test_pending_permission_cannot_be_replaced_by_anonymous_policy(tmp_path, monkeypatch):
+        done, sent, contexts, _ = await run_mixed(tmp_path, monkeypatch, 'permission')
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False)]
+E       AssertionError: assert [('/detail/2'...atus', False)] == [('/detail/2', False)]
+E         
+E         Left contains one more item: ('/status', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_p0.py:118: AssertionError</failure></testcase></testsuite></testsuites>

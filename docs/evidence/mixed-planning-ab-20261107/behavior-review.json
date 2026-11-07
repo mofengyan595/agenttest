@@ -1,0 +1,1692 @@
+{
+  "review": "POST_RUN_DIAGNOSTIC_REVIEW_NOT_A_REPLACEMENT_FOR_FROZEN_SCORES",
+  "limitations": [
+    "Frozen held_operation verification requires an explicit blocked-operation list. This diagnostic separately shows a valid pending permission question, zero held requests and completed independent checks.",
+    "Frozen false_refusal requires a rejection record or question. This diagnostic also lists configured legal operations incorrectly held without either record."
+  ],
+  "totals": {
+    "baseline": {
+      "observed_hold_requirements_met": 9,
+      "planning_refusal_or_legal_block": 5,
+      "pending_fixed_reference_positions": 0,
+      "diagnosed_failure_positions": [
+        "B02_r1_baseline",
+        "B05_r1_baseline",
+        "B06_r1_baseline",
+        "B10_r1_baseline",
+        "B12_r1_baseline",
+        "B10_r2_baseline",
+        "B06_r2_baseline",
+        "B05_r2_baseline",
+        "B04_r2_baseline",
+        "B01_r2_baseline"
+      ]
+    },
+    "candidate": {
+      "observed_hold_requirements_met": 8,
+      "planning_refusal_or_legal_block": 4,
+      "pending_fixed_reference_positions": 2,
+      "diagnosed_failure_positions": [
+        "B04_r1_candidate",
+        "B05_r1_candidate",
+        "B06_r1_candidate",
+        "B10_r1_candidate",
+        "B12_r1_candidate",
+        "B12_r2_candidate",
+        "B10_r2_candidate",
+        "B06_r2_candidate",
+        "B05_r2_candidate",
+        "B04_r2_candidate"
+      ]
+    }
+  },
+  "positions": [
+    {
+      "id": "B01_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B01_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B02_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": true,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "MODEL_SCHEMA_TYPE_OR_CONSTRAINT",
+            "fields": [
+              "*"
+            ]
+          },
+          "reason": "MODEL_INVALID_RESPONSE",
+          "elapsed_ms": 2165.521,
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "MODEL_SCHEMA_TYPE_OR_CONSTRAINT",
+              "fields": [
+                "*"
+              ]
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 2125,
+            "request_bytes": 20009,
+            "request_sha256": "eafc0cf104dfe1abc1c8774697141f9f4e5464713c525a17ea8140f8a00a7166",
+            "response_bytes": 2160,
+            "input_token_upper_bound": 20521,
+            "input_tokens": 5062,
+            "output_tokens": 407,
+            "total_tokens": 5469,
+            "output_sha256": "ce151a0b50bb73aa27fedeab098679e0cfe4559eea5a95b1946fc17710a9d3ea",
+            "reason": "MODEL_INVALID_RESPONSE"
+          },
+          "proposed_question_count": null
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B02_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B03_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B03_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B04_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B04_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": true,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_REQUIREMENT_RESPONSE_INVALID",
+            "fields": []
+          },
+          "reason": "MODEL_INVALID_RESPONSE",
+          "elapsed_ms": 1919.033,
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_RESPONSE_INVALID",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 1875,
+            "request_bytes": 25604,
+            "request_sha256": "95ecf010b471057dd26a0609eb4a3131ad0fccd60b9ba41d4279e419d34a847d",
+            "response_bytes": 2480,
+            "input_token_upper_bound": 26116,
+            "input_tokens": 6848,
+            "output_tokens": 490,
+            "total_tokens": 7338,
+            "output_sha256": "63fabad4750791c9a7b33a4728bb60bea3ce59343eaf028d08f93425148d57f0",
+            "reason": "MODEL_INVALID_RESPONSE"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B05_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [
+        "getSpecialty"
+      ],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_1",
+          "source_id": "request_3",
+          "source_quote": "再用这次响应的 $.specialties[0].id 读取对应专科",
+          "start": 36,
+          "end": 62,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "用户要求用兽医响应中的 $.specialties[0].id 读取对应专科并核对 $.name 等于 radiology，但本组未提供 getSpecialty 的已批准策略与操作定义，无法构造该读取与字段核对步骤，需在包含该接口的组中补充。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B05_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [
+        "getSpecialty"
+      ],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_1",
+          "source_id": "request_3",
+          "source_quote": "再用这次响应的 $.specialties[0].id 读取对应专科",
+          "start": 36,
+          "end": 62,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "使用兽医响应中的 $.specialties[0].id 读取对应专科并核对名称，需要 getSpecialty 操作的已批准策略，本组未提供，无法安排该依赖读取与断言。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B06_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 1
+    },
+    {
+      "id": "B06_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 1
+    },
+    {
+      "id": "B07_r1_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_6d45b778e958aa0af4f6",
+          "operation_id": "getSpecialty",
+          "question": "请求要求 specialtyId=2 的专科响应 $.name 等于“cardiology”，但已批准规则记录期望为“surgery”；该接口 $.name 的预期值应以哪个为准？",
+          "requested_behavior": "确认 getSpecialty 返回的 $.name 对 specialtyId=2 的预期值，以解决当前请求与已批准响应规则之间的冲突。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "用户要求核对 $.name 等于 “Leo”，已由普通用例覆盖；未遗漏。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B07_r1_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [
+        {
+          "source_id": "request_2",
+          "disposition": "needs_review",
+          "actions": [],
+          "before": [],
+          "same_resource": [
+            {
+              "resource_ref": "resource_5c4b22fc0f38529d"
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_aaca80b98d7896cc6b18",
+          "operation_id": "getSpecialty",
+          "question": "专科查询响应中的 $.name 期望为 cardiology，但已确认响应规则为 surgery，当前请求的 cardiology 断言应采用哪个值？",
+          "requested_behavior": "核对 getSpecialty 响应 $.name 等于 cardiology",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "用户要求核对宠物名称等于 Leo，本组已按确认规则覆盖；专科查询不属于本组接口，其名称期望存在待确认问题。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B08_r1_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_017e34255398a22f168b",
+          "operation_id": "getVet",
+          "question": "当前请求要求 getVet 响应的 $.firstName 等于 Harriet，但已批准的响应检查期望 Helen。应以哪个规则为准？",
+          "requested_behavior": "确认读取 vetId=2 后 firstName 的期望值规则",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "已按用户给定的 page=0、size=2 执行读取并保留已批准的 $.content 数量为 2 的断言，无遗漏。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B08_r1_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_7c202f86662767408d49",
+          "operation_id": "getVet",
+          "question": "已批准对 getVet 响应的检查期望 $.firstName 等于 Helen，而当前请求要求 Harriet；应以哪个 firstName 作为预期值？",
+          "requested_behavior": "获取 vetId=2 的兽医并检查返回的 firstName 是否等于请求值 Harriet，需要确认这与已批准期望 Helen 的冲突。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "宠物分页读取与 $.content 数量为 2 的校验已包含在用例中，没有遗漏。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B09_r1_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_a7582878d81daa3a85be",
+          "operation_id": "getGeneralAPISettings",
+          "question": "请求要求核对 $.max_response_items 等于 52，但已批准的规则期望该值为 50。应以哪个值作为该分页设置的正确断言？",
+          "requested_behavior": "确认 getGeneralAPISettings 响应中 $.max_response_items 的正确期望值（用户要求的 52 与已批准的 50 存在冲突）。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B09_r1_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_6e9262af2c063383ce31",
+          "operation_id": "getGeneralAPISettings",
+          "question": "当前配置中 max_response_items 的已批准期望是 50，但本次请求要求其等于 52；应以哪个值为准？",
+          "requested_behavior": "确认 getGeneralAPISettings 的 $.max_response_items 期望值",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "分页配置查询对应的 getGeneralAPISettings 不在本组已批准操作中，且 max_response_items 期望值 50 与请求值 52 冲突，等待确认后另行处理。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B10_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+            "fields": []
+          },
+          "reason": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+          "elapsed_ms": 3642.344,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 3594,
+            "request_bytes": 22873,
+            "request_sha256": "0d7d1ba921b1fde607d5791d55aa562bd62538ecfaaad8e50e5783e8ebf6c54a",
+            "response_bytes": 2605,
+            "input_token_upper_bound": 23385,
+            "input_tokens": 5983,
+            "output_tokens": 552,
+            "total_tokens": 6535,
+            "output_sha256": "f15e6b2c3c03c71cd2bacffb79489a72b33d4afcdcac5ffba051f28a2f3a6013",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [
+        {
+          "name": "vetId",
+          "value": 2,
+          "source_quote": "vetId=2",
+          "start": 5,
+          "end": 12,
+          "deferred": false,
+          "candidate_operations": [],
+          "status": "UNKNOWN_FIELD"
+        }
+      ],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B10_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+            "fields": []
+          },
+          "reason": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+          "elapsed_ms": 2911.445,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 2875,
+            "request_bytes": 24305,
+            "request_sha256": "c09018c00860f95f38905486236470ccbbbe781c2c816abe180758679654ea29",
+            "response_bytes": 2349,
+            "input_token_upper_bound": 24817,
+            "input_tokens": 6506,
+            "output_tokens": 470,
+            "total_tokens": 6976,
+            "output_sha256": "4e25c1429c70ead610a14b3c809e804fc0a7573d6fb32d4747e39974c13f442b",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [
+        {
+          "name": "vetId",
+          "value": 2,
+          "source_quote": "vetId=2",
+          "start": 5,
+          "end": 12,
+          "deferred": false,
+          "candidate_operations": [],
+          "status": "UNKNOWN_FIELD"
+        }
+      ],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B11_r1_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_2",
+          "source_id": "request_2",
+          "source_quote": "随后用该响应的 $.specialties[0].id 读取专科",
+          "start": 48,
+          "end": 72,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "当前需求中读取兽医及其专科的步骤和专科断言均不属于本组已批准接口，无法在此组执行。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B11_r1_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [
+        {
+          "source_id": "request_1",
+          "disposition": "needs_review",
+          "actions": [
+            {
+              "operation_id": "getVet",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [
+            {
+              "resource_ref": "resource_c16789a22dad3842"
+            }
+          ],
+          "response_checks": [
+            "expectation_f2fb6b3076c517b77a24",
+            "expectation_e7751405112527e7645d"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_2",
+          "source_id": "request_2",
+          "source_quote": "随后用该响应的 $.specialties[0].id 读取专科",
+          "start": 48,
+          "end": 72,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_8c1690aa6445289d0842",
+          "operation_id": "getVet",
+          "question": "当前原文要求验证 getVet 响应的 $.firstName 等于文字值 Mira，而确认规则/期望中该字段为 Helen；应以哪个值为可通过的断言？",
+          "requested_behavior": "对 vetId=2 的兽医响应断言 $.firstName 等于 Mira 还是按已确认规则等于 Helen？",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "宠物读取本身已覆盖；但用户要求的兽医读取与随后的专科读取不属本组已批准接口，无法在本组执行。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B12_r1_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [
+        {
+          "operation": "getVersion",
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "actual_statuses": [
+            200
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "question_e52801228b28ef58e0a3",
+          "operation_id": "getVersion",
+          "question": "reviewer 读取 Gitea 版本接口（/api/v1/version）时，应该返回 403 还是 404？",
+          "requested_behavior": "明确 reviewer 对版本接口的拒绝状态码",
+          "kind": "permission",
+          "role": "reviewer",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "not_covered": [
+        "reviewer 读取版本接口应返回 403 还是 404 缺少已批准的权限规则，已作为既有待确认问题保留，本轮未构造该权限用例。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B12_r1_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [
+        {
+          "group_id": "group_1",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "DESIGN_REQUIRED_IDENTITY_NOT_APPROVED",
+            "fields": []
+          },
+          "reason": "DESIGN_REQUIRED_IDENTITY_NOT_APPROVED",
+          "elapsed_ms": 8.355,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 0,
+            "model_name": null,
+            "model_sha256": null,
+            "http_status": null,
+            "elapsed_ms": 0,
+            "request_bytes": 0,
+            "request_sha256": null,
+            "response_bytes": 0,
+            "input_token_upper_bound": 0,
+            "input_tokens": null,
+            "output_tokens": null,
+            "total_tokens": null,
+            "output_sha256": null,
+            "reason": null
+          }
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_53eb1c9d82e150daf575",
+          "operation_id": "getVersion",
+          "question": "reviewer 身份调用 GET /api/v1/version 读取 Gitea 版本时，接口应返回 403 还是 404？",
+          "requested_behavior": "确认 reviewer 读取版本接口的拒绝状态码是 403 还是 404",
+          "kind": "permission",
+          "role": "reviewer",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B12_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [
+        {
+          "operation": "getVersion",
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "actual_statuses": [
+            200
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "question_4411391190cab3647d20",
+          "operation_id": "getVersion",
+          "question": "reviewer 读取 Gitea 版本时，应该返回 403 还是 404？",
+          "requested_behavior": "确认 reviewer 调用 getVersion 时的拒绝状态码为 403 或 404",
+          "kind": "permission",
+          "role": "reviewer",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "not_covered": [
+        "reviewer 读取版本时的拒绝状态码（403 或 404）尚无已批准的权限策略，待人工确认后才能设计权限用例。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B12_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_84e92075370aff7a99ce",
+          "operation_id": "getVersion",
+          "question": "reviewer 身份调用 GET /api/v1/version 读取服务版本时，应返回 403 还是 404？",
+          "requested_behavior": "确认 reviewer 访问版本接口被拒绝时使用的状态码",
+          "kind": "permission",
+          "role": "reviewer",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "not_covered": [
+        "reviewer 身份读取版本接口被拒绝时应返回 403 还是 404 尚未确认，待权限规则明确后再设计对应用例。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B11_r2_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_2",
+          "source_id": "request_2",
+          "source_quote": "随后用该响应的 $.specialties[0].id 读取专科",
+          "start": 48,
+          "end": 72,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_56e214c4fd54f93c5bde",
+          "operation_id": "getVet",
+          "question": "当前请求要求校验 getVet 响应的 $.firstName 等于 text_1（Mira），但已确认的响应规则为 $.firstName 等于 Helen；应以哪个值为准？",
+          "requested_behavior": "确认 getVet 响应中 $.firstName 的预期值。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "读取宠物的请求本身已覆盖，但用户还要求校验 $.ownerId 等于 1，该断言已由已确认规则中的同名字段检查满足，无需额外请求；getVet 与专科读取不在本组授权范围内，其 firstName 预期值存在冲突，已由既有问题承接。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B11_r2_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_2",
+          "source_id": "request_2",
+          "source_quote": "随后用该响应的 $.specialties[0].id 读取专科",
+          "start": 48,
+          "end": 72,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_3974e72633e292ca7074",
+          "operation_id": "getVet",
+          "question": "针对 getVet 在 vetId=2 时，当前源文本要求验证 $.firstName 等于 “Mira”；但已有确认规则写的是 $.firstName 等于 “Helen”。应以哪个期望值为准？",
+          "requested_behavior": "getVet 返回之后，检查 $.firstName 是否等于当前请求指定的值 “Mira”。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "本组仅含 getOwnersPet 及其已确认规则，无法在本组内验证兽医与专科读取。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B10_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+            "fields": []
+          },
+          "reason": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+          "elapsed_ms": 3248.386,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 3218,
+            "request_bytes": 24305,
+            "request_sha256": "c09018c00860f95f38905486236470ccbbbe781c2c816abe180758679654ea29",
+            "response_bytes": 3114,
+            "input_token_upper_bound": 24817,
+            "input_tokens": 6506,
+            "output_tokens": 665,
+            "total_tokens": 7171,
+            "output_sha256": "820e722bed63c3b7d066c4d03029f446d4482bf68d1861b3a857114a3b795d9b",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [
+        {
+          "name": "vetId",
+          "value": 2,
+          "source_quote": "vetId=2",
+          "start": 5,
+          "end": 12,
+          "deferred": false,
+          "candidate_operations": [],
+          "status": "UNKNOWN_FIELD"
+        }
+      ],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B10_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+            "fields": []
+          },
+          "reason": "FOCUS_EXPLICIT_REQUIREMENT_UNACCOUNTED",
+          "elapsed_ms": 2132.6,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 2078,
+            "request_bytes": 22873,
+            "request_sha256": "0d7d1ba921b1fde607d5791d55aa562bd62538ecfaaad8e50e5783e8ebf6c54a",
+            "response_bytes": 2419,
+            "input_token_upper_bound": 23385,
+            "input_tokens": 5983,
+            "output_tokens": 492,
+            "total_tokens": 6475,
+            "output_sha256": "9427521d241adf2353c5d2e3df86423653451002898c9794a24fd927527743f4",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [
+        {
+          "name": "vetId",
+          "value": 2,
+          "source_quote": "vetId=2",
+          "start": 5,
+          "end": 12,
+          "deferred": false,
+          "candidate_operations": [],
+          "status": "UNKNOWN_FIELD"
+        }
+      ],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B09_r2_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_72a272b14675b73612c4",
+          "operation_id": "getGeneralAPISettings",
+          "question": "API 分页设置中 $.max_response_items 的期望值是多少？当前请求写的是 52，而已确认的规则为 50，二者冲突。",
+          "requested_behavior": "读取分页设置后按确认的期望值断言 $.max_response_items",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "分页配置读取操作不在本组已批准操作清单内，且其期望值 52 与已确认规则 50 冲突，已通过既有澄清问题挂起，本轮不生成用例。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B09_r2_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_cf430fbf42fdfe66a513",
+          "operation_id": "getGeneralAPISettings",
+          "question": "你要求检查 $.max_response_items 等于 52，但已批准的响应规则期望该字段等于 50。此处应以哪个值为准？",
+          "requested_behavior": "读取 API 分页配置后核对 $.max_response_items 的值",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B08_r2_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_65915a7dfe20eb9f3696",
+          "operation_id": "getVet",
+          "question": "当前请求要求校验 $.firstName 等于 Harriet，但已批准的校验规则期望值为 Helen。应以哪个值为准？",
+          "requested_behavior": "确认 getVet 响应中 $.firstName 的期望值。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "用户要求校验 $.firstName 为 Harriet 的兽医读取操作不在本组已批准操作范围内，无法在本组安排该请求；其期望值冲突已通过既有待确认问题提出。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B08_r2_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [
+        {
+          "id": "question_4bf480aacbe4ee63c746",
+          "operation_id": "getVet",
+          "question": "当前文本要求 $.firstName 等于 Harriet，但已批准响应规则期望值为 Helen；该项目应以哪个 firstName 值作为 getVet 的断言？",
+          "requested_behavior": "确认 getVet 响应 $.firstName 的预期值，以便选择可执行的已批准响应检查。",
+          "kind": "clarification",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "not_covered": [
+        "用户要求的宠物分页读取与 $.content 数量校验均已在普通用例中覆盖，无遗漏。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B07_r2_candidate",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "用户还要求查询 specialtyId=2 的专科并核对名称等于 cardiology，但该专科查询接口不属于本组已批准的接口与规则，本组无法执行，故该部分未覆盖。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B07_r2_baseline",
+      "official_correct_hold": true,
+      "observed_hold_requirements_met": true,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "本组没有包含查专科接口 getSpecialty，无法执行 specialtyId=2 并核对 $.name 等于 cardiology 的请求；该部分不属于当前分组已批准接口范围。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B06_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 1
+    },
+    {
+      "id": "B06_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 1
+    },
+    {
+      "id": "B05_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [
+        "getSpecialty"
+      ],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_1",
+          "source_id": "request_3",
+          "source_quote": "再用这次响应的 $.specialties[0].id 读取对应专科",
+          "start": 36,
+          "end": 62,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "用户要求用本次兽医响应中的 $.specialties[0].id 读取对应专科并核对返回的 $.name 为 radiology，但本组未提供 getSpecialty 接口及其已批准响应规则，无法编排该后续读取步骤。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B05_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [
+        "getSpecialty"
+      ],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [
+        {
+          "id": "response_1",
+          "source_id": "request_3",
+          "source_quote": "再用这次响应的 $.specialties[0].id 读取对应专科",
+          "start": 36,
+          "end": 62,
+          "selector": "$.specialties[0].id",
+          "operator": null,
+          "expected": null,
+          "witnesses": [],
+          "status": "NEEDS_REVIEW",
+          "reason": "RESPONSE_CHECK_NOT_APPROVED",
+          "actions": [
+            {
+              "operation_id": "getSpecialty",
+              "role": null
+            }
+          ],
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        }
+      ],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [
+        "需要以本次响应中 specialties 首项的 id 作为下一步输入读取专科，并核对专科 name 为 radiology，但本组未提供该专科读取接口及其已批准的策略与响应断言，无法执行该联动校验。"
+      ],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B04_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": true,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [
+        {
+          "group_id": "group_1",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "DESIGN_REQUIRED_READ_COUNT_MISMATCH",
+            "fields": [
+              "requirement_map.request_1"
+            ]
+          },
+          "reason": "DESIGN_REQUIRED_READ_COUNT_MISMATCH",
+          "elapsed_ms": 4615.533,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 4578,
+            "request_bytes": 27198,
+            "request_sha256": "e054adec4cf97b9369cedff325e196eb502b200fc1b7157ebe3a4fb1a621ef93",
+            "response_bytes": 2617,
+            "input_token_upper_bound": 27710,
+            "input_tokens": 6049,
+            "output_tokens": 464,
+            "total_tokens": 6513,
+            "output_sha256": "7b4136dbbcffcf32ed0d03226920130b18a24c79b1dadf28e5741b9979f803fe",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "plan_construction": [
+            {
+              "encoding": "UNORDERED_APPROVED_NODES_V1",
+              "proposed_nodes": 3,
+              "constructed_nodes": 3,
+              "managed_authentication_nodes": 0,
+              "dependency_edges": 2,
+              "independent_contexts": 1
+            },
+            {
+              "encoding": "UNORDERED_APPROVED_NODES_V1",
+              "proposed_nodes": 2,
+              "constructed_nodes": 2,
+              "managed_authentication_nodes": 0,
+              "dependency_edges": 1,
+              "independent_contexts": 1
+            }
+          ],
+          "construction_ms": 0.245
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B04_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": true,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [
+        {
+          "group_id": "group_1",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "DESIGN_REQUIRED_READ_COUNT_MISMATCH",
+            "fields": [
+              "requirement_map.request_1"
+            ]
+          },
+          "reason": "DESIGN_REQUIRED_READ_COUNT_MISMATCH",
+          "elapsed_ms": 4629.221,
+          "model_call": {
+            "diagnostic": null,
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 4578,
+            "request_bytes": 26876,
+            "request_sha256": "39ebe30f2f9b875bff1a9eba2b01aa1283844161287366c88c0649ed8bb9c511",
+            "response_bytes": 3059,
+            "input_token_upper_bound": 27388,
+            "input_tokens": 5971,
+            "output_tokens": 577,
+            "total_tokens": 6548,
+            "output_sha256": "9ac14108943249ce3dc4ba39e34742592e5931bc72d9e662631e880ea2f876cf",
+            "reason": "MODEL_OUTPUT_RECEIVED"
+          },
+          "plan_construction": [
+            {
+              "encoding": "UNORDERED_APPROVED_NODES_V1",
+              "proposed_nodes": 3,
+              "constructed_nodes": 3,
+              "managed_authentication_nodes": 0,
+              "dependency_edges": 2,
+              "independent_contexts": 1
+            },
+            {
+              "encoding": "UNORDERED_APPROVED_NODES_V1",
+              "proposed_nodes": 3,
+              "constructed_nodes": 3,
+              "managed_authentication_nodes": 0,
+              "dependency_edges": 2,
+              "independent_contexts": 1
+            }
+          ],
+          "construction_ms": 0.279
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B03_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B03_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B02_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B02_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B01_r2_candidate",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": false,
+      "planning_refusal_or_legal_block": false,
+      "rejected": [],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    },
+    {
+      "id": "B01_r2_baseline",
+      "official_correct_hold": false,
+      "observed_hold_requirements_met": false,
+      "extra_legal_operations_blocked": [],
+      "official_false_refusal": true,
+      "planning_refusal_or_legal_block": true,
+      "rejected": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+            "fields": []
+          },
+          "reason": "MODEL_INVALID_RESPONSE",
+          "elapsed_ms": 13666.874,
+          "model_call": {
+            "diagnostic": {
+              "layer": "model",
+              "code": "FOCUS_REQUIREMENT_RESOURCE_INVALID",
+              "fields": []
+            },
+            "calls": 1,
+            "model_name": "ecnu-max",
+            "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+            "http_status": 200,
+            "elapsed_ms": 13625,
+            "request_bytes": 24840,
+            "request_sha256": "b2e391c9c60d3aa1c63bd81c7f733e2dcfe1c54e2a00d52dac689caa0c830df6",
+            "response_bytes": 2677,
+            "input_token_upper_bound": 25352,
+            "input_tokens": 6549,
+            "output_tokens": 545,
+            "total_tokens": 7094,
+            "output_sha256": "8d884e4c5fb78093e54d5490ca91bb529a4c4db8ca40a94e3dd6397f18aec267",
+            "reason": "MODEL_INVALID_RESPONSE"
+          },
+          "proposed_question_count": 0
+        }
+      ],
+      "pending_fixed_reference_records": [],
+      "source_selectors_treated_as_response_checks": [],
+      "unknown_explicit_inputs": [],
+      "actual_scope_violations": [],
+      "questions": [],
+      "not_covered": [],
+      "failed_assertions": 0
+    }
+  ]
+}

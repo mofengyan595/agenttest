@@ -1,0 +1,492 @@
+--- before/src/agenttest/product_focus.py
++++ after/src/agenttest/product_focus.py
+@@ -134,6 +134,31 @@
+                if question.kind == 'business_rule' and question.source_quote in pending}
+     return blocked - {action.operation_id for item in selection.requirements
+                       if item.disposition == 'required' for action in item.actions}
++
++
++def permission_review_scope(selection):
++    """A pending permission is a sourced actor question, not permission to sample a public rule."""
++    questions = [q for q in selection.expectation_questions if q.kind == 'permission']
++    scopes = {q.operation_id: set() for q in questions}
++    planning, pending = [], []
++    for item in selection.requirements:
++        own = [q for q in questions if q.source_quote == item.source_quote]
++        explicit_anonymous = bool(re.search(r'匿名\s*(?:读取|查询|请求|调用)', item.source_quote))
++        actions = [a for a in item.actions if not any(q.operation_id == a.operation_id
++            and not (a.role is None and explicit_anonymous) for q in own)]
++        for action in actions if item.disposition == 'required' else []:
++            if action.operation_id in scopes:
++                # A same-clause anonymous read must be explicit, never inferred from a policy.
++                if not own or action.role is None and explicit_anonymous:
++                    scopes[action.operation_id].add(action.role)
++        for question in own:
++            pending.append(dict(source_id=item.source_id, source_quote=item.source_quote,
++                operation_id=question.operation_id, role=question.role, status='NEEDS_REVIEW',
++                reason='PERMISSION_EXPECTATION_NOT_APPROVED'))
++        planning.append(item.model_copy(update=dict(actions=actions,
++            disposition='needs_review' if own and not actions else item.disposition)).model_dump())
++    return {op for op, roles in scopes.items() if not roles}, planning, {
++        op: sorted(roles, key=lambda role: role or '') for op, roles in scopes.items()}, pending
+ 
+ 
+ class FocusSelection(StrictModel):
+@@ -491,12 +516,9 @@
+     context["execution_prerequisites"] = [dict(operation_id=p.operation_id,
+         after_operation=policies[key].operation_id) for p in policies.values()
+         for key in p.prerequisite_policy_ids if key in policies]
+-    context["resource_dependencies"] = [dict(operation_id=p.operation_id,
+-        location=r.location, name=r.name, from_operation=policies[r.source_policy_id].operation_id,
+-        from_method=operations[policies[r.source_policy_id].operation_id].method,
+-        selector=r.source_selector, roles=p.roles)
+-        for p in policies.values() if not p.negative for r in p.binding_rules
+-        if r.source_policy_id in policies]
++    from agenttest.requirement_ledger import resource_input_dependencies
++
++    context['resource_dependencies'] = resource_input_dependencies(project)
+     from agenttest.product_checks import check_index
+ 
+     context["approved_checks"] = check_index(project)
+@@ -531,6 +553,12 @@
+         "input_requirements", [])
+     context["unavailable_operations"] = [o for o in (inventory or {}).get("operations", [])
+                                          if o["state"] != "READY"]
++    unavailable = {o['operation_id'] for o in context['unavailable_operations']}
++    # Schema facts for held inputs are separate from approved executable input slots.
++    context['unavailable_input_fields'] = [dict(operation_id=op.operation_id,
++        location='path_parameters' if p['in'] == 'path' else 'query', name=p['name'])
++        for op in project.contract.operations if op.operation_id in unavailable
++        for p in op.parameters if p.get('in') in {'path', 'query'}]
+     from agenttest.boundary_obligations import bind_boundary_actions, boundary_links
+ 
+     if links := boundary_links(project, context):
+--- before/src/agenttest/request_requirements.py
++++ after/src/agenttest/request_requirements.py
+@@ -454,12 +454,15 @@
+         raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_OPERATION_SELECTED')
+     catalog = context.get('response_expectations', {})
+     from agenttest.requirement_ledger import (
++        data_reference_candidates,
++        explicit_data_references,
+         explicit_http_statuses,
+         explicit_response_checks,
+         scoped_read_status,
+     )
+ 
+     text = context.get('user_task', '')
++    data_references = explicit_data_references(text)
+     predicates = {}
+     for entry in explicit_response_checks(text):
+         predicates.setdefault(entry['source_id'], []).append(entry)
+@@ -630,8 +633,11 @@
+             rule['operation_id'] == status_action.operation_id
+             and status_action.role in rule['roles'] and rule['statuses'] == [status['expected']]
+             for rule in context.get('confirmed_response_checks', []))
++        data_gap = any(entry['source_id'] == item.source_id and not data_reference_candidates(
++            entry, requirements, context.get('resource_dependencies', []))
++            for entry in data_references)
+         has_gap = (human_gap or identity_gap or configuration_gap or boundary_gap or predicate_gap
+-                   or status_gap
++                   or status_gap or data_gap
+                    or selection.mode == 'needs_information' and selection.question)
+         if item.disposition == 'needs_review' and not has_gap:
+             # An unresolved clause is not silently accepted as a completed requirement.
+--- before/src/agenttest/requirement_ledger.py
++++ after/src/agenttest/requirement_ledger.py
+@@ -25,6 +25,28 @@
+ _RESPONSE_COUNT = re.compile(
+     r'\s*(?:数量|条数|长度)\s*(?:为|是|[=＝])\s*([0-9]{1,8})\s*(?:条|项)?\s*$')
+ _RESPONSE_VERB = re.compile(r'响应|返回|确认|核对|检查|验证|断言')
++_DATA_PREFIX = re.compile(r'(?:用|使用|将|根据)(?:本次|这次|该|上述|前述)?响应(?:中的?|的)?\s*$')
++_DATA_TAIL = re.compile(r'\s*(?:读取|查询|调用|作为.{0,40}(?:参数|输入|读取|查询))')
++
++
++def explicit_data_references(text):
++    """Recognize bounded response-to-input syntax without granting binding authority."""
++    from agenttest.request_requirements import request_atoms
++
++    entries = []
++    for atom in request_atoms(text):
++        if atom['future_only'] or atom['constraint']:
++            continue
++        source = atom['text']
++        plain = _QUOTED.sub(lambda m: ' ' * len(m.group()), source)
++        for match in _RESPONSE_PATH.finditer(plain):
++            if (_DATA_PREFIX.search(plain[:match.start()])
++                    and _DATA_TAIL.match(plain[match.end():])):
++                entries.append(dict(id=f'data_{len(entries) + 1}', source_id=atom['source_id'],
++                    source_quote=source, start=atom['start'] + match.start(),
++                    end=atom['start'] + match.end(), selector=match.group(), witnesses=[],
++                    status='NEEDS_REVIEW', reason='DATA_SOURCE_NOT_APPROVED'))
++    return entries
+ 
+ 
+ def explicit_response_checks(text):
+@@ -32,6 +54,7 @@
+     from agenttest.request_requirements import request_atoms
+ 
+     entries = []
++    data_offsets = {entry['start'] for entry in explicit_data_references(text)}
+     for atom in request_atoms(text):
+         if atom['future_only'] or atom['constraint']:
+             continue
+@@ -39,6 +62,9 @@
+         plain = _QUOTED.sub(lambda match: ' ' * len(match.group()), source)
+         for match in _RESPONSE_PATH.finditer(plain):
+             prefix, tail = source[:match.start()], source[match.end():]
++            if (atom['start'] + match.start() in data_offsets
++                    and not re.search(r'验证|断言|确认|核对|检查', tail)):
++                continue
+             operator, expected = None, None
+             if re.fullmatch(r'\s*(?:应)?存在\s*', tail):
+                 operator = 'exists'
+@@ -69,6 +95,92 @@
+                 expected=None, witnesses=[], status='NEEDS_REVIEW',
+                 reason='RESPONSE_SELECTOR_UNRESOLVED'))
+     return entries
++
++
++def data_reference_candidates(entry, requirements, dependencies):
++    """Bind the explicit consumer to the immediately preceding sourced producer and roles."""
++    from agenttest.policies import dependency_roles_match
++
++    items = sorted(requirements, key=lambda item: int(item.source_id.removeprefix('request_')))
++    index = next((i for i, item in enumerate(items) if item.source_id == entry['source_id']), -1)
++    if index < 1:
++        return []
++    consumer, producer = items[index], items[index - 1]
++    if (consumer.disposition not in {'required', 'needs_review'}
++            or producer.disposition != 'required'
++            or len(consumer.actions) != 1 or len(producer.actions) != 1):
++        return []
++    use, source = consumer.actions[0], producer.actions[0]
++    return [dict(edge, source_role=source.role, role=use.role) for edge in dependencies
++        if edge['operation_id'] == use.operation_id and use.role in edge.get('roles', ())
++        and edge['from_operation'] == source.operation_id
++        and source.role in edge.get('source_roles', ()) and edge['selector'] == entry['selector']
++        and dependency_roles_match(source.role, use.role, edge['role_relation'])]
++
++
++def resource_input_dependencies(project):
++    policies = {p.id: p for p in project.registry.definitions()}
++    methods = {o.operation_id: o.method for o in project.contract.operations}
++    return [dict(operation_id=p.operation_id, roles=p.roles, policy_id=p.id,
++        location=r.location, name=r.name, selector=r.source_selector,
++        source_policy_id=r.source_policy_id,
++        from_operation=policies[r.source_policy_id].operation_id,
++        from_method=methods[policies[r.source_policy_id].operation_id],
++        source_roles=policies[r.source_policy_id].roles, role_relation=r.role_relation)
++        for p in policies.values() if not p.negative for r in p.binding_rules
++        if r.source_policy_id in policies]
++
++
++def unresolved_data_operations(ledger, selection, project):
++    dependencies = resource_input_dependencies(project)
++    by_source = {item.source_id: item for item in selection.requirements}
++    blocked = set()
++    for entry in ledger:
++        item = by_source[entry['source_id']]
++        candidates = data_reference_candidates(entry, selection.requirements, dependencies)
++        entry['actions'] = [a.model_dump() for a in item.actions]
++        if candidates and item.disposition == 'required':
++            entry.update(status='NOT_EXECUTED', approved_bindings=candidates,
++                         reason='DATA_SOURCE_NOT_EXECUTED')
++        else:
++            operations = {a.operation_id for a in item.actions} | set(item.blocked_operation_ids)
++            if not operations:
++                raise ValidationFailure(Layer.MODEL, 'FOCUS_DATA_SOURCE_SCOPE_MISSING')
++            entry['blocked_operations'] = sorted(operations)
++            blocked.update(operations)
++    return blocked
++
++
++def validate_data_witnesses(design, primary, ledger):
++    """Require the exact approved input reference, never infer or repair a model binding."""
++    for entry in ledger:
++        bindings = [r for r in entry.get('approved_bindings', []) if r['operation_id'] in primary]
++        if not bindings:
++            continue
++        found = False
++        for case in design.cases:
++            steps = {s.id: s for s in case.plan.steps}
++            for step in case.plan.steps:
++                for edge in bindings:
++                    if (step.operation_id != edge['operation_id']
++                            or step.policy_id != edge['policy_id']
++                            or step.role != edge['role']):
++                        continue
++                    for argument in step.arguments:
++                        source = steps.get(argument.from_step)
++                        if (argument.location == edge['location'] and argument.name == edge['name']
++                                and argument.select == entry['selector'] and source is not None
++                                and source.policy_id == edge['source_policy_id']
++                                and source.operation_id == edge['from_operation']
++                                and source.role == edge['source_role']):
++                            found = True
++                            case._data_source_steps.setdefault(entry['id'], []).append(dict(
++                                step_id=step.id, source_step_id=source.id,
++                                operation_id=step.operation_id, policy_id=step.policy_id,
++                                role=step.role, selector=argument.select,
++                                location=argument.location, name=argument.name))
++        if not found:
++            raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_DATA_SOURCE_MISSING')
+ 
+ 
+ def response_predicate_matches(entry, rule):
+@@ -291,6 +403,20 @@
+             entry.pop('reason', None)
+             entry['status'] = next(state for state in (
+                 'ASSERTION_FAILED', 'EXECUTED', 'PASS', 'PLANNED') if state in states)
++    for entry in summary.get('data_references', []):
++        for planned in case_row.get('data_source_steps', {}).get(entry['id'], []):
++            witness = next((w for w in entry['witnesses'] if w['case_id'] == case_row['case_id']
++                            and w['step_id'] == planned['step_id']), None)
++            if witness is None:
++                witness = dict(planned, case_id=case_row['case_id'], status='PLANNED')
++                entry['witnesses'].append(witness)
++            source, consumer = steps.get(witness['source_step_id']), steps.get(witness['step_id'])
++            if report and source and source.attempts and consumer and consumer.attempts:
++                witness.update(status='EXECUTED', run_id=report.run_id)
++        if entry['witnesses']:
++            entry['status'] = ('EXECUTED' if all(w['status'] == 'EXECUTED'
++                for w in entry['witnesses']) else 'PLANNED')
++            entry.pop('reason', None)
+ 
+ 
+ def explicit_assignments(text):
+@@ -331,8 +457,11 @@
+         candidates.update(c['operation_id'] for c in responses.values()
+                           if c.get('select', '').rsplit('.', 1)[-1] == item['name'])
+         entry = dict(**item, candidate_operations=sorted(candidates), status='UNACCOUNTED')
++        held = held_assignment_source(context, selection, item)
+         if item['deferred']:
+             entry['status'] = 'DEFERRED'
++        elif held is not None:
++            entry.update(held, status='NEEDS_REVIEW', reason='OPERATION_NOT_READY')
+         elif not candidates:
+             entry['status'] = 'UNKNOWN_FIELD'
+         else:
+@@ -383,6 +512,31 @@
+     return ledger
+ 
+ 
++def held_assignment_source(context, selection, assignment):
++    """Retain a uniquely sourced unavailable input; never add an executable slot."""
++    from agenttest.request_requirements import request_atoms
++
++    atoms = {a['source_id']: a for a in request_atoms(context['user_task'])}
++    unavailable = {o['operation_id'] for o in context.get('unavailable_operations', [])}
++    candidates = []
++    for requirement in selection.requirements:
++        atom = atoms.get(requirement.source_id)
++        if (requirement.disposition != 'needs_review' or atom is None
++                or requirement.source_quote != atom['text']
++                or not atom['start'] <= assignment['start'] < assignment['end'] <= atom['end']):
++            continue
++        blocked = unavailable & set(selection.blocked_operation_ids) & set(
++            requirement.blocked_operation_ids)
++        candidates.extend(dict(source_id=requirement.source_id, **field)
++            for field in context.get('unavailable_input_fields', [])
++            if field['operation_id'] in blocked and field['name'] == assignment['name'])
++    if len(candidates) != 1:
++        return None
++    field = candidates[0]
++    return dict(source_id=field['source_id'], operation_id=field['operation_id'],
++                location=field['location'], candidate_operations=[field['operation_id']])
++
++
+ def validate_assignment_coverage(context, selection):
+     ledger = reconcile_assignments(context, selection)
+     if any(item['status'] in {'UNACCOUNTED', 'UNKNOWN_FIELD'} for item in ledger):
+--- before/src/agenttest/product_tasks.py
++++ after/src/agenttest/product_tasks.py
+@@ -14,9 +14,11 @@
+ from agenttest.product_design import design_groups, propose_design, validate_design_case
+ from agenttest.report import ModelCallStats, Outcome, fingerprint
+ from agenttest.requirement_ledger import (
++    explicit_data_references,
+     explicit_http_statuses,
+     explicit_response_checks,
+     record_requirement_evidence,
++    unresolved_data_operations,
+     unresolved_http_status_operations,
+     unresolved_response_operations,
+ )
+@@ -181,6 +183,7 @@
+                     if (context.get("current_request", text) != DEFAULT_ROUND
+                             and svc.focus_factory is not None):
+                         from agenttest.product_focus import (
++                            permission_review_scope,
+                             review_only_operations,
+                             rule_review_scope,
+                             select_focus,
+@@ -192,6 +195,9 @@
+                         response_requirements = explicit_response_checks(context["current_request"])
+                         if response_requirements:
+                             summary["response_requirements"] = response_requirements
++                        data_references = explicit_data_references(context['current_request'])
++                        if data_references:
++                            summary['data_references'] = data_references
+                         raw_focus = svc.focus_factory(project)
+                         focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
+                                                     ledger, guard)
+@@ -278,10 +284,18 @@
+                             pending_only.difference_update(selection.normal_operation_ids,
+                                 (check_operations[c['policy_id']] for c in executable_checks))
+                             rule_reads, rule_logins = rule_review_scope(project, selection)
++                            permission_blocked, planning_requirements, action_scope, holds = (
++                                permission_review_scope(selection))
++                            summary['planning_requirements'] = planning_requirements
++                            summary['permission_action_scope'] = action_scope
++                            if holds:
++                                summary['permission_requirements'] = holds
+                             response_blocked = unresolved_response_operations(response_requirements,
+                                 selection, project, executable_checks)
+                             status_blocked = unresolved_http_status_operations(
+                                 status_requirements, selection, project)
++                            data_blocked = unresolved_data_operations(data_references,
++                                                                     selection, project)
+                             if rule_reads:
+                                 summary['expectation_blocked_operations'] = sorted(
+                                     rule_reads | rule_logins)
+@@ -289,6 +303,8 @@
+                                 operation_ids=[*selection.source_conflicts, *pending_only,
+                                                *rule_reads, *rule_logins, *response_blocked,
+                                                *status_blocked,
++                                               *permission_blocked,
++                                               *data_blocked,
+                                                *review_only_operations(selection)],
+                                 requirement_links=selection.requirements)
+                             summary["input_blocked_operations"] = blocked_inputs
+@@ -374,7 +390,8 @@
+                                               summary=summary)
+                             return
+                         if selection.mode == 'no_current_action':
+-                            unresolved = status_requirements or response_requirements
++                            unresolved = (status_requirements or response_requirements
++                                          or data_references)
+                             summary.update(complete=not unresolved,
+                                 checks_passed=False,
+                                 reason='本轮仅包含未来动作或范围约束，没有安排当前业务请求。',
+@@ -453,8 +470,10 @@
+                                 input_requirements=summary.get("focus", {}).get(
+                                     "input_requirements", []),
+                                 requested_checks=executable_checks,
+-                                request_requirements=summary.get('focus', {}).get(
+-                                    'requirements', []),
++                                request_requirements=summary.get('planning_requirements',
++                                    summary.get('focus', {}).get('requirements', [])),
++                                permission_action_scope=summary.get('permission_action_scope'),
++                                data_references=summary.get('data_references', []),
+                                 http_status_requirements=summary.get(
+                                     'http_status_requirements', []),
+                                 response_requirements=summary.get('response_requirements', []),
+@@ -563,6 +582,8 @@
+                                 case_row['http_status_steps'] = case._http_status_steps
+                             if case._response_steps:
+                                 case_row['response_steps'] = case._response_steps
++                            if case._data_source_steps:
++                                case_row['data_source_steps'] = case._data_source_steps
+                             record_requirement_evidence(summary, case_row)
+                             summary["cases"].append(case_row)
+                             checkpoint()
+@@ -691,7 +712,8 @@
+                     for c in summary["cases"]
+                 ) and not summary["questions"] and not summary["not_covered"] and all(
+                     g.get("status") in {"DESIGNED", "OUTSIDE_FOCUS"} for g in summary["groups"]
+-                ) and status_states <= {'PASS', 'ASSERTION_FAILED'}
++                ) and status_states <= {'PASS', 'ASSERTION_FAILED'} and all(
++                    entry['status'] == 'EXECUTED' for entry in summary.get('data_references', []))
+                 summary["checks_passed"] = bool(summary["cases"]) and all(
+                     c.get("outcome") == "PASS" for c in summary["cases"]
+                 ) and status_states <= {'PASS'}
+@@ -796,6 +818,13 @@
+         reasons.update({op: "原文指定的 HTTP 状态码缺少已确认的断言；该读取暂停。"
+                         for item in summary.get('http_status_requirements', [])
+                         for op in item.get('blocked_operations', [])})
++        reasons.update({op: "原文指定的数据来源与已批准的接口、身份或字段绑定不一致；相关读取暂停。"
++                        for item in summary.get('data_references', [])
++                        for op in item.get('blocked_operations', [])})
++        reasons.update({item['operation_id']: "该原文分项的身份权限预期待确认；不能用其他身份代替。"
++                        for item in summary.get('permission_requirements', [])
++                        if not summary.get('permission_action_scope', {}).get(
++                            item['operation_id'])})
+         messages = dict(MODEL_TIMEOUT="模型生成方案时超时，此组没有执行。",
+             MODEL_INVALID_RESPONSE="模型方案未通过格式校验，此组没有执行。",
+             MODEL_TOKEN_BUDGET="本组资料超过模型输入预算，未发送模型或业务请求。",
+--- before/src/agenttest/product_design.py
++++ after/src/agenttest/product_design.py
+@@ -26,6 +26,7 @@
+     plan: GenericPlannerDraft
+     _http_status_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
+     _response_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
++    _data_source_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
+ 
+     @model_validator(mode="after")
+     def nonempty(self):
+@@ -525,7 +526,8 @@
+                          requested_checks=(), handled_questions=(), pending_negative_values=(),
+                          allow_new_questions=True, normal_operation_ids=(),
+                          allow_optional_negatives=True, request_requirements=(),
+-                         http_status_requirements=(), response_requirements=()):
++                         http_status_requirements=(), response_requirements=(),
++                         permission_action_scope=None, data_references=()):
+     context = design_context(project, text, group, remaining_requests, inventory_total)
+     if task_context:
+         context["user_task"] = task_context.get("current_request", text)
+@@ -536,6 +538,15 @@
+     context["selected_for_current_focus"] = must_be_relevant
+     context["allow_new_questions"] = allow_new_questions
+     context['request_requirements'] = list(request_requirements)
++    permission_action_scope = permission_action_scope or {}
++    for policy in context['policies']:
++        if policy['operation_id'] in permission_action_scope:
++            policy['roles'] = [role for role in policy['roles']
++                              if role in permission_action_scope[policy['operation_id']]]
++    context['policies'] = [p for p in context['policies'] if p['roles']]
++    scoped_ids = {p['id'] for p in context['policies']}
++    for key in ('confirmed_rules', 'confirmed_access_rules', 'approved_negative_expectations'):
++        context[key] = [p for p in context[key] if p['policy_id'] in scoped_ids]
+     for requirement in request_requirements:
+         if requirement['disposition'] != 'required':
+             continue
+@@ -646,6 +657,10 @@
+                 raise ValueError("DESIGN_UNAPPROVED_NEGATIVE_VALUE")
+             if not set(s.operation_id for s in scenario.steps) <= allowed:
+                 raise ValueError("DESIGN_OPERATION_OUTSIDE_GROUP")
++            if any(s.operation_id in permission_action_scope
++                   and s.role not in permission_action_scope[s.operation_id]
++                   for s in scenario.steps):
++                raise ValidationFailure(Layer.MODEL, 'DESIGN_PERMISSION_SCOPE_NOT_REQUESTED')
+             if len(scenario.steps) > remaining_requests:
+                 raise ValueError("DESIGN_STEP_BUDGET_EXCEEDED")
+         coalesce_read_cases(project, design, context['user_task'], request_requirements,
+@@ -669,6 +684,7 @@
+             validate_plan_requirements,
+         )
+         from agenttest.requirement_ledger import (
++            validate_data_witnesses,
+             validate_http_status_witnesses,
+             validate_response_witnesses,
+         )
+@@ -683,6 +699,7 @@
+                                        context['requested_checks'])
+         validate_response_witnesses(design, group['primary'], source_requirements,
+                                     response_requirements, policies, context['requested_checks'])
++        validate_data_witnesses(design, group['primary'], data_references)
+         operations = {s.operation_id for c in design.cases for s in c.plan.steps}
+         if (must_be_relevant and set(group["primary"]) - operations
+                 and not design.questions and not design.not_covered):
+--- before/tests/test_product_focus.py
++++ after/tests/test_product_focus.py
+@@ -430,7 +430,8 @@
+         async def generate(self, context):
+             assert context["resource_dependencies"] == [dict(operation_id="readExport",
+                 location="path_parameters", name="id", from_operation="readHeader",
+-                from_method="GET", selector="$.id", roles=[None])]
++                from_method="GET", selector="$.id", roles=[None], policy_id='web_rule_2',
++                source_policy_id='web_rule_1', source_roles=[None], role_relation='anonymous')]
+             assert context["input_fields"][0]["source_dependency"]
+             return FocusSelection(interpretation="先查询已确认报表，再用响应编号导出。",
+                 mode="selected",

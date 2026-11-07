@@ -26,6 +26,7 @@ class DesignCase(StrictModel):
     plan: GenericPlannerDraft
     _http_status_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
     _response_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
+    _data_source_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
 
     @model_validator(mode="after")
     def nonempty(self):
@@ -525,7 +526,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          requested_checks=(), handled_questions=(), pending_negative_values=(),
                          allow_new_questions=True, normal_operation_ids=(),
                          allow_optional_negatives=True, request_requirements=(),
-                         http_status_requirements=(), response_requirements=()):
+                         http_status_requirements=(), response_requirements=(),
+                         permission_action_scope=None, data_references=()):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -536,6 +538,15 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
     context["selected_for_current_focus"] = must_be_relevant
     context["allow_new_questions"] = allow_new_questions
     context['request_requirements'] = list(request_requirements)
+    permission_action_scope = permission_action_scope or {}
+    for policy in context['policies']:
+        if policy['operation_id'] in permission_action_scope:
+            policy['roles'] = [role for role in policy['roles']
+                              if role in permission_action_scope[policy['operation_id']]]
+    context['policies'] = [p for p in context['policies'] if p['roles']]
+    scoped_ids = {p['id'] for p in context['policies']}
+    for key in ('confirmed_rules', 'confirmed_access_rules', 'approved_negative_expectations'):
+        context[key] = [p for p in context[key] if p['policy_id'] in scoped_ids]
     for requirement in request_requirements:
         if requirement['disposition'] != 'required':
             continue
@@ -646,6 +657,10 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                 raise ValueError("DESIGN_UNAPPROVED_NEGATIVE_VALUE")
             if not set(s.operation_id for s in scenario.steps) <= allowed:
                 raise ValueError("DESIGN_OPERATION_OUTSIDE_GROUP")
+            if any(s.operation_id in permission_action_scope
+                   and s.role not in permission_action_scope[s.operation_id]
+                   for s in scenario.steps):
+                raise ValidationFailure(Layer.MODEL, 'DESIGN_PERMISSION_SCOPE_NOT_REQUESTED')
             if len(scenario.steps) > remaining_requests:
                 raise ValueError("DESIGN_STEP_BUDGET_EXCEEDED")
         coalesce_read_cases(project, design, context['user_task'], request_requirements,
@@ -669,6 +684,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
             validate_plan_requirements,
         )
         from agenttest.requirement_ledger import (
+            validate_data_witnesses,
             validate_http_status_witnesses,
             validate_response_witnesses,
         )
@@ -683,6 +699,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                                        context['requested_checks'])
         validate_response_witnesses(design, group['primary'], source_requirements,
                                     response_requirements, policies, context['requested_checks'])
+        validate_data_witnesses(design, group['primary'], data_references)
         operations = {s.operation_id for c in design.cases for s in c.plan.steps}
         if (must_be_relevant and set(group["primary"]) - operations
                 and not design.questions and not design.not_covered):
