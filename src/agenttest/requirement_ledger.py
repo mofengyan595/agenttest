@@ -25,12 +25,18 @@ _RESPONSE_EQUAL = re.compile(r'\s*(?:==?|＝|等于|应为)\s*(.+?)\s*$')
 _RESPONSE_COUNT = re.compile(
     r'\s*(?:数量|条数|长度)\s*(?:为|是|[=＝])\s*([0-9]{1,8})\s*(?:条|项)?\s*$')
 _RESPONSE_VERB = re.compile(r'响应|返回|确认|核对|检查|验证|断言')
-_DATA_PREFIX = re.compile(r'(?:用|使用|将|根据)(?:本次|这次|该|上述|前述)?响应(?:中的?|的)?\s*$')
-_DATA_TAIL = re.compile(r'\s*(?:读取|查询|调用|作为.{0,40}(?:参数|输入|读取|查询))')
+_DATA_PREFIX = re.compile(r'(?:用|使用|将|根据|依据)[^，；。$]{0,24}响应(?:中的?|的)?\s*$')
+_CHECK_VERB = re.compile(r'验证|断言|确认|核对|检查')
+_PREDICATE_TAIL = re.compile(r'\s*(?:[=＝]|等于|应|存在|非空|不为空|数量|条数|长度)')
 
 
 def explicit_data_references(text):
-    """Recognize bounded response-to-input syntax without granting binding authority."""
+    """Extract transfer candidates, independent of consumer verb vocabulary.
+
+    The source expression and selector identify a possible transfer, not an assertion
+    or approval. Only an exact, unambiguous producer/consumer policy edge can authorize
+    it below; the final plan and executed response must also witness that binding.
+    """
     from agenttest.request_requirements import request_atoms
 
     entries = []
@@ -40,8 +46,9 @@ def explicit_data_references(text):
         source = atom['text']
         plain = _QUOTED.sub(lambda m: ' ' * len(m.group()), source)
         for match in _RESPONSE_PATH.finditer(plain):
-            if (_DATA_PREFIX.search(plain[:match.start()])
-                    and _DATA_TAIL.match(plain[match.end():])):
+            prefix, tail = plain[:match.start()], plain[match.end():]
+            if (_DATA_PREFIX.search(prefix) and not _CHECK_VERB.search(prefix)
+                    and tail.strip() and not _PREDICATE_TAIL.match(tail)):
                 entries.append(dict(id=f'data_{len(entries) + 1}', source_id=atom['source_id'],
                     source_quote=source, start=atom['start'] + match.start(),
                     end=atom['start'] + match.end(), selector=match.group(), witnesses=[],
@@ -111,11 +118,13 @@ def data_reference_candidates(entry, requirements, dependencies):
             or len(consumer.actions) != 1 or len(producer.actions) != 1):
         return []
     use, source = consumer.actions[0], producer.actions[0]
-    return [dict(edge, source_role=source.role, role=use.role) for edge in dependencies
+    candidates = [dict(edge, source_role=source.role, role=use.role) for edge in dependencies
         if edge['operation_id'] == use.operation_id and use.role in edge.get('roles', ())
         and edge['from_operation'] == source.operation_id
         and source.role in edge.get('source_roles', ()) and edge['selector'] == entry['selector']
         and dependency_roles_match(source.role, use.role, edge['role_relation'])]
+    # Multiple possible input slots or policies are not permission to choose one silently.
+    return candidates if len(candidates) == 1 else []
 
 
 def resource_input_dependencies(project):
@@ -127,8 +136,11 @@ def resource_input_dependencies(project):
         from_operation=policies[r.source_policy_id].operation_id,
         from_method=methods[policies[r.source_policy_id].operation_id],
         source_roles=policies[r.source_policy_id].roles, role_relation=r.role_relation)
-        for p in policies.values() if not p.negative for r in p.binding_rules
-        if r.source_policy_id in policies]
+        for p in policies.values() if not p.negative and p.assertions.reviewed
+        and p.assertions.source.strip() for r in p.binding_rules
+        if r.source_policy_id in policies and not policies[r.source_policy_id].negative
+        and policies[r.source_policy_id].assertions.reviewed
+        and policies[r.source_policy_id].assertions.source.strip()]
 
 
 def unresolved_data_operations(ledger, selection, project):

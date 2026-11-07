@@ -1,0 +1,6 @@
+{
+  "src/agenttest/product_focus.py": "a16002df72c2cbb12655d5e6a4de49f85f638764782550d769ac9cc34dd85696",
+  "src/agenttest/request_requirements.py": "e7ed1ea5a94814c907f10a5283ccdffce4d270e502b07c264272b808244e900c",
+  "src/agenttest/requirement_ledger.py": "a3d5e18120a6afd3d817eabf7443f50e6c540645b0bdd9d3f13aa6022fc8f0a3",
+  "tests/test_mixed_planning_c02_c03.py": "91e123f85970158d677a2c13b897f6af4f5a6e9d0d7be2714a834ca2c174fe6e"
+}

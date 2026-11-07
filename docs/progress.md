@@ -3423,3 +3423,21 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 两个失败均为 `Source changed during slot check`，由本轮证据提交在全量套件运行期间改变 HEAD 引起，
 在稳定 HEAD `477a995` 上单独复跑 2 passed。`ruff check src tests` 全过；仓库未以 `ruff format`
 作为门禁（全仓 301/320 文件不符合），故沿用 lint 门禁。无产品相关失败。
+
+
+## C02 / C03 确定性修复（2026-11-07）
+
+从干净 HEAD `77effe8` 开始，保留 B12/B10，完成权限询问与执行动作分离、同接口不同身份指代，以及受约束的响应到输入识别。新增 37 项正反例，首次 10 failed / 2 passed 的确定性失败证据保留。
+
+| 最终批次 | 实际结果 | Pytest 时间 |
+| --- | --- | --- |
+| 相关回归 | 340 passed / 0 skipped / 0 failed | 255.69 秒 |
+| 安全回归 | 116 passed / 0 skipped / 0 failed | 38.12 秒 |
+| 固定回归及导出审计 | 48 passed / 0 skipped / 0 failed | 24.45 秒 |
+| 全量回归 | 2368 passed / 15 skipped / 0 failed | 3530.54 秒 |
+
+相关、安全、固定批次使用项目 `.venv/Scripts/python.exe -m pytest -q`；全量使用已有 `scripts/check_full.py --jobs 4`，默认收集全套测试，逐 ID 核对收集与实际终态、遗漏、重复、退出码及源码摘要。全量表中为各进程 Pytest 时间合计，实际墙钟见验证清单。相关批次指定需求、来源、聚焦、设计、计划构造及任务测试，安全批次指定 SSRF/执行器/负例/取消/敏感字段测试，固定批次包含 `examples/regressions` 及导出/回放审计。完整参数和原始结果见 [验证清单](evidence/mixed-planning-c02-c03-20261107/verification.json)及同目录的四份 `*-verification.json`。`ruff check .` 和 `git diff --check` 已通过。
+
+全量跳过原因：Windows symlink privilege unavailable（2 项）；could not import 'schemathesis': No module named 'schemathesis'（1 项）；POSIX link semantics（1 项）；POSIX directory replacement semantics（1 项）；POSIX FIFO semantics（1 项）；POSIX nofollow/dir_fd semantics（1 项）；Symlink creation unavailable: 1314（7 项）；OS does not grant symlink creation（1 项）。
+
+最终各批次 HEAD 与正式文件摘要均不变；历史 54 个证据文件摘要保持一致。未调用付费模型、未访问真实业务目标、未改 CourseInsight。详见 [修复报告](mixed-planning-c02-c03-20261107.md)。下一准确里程碑：按 [12 条全新需求方案](mixed-planning-c02-c03-ab-plan-20261107.md) 完成隔离只读夹具和评分器预检，封印后另行确认真实 A/B 执行。

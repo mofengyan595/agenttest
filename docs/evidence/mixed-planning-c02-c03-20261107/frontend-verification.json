@@ -1,0 +1,22 @@
+{
+  "command": [
+    "node",
+    "web/node_modules/typescript/bin/tsc",
+    "--project",
+    "web/tsconfig.json",
+    "--noEmit"
+  ],
+  "exit_code": 0,
+  "output": "",
+  "before": {
+    "head": "77effe8db742419c7256509bafbd417562d40f71",
+    "digest": "edab58b73a006cd36f1c376cebea66ce4fefdb8aaff3758cf855787158b93945"
+  },
+  "after": {
+    "head": "77effe8db742419c7256509bafbd417562d40f71",
+    "digest": "edab58b73a006cd36f1c376cebea66ce4fefdb8aaff3758cf855787158b93945"
+  },
+  "source_unchanged": true,
+  "type_file_sha256": "da847370d8a1cb28aca6b1018546c9d40beec0c344177ff51a2e2f703f9bab17",
+  "timing": "Frontend type-only alignment after completed Python full regression; Python unchanged"
+}

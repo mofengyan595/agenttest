@@ -1,0 +1,134 @@
+{
+  "start_head": "77effe8db742419c7256509bafbd417562d40f71",
+  "checkout_unchanged_during_each_suite": true,
+  "full_checkout_sha256": "a6502c5cfe3025965f56c31c990500686a5a74c0c029476e42a7654beb06aba0",
+  "historical_files_unchanged": 54,
+  "new_real_model_calls": 0,
+  "new_real_target_requests": 0,
+  "real_business_writes": 0,
+  "evidence": {
+    "red": {
+      "original_sha256": "94c2821676366808225df4a426e9cfe9873ebc6d33c8e206aae66b81a7e3d94f",
+      "public_sha256": "e22163b2d803c94ca2d8357b9a280cff0da477fc499cda20adc3ea2198e57efc",
+      "result": {
+        "tests": 12.0,
+        "failures": 10.0,
+        "errors": 0.0,
+        "skipped": 0.0,
+        "time": 15.934
+      }
+    },
+    "same-clause-red": {
+      "original_sha256": "e3a93d4687602c501d4ba988ae0f1f7e40eb569da50966b25bdab96857b13cbe",
+      "public_sha256": "fd2ee3458dfa01299cc7e06c70a2884f5d9393f3a11b5707f20e9ebca866c6dc",
+      "result": {
+        "tests": 4.0,
+        "failures": 2.0,
+        "errors": 0.0,
+        "skipped": 0.0,
+        "time": 3.82
+      }
+    },
+    "related": {
+      "original_sha256": "8abe088f3da085757ff59d6fc4f107fcc97cb8c4bb94cb20474e315f34296724",
+      "public_sha256": "625a896121b5017f0dc7d3d843aadc5a2dbbb7f00781000879f10da261e60dcf",
+      "result": {
+        "tests": 340.0,
+        "failures": 0.0,
+        "errors": 0.0,
+        "skipped": 0.0,
+        "time": 255.695
+      }
+    },
+    "safety": {
+      "original_sha256": "11b487c466af5bb2ad26dd243e4225fe9c8b962ea2ac923b04dfe3aa1efb8122",
+      "public_sha256": "0e0d6dbd0a1d8a712a179d1bacdc1cebdca0687266e224ece159529f600e7d7e",
+      "result": {
+        "tests": 116.0,
+        "failures": 0.0,
+        "errors": 0.0,
+        "skipped": 0.0,
+        "time": 38.122
+      }
+    },
+    "fixed": {
+      "original_sha256": "f4f4aa21623f9e7eaa0ae3ba4aebaa887e6b8fbb8cbc03c34980a90294131c2e",
+      "public_sha256": "cb5b3394e887257659eaf3b54484b6f1883c16737ca9a8cbbe2d890e389d9b4e",
+      "result": {
+        "tests": 48.0,
+        "failures": 0.0,
+        "errors": 0.0,
+        "skipped": 0.0,
+        "time": 24.453
+      }
+    },
+    "full": {
+      "original_sha256": "54144b27431703e518fae783601511aa6cc7e4f8020462b2aaad4712d6ccd39b",
+      "public_sha256": "43639ee2b22a62028fc52001025c66f006f5129f6ca3c6d7bb660f93fd7c3985",
+      "result": {
+        "tests": 2383.0,
+        "failures": 0.0,
+        "errors": 0.0,
+        "skipped": 15.0,
+        "time": 3530.54
+      }
+    }
+  },
+  "full_skip_reasons": {
+    "Windows symlink privilege unavailable": 2,
+    "could not import 'schemathesis': No module named 'schemathesis'": 1,
+    "POSIX link semantics": 1,
+    "POSIX directory replacement semantics": 1,
+    "POSIX FIFO semantics": 1,
+    "POSIX nofollow/dir_fd semantics": 1,
+    "Symlink creation unavailable: 1314": 7,
+    "OS does not grant symlink creation": 1
+  },
+  "interrupted_full_run": {
+    "reason": "Additional same-clause C02 review/action counterexample; not a completed regression",
+    "log_sha256": "96e8c8364d79712752e20de5b0c0a52a7f59d0f4137b74cb1abfa0f29ec958bd"
+  },
+  "concurrent_workspace_change": {
+    "related_tests_passed": 340,
+    "frozen_checkout_check_passed": false,
+    "reason": "README/progress/performance documentation changed during the suite; operator paused the other task and requested preservation and exclusion from this commit"
+  },
+  "preserved_foreign_workspace_files": {
+    "README.md": "41a6219de95ebed6423e5171a0f51af77538b857fa1dd21d440a2d4fed874250",
+    "docs/progress.md": "fda9436a87dddb624512b1f69a27da31f65cd27ca8a2fb11fcaaf64b1b38f352",
+    "docs/validation-performance.md": "d23db673897d71e248c6c336c8296c01010afa484bbbc8dd8a0360edc5d7cdfc",
+    "src/agenttest/report_files.py": "bfc838bb2083f41154ebeaedba70c53ccff4ec7fb3d786bc8150c07115e2fc03",
+    "tests/test_report_publication.py": "8203ac5a62259108f170118a900a1e22481804d7ee4ef4ab7b294edc3e7f8252"
+  },
+  "frontend_typecheck_after_python_full": {
+    "command": [
+      "node",
+      "web/node_modules/typescript/bin/tsc",
+      "--project",
+      "web/tsconfig.json",
+      "--noEmit"
+    ],
+    "exit_code": 0,
+    "output": "",
+    "before": {
+      "head": "77effe8db742419c7256509bafbd417562d40f71",
+      "digest": "edab58b73a006cd36f1c376cebea66ce4fefdb8aaff3758cf855787158b93945"
+    },
+    "after": {
+      "head": "77effe8db742419c7256509bafbd417562d40f71",
+      "digest": "edab58b73a006cd36f1c376cebea66ce4fefdb8aaff3758cf855787158b93945"
+    },
+    "source_unchanged": true,
+    "type_file_sha256": "da847370d8a1cb28aca6b1018546c9d40beec0c344177ff51a2e2f703f9bab17",
+    "timing": "Frontend type-only alignment after completed Python full regression; Python unchanged"
+  },
+  "sensitive_check": {
+    "passed": true,
+    "findings": [],
+    "checks": [
+      "sensitive_paths",
+      "high_confidence_token_patterns",
+      "local_configured_secret_values"
+    ]
+  }
+}

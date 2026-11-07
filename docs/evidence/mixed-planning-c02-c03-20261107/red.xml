@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="12" time="15.934" timestamp="2026-11-07T17:10:55.849387+08:00" hostname="[local]"><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_question_without_reviewer_action_preserves_independent_read[True-required]" time="0.662"><failure message="AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}&#10;assert 'NEEDS_REVIEW' == 'FINISHED'&#10;  &#10;  - FINISHED&#10;  + NEEDS_REVIEW">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c02_question_without_revi0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B8523490&gt;
+disposition = 'required', anonymous = True
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    @pytest.mark.parametrize('anonymous', [True, False])
+    async def test_c02_question_without_reviewer_action_preserves_independent_read(
+            tmp_path, monkeypatch, disposition, anonymous):
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, permission=True,
+                                        disposition=disposition, anonymous=anonymous)
+&gt;       assert done['status'] == 'FINISHED', done['summary']
+E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}
+E       assert 'NEEDS_REVIEW' == 'FINISHED'
+E         
+E         - FINISHED
+E         + NEEDS_REVIEW
+
+tests\test_mixed_planning_c02_c03.py:117: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_question_without_reviewer_action_preserves_independent_read[True-needs_review]" time="0.409"><failure message="AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}&#10;assert 'NEEDS_REVIEW' == 'FINISHED'&#10;  &#10;  - FINISHED&#10;  + NEEDS_REVIEW">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c02_question_without_revi1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B8597410&gt;
+disposition = 'needs_review', anonymous = True
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    @pytest.mark.parametrize('anonymous', [True, False])
+    async def test_c02_question_without_reviewer_action_preserves_independent_read(
+            tmp_path, monkeypatch, disposition, anonymous):
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, permission=True,
+                                        disposition=disposition, anonymous=anonymous)
+&gt;       assert done['status'] == 'FINISHED', done['summary']
+E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}
+E       assert 'NEEDS_REVIEW' == 'FINISHED'
+E         
+E         - FINISHED
+E         + NEEDS_REVIEW
+
+tests\test_mixed_planning_c02_c03.py:117: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_question_without_reviewer_action_preserves_independent_read[False-required]" time="0.412"><failure message="AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}&#10;assert 'NEEDS_REVIEW' == 'FINISHED'&#10;  &#10;  - FINISHED&#10;  + NEEDS_REVIEW">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c02_question_without_revi2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B857BCD0&gt;
+disposition = 'required', anonymous = False
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    @pytest.mark.parametrize('anonymous', [True, False])
+    async def test_c02_question_without_reviewer_action_preserves_independent_read(
+            tmp_path, monkeypatch, disposition, anonymous):
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, permission=True,
+                                        disposition=disposition, anonymous=anonymous)
+&gt;       assert done['status'] == 'FINISHED', done['summary']
+E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}
+E       assert 'NEEDS_REVIEW' == 'FINISHED'
+E         
+E         - FINISHED
+E         + NEEDS_REVIEW
+
+tests\test_mixed_planning_c02_c03.py:117: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_question_without_reviewer_action_preserves_independent_read[False-needs_review]" time="0.389"><failure message="AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}&#10;assert 'NEEDS_REVIEW' == 'FINISHED'&#10;  &#10;  - FINISHED&#10;  + NEEDS_REVIEW">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c02_question_without_revi3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B85A6010&gt;
+disposition = 'needs_review', anonymous = False
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    @pytest.mark.parametrize('anonymous', [True, False])
+    async def test_c02_question_without_reviewer_action_preserves_independent_read(
+            tmp_path, monkeypatch, disposition, anonymous):
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, permission=True,
+                                        disposition=disposition, anonymous=anonymous)
+&gt;       assert done['status'] == 'FINISHED', done['summary']
+E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}
+E       assert 'NEEDS_REVIEW' == 'FINISHED'
+E         
+E         - FINISHED
+E         + NEEDS_REVIEW
+
+tests\test_mixed_planning_c02_c03.py:117: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_cannot_execute_reviewer_with_public_policy" time="0.412" /><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_response_to_input_is_bound_to_actual_response[\u968f\u540e\u7528\u8be5\u54cd\u5e94\u4e2d\u7684 $.link.id \u6253\u5f00\u76f8\u5e94\u72b6\u6001]" time="3.149"><failure message="AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]&#10;  &#10;  Right contains one more item: ('/status/7', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c03_response_to_input_is_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B859E590&gt;
+wording = '随后用该响应中的 $.link.id 打开相应状态'
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('wording', [
+        '随后用该响应中的 $.link.id 打开相应状态',
+        '随后将该响应中的 $.link.id 交给状态接口作为入参',
+        '依据该响应中的 $.link.id 获取对应状态',
+    ])
+    async def test_c03_response_to_input_is_bound_to_actual_response(tmp_path, monkeypatch, wording):
+        done, sent, _, text = await run_case(tmp_path, monkeypatch, wording=wording)
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
+E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
+E         
+E         Right contains one more item: ('/status/7', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_c02_c03.py:145: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_response_to_input_is_bound_to_actual_response[\u968f\u540e\u5c06\u8be5\u54cd\u5e94\u4e2d\u7684 $.link.id \u4ea4\u7ed9\u72b6\u6001\u63a5\u53e3\u4f5c\u4e3a\u5165\u53c2]" time="1.803"><failure message="AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]&#10;  &#10;  Right contains one more item: ('/status/7', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c03_response_to_input_is_1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B8506850&gt;
+wording = '随后将该响应中的 $.link.id 交给状态接口作为入参'
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('wording', [
+        '随后用该响应中的 $.link.id 打开相应状态',
+        '随后将该响应中的 $.link.id 交给状态接口作为入参',
+        '依据该响应中的 $.link.id 获取对应状态',
+    ])
+    async def test_c03_response_to_input_is_bound_to_actual_response(tmp_path, monkeypatch, wording):
+        done, sent, _, text = await run_case(tmp_path, monkeypatch, wording=wording)
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
+E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
+E         
+E         Right contains one more item: ('/status/7', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_c02_c03.py:145: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_response_to_input_is_bound_to_actual_response[\u4f9d\u636e\u8be5\u54cd\u5e94\u4e2d\u7684 $.link.id \u83b7\u53d6\u5bf9\u5e94\u72b6\u6001]" time="1.756"><failure message="AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]&#10;  &#10;  Right contains one more item: ('/status/7', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c03_response_to_input_is_2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B8520790&gt;
+wording = '依据该响应中的 $.link.id 获取对应状态'
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('wording', [
+        '随后用该响应中的 $.link.id 打开相应状态',
+        '随后将该响应中的 $.link.id 交给状态接口作为入参',
+        '依据该响应中的 $.link.id 获取对应状态',
+    ])
+    async def test_c03_response_to_input_is_bound_to_actual_response(tmp_path, monkeypatch, wording):
+        done, sent, _, text = await run_case(tmp_path, monkeypatch, wording=wording)
+        assert done['status'] == 'FINISHED', done['summary']
+&gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
+E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
+E         
+E         Right contains one more item: ('/status/7', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_c02_c03.py:145: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_unknown_source_and_wrong_runtime_binding_are_held[selector]" time="1.976"><failure message="KeyError: 'data_references'">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c03_unknown_source_and_wr0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B9067390&gt;
+fault = 'selector'
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('fault', ['selector', 'binding'])
+    async def test_c03_unknown_source_and_wrong_runtime_binding_are_held(tmp_path, monkeypatch, fault):
+        wording = '随后用该响应中的 $.unknown.id 打开相应状态' if fault == 'selector' else (
+            '随后用该响应中的 $.link.id 打开相应状态')
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, wording=wording,
+                                        bad_binding=fault == 'binding')
+        assert not done['summary']['complete']
+        assert sent == ([('/detail/2', False)] if fault == 'selector' else [])
+        if fault == 'selector':
+&gt;           entry, = done['summary']['data_references']
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'data_references'
+
+tests\test_mixed_planning_c02_c03.py:164: KeyError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_unknown_source_and_wrong_runtime_binding_are_held[binding]" time="1.712"><failure message="AssertionError: assert [('/detail/2', False)] == []&#10;  &#10;  Left contains one more item: ('/detail/2', False)&#10;  Use -v to get more diff">tmp_path = WindowsPath('[repo]/runs/c02-c03-tmp-red3/test_c03_unknown_source_and_wr1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001E4B90875D0&gt;
+fault = 'binding'
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('fault', ['selector', 'binding'])
+    async def test_c03_unknown_source_and_wrong_runtime_binding_are_held(tmp_path, monkeypatch, fault):
+        wording = '随后用该响应中的 $.unknown.id 打开相应状态' if fault == 'selector' else (
+            '随后用该响应中的 $.link.id 打开相应状态')
+        done, sent, _, _ = await run_case(tmp_path, monkeypatch, wording=wording,
+                                        bad_binding=fault == 'binding')
+        assert not done['summary']['complete']
+&gt;       assert sent == ([('/detail/2', False)] if fault == 'selector' else [])
+E       AssertionError: assert [('/detail/2', False)] == []
+E         
+E         Left contains one more item: ('/detail/2', False)
+E         Use -v to get more diff
+
+tests\test_mixed_planning_c02_c03.py:162: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_missing_action_witness_is_only_exempt_for_sourced_permission_question" time="0.001"><failure message="agenttest.diagnostics.ValidationFailure: FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION">def test_c02_missing_action_witness_is_only_exempt_for_sourced_permission_question():
+        text = '请确认 reviewer 访问版本接口时应当返回 403 还是 404'
+        context = ctx(text)
+        context.update(approved_ids=['version'], resource_dependencies=[],
+            managed_authentication=[dict(identity='reviewer')],
+            permission_question_roles=dict(version=['reviewer']))
+        requirement = RequestRequirement(source_id='request_1', source_quote=text,
+            **clause('version', actions=[]))
+        question = ExpectationQuestion(operation_id='version', kind='permission', role='reviewer',
+            status_choices=[403, 404], source_quote=text, question='请确认访问权限？',
+            requested_behavior='确认 reviewer 版本接口权限')
+        chosen = FocusSelection(interpretation='保留权限问题的原文见证', mode='selected',
+            operation_ids=['version'], question=None, pending_questions=[], not_covered=[],
+            requirements=[requirement], expectation_questions=[question])
+&gt;       validate_expectation_questions([question], context, ['version'], requirements=[requirement])
+
+tests\test_mixed_planning_c02_c03.py:182: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+questions = [ExpectationQuestion(operation_id='version', question='请确认访问权限？', requested_behavior='确认 reviewer 版本接口权限', source_quote='请确认 reviewer 访问版本接口时应当返回 403 还是 404', kind='permission', role='reviewer', status_choices=[403, 404])]
+context = {'user_task': '请确认 reviewer 访问版本接口时应当返回 403 还是 404', 'request_atoms': [{'source_id': 'request_1', 'text': '请确认 reviewe..., 'start': 0, 'end': 35, ...}], 'approved_ids': ['version'], 'managed_authentication': [{'identity': 'reviewer'}], ...}
+selected = ['version']
+requirements = [RequestRequirement(source_id='request_1', source_quote='请确认 reviewer 访问版本接口时应当返回 403 还是 404', disposition='required',...[], same_resource=[], existing_resources=[], response_checks=[], forbidden_operation_ids=[], blocked_operation_ids=[])]
+
+    def validate_expectation_questions(questions, context, selected, *, requirements=()):
+        """Unknown business expectations carry operator evidence, never execution authority."""
+        seen = set()
+        for question in questions:
+            validated_previous = any(question.operation_id == q.get("operation_id")
+                and question.kind == q.get("kind", "business_rule") and question.role == q.get("role")
+                and question.source_quote in q.get("source_quote", "")
+                for q in context.get("previous_expectation_questions", []))
+            previous = validated_previous or any(question.source_quote in text
+                                                for text in context.get("previous_requests", []))
+            key = (question.operation_id, question.kind,
+                   question.role if question.kind == "permission" else question.requested_behavior)
+            if (question.operation_id not in selected or key in seen
+                    or question.source_quote not in context["user_task"] and not previous):
+                raise ValidationFailure(Layer.MODEL, "FOCUS_EXPECTATION_QUESTION_INVALID")
+            if (question.kind == "permission" and question.role not in
+                    context.get("permission_question_roles", {}).get(question.operation_id, [])):
+                raise ValidationFailure(Layer.MODEL, "FOCUS_EXPECTATION_QUESTION_INVALID")
+            if 'request_atoms' in context:
+                from agenttest.request_requirements import (
+                    permission_source_texts,
+                    question_source_texts,
+                )
+    
+                if question.source_quote not in question_source_texts(context):
+                    raise ValidationFailure(Layer.MODEL, 'FOCUS_QUESTION_SOURCE_NOT_CURRENT')
+                if question.kind == 'permission' and (
+                        question.source_quote not in permission_source_texts(
+                            context, question.operation_id, question.role)
+                        or not (validated_previous or any(
+                            item.source_quote == question.source_quote and any(
+                                action.operation_id == question.operation_id
+                                and action.role == question.role for action in item.actions)
+                            for item in requirements))):
+&gt;                   raise ValidationFailure(Layer.MODEL, 'FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION')
+E                   agenttest.diagnostics.ValidationFailure: FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION
+
+src\agenttest\product_focus.py:81: ValidationFailure</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c03_unknown_predicate_does_not_disappear_as_data" time="0.001" /></testsuite></testsuites>

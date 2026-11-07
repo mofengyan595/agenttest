@@ -264,6 +264,52 @@ def permission_source_texts(context, operation, role):
                 text)}
 
 
+def explicit_anonymous_read(text):
+    return bool(re.search(r'匿名\s*(?:读取|查询|请求|调用|访问)', text))
+
+
+def permission_inquiry(text):
+    return bool(re.search(r'权限|403|404|是否.*(?:允许|访问|读取)', text))
+
+
+def interface_anaphor(text):
+    # Entity references still require a real resource witness, even near an interface noun.
+    return bool(re.search(r'同(?:一|一个)(?![^，；。]{0,12}(?:资源|记录|实体))'
+                          r'[^，；。]{0,12}接口', text))
+
+
+def permission_question_witness(question, item, context):
+    """A sourced permission inquiry is an obligation even when it requests no HTTP action."""
+    return (question.kind == 'permission' and item.source_quote == question.source_quote
+        and item.disposition in {'required', 'needs_review'}
+        and question.role in context.get('permission_question_roles', {}).get(
+            question.operation_id, ())
+        and question.source_quote in permission_source_texts(
+            context, question.operation_id, question.role)
+        and (any(a.operation_id == question.operation_id and a.role == question.role
+                 for a in item.actions)
+             or permission_inquiry(item.source_quote) and (
+                 not item.actions and not explicit_anonymous_read(item.source_quote)
+                 or explicit_anonymous_read(item.source_quote) and bool(item.actions) and all(
+                     a.operation_id == question.operation_id and a.role is None
+                     for a in item.actions))))
+
+
+def same_interface_question_reference(item, atom, requirements, questions, context):
+    """An explicit same-interface anaphor is not an entity-level resource relation."""
+    if not interface_anaphor(atom['text']):
+        return False
+    positions = {a['source_id']: a['start'] for a in context.get('request_atoms', [])}
+    reads = {op['id'] for group in context.get('grouped_index', [])
+             for op in group['operations'] if op['method'] in {'GET', 'HEAD'}}
+    return bool(item.actions) and all(any(
+        question.operation_id == action.operation_id
+        and action.operation_id in reads
+        and positions.get(prior.source_id, atom['start'] + 1) <= atom['start']
+        and permission_question_witness(question, prior, context)
+        for question in questions for prior in requirements) for action in item.actions)
+
+
 def fixed_resource_sources(context, atom):
     """Offer fixed paths witnessed locally, in an adjacent check, or by an explicit anaphor."""
     from agenttest.requirement_ledger import explicit_response_checks
@@ -353,18 +399,25 @@ def requirement_schema(context):
                 required=['resource_ref']))
         branches = []
         trusted = trusted_actions.get(atom['source_id'])
+        permission_only = (permission_inquiry(atom['text'])
+            and not explicit_anonymous_read(atom['text']) and any(
+                atom['text'] in permission_source_texts(context, operation, role)
+                for operation, identities in context.get('permission_question_roles', {}).items()
+                for role in identities))
         dispositions = (['deferred'] if atom.get('future_only') else ['required', 'needs_review',
             *(['constraint'] if atom['constraint'] else [])])
         if trusted is not None:
             dispositions = ['required']
         for disposition in dispositions:
             props = dict(disposition=dict(type='string', enum=[disposition]),
-                actions=dict(type='array', items=action, minItems=1 if disposition == 'required'
-                             else 0, maxItems=20 if disposition != 'deferred' else 0),
+                actions=dict(type='array', items=action, minItems=int(
+                    disposition == 'required' and not permission_only),
+                    maxItems=20 if disposition != 'deferred' else 0),
                 before=dict(type='array', items=order, minItems=int(
                     disposition == 'required' and atom['ordered']), maxItems=20),
                 same_resource=(dict(type='array', items=dict(anyOf=choices), minItems=int(
-                    disposition == 'required' and atom['same_resource']), maxItems=20)
+                    disposition == 'required' and atom['same_resource']
+                    and not interface_anaphor(atom['text'])), maxItems=20)
                     if choices else dict(type='array', maxItems=0)),
                 response_checks=(dict(type='array', items=dict(type='string', enum=list(
                     context['response_expectations'])), maxItems=30)
@@ -501,10 +554,15 @@ def validate_requirement_links(requirements, context, selection):
         bind_response_continuation(item, atom, previous, catalog, read_operations)
         previous = item
         if item.disposition == 'required':
+            pending_inquiry = not item.actions and any(
+                permission_question_witness(q, item, context)
+                for q in selection.expectation_questions)
+            interface_reference = same_interface_question_reference(item, atom, requirements,
+                selection.expectation_questions, context)
             missing_witnesses = [field for field, missing in (
-                ('actions', not item.actions),
+                ('actions', not item.actions and not pending_inquiry),
                 ('same_resource', atom['same_resource'] and not (
-                    item.same_resource or item.existing_resources)),
+                    item.same_resource or item.existing_resources or interface_reference)),
                 ('before', atom['ordered'] and not item.before),
             ) if missing]
             if missing_witnesses:
@@ -521,6 +579,9 @@ def validate_requirement_links(requirements, context, selection):
     mapped.update(catalog[ref]['operation_id'] for item in requirements
                   for ref in item.response_checks
                   if ref in catalog)
+    # A selected operation can own a pending question without requesting an execution.
+    pending_operations = {q.operation_id for q in selection.expectation_questions
+        if any(permission_question_witness(q, item, context) for item in requirements)}
     supported = set(mapped)
     while True:
         previous = set(supported)
@@ -534,12 +595,14 @@ def validate_requirement_links(requirements, context, selection):
                          if a['identity'] in dependency_roles and a.get('login_operation'))
         if previous == supported:
             break
-    missing = set(selection.operation_ids) - supported if selection.mode == 'selected' else set()
+    missing = (set(selection.operation_ids) - supported - pending_operations
+               if selection.mode == 'selected' else set())
     if missing:
         error = ValidationFailure(Layer.MODEL, 'FOCUS_SELECTED_ACTION_WITHOUT_SOURCE')
         error.diagnostic.fields = sorted(missing)
         raise error
     selection.operation_sources = {operation: 'USER_REQUIREMENT' if operation in mapped
+        else 'PENDING_PERMISSION' if operation in pending_operations
         else 'TRUSTED_PREREQUISITE' for operation in selection.operation_ids}
     configured_resources = list(context.get('existing_resources', {}).values())
     from agenttest.product_sources import numeric_boundary_reference

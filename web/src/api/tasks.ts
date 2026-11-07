@@ -94,7 +94,8 @@ export interface GoalTask {
       interpretation: string;
       operation_ids: string[];
       normal_operation_ids?: string[];
-      operation_sources?: Record<string, "USER_REQUIREMENT" | "TRUSTED_PREREQUISITE">;
+      operation_sources?: Record<string,
+        "USER_REQUIREMENT" | "TRUSTED_PREREQUISITE" | "PENDING_PERMISSION">;
       requirements?: {
         source_id: string; source_quote: string;
         disposition: "required" | "needs_review" | "deferred" | "constraint";

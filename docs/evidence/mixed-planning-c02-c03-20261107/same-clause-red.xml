@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="4" time="3.820" timestamp="2026-11-07T17:45:55.863873+08:00" hostname="[local]"><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities[required-]" time="0.005" /><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities[required-\u540c\u4e00\u4e2a]" time="0.002" /><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities[needs_review-]" time="0.002"><failure message="AssertionError: assert (not {'status'})">anaphor = '', disposition = 'needs_review'
+
+    @pytest.mark.parametrize('anaphor', ['', '同一个'])
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    def test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities(
+            anaphor, disposition):
+        from agenttest.product_focus import permission_review_scope
+    
+        text = f'请确认 reviewer 访问状态接口的权限并匿名访问{anaphor}状态接口'
+        context = ctx(text)
+        context.update(approved_ids=['status'], resource_dependencies=[],
+            managed_authentication=[dict(identity='reviewer', credential_status='READY')],
+            permission_question_roles=dict(status=['reviewer']),
+            grouped_index=[dict(operations=[dict(id='status', method='GET')])])
+        item = RequestRequirement(source_id='request_1', source_quote=text,
+            **clause('status', disposition=disposition))
+        question = ExpectationQuestion(operation_id='status', kind='permission', role='reviewer',
+            status_choices=[403, 404], source_quote=text, question='请确认 reviewer 的访问权限？',
+            requested_behavior='确认 reviewer 访问权限')
+        chosen = FocusSelection(interpretation='分开权限问题与匿名动作', mode='selected',
+            operation_ids=['status'], question=None, pending_questions=[], not_covered=[],
+            requirements=[item], expectation_questions=[question])
+        validate_expectation_questions([question], context, ['status'], requirements=[item])
+        validate_requirement_links([item], context, chosen)
+        blocked, planning, scope, pending = permission_review_scope(chosen)
+&gt;       assert not blocked and scope == dict(status=[None])
+E       AssertionError: assert (not {'status'})
+
+tests\test_mixed_planning_c02_c03.py:339: AssertionError</failure></testcase><testcase classname="tests.test_mixed_planning_c02_c03" name="test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities[needs_review-\u540c\u4e00\u4e2a]" time="0.002"><failure message="AssertionError: assert (not {'status'})">anaphor = '同一个', disposition = 'needs_review'
+
+    @pytest.mark.parametrize('anaphor', ['', '同一个'])
+    @pytest.mark.parametrize('disposition', ['required', 'needs_review'])
+    def test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities(
+            anaphor, disposition):
+        from agenttest.product_focus import permission_review_scope
+    
+        text = f'请确认 reviewer 访问状态接口的权限并匿名访问{anaphor}状态接口'
+        context = ctx(text)
+        context.update(approved_ids=['status'], resource_dependencies=[],
+            managed_authentication=[dict(identity='reviewer', credential_status='READY')],
+            permission_question_roles=dict(status=['reviewer']),
+            grouped_index=[dict(operations=[dict(id='status', method='GET')])])
+        item = RequestRequirement(source_id='request_1', source_quote=text,
+            **clause('status', disposition=disposition))
+        question = ExpectationQuestion(operation_id='status', kind='permission', role='reviewer',
+            status_choices=[403, 404], source_quote=text, question='请确认 reviewer 的访问权限？',
+            requested_behavior='确认 reviewer 访问权限')
+        chosen = FocusSelection(interpretation='分开权限问题与匿名动作', mode='selected',
+            operation_ids=['status'], question=None, pending_questions=[], not_covered=[],
+            requirements=[item], expectation_questions=[question])
+        validate_expectation_questions([question], context, ['status'], requirements=[item])
+        validate_requirement_links([item], context, chosen)
+        blocked, planning, scope, pending = permission_review_scope(chosen)
+&gt;       assert not blocked and scope == dict(status=[None])
+E       AssertionError: assert (not {'status'})
+
+tests\test_mixed_planning_c02_c03.py:339: AssertionError</failure></testcase></testsuite></testsuites>

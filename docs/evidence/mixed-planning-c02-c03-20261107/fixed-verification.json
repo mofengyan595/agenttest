@@ -1,0 +1,21 @@
+{
+  "command": [
+    "<repo>\\.venv\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "examples/regressions",
+    "tests/test_regression_examples.py",
+    "tests/test_regression_cli.py",
+    "tests/test_regression.py",
+    "tests/test_saved_plan_audit.py",
+    "--basetemp=<repo>\\runs\\c02-c03-validation-final3\\fixed-tmp",
+    "--junitxml=<repo>\\runs\\c02-c03-validation-final3\\fixed.xml"
+  ],
+  "exit_code": 0,
+  "seconds": 36.92200000002049,
+  "head": "77effe8db742419c7256509bafbd417562d40f71",
+  "before_sha256": "a6502c5cfe3025965f56c31c990500686a5a74c0c029476e42a7654beb06aba0",
+  "after_sha256": "a6502c5cfe3025965f56c31c990500686a5a74c0c029476e42a7654beb06aba0",
+  "checkout_unchanged": true
+}

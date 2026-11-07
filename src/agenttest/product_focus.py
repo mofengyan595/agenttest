@@ -64,6 +64,7 @@ def validate_expectation_questions(questions, context, selected, *, requirements
             raise ValidationFailure(Layer.MODEL, "FOCUS_EXPECTATION_QUESTION_INVALID")
         if 'request_atoms' in context:
             from agenttest.request_requirements import (
+                permission_question_witness,
                 permission_source_texts,
                 question_source_texts,
             )
@@ -73,11 +74,8 @@ def validate_expectation_questions(questions, context, selected, *, requirements
             if question.kind == 'permission' and (
                     question.source_quote not in permission_source_texts(
                         context, question.operation_id, question.role)
-                    or not (validated_previous or any(
-                        item.source_quote == question.source_quote and any(
-                            action.operation_id == question.operation_id
-                            and action.role == question.role for action in item.actions)
-                        for item in requirements))):
+                    or not (validated_previous or any(permission_question_witness(
+                        question, item, context) for item in requirements))):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION')
         readiness = context.get('managed_authentication', [])
         confirmed = [r for r in context.get('confirmed_response_checks', [])
@@ -138,15 +136,23 @@ def review_only_operations(selection):
 
 def permission_review_scope(selection):
     """A pending permission is a sourced actor question, not permission to sample a public rule."""
+    from agenttest.request_requirements import explicit_anonymous_read
+
     questions = [q for q in selection.expectation_questions if q.kind == 'permission']
     scopes = {q.operation_id: set() for q in questions}
     planning, pending = [], []
     for item in selection.requirements:
         own = [q for q in questions if q.source_quote == item.source_quote]
-        explicit_anonymous = bool(re.search(r'匿名\s*(?:读取|查询|请求|调用)', item.source_quote))
+        explicit_anonymous = explicit_anonymous_read(item.source_quote)
         actions = [a for a in item.actions if not any(q.operation_id == a.operation_id
             and not (a.role is None and explicit_anonymous) for q in own)]
-        for action in actions if item.disposition == 'required' else []:
+        anonymous_required = (bool(own) and explicit_anonymous and bool(actions)
+            and all(a.role is None and any(q.operation_id == a.operation_id for q in own)
+                    for a in actions)
+            and not any(q.source_quote == item.source_quote for q in selection.input_questions)
+            and not any(q.source_quote == item.source_quote and q.kind != 'permission'
+                        for q in selection.expectation_questions))
+        for action in actions if item.disposition == 'required' or anonymous_required else []:
             if action.operation_id in scopes:
                 # A same-clause anonymous read must be explicit, never inferred from a policy.
                 if not own or action.role is None and explicit_anonymous:
@@ -156,7 +162,8 @@ def permission_review_scope(selection):
                 operation_id=question.operation_id, role=question.role, status='NEEDS_REVIEW',
                 reason='PERMISSION_EXPECTATION_NOT_APPROVED'))
         planning.append(item.model_copy(update=dict(actions=actions,
-            disposition='needs_review' if own and not actions else item.disposition)).model_dump())
+            disposition='required' if anonymous_required else
+                'needs_review' if own and not actions else item.disposition)).model_dump())
     return {op for op, roles in scopes.items() if not roles}, planning, {
         op: sorted(roles, key=lambda role: role or '') for op, roles in scopes.items()}, pending
 
@@ -208,7 +215,10 @@ belong to their action,
 not an extra request. response_checks cite the exact operator-owned response_expectations entries.
 For a continuation that checks response contents, cite the reviewed field references and keep the
 preceding read and identity. A question about whether a rule is guaranteed is not a request to
-sample an endpoint. Preserve any separately requested read. Unknown requested rules require
+sample an endpoint. A permission inquiry can have needs_review with actions=[]; keep its
+operation, accessing identity and source-backed question. It does not request an HTTP sample.
+Preserve independently requested anonymous actions, including on that same interface.
+Unknown requested rules require
 needs_review and a source-backed question; never invent an expected
 value. Inventory gaps may cite blocked_operation_ids matching blocked_operations instead of a
 business question. Only explicit prohibitions/scope directives use constraint, with zero actions
