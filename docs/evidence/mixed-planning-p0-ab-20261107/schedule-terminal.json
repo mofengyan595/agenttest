@@ -1,0 +1,246 @@
+{
+  "digest": "28cce64c5b773dafcb9389ca533101bb41e90c0df28d17ea55defd1da831ab1f",
+  "records": [
+    {
+      "id": "C01_r1_baseline",
+      "taskId": "6057eabde52d44779acda83a628a0260",
+      "status": "FINISHED",
+      "elapsed_ms": 35364,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C01_r1_candidate",
+      "taskId": "9a7c7ed597e54352b5109a3ebdc16241",
+      "status": "FINISHED",
+      "elapsed_ms": 22666,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C02_r1_baseline",
+      "taskId": "315282468b0f4b75a3bff552ed48765d",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 9456,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C02_r1_candidate",
+      "taskId": "e867ba8e2f79437784eba93871f206cf",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 17776,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C03_r1_baseline",
+      "taskId": "6779178ec0e244df9e21d0f9439fceb6",
+      "status": "FINISHED",
+      "elapsed_ms": 15444,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C03_r1_candidate",
+      "taskId": "582ec9b5ff7e4918ace4edc1232b3241",
+      "status": "FINISHED",
+      "elapsed_ms": 23263,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C04_r1_baseline",
+      "taskId": "82cce9de773b40da9d0e395c57808332",
+      "status": "FINISHED",
+      "elapsed_ms": 26916,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C04_r1_candidate",
+      "taskId": "7aeebd7d73244590b9453fdbb0828de6",
+      "status": "FINISHED",
+      "elapsed_ms": 19622,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C05_r1_baseline",
+      "taskId": "e148a82cff32422fb0a9137b5bda0085",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 10322,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C05_r1_candidate",
+      "taskId": "10b3bd081bd64b17a551e08609a204f1",
+      "status": "FINISHED",
+      "elapsed_ms": 16654,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C06_r1_baseline",
+      "taskId": "b5bfc39f2f8e4cb18062f092823279a1",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 10249,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C06_r1_candidate",
+      "taskId": "bf4a06ab29f94a438dd23a21c4e5460a",
+      "status": "FINISHED",
+      "elapsed_ms": 26824,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 3,
+      "complete": false
+    },
+    {
+      "id": "C06_r2_candidate",
+      "taskId": "3768ba82b1764e9e9089649df37c3383",
+      "status": "FINISHED",
+      "elapsed_ms": 17354,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 3,
+      "complete": false
+    },
+    {
+      "id": "C06_r2_baseline",
+      "taskId": "6d08ac9bee484c16b385696c8d047fe3",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 8772,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C05_r2_candidate",
+      "taskId": "03b85ed541064c7eab974c542f67ea83",
+      "status": "FINISHED",
+      "elapsed_ms": 16794,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C05_r2_baseline",
+      "taskId": "da244a33b00d4705b533692de6cbf3c2",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 8810,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C04_r2_candidate",
+      "taskId": "f7f3d71af9ee4d6d9c454fb6378c6252",
+      "status": "FINISHED",
+      "elapsed_ms": 23795,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C04_r2_baseline",
+      "taskId": "0610c6ca2291405e976d0900f45918cd",
+      "status": "FINISHED",
+      "elapsed_ms": 25784,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 2,
+      "complete": false
+    },
+    {
+      "id": "C03_r2_candidate",
+      "taskId": "8f460536b15e4dfdad7c4a2355211572",
+      "status": "FINISHED",
+      "elapsed_ms": 12990,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C03_r2_baseline",
+      "taskId": "53ca9e835c4c473fbcf2728a061766c3",
+      "status": "FINISHED",
+      "elapsed_ms": 11964,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C02_r2_candidate",
+      "taskId": "946c24b4fa85421bb7f9abefb2e7304e",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 6330,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C02_r2_baseline",
+      "taskId": "74217b5456ab4bf4919c21cb9eb36169",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 6389,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    },
+    {
+      "id": "C01_r2_candidate",
+      "taskId": "11da0a4656bd4da2afb935e531b11b92",
+      "status": "FINISHED",
+      "elapsed_ms": 10343,
+      "model_calls": 2,
+      "usage_known": true,
+      "requests": 1,
+      "complete": false
+    },
+    {
+      "id": "C01_r2_baseline",
+      "taskId": "72b8a61964dc4f128c64bf80b618d59f",
+      "status": "FINISHED",
+      "elapsed_ms": 6479,
+      "model_calls": 1,
+      "usage_known": true,
+      "requests": 0,
+      "complete": false
+    }
+  ],
+  "stop": null
+}

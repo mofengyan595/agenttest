@@ -1,0 +1,2961 @@
+{
+  "baseline": {
+    "commit": "00f570b77524bfd9d70dcbe165e82f1e6233ac5e",
+    "source": "sha256:89e4fbe20d80e2d3e902e815ee609e6505d4c07852a6bf629c356c8fd24e048f",
+    "description": "pre-P0 A/B candidate snapshot 85d6cd22"
+  },
+  "candidate": "sha256:b9b2bb0c986f80d3b279e9051fc4cca2c2e134778e3d85d1cb9bbc67df3bd778",
+  "candidate_commit": "8c0c6c7ba916ea1839e7c4931be242e5dcc6474e",
+  "ports": {
+    "baseline": 18961,
+    "candidate": 18962
+  },
+  "rounds": 2,
+  "model": "ecnu-max",
+  "model_parameters": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "timeout": 30.0,
+    "max_input_tokens": 20000,
+    "max_output_tokens": 4096,
+    "max_total_tokens": 25000,
+    "max_response_bytes": 200000
+  },
+  "endpoint_sha256": "cf7bbd5b227c0900d8175b64799b539da6646c5268950d2688247d7ddaaf7dbc",
+  "temperature": 0,
+  "authorization": {
+    "source": "2026-11-07 operator request for this 24-position P0 A/B",
+    "inherited": "configured real-model calls authorized; probe confirmed READY",
+    "task_limits": "unchanged registered project budgets; no position resubmission"
+  },
+  "targets": {
+    "gitea": {
+      "version": "1.26.3",
+      "source_openapi_sha256": "f10ecf3934a5b603e55a531dcf81f1d8e84fff702d116ea4791d30f70c5f0d83"
+    },
+    "petclinic": {
+      "source_commit": "afc8fc1d3b8ec8de69414482b3bd70a1da78cb95",
+      "source_openapi_sha256": "bb31f547c10d86d5279557dd6d9b995f0a29ba95cab691bc767e739c6cd4b7a2"
+    }
+  },
+  "configs": {
+    "g-perm-self": {
+      "name": "隔离读取项目 g-perm-self",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"gitea authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/api/v1/user\": {\"get\": {\"operationId\": \"userGetCurrent\", \"summary\": \"读取当前归档员身份\", \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}}, \"security\": [{\"bearer\": []}]}}, \"/api/v1/version\": {\"get\": {\"operationId\": \"getVersion\", \"summary\": \"读取 Gitea 服务版本\", \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}}}}, \"/api/v1/repos/{owner}/{repo}\": {\"get\": {\"operationId\": \"repoGet\", \"summary\": \"读取私有仓库详情\", \"parameters\": [{\"name\": \"owner\", \"in\": \"path\", \"schema\": {\"type\": \"string\"}, \"required\": true}, {\"name\": \"repo\", \"in\": \"path\", \"schema\": {\"type\": \"string\"}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}}, \"security\": [{\"bearer\": []}]}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18887",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "userGetCurrent",
+            "alias": "读取当前归档员身份",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.login",
+                "operator": "equals",
+                "expected": "archivist"
+              }
+            ],
+            "arguments": [],
+            "role": "archivist",
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getVersion",
+            "alias": "读取 Gitea 服务版本",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.version",
+                "operator": "equals",
+                "expected": "1.26.3"
+              }
+            ],
+            "arguments": [],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "repoGet",
+            "alias": "读取私有仓库详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.private",
+                "operator": "equals",
+                "expected": true
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "sealed-register"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "owner",
+                "value": "archivist",
+                "location": "path_parameters",
+                "negative_enabled": false
+              },
+              {
+                "name": "repo",
+                "value": "sealed-register",
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": "archivist",
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": [
+              {
+                "role": "reviewer",
+                "statuses": [
+                  404
+                ],
+                "rule": "非协作者不能看到私有仓库，返回 404"
+              }
+            ]
+          }
+        ],
+        "roles": [
+          {
+            "alias": "archivist",
+            "bearer_env": "AGENTTEST_TARGET_GITEA_ARCHIVIST"
+          },
+          {
+            "alias": "reviewer",
+            "bearer_env": "AGENTTEST_TARGET_GITEA_REVIEWER"
+          }
+        ],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    },
+    "g-perm-anonymous": {
+      "name": "隔离读取项目 g-perm-anonymous",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"gitea authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/api/v1/version\": {\"get\": {\"operationId\": \"getVersion\", \"summary\": \"读取 Gitea 服务版本\", \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}}}}, \"/api/v1/repos/{owner}/{repo}\": {\"get\": {\"operationId\": \"repoGet\", \"summary\": \"读取私有仓库详情\", \"parameters\": [{\"name\": \"owner\", \"in\": \"path\", \"schema\": {\"type\": \"string\"}, \"required\": true}, {\"name\": \"repo\", \"in\": \"path\", \"schema\": {\"type\": \"string\"}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}}, \"security\": [{\"bearer\": []}]}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18887",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "getVersion",
+            "alias": "读取 Gitea 服务版本",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.version",
+                "operator": "equals",
+                "expected": "1.26.3"
+              }
+            ],
+            "arguments": [],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "repoGet",
+            "alias": "读取私有仓库详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.private",
+                "operator": "equals",
+                "expected": true
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "sealed-register"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "owner",
+                "value": "archivist",
+                "location": "path_parameters",
+                "negative_enabled": false
+              },
+              {
+                "name": "repo",
+                "value": "sealed-register",
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": "archivist",
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": [
+              {
+                "role": "reviewer",
+                "statuses": [
+                  404
+                ],
+                "rule": "非协作者不能看到私有仓库，返回 404"
+              }
+            ]
+          }
+        ],
+        "roles": [
+          {
+            "alias": "archivist",
+            "bearer_env": "AGENTTEST_TARGET_GITEA_ARCHIVIST"
+          },
+          {
+            "alias": "reviewer",
+            "bearer_env": "AGENTTEST_TARGET_GITEA_REVIEWER"
+          }
+        ],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    },
+    "p-linked-approved": {
+      "name": "隔离读取项目 p-linked-approved",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"petclinic authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/petclinic/api/vets/{vetId}\": {\"get\": {\"operationId\": \"getVet\", \"summary\": \"读取兽医详情\", \"parameters\": [{\"name\": \"vetId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/specialties/{specialtyId}\": {\"get\": {\"operationId\": \"getSpecialty\", \"summary\": \"读取专科详情\", \"parameters\": [{\"name\": \"specialtyId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18886",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "getVet",
+            "alias": "读取兽医详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "vetId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getSpecialty",
+            "alias": "读取专科详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              }
+            ],
+            "arguments": [
+              {
+                "location": "path_parameters",
+                "name": "specialtyId",
+                "source_operation": "getVet",
+                "selector": "$.specialties[0].id"
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          }
+        ],
+        "roles": [],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    },
+    "p-linked-hold": {
+      "name": "隔离读取项目 p-linked-hold",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"petclinic authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/petclinic/api/vets/{vetId}\": {\"get\": {\"operationId\": \"getVet\", \"summary\": \"读取兽医详情\", \"parameters\": [{\"name\": \"vetId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/specialties/{specialtyId}\": {\"get\": {\"operationId\": \"getSpecialty\", \"summary\": \"读取专科详情\", \"parameters\": [{\"name\": \"specialtyId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/owners/{ownerId}/pets/{petId}\": {\"get\": {\"operationId\": \"getOwnersPet\", \"summary\": \"读取指定主人名下宠物\", \"parameters\": [{\"name\": \"ownerId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}, {\"name\": \"petId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18886",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "getVet",
+            "alias": "读取兽医详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "vetId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getSpecialty",
+            "alias": "读取专科详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              }
+            ],
+            "arguments": [
+              {
+                "location": "path_parameters",
+                "name": "specialtyId",
+                "source_operation": "getVet",
+                "selector": "$.specialties[0].id"
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getOwnersPet",
+            "alias": "读取指定主人名下宠物",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.ownerId",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "ownerId",
+                "value": 1,
+                "location": "path_parameters",
+                "negative_enabled": false
+              },
+              {
+                "name": "petId",
+                "value": 1,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          }
+        ],
+        "roles": [],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    },
+    "p-disabled-pair": {
+      "name": "隔离读取项目 p-disabled-pair",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"petclinic authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/petclinic/api/vets/{vetId}\": {\"get\": {\"operationId\": \"getVet\", \"summary\": \"读取兽医详情\", \"parameters\": [{\"name\": \"vetId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/v2/pets\": {\"get\": {\"operationId\": \"listPetsPage\", \"summary\": \"读取宠物分页\", \"parameters\": [{\"name\": \"page\", \"in\": \"query\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"default\": 0, \"minimum\": 0}, \"required\": false}, {\"name\": \"size\", \"in\": \"query\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"default\": 20, \"maximum\": 100, \"minimum\": 1}, \"required\": false}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/specialties/{specialtyId}\": {\"get\": {\"operationId\": \"getSpecialty\", \"summary\": \"读取专科详情\", \"parameters\": [{\"name\": \"specialtyId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18886",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "getVet",
+            "alias": "读取兽医详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "vetId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": [],
+            "enabled": false
+          },
+          {
+            "operation_id": "listPetsPage",
+            "alias": "读取宠物分页",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.content",
+                "operator": "count",
+                "expected": 2
+              },
+              {
+                "select": "$.totalElements",
+                "operator": "equals",
+                "expected": 13
+              }
+            ],
+            "arguments": [
+              {
+                "name": "page",
+                "value": 0,
+                "location": "query",
+                "negative_enabled": false
+              },
+              {
+                "name": "size",
+                "value": 2,
+                "location": "query",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getSpecialty",
+            "alias": "读取专科详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "surgery"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "specialtyId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          }
+        ],
+        "roles": [],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    },
+    "p-disabled-order": {
+      "name": "隔离读取项目 p-disabled-order",
+      "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"petclinic authorized read subset\", \"version\": \"1\"}, \"paths\": {\"/petclinic/api/vets/{vetId}\": {\"get\": {\"operationId\": \"getVet\", \"summary\": \"读取兽医详情\", \"parameters\": [{\"name\": \"vetId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/specialties/{specialtyId}\": {\"get\": {\"operationId\": \"getSpecialty\", \"summary\": \"读取专科详情\", \"parameters\": [{\"name\": \"specialtyId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}, \"/petclinic/api/owners/{ownerId}/pets/{petId}\": {\"get\": {\"operationId\": \"getOwnersPet\", \"summary\": \"读取指定主人名下宠物\", \"parameters\": [{\"name\": \"ownerId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}, {\"name\": \"petId\", \"in\": \"path\", \"schema\": {\"type\": \"integer\", \"format\": \"int32\", \"minimum\": 0}, \"required\": true}], \"responses\": {\"200\": {\"description\": \"Upstream HTTP response\"}, \"304\": {\"description\": \"Upstream HTTP response\"}, \"400\": {\"description\": \"Upstream HTTP response\"}, \"404\": {\"description\": \"Upstream HTTP response\"}, \"500\": {\"description\": \"Upstream HTTP response\"}}}}}, \"components\": {\"securitySchemes\": {\"bearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+      "confirmed": true,
+      "generic": {
+        "base_url": "http://127.0.0.1:18886",
+        "isolated_confirmed": true,
+        "assisted": true,
+        "allow_mutations": false,
+        "operations": [
+          {
+            "operation_id": "getVet",
+            "alias": "读取兽医详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "vetId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": [],
+            "enabled": false
+          },
+          {
+            "operation_id": "getSpecialty",
+            "alias": "读取专科详情",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "surgery"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "specialtyId",
+                "value": 2,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          },
+          {
+            "operation_id": "getOwnersPet",
+            "alias": "读取指定主人名下宠物",
+            "statuses": [
+              200
+            ],
+            "checks": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.ownerId",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "arguments": [
+              {
+                "name": "ownerId",
+                "value": 1,
+                "location": "path_parameters",
+                "negative_enabled": false
+              },
+              {
+                "name": "petId",
+                "value": 1,
+                "location": "path_parameters",
+                "negative_enabled": false
+              }
+            ],
+            "role": null,
+            "check_source": "已核对隔离服务的官方夹具响应与原生接口定义。",
+            "access_checks": []
+          }
+        ],
+        "roles": [],
+        "max_requests": 12,
+        "approve_negative_tests": false,
+        "allow_negative_value_variants": false
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "C01",
+      "request": "请确认 reviewer 访问 Gitea 版本接口时应当返回 403 还是 404；另外以 archivist 查看当前账号，核对 $.login 等于 \"archivist\"。",
+      "config": "g-perm-self",
+      "category": "pending_permission_independent_read",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "userGetCurrent",
+            "role": "archivist",
+            "status": 200,
+            "values": {},
+            "fields": [
+              {
+                "select": "$.login",
+                "operator": "equals",
+                "expected": "archivist"
+              }
+            ],
+            "source": "以 archivist 查看当前账号",
+            "negative": false
+          }
+        ],
+        "relation": null,
+        "gap": {
+          "kind": "permission",
+          "operation": "getVersion",
+          "role": "reviewer",
+          "source": "reviewer 访问 Gitea 版本接口",
+          "blocked_operations": [
+            "getVersion"
+          ]
+        },
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "以 archivist 查看当前账号"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "以 archivist 查看当前账号"
+          },
+          {
+            "id": "s1.field.$.login",
+            "kind": "field",
+            "step": 0,
+            "field": {
+              "select": "$.login",
+              "operator": "equals",
+              "expected": "archivist"
+            },
+            "source": "以 archivist 查看当前账号"
+          },
+          {
+            "id": "gap",
+            "kind": "hold",
+            "source": "reviewer 访问 Gitea 版本接口",
+            "gap": {
+              "kind": "permission",
+              "operation": "getVersion",
+              "role": "reviewer",
+              "source": "reviewer 访问 Gitea 版本接口",
+              "blocked_operations": [
+                "getVersion"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "C02",
+      "request": "请确认 reviewer 访问 Gitea 版本接口时应当返回 403 还是 404；另外匿名访问同一个版本接口，核对 HTTP 200。",
+      "config": "g-perm-anonymous",
+      "category": "pending_permission_explicit_anonymous",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "getVersion",
+            "role": null,
+            "status": 200,
+            "values": {},
+            "fields": [],
+            "source": "匿名访问同一个版本接口",
+            "negative": false
+          }
+        ],
+        "relation": null,
+        "gap": {
+          "kind": "permission",
+          "operation": "getVersion",
+          "role": "reviewer",
+          "source": "reviewer 访问 Gitea 版本接口",
+          "blocked_operations": []
+        },
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "匿名访问同一个版本接口"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "匿名访问同一个版本接口"
+          },
+          {
+            "id": "gap",
+            "kind": "hold",
+            "source": "reviewer 访问 Gitea 版本接口",
+            "gap": {
+              "kind": "permission",
+              "operation": "getVersion",
+              "role": "reviewer",
+              "source": "reviewer 访问 Gitea 版本接口",
+              "blocked_operations": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "C03",
+      "request": "先取回 vetId=2 的兽医资料并核对 HTTP 200；随后用该响应中的 $.specialties[0].id 打开相应专科，验证 $.id 等于 1。",
+      "config": "p-linked-approved",
+      "category": "approved_response_dependency",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "getVet",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "vetId": 2
+              }
+            },
+            "fields": [],
+            "source": "先取回 vetId=2 的兽医资料",
+            "negative": false
+          },
+          {
+            "operation": "getSpecialty",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "specialtyId": 1
+              }
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              }
+            ],
+            "source": "打开相应专科",
+            "negative": false
+          }
+        ],
+        "relation": {
+          "kind": "dependency",
+          "indices": [
+            0,
+            1
+          ],
+          "location": "path_parameters.specialtyId",
+          "selector": "$.specialties[0].id",
+          "source": "随后用该响应中的"
+        },
+        "gap": null,
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "先取回 vetId=2 的兽医资料"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "先取回 vetId=2 的兽医资料"
+          },
+          {
+            "id": "s1.path_parameters.vetId",
+            "kind": "parameter",
+            "step": 0,
+            "location": "path_parameters",
+            "name": "vetId",
+            "value": 2,
+            "source": "先取回 vetId=2 的兽医资料"
+          },
+          {
+            "id": "s2.action",
+            "kind": "action",
+            "step": 1,
+            "source": "打开相应专科"
+          },
+          {
+            "id": "s2.status",
+            "kind": "status",
+            "step": 1,
+            "source": "打开相应专科"
+          },
+          {
+            "id": "s2.path_parameters.specialtyId",
+            "kind": "parameter",
+            "step": 1,
+            "location": "path_parameters",
+            "name": "specialtyId",
+            "value": 1,
+            "source": "打开相应专科"
+          },
+          {
+            "id": "s2.field.$.id",
+            "kind": "field",
+            "step": 1,
+            "field": {
+              "select": "$.id",
+              "operator": "equals",
+              "expected": 1
+            },
+            "source": "打开相应专科"
+          },
+          {
+            "id": "relation",
+            "kind": "dependency",
+            "source": "随后用该响应中的",
+            "relation": {
+              "kind": "dependency",
+              "indices": [
+                0,
+                1
+              ],
+              "location": "path_parameters.specialtyId",
+              "selector": "$.specialties[0].id",
+              "source": "随后用该响应中的"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "C04",
+      "request": "读取 vetId=2 的兽医并验证 $.firstName 等于 \"Helen\"；接着用该响应的 $.specialties[0].id 读取专科，要求 $.name 等于 \"cardiology\"；另外读取 ownerId=1、petId=1 的宠物，核对 $.name 等于 \"Leo\"。",
+      "config": "p-linked-hold",
+      "category": "dependency_with_unapproved_assertion",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "getVet",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "vetId": 2
+              }
+            },
+            "fields": [
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "source": "读取 vetId=2 的兽医",
+            "negative": false
+          },
+          {
+            "operation": "getOwnersPet",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "ownerId": 1,
+                "petId": 1
+              }
+            },
+            "fields": [
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "source": "读取 ownerId=1、petId=1 的宠物",
+            "negative": false
+          }
+        ],
+        "relation": null,
+        "gap": {
+          "kind": "content",
+          "operation": "getSpecialty",
+          "source": "等于 \"cardiology\"",
+          "selector": "$.name",
+          "operator": "equals",
+          "value": "cardiology",
+          "blocked_operations": [
+            "getSpecialty"
+          ]
+        },
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "读取 vetId=2 的兽医"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "读取 vetId=2 的兽医"
+          },
+          {
+            "id": "s1.path_parameters.vetId",
+            "kind": "parameter",
+            "step": 0,
+            "location": "path_parameters",
+            "name": "vetId",
+            "value": 2,
+            "source": "读取 vetId=2 的兽医"
+          },
+          {
+            "id": "s1.field.$.firstName",
+            "kind": "field",
+            "step": 0,
+            "field": {
+              "select": "$.firstName",
+              "operator": "equals",
+              "expected": "Helen"
+            },
+            "source": "读取 vetId=2 的兽医"
+          },
+          {
+            "id": "s2.action",
+            "kind": "action",
+            "step": 1,
+            "source": "读取 ownerId=1、petId=1 的宠物"
+          },
+          {
+            "id": "s2.status",
+            "kind": "status",
+            "step": 1,
+            "source": "读取 ownerId=1、petId=1 的宠物"
+          },
+          {
+            "id": "s2.path_parameters.ownerId",
+            "kind": "parameter",
+            "step": 1,
+            "location": "path_parameters",
+            "name": "ownerId",
+            "value": 1,
+            "source": "读取 ownerId=1、petId=1 的宠物"
+          },
+          {
+            "id": "s2.path_parameters.petId",
+            "kind": "parameter",
+            "step": 1,
+            "location": "path_parameters",
+            "name": "petId",
+            "value": 1,
+            "source": "读取 ownerId=1、petId=1 的宠物"
+          },
+          {
+            "id": "s2.field.$.name",
+            "kind": "field",
+            "step": 1,
+            "field": {
+              "select": "$.name",
+              "operator": "equals",
+              "expected": "Leo"
+            },
+            "source": "读取 ownerId=1、petId=1 的宠物"
+          },
+          {
+            "id": "gap",
+            "kind": "hold",
+            "source": "等于 \"cardiology\"",
+            "gap": {
+              "kind": "content",
+              "operation": "getSpecialty",
+              "source": "等于 \"cardiology\"",
+              "selector": "$.name",
+              "operator": "equals",
+              "value": "cardiology",
+              "blocked_operations": [
+                "getSpecialty"
+              ]
+            }
+          },
+          {
+            "id": "held.getSpecialty",
+            "kind": "held_operation",
+            "operation": "getSpecialty",
+            "source": "等于 \"cardiology\"",
+            "gap": {
+              "kind": "content",
+              "operation": "getSpecialty",
+              "source": "等于 \"cardiology\"",
+              "selector": "$.name",
+              "operator": "equals",
+              "value": "cardiology",
+              "blocked_operations": [
+                "getSpecialty"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "C05",
+      "request": "vetId=2 的兽医详情先尝试读取；随后分别核对宠物分页 page=0、size=2 的 $.content 数量为 2，以及 specialtyId=2 专科的 $.name 等于 \"surgery\"。",
+      "config": "p-disabled-pair",
+      "category": "unavailable_operation_independent_reads",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "listPetsPage",
+            "role": null,
+            "status": 200,
+            "values": {
+              "query": {
+                "page": 0,
+                "size": 2
+              }
+            },
+            "fields": [
+              {
+                "select": "$.content",
+                "operator": "count",
+                "expected": 2
+              }
+            ],
+            "source": "宠物分页 page=0、size=2",
+            "negative": false
+          },
+          {
+            "operation": "getSpecialty",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "specialtyId": 2
+              }
+            },
+            "fields": [
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "surgery"
+              }
+            ],
+            "source": "specialtyId=2 专科",
+            "negative": false
+          }
+        ],
+        "relation": null,
+        "gap": {
+          "kind": "operation",
+          "operation": "getVet",
+          "source": "vetId=2 的兽医详情先尝试读取",
+          "blocked_operations": [
+            "getVet"
+          ]
+        },
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "宠物分页 page=0、size=2"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "宠物分页 page=0、size=2"
+          },
+          {
+            "id": "s1.query.page",
+            "kind": "parameter",
+            "step": 0,
+            "location": "query",
+            "name": "page",
+            "value": 0,
+            "source": "宠物分页 page=0、size=2"
+          },
+          {
+            "id": "s1.query.size",
+            "kind": "parameter",
+            "step": 0,
+            "location": "query",
+            "name": "size",
+            "value": 2,
+            "source": "宠物分页 page=0、size=2"
+          },
+          {
+            "id": "s1.field.$.content",
+            "kind": "field",
+            "step": 0,
+            "field": {
+              "select": "$.content",
+              "operator": "count",
+              "expected": 2
+            },
+            "source": "宠物分页 page=0、size=2"
+          },
+          {
+            "id": "s2.action",
+            "kind": "action",
+            "step": 1,
+            "source": "specialtyId=2 专科"
+          },
+          {
+            "id": "s2.status",
+            "kind": "status",
+            "step": 1,
+            "source": "specialtyId=2 专科"
+          },
+          {
+            "id": "s2.path_parameters.specialtyId",
+            "kind": "parameter",
+            "step": 1,
+            "location": "path_parameters",
+            "name": "specialtyId",
+            "value": 2,
+            "source": "specialtyId=2 专科"
+          },
+          {
+            "id": "s2.field.$.name",
+            "kind": "field",
+            "step": 1,
+            "field": {
+              "select": "$.name",
+              "operator": "equals",
+              "expected": "surgery"
+            },
+            "source": "specialtyId=2 专科"
+          },
+          {
+            "id": "gap",
+            "kind": "hold",
+            "source": "vetId=2 的兽医详情先尝试读取",
+            "gap": {
+              "kind": "operation",
+              "operation": "getVet",
+              "source": "vetId=2 的兽医详情先尝试读取",
+              "blocked_operations": [
+                "getVet"
+              ]
+            }
+          },
+          {
+            "id": "held.vetId",
+            "kind": "held_parameter",
+            "name": "vetId",
+            "value": 2,
+            "operation": "getVet",
+            "source": "vetId=2",
+            "gap": {
+              "kind": "operation",
+              "operation": "getVet",
+              "source": "vetId=2 的兽医详情先尝试读取",
+              "blocked_operations": [
+                "getVet"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "C06",
+      "request": "vetId=2 的兽医详情先尝试读取；随后连续两次读取 specialtyId=2 的专科并每次核对 HTTP 200；两次完成后才读取 ownerId=1、petId=1 的宠物，验证 $.name 等于 \"Leo\"。",
+      "config": "p-disabled-order",
+      "category": "unavailable_operation_repeat_order",
+      "rubric": {
+        "steps": [
+          {
+            "operation": "getSpecialty",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "specialtyId": 2
+              }
+            },
+            "fields": [],
+            "source": "连续两次读取 specialtyId=2",
+            "negative": false
+          },
+          {
+            "operation": "getSpecialty",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "specialtyId": 2
+              }
+            },
+            "fields": [],
+            "source": "连续两次读取 specialtyId=2",
+            "negative": false
+          },
+          {
+            "operation": "getOwnersPet",
+            "role": null,
+            "status": 200,
+            "values": {
+              "path_parameters": {
+                "ownerId": 1,
+                "petId": 1
+              }
+            },
+            "fields": [
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "source": "两次完成后才读取",
+            "negative": false
+          }
+        ],
+        "relation": {
+          "kind": "order",
+          "indices": [
+            0,
+            1,
+            2
+          ],
+          "source": "两次完成后才读取"
+        },
+        "gap": {
+          "kind": "operation",
+          "operation": "getVet",
+          "source": "vetId=2 的兽医详情先尝试读取",
+          "blocked_operations": [
+            "getVet"
+          ]
+        },
+        "obligations": [
+          {
+            "id": "s1.action",
+            "kind": "action",
+            "step": 0,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s1.status",
+            "kind": "status",
+            "step": 0,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s1.path_parameters.specialtyId",
+            "kind": "parameter",
+            "step": 0,
+            "location": "path_parameters",
+            "name": "specialtyId",
+            "value": 2,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s2.action",
+            "kind": "action",
+            "step": 1,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s2.status",
+            "kind": "status",
+            "step": 1,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s2.path_parameters.specialtyId",
+            "kind": "parameter",
+            "step": 1,
+            "location": "path_parameters",
+            "name": "specialtyId",
+            "value": 2,
+            "source": "连续两次读取 specialtyId=2"
+          },
+          {
+            "id": "s3.action",
+            "kind": "action",
+            "step": 2,
+            "source": "两次完成后才读取"
+          },
+          {
+            "id": "s3.status",
+            "kind": "status",
+            "step": 2,
+            "source": "两次完成后才读取"
+          },
+          {
+            "id": "s3.path_parameters.ownerId",
+            "kind": "parameter",
+            "step": 2,
+            "location": "path_parameters",
+            "name": "ownerId",
+            "value": 1,
+            "source": "两次完成后才读取"
+          },
+          {
+            "id": "s3.path_parameters.petId",
+            "kind": "parameter",
+            "step": 2,
+            "location": "path_parameters",
+            "name": "petId",
+            "value": 1,
+            "source": "两次完成后才读取"
+          },
+          {
+            "id": "s3.field.$.name",
+            "kind": "field",
+            "step": 2,
+            "field": {
+              "select": "$.name",
+              "operator": "equals",
+              "expected": "Leo"
+            },
+            "source": "两次完成后才读取"
+          },
+          {
+            "id": "relation",
+            "kind": "order",
+            "source": "两次完成后才读取",
+            "relation": {
+              "kind": "order",
+              "indices": [
+                0,
+                1,
+                2
+              ],
+              "source": "两次完成后才读取"
+            }
+          },
+          {
+            "id": "gap",
+            "kind": "hold",
+            "source": "vetId=2 的兽医详情先尝试读取",
+            "gap": {
+              "kind": "operation",
+              "operation": "getVet",
+              "source": "vetId=2 的兽医详情先尝试读取",
+              "blocked_operations": [
+                "getVet"
+              ]
+            }
+          },
+          {
+            "id": "held.vetId",
+            "kind": "held_parameter",
+            "name": "vetId",
+            "value": 2,
+            "operation": "getVet",
+            "source": "vetId=2",
+            "gap": {
+              "kind": "operation",
+              "operation": "getVet",
+              "source": "vetId=2 的兽医详情先尝试读取",
+              "blocked_operations": [
+                "getVet"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "authority": {
+    "g-perm-self": {
+      "operations": {
+        "repoGet": {
+          "method": "GET",
+          "path": "/api/v1/repos/{owner}/{repo}"
+        },
+        "userGetCurrent": {
+          "method": "GET",
+          "path": "/api/v1/user"
+        },
+        "getVersion": {
+          "method": "GET",
+          "path": "/api/v1/version"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "userGetCurrent",
+          "roles": [
+            "archivist"
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:baf33f73980e2b32d5f065120ab2f67d637ec7d51999ab631c9bf83247c9607d:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.login",
+                "operator": "equals",
+                "expected": "archivist"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "getVersion",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:baf33f73980e2b32d5f065120ab2f67d637ec7d51999ab631c9bf83247c9607d:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.version",
+                "operator": "equals",
+                "expected": "1.26.3"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_3",
+          "operation_id": "repoGet",
+          "roles": [
+            "archivist"
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:baf33f73980e2b32d5f065120ab2f67d637ec7d51999ab631c9bf83247c9607d:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.private",
+                "operator": "equals",
+                "expected": true
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "sealed-register"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "owner",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "archivist"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "repo",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "sealed-register"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_3_access_1",
+          "operation_id": "repoGet",
+          "roles": [
+            "reviewer"
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:baf33f73980e2b32d5f065120ab2f67d637ec7d51999ab631c9bf83247c9607d:OPERATOR_ACCESS_RULE",
+            "status": {
+              "codes": [
+                404
+              ]
+            },
+            "fields": [],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "owner",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "archivist"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "repo",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "sealed-register"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null,
+          "planning_purpose": "非协作者不能看到私有仓库，返回 404"
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    },
+    "g-perm-anonymous": {
+      "operations": {
+        "repoGet": {
+          "method": "GET",
+          "path": "/api/v1/repos/{owner}/{repo}"
+        },
+        "getVersion": {
+          "method": "GET",
+          "path": "/api/v1/version"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "getVersion",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:3521d6d7805781bd324efa99c28acd7e5d7694b592f72af3ce7d709a40bb9fa4:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.version",
+                "operator": "equals",
+                "expected": "1.26.3"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "repoGet",
+          "roles": [
+            "archivist"
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:3521d6d7805781bd324efa99c28acd7e5d7694b592f72af3ce7d709a40bb9fa4:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.private",
+                "operator": "equals",
+                "expected": true
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "sealed-register"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "owner",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "archivist"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "repo",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "sealed-register"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2_access_1",
+          "operation_id": "repoGet",
+          "roles": [
+            "reviewer"
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:3521d6d7805781bd324efa99c28acd7e5d7694b592f72af3ce7d709a40bb9fa4:OPERATOR_ACCESS_RULE",
+            "status": {
+              "codes": [
+                404
+              ]
+            },
+            "fields": [],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "owner",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "archivist"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "repo",
+              "literal_schema": {
+                "type": "string",
+                "enum": [
+                  "sealed-register"
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null,
+          "planning_purpose": "非协作者不能看到私有仓库，返回 404"
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    },
+    "p-linked-approved": {
+      "operations": {
+        "getSpecialty": {
+          "method": "GET",
+          "path": "/petclinic/api/specialties/{specialtyId}"
+        },
+        "getVet": {
+          "method": "GET",
+          "path": "/petclinic/api/vets/{vetId}"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "getVet",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:597dacf6711fdf2fa91584228b6ec0c5e8f26656079e498552af8adb12efd773:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "vetId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  2
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "getSpecialty",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:597dacf6711fdf2fa91584228b6ec0c5e8f26656079e498552af8adb12efd773:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "specialtyId",
+              "literal_schema": null,
+              "source_policy_id": "web_rule_1",
+              "source_selector": "$.specialties[0].id",
+              "role_relation": "anonymous",
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    },
+    "p-linked-hold": {
+      "operations": {
+        "getOwnersPet": {
+          "method": "GET",
+          "path": "/petclinic/api/owners/{ownerId}/pets/{petId}"
+        },
+        "getSpecialty": {
+          "method": "GET",
+          "path": "/petclinic/api/specialties/{specialtyId}"
+        },
+        "getVet": {
+          "method": "GET",
+          "path": "/petclinic/api/vets/{vetId}"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "getVet",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:b79abe5abc2fc0addf12fedefede4c8d6974aa47f4140ddcaf2ffe963a88f0cd:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.firstName",
+                "operator": "equals",
+                "expected": "Helen"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "vetId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  2
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "getSpecialty",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:b79abe5abc2fc0addf12fedefede4c8d6974aa47f4140ddcaf2ffe963a88f0cd:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "specialtyId",
+              "literal_schema": null,
+              "source_policy_id": "web_rule_1",
+              "source_selector": "$.specialties[0].id",
+              "role_relation": "anonymous",
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_3",
+          "operation_id": "getOwnersPet",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:b79abe5abc2fc0addf12fedefede4c8d6974aa47f4140ddcaf2ffe963a88f0cd:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.ownerId",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "ownerId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  1
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "petId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  1
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    },
+    "p-disabled-pair": {
+      "operations": {
+        "getSpecialty": {
+          "method": "GET",
+          "path": "/petclinic/api/specialties/{specialtyId}"
+        },
+        "listPetsPage": {
+          "method": "GET",
+          "path": "/petclinic/api/v2/pets"
+        },
+        "getVet": {
+          "method": "GET",
+          "path": "/petclinic/api/vets/{vetId}"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "listPetsPage",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:5cb3b8fdc3367fc45a1064eb835a5fc3b3987a0774097639bbf2f284ea090b9f:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.content",
+                "operator": "count",
+                "expected": 2
+              },
+              {
+                "select": "$.totalElements",
+                "operator": "equals",
+                "expected": 13
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "query",
+              "name": "page",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "default": 0,
+                "minimum": 0,
+                "enum": [
+                  0
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "query",
+              "name": "size",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "default": 20,
+                "maximum": 100,
+                "minimum": 1,
+                "enum": [
+                  2
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "getSpecialty",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:5cb3b8fdc3367fc45a1064eb835a5fc3b3987a0774097639bbf2f284ea090b9f:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "surgery"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "specialtyId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  2
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    },
+    "p-disabled-order": {
+      "operations": {
+        "getOwnersPet": {
+          "method": "GET",
+          "path": "/petclinic/api/owners/{ownerId}/pets/{petId}"
+        },
+        "getSpecialty": {
+          "method": "GET",
+          "path": "/petclinic/api/specialties/{specialtyId}"
+        },
+        "getVet": {
+          "method": "GET",
+          "path": "/petclinic/api/vets/{vetId}"
+        }
+      },
+      "policies": [
+        {
+          "id": "web_rule_1",
+          "operation_id": "getSpecialty",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:3450582d36fb9491d965e38bb401dfd9a575c5af121f527d4803ebef8b2283e8:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 2
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "surgery"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "specialtyId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  2
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        },
+        {
+          "id": "web_rule_2",
+          "operation_id": "getOwnersPet",
+          "roles": [
+            null
+          ],
+          "business_scenario": "web_contract_v2",
+          "assertions": {
+            "reviewed": true,
+            "source": "WEB_OPERATOR_CONFIRMED:3450582d36fb9491d965e38bb401dfd9a575c5af121f527d4803ebef8b2283e8:已核对隔离服务的官方夹具响应与原生接口定义。",
+            "status": {
+              "codes": [
+                200
+              ]
+            },
+            "fields": [
+              {
+                "select": "$.id",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.ownerId",
+                "operator": "equals",
+                "expected": 1
+              },
+              {
+                "select": "$.name",
+                "operator": "equals",
+                "expected": "Leo"
+              }
+            ],
+            "public_evidence": []
+          },
+          "poll": null,
+          "required_bindings": {},
+          "binding_rules": [
+            {
+              "location": "path_parameters",
+              "name": "ownerId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  1
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            },
+            {
+              "location": "path_parameters",
+              "name": "petId",
+              "literal_schema": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "enum": [
+                  1
+                ]
+              },
+              "source_policy_id": null,
+              "source_selector": "$",
+              "role_relation": null,
+              "response_selector": null,
+              "source_body_equalities": {}
+            }
+          ],
+          "closed_arguments": true,
+          "csv_fixture": null
+        }
+      ],
+      "budget": {
+        "max_model_calls": 4,
+        "max_readonly_investigations": 2,
+        "max_input_tokens": 60000,
+        "max_output_tokens": 8192,
+        "max_total_tokens": 70000,
+        "suite_max_model_calls": 9,
+        "suite_max_total_tokens": 500000
+      },
+      "max_requests": 12,
+      "max_steps": 20
+    }
+  },
+  "preflight": [
+    {
+      "task": "C01",
+      "operation": "userGetCurrent",
+      "role": "archivist",
+      "values": {},
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "2d02955ec3ef7b5d54c65f3d0379a0c6a2553ac66255bd51a2327a1524f495bb"
+    },
+    {
+      "task": "C02",
+      "operation": "getVersion",
+      "role": null,
+      "values": {},
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "724946a4bc100e91383b7caeb5b872020c90f5b3af1b3886b960f11ea53882e1"
+    },
+    {
+      "task": "C03",
+      "operation": "getVet",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "vetId": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "994d33135d050ce838863f83ef3280e680c47cfe1a240c8c32cbe36aa43199b8"
+    },
+    {
+      "task": "C03",
+      "operation": "getSpecialty",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "specialtyId": 1
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "5012e2c33634eec7668edd68cd6e2d489b86296428825be5d13ec3afd521cf98"
+    },
+    {
+      "task": "C04",
+      "operation": "getVet",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "vetId": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "994d33135d050ce838863f83ef3280e680c47cfe1a240c8c32cbe36aa43199b8"
+    },
+    {
+      "task": "C04",
+      "operation": "getOwnersPet",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "ownerId": 1,
+          "petId": 1
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "03d69b0a956439c73e8831a113317b952b6440b4aaa4dbc640bb539c257e52c8"
+    },
+    {
+      "task": "C05",
+      "operation": "listPetsPage",
+      "role": null,
+      "values": {
+        "query": {
+          "page": 0,
+          "size": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "2a22cc53c289a584404845134c246a95aa462e31f969c9601e160e5961383ac2"
+    },
+    {
+      "task": "C05",
+      "operation": "getSpecialty",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "specialtyId": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "e9fc975e90493007969c79101c7b93446f2f4f5070d5baf8244f75cbd0288f70"
+    },
+    {
+      "task": "C06",
+      "operation": "getSpecialty",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "specialtyId": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "e9fc975e90493007969c79101c7b93446f2f4f5070d5baf8244f75cbd0288f70"
+    },
+    {
+      "task": "C06",
+      "operation": "getSpecialty",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "specialtyId": 2
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "e9fc975e90493007969c79101c7b93446f2f4f5070d5baf8244f75cbd0288f70"
+    },
+    {
+      "task": "C06",
+      "operation": "getOwnersPet",
+      "role": null,
+      "values": {
+        "path_parameters": {
+          "ownerId": 1,
+          "petId": 1
+        }
+      },
+      "status": 200,
+      "approved_expected_status": 200,
+      "assertion_matches": true,
+      "response_sha256": "03d69b0a956439c73e8831a113317b952b6440b4aaa4dbc640bb539c257e52c8"
+    }
+  ],
+  "prompt_sha256": {
+    "baseline": {
+      "product_focus.py:FOCUS_PROMPT": "bb4f77d5623d04430014783d1fd2f45889ab5752cd75f48f41e79c9946894e81",
+      "product_design.py:DESIGN_PROMPT": "ad8788c37d83431fbc1a56bdfc05fc8573469a75d54f9fa6d6684c52d1099bac",
+      "llm_planner.py:SYSTEM_PROMPT": "f82fa860091843209104c2e859064ef60b8bfaebcf3ccab29f8625dfceee9ca9",
+      "llm_planner.py:GENERIC_PROMPT": "cbb0c94ce641e07cd0f3ab5f1df28471f315e3b077cfe6a2b21fc324d7c6241e",
+      "llm_planner.py:COURSEINSIGHT_PROMPT": "bc4df8dea3ebfdaa88628e8369572bc0ce199dacad7b1f3ee5c39a179d50395f"
+    },
+    "candidate": {
+      "product_focus.py:FOCUS_PROMPT": "bb4f77d5623d04430014783d1fd2f45889ab5752cd75f48f41e79c9946894e81",
+      "product_design.py:DESIGN_PROMPT": "ad8788c37d83431fbc1a56bdfc05fc8573469a75d54f9fa6d6684c52d1099bac",
+      "llm_planner.py:SYSTEM_PROMPT": "f82fa860091843209104c2e859064ef60b8bfaebcf3ccab29f8625dfceee9ca9",
+      "llm_planner.py:GENERIC_PROMPT": "cbb0c94ce641e07cd0f3ab5f1df28471f315e3b077cfe6a2b21fc324d7c6241e",
+      "llm_planner.py:COURSEINSIGHT_PROMPT": "bc4df8dea3ebfdaa88628e8369572bc0ce199dacad7b1f3ee5c39a179d50395f"
+    }
+  },
+  "source_archives": {
+    "baseline": "sha256:89e4fbe20d80e2d3e902e815ee609e6505d4c07852a6bf629c356c8fd24e048f",
+    "candidate": "c5eb6d0a2644bca11fc67d1c5f3912f78557617d17ace75fdaad8b5acfc1452e"
+  },
+  "dependencies": [
+    [
+      "PyJWT",
+      "2.15.1"
+    ],
+    [
+      "PyYAML",
+      "6.0.3"
+    ],
+    [
+      "Pygments",
+      "2.21.0"
+    ],
+    [
+      "agenttest",
+      "0.1.0"
+    ],
+    [
+      "agenttest",
+      "0.1.0"
+    ],
+    [
+      "annotated-doc",
+      "0.0.5"
+    ],
+    [
+      "annotated-types",
+      "0.8.0"
+    ],
+    [
+      "anyio",
+      "4.15.1"
+    ],
+    [
+      "attrs",
+      "26.1.0"
+    ],
+    [
+      "certifi",
+      "2026.7.22"
+    ],
+    [
+      "cffi",
+      "2.1.1"
+    ],
+    [
+      "charset-normalizer",
+      "3.5.2"
+    ],
+    [
+      "click",
+      "8.5.0"
+    ],
+    [
+      "colorama",
+      "0.4.6"
+    ],
+    [
+      "cryptography",
+      "50.0.2"
+    ],
+    [
+      "distro",
+      "1.9.0"
+    ],
+    [
+      "fastapi",
+      "0.143.0"
+    ],
+    [
+      "h11",
+      "0.16.0"
+    ],
+    [
+      "httpcore",
+      "1.0.9"
+    ],
+    [
+      "httpcore2",
+      "2.13.1"
+    ],
+    [
+      "httpx",
+      "0.28.1"
+    ],
+    [
+      "httpx2",
+      "2.13.1"
+    ],
+    [
+      "idna",
+      "3.20"
+    ],
+    [
+      "iniconfig",
+      "2.3.1"
+    ],
+    [
+      "jsonpatch",
+      "1.35"
+    ],
+    [
+      "jsonpointer",
+      "3.2.1"
+    ],
+    [
+      "jsonschema",
+      "4.26.0"
+    ],
+    [
+      "jsonschema-path",
+      "0.5.0"
+    ],
+    [
+      "jsonschema-specifications",
+      "2025.9.1"
+    ],
+    [
+      "langchain-core",
+      "1.6.9"
+    ],
+    [
+      "langchain-protocol",
+      "0.0.19"
+    ],
+    [
+      "langgraph",
+      "1.2.14"
+    ],
+    [
+      "langgraph-checkpoint",
+      "4.2.0"
+    ],
+    [
+      "langgraph-prebuilt",
+      "1.1.0"
+    ],
+    [
+      "langgraph-sdk",
+      "0.4.6"
+    ],
+    [
+      "langsmith",
+      "0.14.7"
+    ],
+    [
+      "lazy-object-proxy",
+      "1.12.0"
+    ],
+    [
+      "mcp",
+      "2.3.0"
+    ],
+    [
+      "mcp-types",
+      "2.3.0"
+    ],
+    [
+      "openapi-schema-validator",
+      "0.9.0"
+    ],
+    [
+      "openapi-spec-validator",
+      "0.9.0"
+    ],
+    [
+      "opentelemetry-api",
+      "1.45.1"
+    ],
+    [
+      "orjson",
+      "3.13.0"
+    ],
+    [
+      "ormsgpack",
+      "1.12.2"
+    ],
+    [
+      "packaging",
+      "26.3"
+    ],
+    [
+      "pathable",
+      "0.6.0"
+    ],
+    [
+      "pip",
+      "24.0"
+    ],
+    [
+      "pluggy",
+      "1.6.0"
+    ],
+    [
+      "pycparser",
+      "3.11"
+    ],
+    [
+      "pydantic",
+      "2.14.0"
+    ],
+    [
+      "pydantic-settings",
+      "2.15.0"
+    ],
+    [
+      "pydantic_core",
+      "2.50.0"
+    ],
+    [
+      "pytest",
+      "9.1.1"
+    ],
+    [
+      "pytest-asyncio",
+      "1.4.0"
+    ],
+    [
+      "python-dotenv",
+      "1.2.4"
+    ],
+    [
+      "python-multipart",
+      "0.0.32"
+    ],
+    [
+      "pywin32",
+      "312"
+    ],
+    [
+      "referencing",
+      "0.37.0"
+    ],
+    [
+      "requests",
+      "2.34.2"
+    ],
+    [
+      "requests-toolbelt",
+      "1.0.0"
+    ],
+    [
+      "rfc3339-validator",
+      "0.1.4"
+    ],
+    [
+      "rpds-py",
+      "2026.9.1"
+    ],
+    [
+      "ruff",
+      "0.17.0"
+    ],
+    [
+      "setuptools",
+      "79.0.1"
+    ],
+    [
+      "six",
+      "1.17.0"
+    ],
+    [
+      "sniffio",
+      "1.3.1"
+    ],
+    [
+      "sse-starlette",
+      "3.5.0"
+    ],
+    [
+      "starlette",
+      "1.7.0"
+    ],
+    [
+      "tenacity",
+      "9.2.1"
+    ],
+    [
+      "truststore",
+      "0.10.4"
+    ],
+    [
+      "typing-inspection",
+      "0.4.4"
+    ],
+    [
+      "typing_extensions",
+      "4.16.0"
+    ],
+    [
+      "urllib3",
+      "2.8.0"
+    ],
+    [
+      "uuid_utils",
+      "0.17.1"
+    ],
+    [
+      "uvicorn",
+      "0.54.0"
+    ],
+    [
+      "websockets",
+      "16.1.1"
+    ],
+    [
+      "xxhash",
+      "4.0.1"
+    ],
+    [
+      "zstandard",
+      "0.25.0"
+    ]
+  ],
+  "review": "DEVELOPMENT_ONLY_NO_INDEPENDENT_HUMAN_REVIEW",
+  "evaluator_sha256": {
+    "score.py": "2640a075406b8941f4db1bcab20bd01b5f64db4faa9c543af180fb9e0e16b3d8",
+    "test_score.py": "4bf204c28e3dc8a9eb7098c7ad49f24edaf88442ed70ad4ee1e14f9f1a20def7",
+    "run.mjs": "6f1df0d97582cda729b448c68eae0b8b96e105c42225f6e08ed8a0e1f680bb48",
+    "serve.py": "00bba6ae183cb1802765660fd470b60ef0090323959be37159ced10086909e94",
+    "observe.py": "73ac8e17fe0242f3ceff222e0005c569a57ee12c5dbb22e55dd098c1bc3d5ddf"
+  },
+  "scoring_protocol": {
+    "completion": "all requested authorized requests and approved assertions evaluated, including preserved ASSERTION_FAILED; assertion pass counted separately",
+    "silent": "no successful witness and no requirement-specific execution, hold or rejection record; generic whole-task rejection alone does not explain every requirement",
+    "unnecessary": "primary requests exceeding distinct frozen steps, plus diagnostic requests outside those steps, recorded separately from policy violations",
+    "first_rate_denominator": 24,
+    "eligible_execution_denominator": 2,
+    "hold_denominator": 10,
+    "baseline_kind": "PRE_P0_CANDIDATE",
+    "candidate_kind": "COMMITTED_P0_SOURCE"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "files": {
+    "freeze.json": "28cce64c5b773dafcb9389ca533101bb41e90c0df28d17ea55defd1da831ab1f",
+    "freeze.sha256": "ff1a5466f99a5bd41c8704c755595b51e3e3acbb6772ef8dc6b3000f9fdc0d00",
+    "incremental.patch": "427bce82e6c815c9d4914a41f02613d527fc2d09f0bd733f1c487a647448d66e",
+    "manifest.json": "d688b511ece48b91dd2533e437f679d04bb7c7185a73f733d6d419440be7718e",
+    "positions.csv": "c8f89f530093f9068e57ca332be88d3ee7e7f08822bbde3903ea17f4a7e8a081",
+    "positions.zip": "b5da0c5abc697bc8b2ca7f6050357a17a6c70b5ba3f67cc99c4a5bf54aa57f81",
+    "preflight-journal.jsonl": "7a76c5b5000d73e963f8ca885b826713aa9a7de0d84e835de53b75383e14c852",
+    "results.json": "8636d1c34bab1029d23e76c7c819cd800d74706744c443d26cd42c5c2a903a65",
+    "schedule-terminal.json": "641b1d0ec9ea73ba2375ba1cdbae3029dc0310734c885a13bb38e83ea3e1ebcb",
+    "verification.json": "5eb926c7aba2f9cbaf0c903abb6e0586f47ae5806cf58a23f8b13a01cbcbf962"
+  },
+  "freeze_sha256": "28cce64c5b773dafcb9389ca533101bb41e90c0df28d17ea55defd1da831ab1f",
+  "commit": "8c0c6c7ba916ea1839e7c4931be242e5dcc6474e"
+}
