@@ -9,7 +9,7 @@
   "evidence": {
     "red": {
       "original_sha256": "94c2821676366808225df4a426e9cfe9873ebc6d33c8e206aae66b81a7e3d94f",
-      "public_sha256": "e22163b2d803c94ca2d8357b9a280cff0da477fc499cda20adc3ea2198e57efc",
+      "public_sha256": "a0420b66961f131041e1abffc0401743bcf0413ecdf43439c3476773b634f6c9",
       "result": {
         "tests": 12.0,
         "failures": 10.0,
@@ -20,7 +20,7 @@
     },
     "same-clause-red": {
       "original_sha256": "e3a93d4687602c501d4ba988ae0f1f7e40eb569da50966b25bdab96857b13cbe",
-      "public_sha256": "fd2ee3458dfa01299cc7e06c70a2884f5d9393f3a11b5707f20e9ebca866c6dc",
+      "public_sha256": "523acf76cdd89bf0f3f5ef6de41f37916b613c8099d4e35b51571a8178680bfb",
       "result": {
         "tests": 4.0,
         "failures": 2.0,
@@ -130,5 +130,6 @@
       "high_confidence_token_patterns",
       "local_configured_secret_values"
     ]
-  }
+  },
+  "public_failure_xml_encoding": "Trailing whitespace encoded as XML character references; parsed failure records unchanged; original raw evidence hashes retained"
 }

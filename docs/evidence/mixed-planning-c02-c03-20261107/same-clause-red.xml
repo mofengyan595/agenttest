@@ -5,7 +5,7 @@
     def test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities(
             anaphor, disposition):
         from agenttest.product_focus import permission_review_scope
-    
+&#32;&#32;&#32;&#32;
         text = f'请确认 reviewer 访问状态接口的权限并匿名访问{anaphor}状态接口'
         context = ctx(text)
         context.update(approved_ids=['status'], resource_dependencies=[],
@@ -33,7 +33,7 @@ tests\test_mixed_planning_c02_c03.py:339: AssertionError</failure></testcase><te
     def test_c02_same_clause_question_and_explicit_anonymous_action_keep_separate_identities(
             anaphor, disposition):
         from agenttest.product_focus import permission_review_scope
-    
+&#32;&#32;&#32;&#32;
         text = f'请确认 reviewer 访问状态接口的权限并匿名访问{anaphor}状态接口'
         context = ctx(text)
         context.update(approved_ids=['status'], resource_dependencies=[],

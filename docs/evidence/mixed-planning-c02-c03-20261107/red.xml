@@ -12,7 +12,7 @@ disposition = 'required', anonymous = True
 &gt;       assert done['status'] == 'FINISHED', done['summary']
 E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}
 E       assert 'NEEDS_REVIEW' == 'FINISHED'
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         - FINISHED
 E         + NEEDS_REVIEW
 
@@ -30,7 +30,7 @@ disposition = 'needs_review', anonymous = True
 &gt;       assert done['status'] == 'FINISHED', done['summary']
 E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；另外匿名访问同一个状态接口，核对 HTTP 200。', 'scope': 'project', ...}
 E       assert 'NEEDS_REVIEW' == 'FINISHED'
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         - FINISHED
 E         + NEEDS_REVIEW
 
@@ -48,7 +48,7 @@ disposition = 'required', anonymous = False
 &gt;       assert done['status'] == 'FINISHED', done['summary']
 E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}
 E       assert 'NEEDS_REVIEW' == 'FINISHED'
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         - FINISHED
 E         + NEEDS_REVIEW
 
@@ -66,7 +66,7 @@ disposition = 'needs_review', anonymous = False
 &gt;       assert done['status'] == 'FINISHED', done['summary']
 E       AssertionError: {'mode': 'MODEL_DESIGNED', 'display_title': '一轮接口测试', 'user_request': '请确认 reviewer 访问状态接口时应当返回 403 还是 404；独立读取详情 detailId=2。', 'scope': 'project', ...}
 E       assert 'NEEDS_REVIEW' == 'FINISHED'
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         - FINISHED
 E         + NEEDS_REVIEW
 
@@ -85,7 +85,7 @@ wording = '随后用该响应中的 $.link.id 打开相应状态'
         assert done['status'] == 'FINISHED', done['summary']
 &gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
 E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         Right contains one more item: ('/status/7', False)
 E         Use -v to get more diff
 
@@ -104,7 +104,7 @@ wording = '随后将该响应中的 $.link.id 交给状态接口作为入参'
         assert done['status'] == 'FINISHED', done['summary']
 &gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
 E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         Right contains one more item: ('/status/7', False)
 E         Use -v to get more diff
 
@@ -123,7 +123,7 @@ wording = '依据该响应中的 $.link.id 获取对应状态'
         assert done['status'] == 'FINISHED', done['summary']
 &gt;       assert sent == [('/detail/2', False), ('/status/7', False)]
 E       AssertionError: assert [('/detail/2', False)] == [('/detail/2'...us/7', False)]
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         Right contains one more item: ('/status/7', False)
 E         Use -v to get more diff
 
@@ -159,7 +159,7 @@ fault = 'binding'
         assert not done['summary']['complete']
 &gt;       assert sent == ([('/detail/2', False)] if fault == 'selector' else [])
 E       AssertionError: assert [('/detail/2', False)] == []
-E         
+E&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;
 E         Left contains one more item: ('/detail/2', False)
 E         Use -v to get more diff
 
@@ -179,7 +179,7 @@ tests\test_mixed_planning_c02_c03.py:162: AssertionError</failure></testcase><te
             requirements=[requirement], expectation_questions=[question])
 &gt;       validate_expectation_questions([question], context, ['version'], requirements=[requirement])
 
-tests\test_mixed_planning_c02_c03.py:182: 
+tests\test_mixed_planning_c02_c03.py:182:&#32;
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 questions = [ExpectationQuestion(operation_id='version', question='请确认访问权限？', requested_behavior='确认 reviewer 版本接口权限', source_quote='请确认 reviewer 访问版本接口时应当返回 403 还是 404', kind='permission', role='reviewer', status_choices=[403, 404])]
@@ -210,7 +210,7 @@ requirements = [RequestRequirement(source_id='request_1', source_quote='请确�
                     permission_source_texts,
                     question_source_texts,
                 )
-    
+&#32;&#32;&#32;&#32;
                 if question.source_quote not in question_source_texts(context):
                     raise ValidationFailure(Layer.MODEL, 'FOCUS_QUESTION_SOURCE_NOT_CURRENT')
                 if question.kind == 'permission' and (
