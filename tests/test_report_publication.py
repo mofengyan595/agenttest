@@ -18,6 +18,41 @@ def report():
                      target_origin="http://127.0.0.1:8080")
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows directory open semantics")
+def test_existing_report_update_needs_no_directory_creation(tmp_path, monkeypatch):
+    store, value = ReportStore(tmp_path), report()
+    store.save(value)
+
+    def denied(*args, **kwargs):
+        raise PermissionError("Directory creation denied; existing files remain writable")
+
+    monkeypatch.setattr(Path, "mkdir", denied)
+    value.completed = True
+    store.save(value)
+    assert store.read(value.run_id).completed
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows directory creation race")
+def test_concurrent_directory_creation_is_rechecked_for_junctions(tmp_path, monkeypatch):
+    outside, root = tmp_path / "outside", tmp_path / "reports"
+    outside.mkdir()
+    mkdir = Path.mkdir
+
+    def race(path, *args, **kwargs):
+        if path == root:
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(root), str(outside)],
+                                    capture_output=True, check=False)
+            if result.returncode:
+                pytest.skip("Junction creation not available on this filesystem")
+            raise FileExistsError("Another writer created the directory")
+        return mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", race)
+    with pytest.raises(ValueError, match="Linked"):
+        ReportStore(root).save(report())
+    assert not list(outside.iterdir())
+
+
 def test_transient_windows_replace_lock_retries_only_publication(tmp_path, monkeypatch):
     replace, calls = ReportDirectory.replace, []
 

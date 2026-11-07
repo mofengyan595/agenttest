@@ -157,7 +157,7 @@ Linux 改用 `.venv/bin/python`。离线演示包含正常流程、预设断言�
 
 ```bash
 # Python 后端（已激活项目 .venv）
-python -m pytest -q
+python scripts/check_full.py --jobs 4
 python -m ruff check .
 
 # 前端（web/ 目录）
@@ -165,6 +165,11 @@ npm test
 npm run build
 npm run test:e2e
 ```
+
+全量入口先收集全部默认测试，再用四个独立进程执行并核对每个测试的终态；报告写入
+`runs/full-checks/`。`python -m pytest -q` 仍可串行运行同一套测试。日常局部修改按
+[开发快检说明](docs/development-checks.md)选择范围；全量耗时及限制见
+[验证性能记录](docs/validation-performance.md)。
 
 `test:e2e` 有额外浏览器和服务准备条件，按 [Web 测试说明](docs/web-console.md) 执行；不能把未启动环境导致的跳过当作通过。
 
