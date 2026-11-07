@@ -3418,3 +3418,8 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 
 结论：不适合进入真实读写验收；下一步先改焦点校验按身份记录问题与动作，再把来源识别改为
 结构判定，然后冻结 12 条新题做第三轮。本轮为开发侧复验，未经独立人工复核。
+
+全量离线回归（候选 `8c0c6c7`）：`pytest -q` 2327 passed、15 skipped、2 failed（2374.08 秒）；
+两个失败均为 `Source changed during slot check`，由本轮证据提交在全量套件运行期间改变 HEAD 引起，
+在稳定 HEAD `477a995` 上单独复跑 2 passed。`ruff check src tests` 全过；仓库未以 `ruff format`
+作为门禁（全仓 301/320 文件不符合），故沿用 lint 门禁。无产品相关失败。

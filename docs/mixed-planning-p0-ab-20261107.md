@@ -85,6 +85,20 @@
 
 **冻结判分器的口径限制（继续保留，未改分）**。`false_refusal` 要求同时存在拒绝诊断与追问记录，因此 C05、C06 基线那种“无追问的零请求整轮拒绝”未被计入误拒计数。本报告按实际行为单列：基线共有 6 个位置属于此类错误拒绝（C02 两轮、C05 两轮、C06 两轮），候选为 2 个（C02 两轮）。
 
+## 回归
+
+候选提交 `8c0c6c7` 上的离线全量回归：
+
+| 检查 | 结果 |
+| --- | --- |
+| `pytest -q`（全量） | 2327 passed, 15 skipped, 2 failed, 2374.08 秒 |
+| 上述 2 个失败单独复跑（稳定 HEAD `477a995`） | 2 passed, 156.36 秒 |
+| `ruff check src tests` | All checks passed |
+
+两个失败均为 `ValueError: Source changed during slot check`（`argument_slot_check.checkout_identity` 与运行开始时冻结的提交身份不一致），原因是本轮证据提交在全量套件运行期间落盘，HEAD 从 `8c0c6c7` 变为 `477a995`。这两条测试本身校验的就是“运行期间源码不变”，因此在稳定 HEAD 上复跑即通过，与产品行为无关。除此之外没有产品相关失败。
+
+仓库并未把 `ruff format` 作为门禁（全仓 301/320 个文件不符合格式化），本轮沿用既有的 lint 门禁。
+
 ## 可复算
 
 - 基线可由公开仓库重建：在 `8c0c6c7` 上反向应用 [`incremental.patch`](evidence/mixed-planning-p0-ab-20261107/incremental.patch)（即上一轮 P0 证据中的源码补丁，摘要见 `verification.json`）后，5 个源码模块与基线快照逐字节一致；已验证。
