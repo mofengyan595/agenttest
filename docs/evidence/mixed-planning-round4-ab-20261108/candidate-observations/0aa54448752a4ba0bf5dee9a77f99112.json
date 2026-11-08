@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "78026c9835eb45ec9306608c6fb4774d", "plan": {"name": "匿名读取公告", "steps": [{"id": "fetch_notice", "operation_id": "fetchNotice", "role": null, "path_parameters": {}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_3", "poll": false, "read_retries": 0}]}}

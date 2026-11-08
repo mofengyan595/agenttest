@@ -1,0 +1,6 @@
+{
+  "id": "F3_r2_candidate",
+  "digest": "457d90967b5119cd0d955a1adbf83655ac161a7a6293dde4619435249f407faf",
+  "request": "先以匿名身份连续读取运行心跳两次；两次都要核对 HTTP 200；最后由 auditor 读取 ledgerId=7 的台账。",
+  "projectId": "web_3c637bf7a5cd469d88de0c0e"
+}

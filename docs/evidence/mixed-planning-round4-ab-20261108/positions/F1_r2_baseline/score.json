@@ -1,0 +1,87 @@
+{
+  "obligations": [
+    {
+      "id": "0.action",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "0.status",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "0.path_parameters.shelfId",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "1.action",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "1.status",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "1.path_parameters.cardRef",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "1.field.$.marker",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "2.action",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "2.status",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "binding.0",
+      "verified": true,
+      "recorded": true,
+      "silent": false
+    },
+    {
+      "id": "order",
+      "verified": false,
+      "recorded": false,
+      "silent": true
+    }
+  ],
+  "obligation_denominator": 11,
+  "silent_obligations": 1,
+  "evidence_integrity": true,
+  "full_execution": false,
+  "correct_hold": false,
+  "false_refusal": false,
+  "configured_scope_violations": 0,
+  "task_scope_violations": 0,
+  "pending_scope_violations": 0,
+  "unnecessary_requests": 0,
+  "unnecessary_permission_questions": 0,
+  "unnecessary_questions": 0,
+  "target_requests": 3,
+  "target_retries": 0,
+  "failed_assertions": 0,
+  "infrastructure": false,
+  "diagnostic_codes": {}
+}

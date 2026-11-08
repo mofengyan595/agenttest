@@ -1,0 +1,59 @@
+[
+  {
+    "sequence": 45,
+    "position": "F3_r1_baseline",
+    "config": "order",
+    "operation_id": "checkPulse",
+    "method": "GET",
+    "path": "/pulse",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "pulse": "steady"
+    },
+    "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 46,
+    "position": "F3_r1_baseline",
+    "config": "order",
+    "operation_id": "checkPulse",
+    "method": "GET",
+    "path": "/pulse",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "pulse": "steady"
+    },
+    "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 47,
+    "position": "F3_r1_baseline",
+    "config": "order",
+    "operation_id": "readLedger",
+    "method": "GET",
+    "path": "/ledgers/7",
+    "role": "auditor",
+    "values": {
+      "path_parameters": {
+        "ledgerId": 7
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": 7,
+      "entries": [
+        {
+          "no": 3
+        }
+      ]
+    },
+    "response_sha256": "ba9d5ae65d883d0681d6781ec916ef0960a9c29d50e6aa91ba9f5e84be4f7dd5",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  }
+]

@@ -1,0 +1,369 @@
+{
+  "flow": {
+    "name": "第四轮隔离读取 flow",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"flow\", \"version\": \"1\"}, \"paths\": {\"/shelves/{shelfId}\": {\"get\": {\"operationId\": \"listShelf\", \"summary\": \"书架\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"shelfId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/cards/{cardRef}\": {\"get\": {\"operationId\": \"showCard\", \"summary\": \"卡片\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"cardRef\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"string\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/pulse\": {\"get\": {\"operationId\": \"checkPulse\", \"summary\": \"运行心跳\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "listShelf",
+          "alias": "书架",
+          "role": "custodian",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "shelfId",
+              "value": 12
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.cards[0].ref",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "showCard",
+          "alias": "卡片",
+          "role": "curator",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "cardRef",
+              "source_operation": "listShelf",
+              "selector": "$.cards[0].ref"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.marker",
+              "operator": "equals",
+              "expected": "catalogued"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "checkPulse",
+          "alias": "运行心跳",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ]
+    }
+  },
+  "perm": {
+    "name": "第四轮隔离读取 perm",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"perm\", \"version\": \"1\"}, \"paths\": {\"/gates\": {\"get\": {\"operationId\": \"readGate\", \"summary\": \"闸口状态\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/keepers/{keeperId}\": {\"get\": {\"operationId\": \"readKeeper\", \"summary\": \"值守账号\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"keeperId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/notices\": {\"get\": {\"operationId\": \"fetchNotice\", \"summary\": \"公告\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/pulse\": {\"get\": {\"operationId\": \"checkPulse\", \"summary\": \"运行心跳\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "readGate",
+          "alias": "闸口状态",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "readKeeper",
+          "alias": "值守账号",
+          "role": "auditor",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "keeperId",
+              "value": 9
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "fetchNotice",
+          "alias": "公告",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "checkPulse",
+          "alias": "运行心跳",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ]
+    }
+  },
+  "order": {
+    "name": "第四轮隔离读取 order",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"order\", \"version\": \"1\"}, \"paths\": {\"/pulse\": {\"get\": {\"operationId\": \"checkPulse\", \"summary\": \"运行心跳\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/ledgers/{ledgerId}\": {\"get\": {\"operationId\": \"readLedger\", \"summary\": \"台账\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"ledgerId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "checkPulse",
+          "alias": "运行心跳",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "readLedger",
+          "alias": "台账",
+          "role": "auditor",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "ledgerId",
+              "value": 7
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ]
+    }
+  },
+  "mix": {
+    "name": "第四轮隔离读取 mix",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"mix\", \"version\": \"1\"}, \"paths\": {\"/shelves/{shelfId}\": {\"get\": {\"operationId\": \"listShelf\", \"summary\": \"书架\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"shelfId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/cards/{cardRef}\": {\"get\": {\"operationId\": \"showCard\", \"summary\": \"卡片\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"cardRef\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"string\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/slips/{slipCode}\": {\"get\": {\"operationId\": \"fetchSlip\", \"summary\": \"凭条\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"slipCode\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"string\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/notices\": {\"get\": {\"operationId\": \"fetchNotice\", \"summary\": \"公告\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "listShelf",
+          "alias": "书架",
+          "role": "custodian",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "shelfId",
+              "value": 12
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.cards[0].ref",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "showCard",
+          "alias": "卡片",
+          "role": "curator",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "cardRef",
+              "source_operation": "listShelf",
+              "selector": "$.cards[0].ref"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.marker",
+              "operator": "equals",
+              "expected": "catalogued"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "fetchSlip",
+          "alias": "凭条",
+          "role": "custodian",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "slipCode",
+              "source_operation": "listShelf",
+              "selector": "$.cards[0].slip"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.code",
+              "operator": "equals",
+              "expected": "S-31"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "fetchNotice",
+          "alias": "公告",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ]
+    }
+  }
+}

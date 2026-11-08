@@ -1,0 +1,103 @@
+{
+  "run_id": "d326706315534ca69246456e3ed2960a",
+  "revision": 14,
+  "started_at": "2026-11-08T07:37:17.910356+00:00",
+  "scenario_sha256": "1a1f2c10be656ea554855a0d48e1782e3a81b2ce12fe2fa7aaa6c3f4d4042255",
+  "contract_sha256": "72793ab15b46f8ab68a2238e633f1b20e22c274b8db13f9630d254816000b1fe",
+  "outcome": "PASS",
+  "steps": [
+    {
+      "step_id": "check_pulse",
+      "step_run_id": "77d763f677f349b287cfa7a22a2fdaec",
+      "operation_id": "checkPulse",
+      "method": "GET",
+      "path_template": "/pulse",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "99f0af823be87d000909023d9a45ac74d7f2c6535e43bf30b9e9bee9258b4d25",
+      "policy_template_sha256": "99f0af823be87d000909023d9a45ac74d7f2c6535e43bf30b9e9bee9258b4d25",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "64f673ea59e443bc98891a82f8dff927",
+          "status_code": 200,
+          "elapsed_ms": 36.106,
+          "response_bytes": 18,
+          "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": null,
+        "values": {
+          "path_parameters": {},
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+      }
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:19091",
+  "target_config_sha256": "eec1f2dfb9409348ff655b1cab1dc1f458a1f71500012277d48522489363f774",
+  "policy_registry_sha256": "609cb8186cea7045903aae0decdd9720a4a8edacc73d7a5498616f25b63e9490",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 0,
+  "tool_calls": 1,
+  "analysis_code": "APPROVED_PLAN_COMPLETED",
+  "workflow_completed": true,
+  "user_task_sha256": "2359286a8133b1635ed95df9a5d5f7b755e372d3d19f07c7cf8790f60cc336c8",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "web_rule_3"
+  ],
+  "model_call": null,
+  "plan_structure": [
+    {
+      "step_id": "check_pulse",
+      "operation_id": "checkPulse",
+      "role": null,
+      "policy_id": "web_rule_3",
+      "argument_sha256": {},
+      "dependencies": {}
+    }
+  ],
+  "plan_derivation": {
+    "source": "MODEL_DESIGN",
+    "group": "group_1",
+    "model_request_sha256": "95496749525877b5b772189859d378419654eba5e55362d4f72af5b8c6f97862"
+  },
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": false,
+  "task_mode": "model_designed",
+  "task_satisfied": null,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。"
+}

@@ -1,0 +1,784 @@
+{
+  "id": "3be5eb0c24ce461f9b4df62f89dd6b84",
+  "project_id": "web_16e7362fdc5546bd92bd9162",
+  "project_identity": "c7d314734e0871742d76bb4827743c4cd7a6676aed058fa28fa97ee00428a754",
+  "request_sha256": "2359286a8133b1635ed95df9a5d5f7b755e372d3d19f07c7cf8790f60cc336c8",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794123426.2442217,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "custodian 读取 shelfId=12 的书架；将它响应中的 $.cards[0].ref 交给 curator 打开卡片；核对卡片的 $.marker 等于 \"catalogued\"；随后匿名读取运行心跳。",
+    "scope": "project",
+    "inventory": {
+      "total": 3,
+      "counts": {
+        "READY": 3,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "showCard",
+          "method": "GET",
+          "path": "/cards/{cardRef}",
+          "summary": "卡片",
+          "group": "cards",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "listShelf",
+          "method": "GET",
+          "path": "/shelves/{shelfId}",
+          "summary": "书架",
+          "group": "shelves",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "custodian 读书架后 curator 读卡片核验标记并匿名检查心跳（独立检查1）",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkPulse"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_3"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "d326706315534ca69246456e3ed2960a",
+        "elapsed_ms": 663.974,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkPulse"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkPulse",
+            "method": "GET",
+            "step_id": "check_pulse",
+            "role": null,
+            "executed": true,
+            "path": "/pulse",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_3"
+        ]
+      },
+      {
+        "case_id": "group_1_case_2",
+        "title": "custodian 读书架后 curator 读卡片核验标记并匿名检查心跳（独立检查2）",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "listShelf",
+          "showCard"
+        ],
+        "planned_steps": 2,
+        "planned_policy_ids": [
+          "web_rule_1",
+          "web_rule_2"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 2,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "response_steps": {
+          "response_1": [
+            {
+              "step_id": "show_card",
+              "operation_id": "showCard",
+              "role": "curator",
+              "policy_id": "web_rule_2",
+              "check_kind": "equals",
+              "check_index": 1
+            }
+          ]
+        },
+        "data_source_steps": {
+          "data_1": [
+            {
+              "step_id": "show_card",
+              "source_step_id": "list_shelf",
+              "operation_id": "showCard",
+              "policy_id": "web_rule_2",
+              "role": "curator",
+              "selector": "$.cards[0].ref",
+              "location": "path_parameters",
+              "name": "cardRef"
+            }
+          ]
+        },
+        "run_id": "e76abb6bbe5f4341b051c3550419f173",
+        "elapsed_ms": 1027.4,
+        "outcome": "PASS",
+        "executed_steps": 2,
+        "executed_operations": [
+          "listShelf",
+          "showCard"
+        ],
+        "http_requests": 2,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "listShelf",
+            "method": "GET",
+            "step_id": "list_shelf",
+            "role": "custodian",
+            "executed": true,
+            "path": "/shelves/{shelfId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "custodian",
+              "values": {
+                "path_parameters": {
+                  "shelfId": 12
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "exists",
+                "selector": "$.cards[0].ref",
+                "passed": true,
+                "expected": null,
+                "actual": "[REDACTED]"
+              }
+            ]
+          },
+          {
+            "operation_id": "showCard",
+            "method": "GET",
+            "step_id": "show_card",
+            "role": "curator",
+            "executed": true,
+            "path": "/cards/{cardRef}",
+            "outcome": "PASS",
+            "request": {
+              "role": "curator",
+              "values": {
+                "path_parameters": {
+                  "cardRef": "K-208"
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "equals",
+                "selector": "$.marker",
+                "passed": true,
+                "expected": "[REDACTED]",
+                "actual": "[REDACTED]"
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_1",
+          "web_rule_2"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "custodian 读取 shelfId=12 的书架并取得 $.cards[0].ref，交由 curator 打开该卡片并核对 $.marker 为 catalogued，随后匿名读取运行心跳。",
+        "elapsed_ms": 7459.672,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 7422,
+          "request_bytes": 25415,
+          "request_sha256": "856233d7ff9543e7b201f929b47a7ac649d3013b9aa2ccb01c5cf51cfdaca62d",
+          "response_bytes": 2469,
+          "input_token_upper_bound": 25927,
+          "input_tokens": 6814,
+          "output_tokens": 484,
+          "total_tokens": 7298,
+          "output_sha256": "c0733092977ce54e070f1758cb43727eee9f1dc029e97a84487287ed79c612b6",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 0
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "用户要求由 custodian 读取 shelfId=12 的书架，再用响应中第一张卡片的引用交给 curator 打开卡片并核对 marker 为 catalogued，最后匿名读取运行心跳。三条已批准规则分别覆盖这三个操作，因此将这一完整依赖流程放在一个案例中，按用户指定顺序排列步骤。",
+        "elapsed_ms": 3911.89,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 3860,
+          "request_bytes": 25962,
+          "request_sha256": "95496749525877b5b772189859d378419654eba5e55362d4f72af5b8c6f97862",
+          "response_bytes": 1894,
+          "input_token_upper_bound": 26474,
+          "input_tokens": 5829,
+          "output_tokens": 315,
+          "total_tokens": 6144,
+          "output_sha256": "6691ade7dd98cbfa95f8c887a2904a63f23d0f7769041a36325238d3e359bdf0",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 3,
+            "constructed_nodes": 3,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 1,
+            "independent_contexts": 2
+          }
+        ],
+        "construction_ms": 0.235
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "showCard",
+          "listShelf",
+          "checkPulse"
+        ],
+        "operations": [
+          "showCard",
+          "checkPulse",
+          "listShelf"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": true,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "custodian 读取 shelfId=12 的书架",
+        "start": 0,
+        "end": 27,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "将它响应中的 $.cards[0].ref 交给 curator 打开卡片",
+        "start": 28,
+        "end": 65,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "核对卡片的 $.marker 等于 \"catalogued\"",
+        "start": 66,
+        "end": 96,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "随后匿名读取运行心跳",
+        "start": 97,
+        "end": 107,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对卡片的 $.marker 等于 \"catalogued\"",
+        "start": 72,
+        "end": 96,
+        "selector": "$.marker",
+        "operator": "equals",
+        "expected": "catalogued",
+        "witnesses": [
+          {
+            "step_id": "show_card",
+            "operation_id": "showCard",
+            "role": "curator",
+            "policy_id": "web_rule_2",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_2",
+            "status": "PASS",
+            "run_id": "e76abb6bbe5f4341b051c3550419f173",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ]
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "将它响应中的 $.cards[0].ref 交给 curator 打开卡片",
+        "start": 35,
+        "end": 49,
+        "selector": "$.cards[0].ref",
+        "witnesses": [
+          {
+            "step_id": "show_card",
+            "source_step_id": "list_shelf",
+            "operation_id": "showCard",
+            "policy_id": "web_rule_2",
+            "role": "curator",
+            "selector": "$.cards[0].ref",
+            "location": "path_parameters",
+            "name": "cardRef",
+            "case_id": "group_1_case_2",
+            "status": "EXECUTED",
+            "run_id": "e76abb6bbe5f4341b051c3550419f173"
+          }
+        ],
+        "status": "EXECUTED",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ],
+        "approved_bindings": [
+          {
+            "operation_id": "showCard",
+            "roles": [
+              "curator"
+            ],
+            "policy_id": "web_rule_2",
+            "location": "path_parameters",
+            "name": "cardRef",
+            "selector": "$.cards[0].ref",
+            "source_policy_id": "web_rule_1",
+            "from_operation": "listShelf",
+            "from_method": "GET",
+            "source_roles": [
+              "custodian"
+            ],
+            "role_relation": "different",
+            "source_role": "custodian",
+            "role": "curator"
+          }
+        ]
+      }
+    ],
+    "context_usage": {
+      "requests": 3,
+      "model_calls": 2,
+      "known_tokens": 13442,
+      "total_tokens": 13442,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 13434.049,
+      "planning_ms": 11371.562,
+      "execution_ms": 1691.374
+    },
+    "focus": {
+      "interpretation": "custodian 读取 shelfId=12 的书架并取得 $.cards[0].ref，交由 curator 打开该卡片并核对 $.marker 为 catalogued，随后匿名读取运行心跳。",
+      "mode": "selected",
+      "operation_ids": [
+        "listShelf",
+        "showCard",
+        "checkPulse"
+      ],
+      "normal_operation_ids": [
+        "listShelf",
+        "showCard",
+        "checkPulse"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "listShelf",
+          "location": "path_parameters",
+          "name": "shelfId",
+          "path": [],
+          "value": 12,
+          "source_quote": "custodian 读取 shelfId=12 的书架"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [],
+      "source_conflicts": [],
+      "requirement_ledger": [
+        {
+          "name": "shelfId",
+          "value": 12,
+          "source_quote": "shelfId=12",
+          "start": 13,
+          "end": 23,
+          "deferred": false,
+          "candidate_operations": [
+            "listShelf"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listShelf"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "custodian 读取 shelfId=12 的书架",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "listShelf",
+              "role": "custodian"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [
+            "expectation_c6c278b64a9841719a09"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "将它响应中的 $.cards[0].ref 交给 curator 打开卡片",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "showCard",
+              "role": "curator"
+            }
+          ],
+          "before": [
+            {
+              "earlier": "listShelf",
+              "later": "showCard"
+            }
+          ],
+          "same_resource": [
+            {
+              "producer": "listShelf",
+              "consumer": "showCard"
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "核对卡片的 $.marker 等于 \"catalogued\"",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "showCard",
+              "role": "curator"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [
+            "expectation_4329b7b171a36185b10d"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_4",
+          "source_quote": "随后匿名读取运行心跳",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkPulse",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "listShelf": "USER_REQUIREMENT",
+        "showCard": "USER_REQUIREMENT",
+        "checkPulse": "USER_REQUIREMENT"
+      }
+    },
+    "requirement_ledger": [
+      {
+        "name": "shelfId",
+        "value": 12,
+        "source_quote": "shelfId=12",
+        "start": 13,
+        "end": 23,
+        "deferred": false,
+        "candidate_operations": [
+          "listShelf"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "listShelf"
+        ]
+      }
+    ],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "custodian 读取 shelfId=12 的书架",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "listShelf",
+            "role": "custodian"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [
+          "expectation_c6c278b64a9841719a09"
+        ],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "将它响应中的 $.cards[0].ref 交给 curator 打开卡片",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ],
+        "before": [
+          {
+            "earlier": "listShelf",
+            "later": "showCard"
+          }
+        ],
+        "same_resource": [
+          {
+            "producer": "listShelf",
+            "consumer": "showCard"
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "核对卡片的 $.marker 等于 \"catalogued\"",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [
+          "expectation_4329b7b171a36185b10d"
+        ],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_4",
+        "source_quote": "随后匿名读取运行心跳",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkPulse",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {},
+    "input_blocked_operations": [],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "当前请求的三项操作均已覆盖；后续可考虑为书架读取增加其他 shelfId 的边界取值测试，但本次未获授权。"
+    ],
+    "checks_passed": true,
+    "coverage": {
+      "operation_denominator": 3,
+      "scenario_denominator": 2,
+      "executed_operations": 3,
+      "executed_scenarios": 2,
+      "started_scenarios": 2,
+      "completed_scenarios": 2,
+      "assertion_passed_scenarios": 2,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [],
+    "exports": {
+      "d326706315534ca69246456e3ed2960a": {
+        "available": true,
+        "reason": ""
+      },
+      "e76abb6bbe5f4341b051c3550419f173": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

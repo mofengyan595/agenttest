@@ -1,0 +1,254 @@
+{
+  "status": 201,
+  "project": {
+    "id": "web_4e0bb691cee548db817beb3c",
+    "name": "第四轮隔离读取 perm",
+    "version": 1,
+    "business_notes": "",
+    "state": "READY",
+    "ready": true,
+    "missing": [],
+    "profile": {
+      "id": "web_4e0bb691cee548db817beb3c",
+      "identity": "e0cb41b43b93e45712b4f921a354f4fad22595bf3bb0a6c6f48801d0d63a5353",
+      "name": "本项目",
+      "environment": "授权测试环境",
+      "address": "http://127.0.0.1:19091",
+      "identities": [
+        {
+          "alias": "auditor",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_R4_AUDITOR_TOKEN"
+        }
+      ],
+      "rules": [
+        {
+          "id": "web_rule_1",
+          "behavior": "闸口状态",
+          "role": null,
+          "operation": "readGate",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "id": "web_rule_2",
+          "behavior": "值守账号",
+          "role": "auditor",
+          "operation": "readKeeper",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "id": "web_rule_3",
+          "behavior": "公告",
+          "role": null,
+          "operation": "fetchNotice",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "id": "web_rule_4",
+          "behavior": "运行心跳",
+          "role": null,
+          "operation": "checkPulse",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+        }
+      ],
+      "examples": [
+        "先安排一轮常规检查，说明还有哪些没有覆盖",
+        "帮我检查参数边界和已确认的身份访问规则"
+      ],
+      "require_review": false
+    },
+    "profile_id": null,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "readGate",
+          "alias": "闸口状态",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "readKeeper",
+          "alias": "值守账号",
+          "enabled": true,
+          "role": "auditor",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "keeperId",
+              "value": 9,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "fetchNotice",
+          "alias": "公告",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "checkPulse",
+          "alias": "运行心跳",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ],
+      "assisted": true
+    },
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readGate",
+          "method": "GET",
+          "path": "/gates",
+          "summary": "闸口状态",
+          "group": "gates",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readKeeper",
+          "method": "GET",
+          "path": "/keepers/{keeperId}",
+          "summary": "值守账号",
+          "group": "keepers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "fetchNotice",
+          "method": "GET",
+          "path": "/notices",
+          "summary": "公告",
+          "group": "notices",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "testing_mode": "MODEL_DESIGNED",
+    "confirmation": {
+      "source": "WEB_OPERATOR_SESSION",
+      "actor": "4324fd0726aaee05e5d99d670aa573bc70ab42c24d50af7d172fc99d79c328d7",
+      "configuration_version": "427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5",
+      "at": 1794123394.4281538
+    },
+    "identity": "b7ae9b799763e823a3ddbd714d93416b96e8d79b410d96aa0f53760cfed5a48d"
+  }
+}

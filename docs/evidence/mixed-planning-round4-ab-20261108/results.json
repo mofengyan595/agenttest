@@ -1,0 +1,1613 @@
+{
+  "freeze_sha256": "457d90967b5119cd0d955a1adbf83655ac161a7a6293dde4619435249f407faf",
+  "versions": {
+    "baseline": "8111a37358f1cc161249016035ff0c25c68ea0ca",
+    "candidate": "a779ca56fde7a60228a5804425f045964503d2f2"
+  },
+  "stop": null,
+  "independent_human_review": "NOT_PERFORMED",
+  "cold_recomputation": "MATCHED",
+  "acceptance_conditions": {
+    "all_16_audited": true,
+    "no_stop": true,
+    "false_refusal_strictly_lower": true,
+    "silent_omissions_not_increased": true,
+    "correct_holds_no_task_regression": true,
+    "candidate_scope_counters_zero": true,
+    "no_unknown": true,
+    "candidate_presentation_false_refusals_zero": true
+  },
+  "acceptance_met": true,
+  "results": {
+    "baseline": {
+      "totals": {
+        "full_execution": 3,
+        "correct_hold": 0,
+        "false_refusal": 4,
+        "silent_obligations": 28,
+        "unnecessary_permission_questions": 0,
+        "unnecessary_questions": 0,
+        "configured_scope_violations": 0,
+        "task_scope_violations": 0,
+        "pending_scope_violations": 0,
+        "unnecessary_requests": 0,
+        "target_requests": 14,
+        "target_retries": 0,
+        "failed_assertions": 0,
+        "model_calls": 13,
+        "known_tokens": 84111,
+        "positions": 8,
+        "audited": 8,
+        "complete_denominator": 4,
+        "hold_denominator": 4,
+        "unknown_positions": 0,
+        "infrastructure_positions": 0,
+        "statuses": {
+          "FINISHED": 5,
+          "NEEDS_REVIEW": 3
+        },
+        "median_elapsed_ms": 17981.5,
+        "total_elapsed_ms": 138036,
+        "observed_obligations": 76,
+        "unexecuted_positions": 0,
+        "total_tokens": 84111,
+        "presentation_false_refusals": 0,
+        "by_task": {
+          "F1": {
+            "full_execution": 1,
+            "correct_hold": 0,
+            "false_refusal": 0,
+            "silent": 1
+          },
+          "F2": {
+            "full_execution": 0,
+            "correct_hold": 0,
+            "false_refusal": 2,
+            "silent": 16
+          },
+          "F3": {
+            "full_execution": 2,
+            "correct_hold": 0,
+            "false_refusal": 0,
+            "silent": 0
+          },
+          "F4": {
+            "full_execution": 0,
+            "correct_hold": 0,
+            "false_refusal": 2,
+            "silent": 11
+          }
+        }
+      },
+      "positions": [
+        {
+          "id": "F1_r1_baseline",
+          "arm": "baseline",
+          "task": "F1",
+          "round": 1,
+          "taskId": "c32fdf9caac9449182b5a812a1d73cf5",
+          "status": "FINISHED",
+          "elapsed_ms": 21285,
+          "task_elapsed_ms": 15386,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 13628,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.cardRef",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.marker",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F1",
+          "audited": true
+        },
+        {
+          "id": "F2_r1_baseline",
+          "arm": "baseline",
+          "task": "F2",
+          "round": 1,
+          "taskId": "4edf6e5a70f741abb7cee17eb796a679",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 11731,
+          "task_elapsed_ms": 6619,
+          "model_calls": 1,
+          "usage_known": true,
+          "known_tokens": 6274,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "gap.0",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "gap.1",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 8,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 0,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {
+            "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+          },
+          "category": "F2",
+          "audited": true
+        },
+        {
+          "id": "F3_r1_baseline",
+          "arm": "baseline",
+          "task": "F3",
+          "round": 1,
+          "taskId": "1480c524f5654a298089c3cc6d39134c",
+          "status": "FINISHED",
+          "elapsed_ms": 15855,
+          "task_elapsed_ms": 10413,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11259,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.path_parameters.ledgerId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F3",
+          "audited": true
+        },
+        {
+          "id": "F4_r1_baseline",
+          "arm": "baseline",
+          "task": "F4",
+          "round": 1,
+          "taskId": "bfd50c80503a4cc18e6cf710e7216a48",
+          "status": "FINISHED",
+          "elapsed_ms": 17660,
+          "task_elapsed_ms": 12019,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 14116,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.slipCode",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.code",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 2,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 2,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F4",
+          "audited": true
+        },
+        {
+          "id": "F4_r2_baseline",
+          "arm": "baseline",
+          "task": "F4",
+          "round": 2,
+          "taskId": "a9d0ca7472524d27b0f29b4695639379",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 18303,
+          "task_elapsed_ms": 12481,
+          "model_calls": 1,
+          "usage_known": true,
+          "known_tokens": 7849,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.path_parameters.slipCode",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.field.$.code",
+              "verified": false,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "binding.0",
+              "verified": false,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 9,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 0,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {
+            "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE": 1
+          },
+          "category": "F4",
+          "audited": true
+        },
+        {
+          "id": "F3_r2_baseline",
+          "arm": "baseline",
+          "task": "F3",
+          "round": 2,
+          "taskId": "4538e9ad015c4b63b786382092606e7b",
+          "status": "FINISHED",
+          "elapsed_ms": 19872,
+          "task_elapsed_ms": 14377,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11297,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.path_parameters.ledgerId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F3",
+          "audited": true
+        },
+        {
+          "id": "F2_r2_baseline",
+          "arm": "baseline",
+          "task": "F2",
+          "round": 2,
+          "taskId": "13cbf7b464f24a018fb48fa520b06c7c",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 14076,
+          "task_elapsed_ms": 8800,
+          "model_calls": 1,
+          "usage_known": true,
+          "known_tokens": 6246,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "gap.0",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "gap.1",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 8,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 0,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {
+            "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+          },
+          "category": "F2",
+          "audited": true
+        },
+        {
+          "id": "F1_r2_baseline",
+          "arm": "baseline",
+          "task": "F1",
+          "round": 2,
+          "taskId": "3be5eb0c24ce461f9b4df62f89dd6b84",
+          "status": "FINISHED",
+          "elapsed_ms": 19254,
+          "task_elapsed_ms": 13810,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 13442,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.cardRef",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.marker",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 1,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F1",
+          "audited": true
+        }
+      ]
+    },
+    "candidate": {
+      "totals": {
+        "full_execution": 4,
+        "correct_hold": 2,
+        "false_refusal": 2,
+        "silent_obligations": 11,
+        "unnecessary_permission_questions": 0,
+        "unnecessary_questions": 0,
+        "configured_scope_violations": 0,
+        "task_scope_violations": 0,
+        "pending_scope_violations": 0,
+        "unnecessary_requests": 0,
+        "target_requests": 20,
+        "target_retries": 0,
+        "failed_assertions": 0,
+        "model_calls": 15,
+        "known_tokens": 94953,
+        "positions": 8,
+        "audited": 8,
+        "complete_denominator": 4,
+        "hold_denominator": 4,
+        "unknown_positions": 0,
+        "infrastructure_positions": 0,
+        "statuses": {
+          "FINISHED": 7,
+          "NEEDS_REVIEW": 1
+        },
+        "median_elapsed_ms": 17026.5,
+        "total_elapsed_ms": 143320,
+        "observed_obligations": 76,
+        "unexecuted_positions": 0,
+        "total_tokens": 94953,
+        "presentation_false_refusals": 0,
+        "by_task": {
+          "F1": {
+            "full_execution": 2,
+            "correct_hold": 0,
+            "false_refusal": 0,
+            "silent": 0
+          },
+          "F2": {
+            "full_execution": 0,
+            "correct_hold": 2,
+            "false_refusal": 0,
+            "silent": 0
+          },
+          "F3": {
+            "full_execution": 2,
+            "correct_hold": 0,
+            "false_refusal": 0,
+            "silent": 0
+          },
+          "F4": {
+            "full_execution": 0,
+            "correct_hold": 0,
+            "false_refusal": 2,
+            "silent": 11
+          }
+        }
+      },
+      "positions": [
+        {
+          "id": "F1_r1_candidate",
+          "arm": "candidate",
+          "task": "F1",
+          "round": 1,
+          "taskId": "7a5da0b4114e402e86a1ee3806e96654",
+          "status": "FINISHED",
+          "elapsed_ms": 15783,
+          "task_elapsed_ms": 10097,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 13479,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.cardRef",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.marker",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F1",
+          "audited": true
+        },
+        {
+          "id": "F2_r1_candidate",
+          "arm": "candidate",
+          "task": "F2",
+          "round": 1,
+          "taskId": "8b2953d7abf949d386f52be99d2b3cee",
+          "status": "FINISHED",
+          "elapsed_ms": 18397,
+          "task_elapsed_ms": 12931,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11604,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.1",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": true,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F2",
+          "audited": true
+        },
+        {
+          "id": "F3_r1_candidate",
+          "arm": "candidate",
+          "task": "F3",
+          "round": 1,
+          "taskId": "924d63ffc4af43b880a065c099b9a140",
+          "status": "FINISHED",
+          "elapsed_ms": 14327,
+          "task_elapsed_ms": 7711,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11267,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.path_parameters.ledgerId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F3",
+          "audited": true
+        },
+        {
+          "id": "F4_r1_candidate",
+          "arm": "candidate",
+          "task": "F4",
+          "round": 1,
+          "taskId": "0dc37670ef0f497d8325e2b5c5c2ae77",
+          "status": "FINISHED",
+          "elapsed_ms": 17226,
+          "task_elapsed_ms": 11501,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 14108,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.slipCode",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.code",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 2,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 2,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F4",
+          "audited": true
+        },
+        {
+          "id": "F4_r2_candidate",
+          "arm": "candidate",
+          "task": "F4",
+          "round": 2,
+          "taskId": "0438108cf8b749e8b763d5f4bfd30d8e",
+          "status": "NEEDS_REVIEW",
+          "elapsed_ms": 13505,
+          "task_elapsed_ms": 7421,
+          "model_calls": 1,
+          "usage_known": true,
+          "known_tokens": 8030,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.path_parameters.slipCode",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "1.field.$.code",
+              "verified": false,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "2.status",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            },
+            {
+              "id": "binding.0",
+              "verified": false,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": false,
+              "recorded": false,
+              "silent": true
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 9,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": false,
+          "false_refusal": true,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 0,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {
+            "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+          },
+          "category": "F4",
+          "audited": true
+        },
+        {
+          "id": "F3_r2_candidate",
+          "arm": "candidate",
+          "task": "F3",
+          "round": 2,
+          "taskId": "3de85e19a58a454b9744b509e51ca8db",
+          "status": "FINISHED",
+          "elapsed_ms": 17800,
+          "task_elapsed_ms": 12359,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11310,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.path_parameters.ledgerId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F3",
+          "audited": true
+        },
+        {
+          "id": "F2_r2_candidate",
+          "arm": "candidate",
+          "task": "F2",
+          "round": 2,
+          "taskId": "bea6c93ab5024700b33e2d5a45572fa4",
+          "status": "FINISHED",
+          "elapsed_ms": 29455,
+          "task_elapsed_ms": 24017,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 11701,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "gap.1",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 8,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": false,
+          "correct_hold": true,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F2",
+          "audited": true
+        },
+        {
+          "id": "F1_r2_candidate",
+          "arm": "candidate",
+          "task": "F1",
+          "round": 2,
+          "taskId": "708fa348aa21453fb2d5ea1ed61c840e",
+          "status": "FINISHED",
+          "elapsed_ms": 16827,
+          "task_elapsed_ms": 11278,
+          "model_calls": 2,
+          "usage_known": true,
+          "known_tokens": 13454,
+          "obligations": [
+            {
+              "id": "0.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "0.path_parameters.shelfId",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.path_parameters.cardRef",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "1.field.$.marker",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.action",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "2.status",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "binding.0",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            },
+            {
+              "id": "order",
+              "verified": true,
+              "recorded": true,
+              "silent": false
+            }
+          ],
+          "obligation_denominator": 11,
+          "silent_obligations": 0,
+          "evidence_integrity": true,
+          "full_execution": true,
+          "correct_hold": false,
+          "false_refusal": false,
+          "configured_scope_violations": 0,
+          "task_scope_violations": 0,
+          "pending_scope_violations": 0,
+          "unnecessary_requests": 0,
+          "unnecessary_permission_questions": 0,
+          "unnecessary_questions": 0,
+          "target_requests": 3,
+          "target_retries": 0,
+          "failed_assertions": 0,
+          "infrastructure": false,
+          "diagnostic_codes": {},
+          "category": "F1",
+          "audited": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "positions": {
+    "F2_r1_baseline": {
+      "task": "F2",
+      "status": "NEEDS_REVIEW",
+      "false_refusal": true,
+      "silent_obligations": 8,
+      "obligation_denominator": 8,
+      "unverified": [
+        "0.action",
+        "0.status",
+        "1.action",
+        "1.status",
+        "2.action",
+        "2.status",
+        "gap.0",
+        "gap.1"
+      ],
+      "diagnostic_codes": {
+        "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+      },
+      "focus_operation_ids": null,
+      "focus_questions": 0,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE"
+        }
+      ],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。"
+    },
+    "F4_r1_baseline": {
+      "task": "F4",
+      "status": "FINISHED",
+      "false_refusal": true,
+      "silent_obligations": 2,
+      "obligation_denominator": 11,
+      "unverified": [
+        "2.action",
+        "2.status"
+      ],
+      "diagnostic_codes": {},
+      "focus_operation_ids": [
+        "listShelf",
+        "showCard",
+        "fetchSlip"
+      ],
+      "focus_questions": 1,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "reason": null,
+          "code": null
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "reason": null,
+          "code": null
+        }
+      ],
+      "reason": ""
+    },
+    "F4_r2_baseline": {
+      "task": "F4",
+      "status": "NEEDS_REVIEW",
+      "false_refusal": true,
+      "silent_obligations": 9,
+      "obligation_denominator": 11,
+      "unverified": [
+        "0.action",
+        "0.status",
+        "0.path_parameters.shelfId",
+        "1.action",
+        "1.status",
+        "1.path_parameters.slipCode",
+        "1.field.$.code",
+        "2.action",
+        "2.status",
+        "binding.0",
+        "gap.0"
+      ],
+      "diagnostic_codes": {
+        "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE": 1
+      },
+      "focus_operation_ids": null,
+      "focus_questions": 0,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE"
+        }
+      ],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。"
+    },
+    "F2_r2_baseline": {
+      "task": "F2",
+      "status": "NEEDS_REVIEW",
+      "false_refusal": true,
+      "silent_obligations": 8,
+      "obligation_denominator": 8,
+      "unverified": [
+        "0.action",
+        "0.status",
+        "1.action",
+        "1.status",
+        "2.action",
+        "2.status",
+        "gap.0",
+        "gap.1"
+      ],
+      "diagnostic_codes": {
+        "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+      },
+      "focus_operation_ids": null,
+      "focus_questions": 0,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION"
+        }
+      ],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。"
+    },
+    "F1_r2_baseline": {
+      "task": "F1",
+      "status": "FINISHED",
+      "false_refusal": false,
+      "silent_obligations": 1,
+      "obligation_denominator": 11,
+      "unverified": [
+        "order"
+      ],
+      "diagnostic_codes": {},
+      "focus_operation_ids": [
+        "listShelf",
+        "showCard",
+        "checkPulse"
+      ],
+      "focus_questions": 0,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "reason": null,
+          "code": null
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "reason": null,
+          "code": null
+        }
+      ],
+      "reason": ""
+    },
+    "F4_r1_candidate": {
+      "task": "F4",
+      "status": "FINISHED",
+      "false_refusal": true,
+      "silent_obligations": 2,
+      "obligation_denominator": 11,
+      "unverified": [
+        "2.action",
+        "2.status"
+      ],
+      "diagnostic_codes": {},
+      "focus_operation_ids": [
+        "listShelf",
+        "showCard",
+        "fetchSlip"
+      ],
+      "focus_questions": 1,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "SELECTED",
+          "reason": null,
+          "code": null
+        },
+        {
+          "group_id": "group_1",
+          "status": "PROPOSED",
+          "reason": null,
+          "code": null
+        }
+      ],
+      "reason": ""
+    },
+    "F4_r2_candidate": {
+      "task": "F4",
+      "status": "NEEDS_REVIEW",
+      "false_refusal": true,
+      "silent_obligations": 9,
+      "obligation_denominator": 11,
+      "unverified": [
+        "0.action",
+        "0.status",
+        "0.path_parameters.shelfId",
+        "1.action",
+        "1.status",
+        "1.path_parameters.slipCode",
+        "1.field.$.code",
+        "2.action",
+        "2.status",
+        "binding.0",
+        "gap.0"
+      ],
+      "diagnostic_codes": {
+        "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+      },
+      "focus_operation_ids": null,
+      "focus_questions": 0,
+      "design_records": [
+        {
+          "group_id": "focus",
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION"
+        }
+      ],
+      "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。"
+    }
+  },
+  "by_arm": {
+    "baseline": {
+      "F1": {
+        "full_execution": 1,
+        "correct_hold": 0,
+        "false_refusal": 0,
+        "silent_obligations": 1
+      },
+      "F2": {
+        "full_execution": 0,
+        "correct_hold": 0,
+        "false_refusal": 2,
+        "silent_obligations": 16
+      },
+      "F3": {
+        "full_execution": 2,
+        "correct_hold": 0,
+        "false_refusal": 0,
+        "silent_obligations": 0
+      },
+      "F4": {
+        "full_execution": 0,
+        "correct_hold": 0,
+        "false_refusal": 2,
+        "silent_obligations": 11
+      }
+    },
+    "candidate": {
+      "F1": {
+        "full_execution": 2,
+        "correct_hold": 0,
+        "false_refusal": 0,
+        "silent_obligations": 0
+      },
+      "F2": {
+        "full_execution": 0,
+        "correct_hold": 2,
+        "false_refusal": 0,
+        "silent_obligations": 0
+      },
+      "F3": {
+        "full_execution": 2,
+        "correct_hold": 0,
+        "false_refusal": 0,
+        "silent_obligations": 0
+      },
+      "F4": {
+        "full_execution": 0,
+        "correct_hold": 0,
+        "false_refusal": 2,
+        "silent_obligations": 11
+      }
+    }
+  }
+}

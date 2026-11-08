@@ -1,0 +1,49 @@
+[
+  {
+    "sequence": 51,
+    "position": "F4_r1_baseline",
+    "config": "mix",
+    "operation_id": "listShelf",
+    "method": "GET",
+    "path": "/shelves/12",
+    "role": "custodian",
+    "values": {
+      "path_parameters": {
+        "shelfId": 12
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": 12,
+      "cards": [
+        {
+          "ref": "K-208",
+          "slip": "S-31"
+        }
+      ],
+      "state": "open"
+    },
+    "response_sha256": "1190d7caa1bf9cfe834d43b03f2e478298bba366e883d00adf11f56b36007f59",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 52,
+    "position": "F4_r1_baseline",
+    "config": "mix",
+    "operation_id": "fetchSlip",
+    "method": "GET",
+    "path": "/slips/S-31",
+    "role": "custodian",
+    "values": {
+      "path_parameters": {
+        "slipCode": "S-31"
+      }
+    },
+    "status": 200,
+    "response": {
+      "code": "S-31"
+    },
+    "response_sha256": "54ecd5a7bd133524cf28a097d63f783dcdcca72ec8ea74dace33e20f33b1b817",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  }
+]

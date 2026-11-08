@@ -1,0 +1,231 @@
+{
+  "run_id": "1eeab10542f24a22ac999b9260869665",
+  "revision": 22,
+  "started_at": "2026-11-08T07:32:54.364960+00:00",
+  "scenario_sha256": "5f8952ad4cde6ca5edbf1a3e96c241b644766ddc141baff0fc4074995f0d8d8d",
+  "contract_sha256": "72793ab15b46f8ab68a2238e633f1b20e22c274b8db13f9630d254816000b1fe",
+  "outcome": "PASS",
+  "steps": [
+    {
+      "step_id": "shelf",
+      "step_run_id": "5d08415862904c2a869d0f717b645c8e",
+      "operation_id": "listShelf",
+      "method": "GET",
+      "path_template": "/shelves/{shelfId}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "ba4cc0e11fc4292d4ad05a557977457ddb5da682f33ed54bd9969aee839b747f",
+      "policy_template_sha256": "ba4cc0e11fc4292d4ad05a557977457ddb5da682f33ed54bd9969aee839b747f",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "exists",
+          "selector": "$.cards[0].ref",
+          "passed": true,
+          "expected": null,
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "06c523e9b1fb46ad97c77300cddf3cea",
+          "status_code": 200,
+          "elapsed_ms": 35.334,
+          "response_bytes": 64,
+          "response_sha256": "1190d7caa1bf9cfe834d43b03f2e478298bba366e883d00adf11f56b36007f59",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": "custodian",
+        "values": {
+          "path_parameters": {
+            "shelfId": 12
+          },
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+      }
+    },
+    {
+      "step_id": "card",
+      "step_run_id": "b6fd1e60d8dd4f5d97949ed59e16640b",
+      "operation_id": "showCard",
+      "method": "GET",
+      "path_template": "/cards/{cardRef}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "4591376b4aab22dde5bf2986decce38dedbd95c53d20f83db935e7594e6f3e7c",
+      "policy_template_sha256": "4591376b4aab22dde5bf2986decce38dedbd95c53d20f83db935e7594e6f3e7c",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        },
+        {
+          "kind": "equals",
+          "selector": "$.marker",
+          "passed": true,
+          "expected": "[REDACTED]",
+          "actual": "[REDACTED]"
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "ac5ddea560e847828b163a2769894c97",
+          "status_code": 200,
+          "elapsed_ms": 19.65,
+          "response_bytes": 60,
+          "response_sha256": "62025887eb1d44107f6a548fb5fd5a22c8af7659c260a58c55f6ff95578f0785",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": "curator",
+        "values": {
+          "path_parameters": {
+            "cardRef": "K-208"
+          },
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+      }
+    },
+    {
+      "step_id": "pulse",
+      "step_run_id": "577ef1bb8c9c45e79db3d50b299e054b",
+      "operation_id": "checkPulse",
+      "method": "GET",
+      "path_template": "/pulse",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "99f0af823be87d000909023d9a45ac74d7f2c6535e43bf30b9e9bee9258b4d25",
+      "policy_template_sha256": "99f0af823be87d000909023d9a45ac74d7f2c6535e43bf30b9e9bee9258b4d25",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "30ed966f4f274f7c91bd95f327d479b9",
+          "status_code": 200,
+          "elapsed_ms": 42.066,
+          "response_bytes": 18,
+          "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": null,
+        "values": {
+          "path_parameters": {},
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+      }
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:19091",
+  "target_config_sha256": "eec1f2dfb9409348ff655b1cab1dc1f458a1f71500012277d48522489363f774",
+  "policy_registry_sha256": "609cb8186cea7045903aae0decdd9720a4a8edacc73d7a5498616f25b63e9490",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 0,
+  "tool_calls": 1,
+  "analysis_code": "APPROVED_PLAN_COMPLETED",
+  "workflow_completed": true,
+  "user_task_sha256": "2359286a8133b1635ed95df9a5d5f7b755e372d3d19f07c7cf8790f60cc336c8",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "web_rule_1",
+    "web_rule_2",
+    "web_rule_3"
+  ],
+  "model_call": null,
+  "plan_structure": [
+    {
+      "step_id": "shelf",
+      "operation_id": "listShelf",
+      "role": "custodian",
+      "policy_id": "web_rule_1",
+      "argument_sha256": {
+        "path_parameters.shelfId": "6b51d431df5d7f141cbececcf79edf3dd861c3b4069f0b11661a3eefacbba918"
+      },
+      "dependencies": {}
+    },
+    {
+      "step_id": "card",
+      "operation_id": "showCard",
+      "role": "curator",
+      "policy_id": "web_rule_2",
+      "argument_sha256": {},
+      "dependencies": {
+        "path_parameters.cardRef": "shelf"
+      }
+    },
+    {
+      "step_id": "pulse",
+      "operation_id": "checkPulse",
+      "role": null,
+      "policy_id": "web_rule_3",
+      "argument_sha256": {},
+      "dependencies": {}
+    }
+  ],
+  "plan_derivation": {
+    "source": "MODEL_DESIGN",
+    "group": "group_1",
+    "model_request_sha256": "dd3cc3e3e9d1b9f84c3e325ce743c0b486b0e81e1a59f74410c60ec6d4a5804f"
+  },
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": false,
+  "task_mode": "model_designed",
+  "task_satisfied": null,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。"
+}

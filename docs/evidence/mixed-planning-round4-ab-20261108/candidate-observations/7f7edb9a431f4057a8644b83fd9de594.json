@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "6d9c486447dd4306ad75f78e1e979c34", "plan": {"name": "auditor 读取指定台账", "steps": [{"id": "read_ledger_7", "operation_id": "readLedger", "role": "auditor", "path_parameters": {"ledgerId": {"value": 7, "from_step": null, "select": "$"}}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_2", "poll": false, "read_retries": 0}]}}

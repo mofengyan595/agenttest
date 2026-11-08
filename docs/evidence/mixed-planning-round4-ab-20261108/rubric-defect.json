@@ -1,0 +1,333 @@
+{
+  "defect": "F4 的冻结 rubric 多出一条原文未要求的 fetchNotice 读取（步骤 2）。",
+  "origin": "方案文档 F4 行只要求 书架 → 凭条 → 标题断言；rubric 误写成 书架 → 凭条 → 公告读取。",
+  "effect": "F4 每个位置都必然少 1 个动作 + 1 个状态义务（silent 2），且两版对称；F4 r2 的 0 请求拒绝同样两版对称。",
+  "frozen_score_kept": true,
+  "supplementary_only": true,
+  "corrected": {
+    "F4_r1_baseline": {
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.shelfId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.slipCode",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.code",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": true,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 2,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    "F4_r1_candidate": {
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.shelfId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.slipCode",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.code",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": true,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 2,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    "F4_r2_candidate": {
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.path_parameters.shelfId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.path_parameters.slipCode",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.field.$.code",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 7,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+      }
+    },
+    "F4_r2_baseline": {
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.path_parameters.shelfId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.path_parameters.slipCode",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.field.$.code",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 7,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE": 1
+      }
+    }
+  },
+  "corrected_totals": {
+    "baseline": {
+      "f4_corrected_false_refusal": 1,
+      "f4_corrected_correct_hold": 1,
+      "f4_corrected_silent": 7,
+      "without_f4_false_refusal": 2,
+      "without_f4_correct_hold": 0,
+      "without_f4_silent": 17,
+      "combined_false_refusal": 3
+    },
+    "candidate": {
+      "f4_corrected_false_refusal": 1,
+      "f4_corrected_correct_hold": 1,
+      "f4_corrected_silent": 7,
+      "without_f4_false_refusal": 0,
+      "without_f4_correct_hold": 2,
+      "without_f4_silent": 0,
+      "combined_false_refusal": 1
+    }
+  }
+}

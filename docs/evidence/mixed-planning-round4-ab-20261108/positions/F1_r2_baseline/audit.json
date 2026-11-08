@@ -1,0 +1,67 @@
+[
+  {
+    "sequence": 67,
+    "position": "F1_r2_baseline",
+    "config": "flow",
+    "operation_id": "checkPulse",
+    "method": "GET",
+    "path": "/pulse",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "pulse": "steady"
+    },
+    "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 68,
+    "position": "F1_r2_baseline",
+    "config": "flow",
+    "operation_id": "listShelf",
+    "method": "GET",
+    "path": "/shelves/12",
+    "role": "custodian",
+    "values": {
+      "path_parameters": {
+        "shelfId": 12
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": 12,
+      "cards": [
+        {
+          "ref": "K-208",
+          "slip": "S-31"
+        }
+      ],
+      "state": "open"
+    },
+    "response_sha256": "1190d7caa1bf9cfe834d43b03f2e478298bba366e883d00adf11f56b36007f59",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 69,
+    "position": "F1_r2_baseline",
+    "config": "flow",
+    "operation_id": "showCard",
+    "method": "GET",
+    "path": "/cards/K-208",
+    "role": "curator",
+    "values": {
+      "path_parameters": {
+        "cardRef": "K-208"
+      }
+    },
+    "status": 200,
+    "response": {
+      "ref": "K-208",
+      "title": "散页目录",
+      "marker": "catalogued"
+    },
+    "response_sha256": "62025887eb1d44107f6a548fb5fd5a22c8af7659c260a58c55f6ff95578f0785",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  }
+]

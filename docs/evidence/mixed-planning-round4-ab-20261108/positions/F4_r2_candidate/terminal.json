@@ -1,0 +1,305 @@
+{
+  "id": "0438108cf8b749e8b763d5f4bfd30d8e",
+  "project_id": "web_d0213cbf259f40e39a91a79d",
+  "project_identity": "28d568c651f3384ab21d8d6001718e0572fbd2128a6cbaddf586b848b80e5b01",
+  "request_sha256": "594c405f5bbccce01a4924537c6d563f7c5d2389293b08de84d1b44903cb6e54",
+  "status": "NEEDS_REVIEW",
+  "plan_version": 1,
+  "created_at": 1794123294.9896884,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "custodian 读取 shelfId=12 的书架；用它响应中的 $.cards[0].slip 让 custodian 取回凭条；核对凭条的 $.code 等于 \"S-31\"；还要核对卡片标题 $.title 等于 \"散页目录\"。",
+    "scope": "project",
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "showCard",
+          "method": "GET",
+          "path": "/cards/{cardRef}",
+          "summary": "卡片",
+          "group": "cards",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "fetchNotice",
+          "method": "GET",
+          "path": "/notices",
+          "summary": "公告",
+          "group": "notices",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "listShelf",
+          "method": "GET",
+          "path": "/shelves/{shelfId}",
+          "summary": "书架",
+          "group": "shelves",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "fetchSlip",
+          "method": "GET",
+          "path": "/slips/{slipCode}",
+          "summary": "凭条",
+          "group": "slips",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "REJECTED",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION",
+          "fields": []
+        },
+        "reason": "MODEL_INVALID_RESPONSE",
+        "elapsed_ms": 7396.635,
+        "model_call": {
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION",
+            "fields": []
+          },
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 7359,
+          "request_bytes": 26696,
+          "request_sha256": "29d9092241d6d879c707adf444f1a319004305cc4e156bafc6941bdf5351709e",
+          "response_bytes": 4079,
+          "input_token_upper_bound": 27208,
+          "input_tokens": 7156,
+          "output_tokens": 874,
+          "total_tokens": 8030,
+          "output_sha256": "64cc9a572c209312288d36aa2780b41380ea1284b9b40900ae69c70d05ea00ba",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        "proposed_question_count": 1
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "showCard",
+          "listShelf",
+          "fetchSlip",
+          "fetchNotice"
+        ],
+        "operations": [
+          "showCard",
+          "fetchNotice",
+          "listShelf",
+          "fetchSlip"
+        ],
+        "supported": true,
+        "status": "NOT_EXECUTED",
+        "reason": "测试重点尚未可靠确认。"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "custodian 读取 shelfId=12 的书架",
+        "start": 0,
+        "end": 27,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+        "start": 28,
+        "end": 67,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "核对凭条的 $.code 等于 \"S-31\"",
+        "start": 68,
+        "end": 90,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+        "start": 91,
+        "end": 117,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对凭条的 $.code 等于 \"S-31\"",
+        "start": 74,
+        "end": 90,
+        "selector": "$.code",
+        "operator": "equals",
+        "expected": "S-31",
+        "witnesses": [],
+        "continues": false,
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_4",
+        "source_quote": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+        "start": 100,
+        "end": 117,
+        "selector": "$.title",
+        "operator": "equals",
+        "expected": "散页目录",
+        "witnesses": [],
+        "continues": false,
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+        "start": 35,
+        "end": 50,
+        "selector": "$.cards[0].slip",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED"
+      }
+    ],
+    "context_usage": {
+      "requests": 0,
+      "model_calls": 1,
+      "known_tokens": 8030,
+      "total_tokens": 8030,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 7506.951,
+      "planning_ms": 7396.635,
+      "execution_ms": 0
+    },
+    "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+    "coverage": {
+      "operation_denominator": 4,
+      "scenario_denominator": 0,
+      "executed_operations": 0,
+      "executed_scenarios": 0,
+      "started_scenarios": 0,
+      "completed_scenarios": 0,
+      "assertion_passed_scenarios": 0,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "showCard",
+        "method": "GET",
+        "path": "/cards/{cardRef}",
+        "summary": "卡片",
+        "group": "cards",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      },
+      {
+        "operation_id": "fetchNotice",
+        "method": "GET",
+        "path": "/notices",
+        "summary": "公告",
+        "group": "notices",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      },
+      {
+        "operation_id": "listShelf",
+        "method": "GET",
+        "path": "/shelves/{shelfId}",
+        "summary": "书架",
+        "group": "shelves",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      },
+      {
+        "operation_id": "fetchSlip",
+        "method": "GET",
+        "path": "/slips/{slipCode}",
+        "summary": "凭条",
+        "group": "slips",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      }
+    ],
+    "exports": {}
+  }
+}

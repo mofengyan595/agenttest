@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "430b2900fd724c6f95086bd50d1dc02b", "plan": {"name": "匿名连续读取两次运行心跳", "steps": [{"id": "pulse_first", "operation_id": "checkPulse", "role": null, "path_parameters": {}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_4", "poll": false, "read_retries": 0}]}}

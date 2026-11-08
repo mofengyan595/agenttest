@@ -1,0 +1,741 @@
+{
+  "id": "8b2953d7abf949d386f52be99d2b3cee",
+  "project_id": "web_2ae6dbb7f066417088e1ffe7",
+  "project_identity": "ab73788bc8197559d008df5028975417175d51378a0803b88a7f3b6add55c02b",
+  "request_sha256": "d89e811cc6f9c1bb8304409a381212872e2675fc968872fd43d4daab050ced9a",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794123209.578316,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404；再确认 inspector 访问值守账号的拒绝规则；同时以匿名方式读取公告；并把运行心跳连读两次。",
+    "scope": "project",
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readGate",
+          "method": "GET",
+          "path": "/gates",
+          "summary": "闸口状态",
+          "group": "gates",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readKeeper",
+          "method": "GET",
+          "path": "/keepers/{keeperId}",
+          "summary": "值守账号",
+          "group": "keepers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "fetchNotice",
+          "method": "GET",
+          "path": "/notices",
+          "summary": "公告",
+          "group": "notices",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "匿名读取公告",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "fetchNotice"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_3"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "78026c9835eb45ec9306608c6fb4774d",
+        "elapsed_ms": 628.578,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "fetchNotice"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "fetchNotice",
+            "method": "GET",
+            "step_id": "fetch_notice",
+            "role": null,
+            "executed": true,
+            "path": "/notices",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_3"
+        ]
+      },
+      {
+        "case_id": "group_1_case_2",
+        "title": "匿名连续读取两次运行心跳（独立检查1）",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkPulse"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_4"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "430b2900fd724c6f95086bd50d1dc02b",
+        "elapsed_ms": 665.592,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkPulse"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkPulse",
+            "method": "GET",
+            "step_id": "pulse_first",
+            "role": null,
+            "executed": true,
+            "path": "/pulse",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_4"
+        ]
+      },
+      {
+        "case_id": "group_1_case_3",
+        "title": "匿名连续读取两次运行心跳（独立检查2）",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkPulse"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_4"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "9be6df7bb4d94f7092c4ac89122dc165",
+        "elapsed_ms": 746.714,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkPulse"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkPulse",
+            "method": "GET",
+            "step_id": "pulse_second",
+            "role": null,
+            "executed": true,
+            "path": "/pulse",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:427d4f96d62531d1a152c4497611ff2e7d543f8f7d64d927ade3dc5c66e57bc5:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_4"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "用户请求四项：inspector 访问 /gates 的拒绝状态（403 或 404）规则、inspector 访问 /keepers/{id} 的拒绝规则、匿名读取公告、心跳连读两次。inspector 凭据为 MISSING（服务端受控配置），两个拒绝规则因缺少可用身份与未确认的拒绝规则需审查；公告匿名读取与心跳读取可执行。",
+        "elapsed_ms": 5638.757,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 5594,
+          "request_bytes": 22196,
+          "request_sha256": "3a025ef54f49188360cac6ec49a5462d66038bb99694143d0086b3100f89d8d9",
+          "response_bytes": 2500,
+          "input_token_upper_bound": 22708,
+          "input_tokens": 5654,
+          "output_tokens": 486,
+          "total_tokens": 6140,
+          "output_sha256": "bd6a30415821f3f9e9faa9af5d3871d0ba846c67e41f5d4560d48d7d131c7348",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 0
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "本组只包含已批准的匿名读取公告和运行心跳两个操作。inspector 访问闸口状态和值守账号的拒绝规则属于本组之外的其他接口，且已有待确认问题，本组只引用这两项待确认问题，不新增断言。公告与心跳各按已确认的 200 规则安排普通读取，心跳在同一用例中连读两次。",
+        "presentation": {
+          "state": "CHINESE",
+          "has_latin": true,
+          "preserved": true
+        },
+        "elapsed_ms": 4361.705,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 4312,
+          "request_bytes": 23631,
+          "request_sha256": "0379e3b17bf1a8e748506f4ccf759c97c83d06e6d0d96479f159a06d94018fef",
+          "response_bytes": 2017,
+          "input_token_upper_bound": 24143,
+          "input_tokens": 5116,
+          "output_tokens": 348,
+          "total_tokens": 5464,
+          "output_sha256": "75c3c634e8ddc264004b1a61d2c03063c83e10d26d4b6db9cc26fd0e8f4f68c7",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 1,
+            "constructed_nodes": 1,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 0,
+            "independent_contexts": 1
+          },
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 2,
+            "constructed_nodes": 2,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 0,
+            "independent_contexts": 2
+          }
+        ],
+        "construction_ms": 0.178
+      }
+    ],
+    "questions": [
+      {
+        "id": "question_759b27e1c4a3ffc34058",
+        "operation_id": "readGate",
+        "question": "inspector 访问闸口状态的权限结果应返回 403 还是 404？",
+        "requested_behavior": "确认 inspector 访问闸口状态的权限结果",
+        "kind": "permission",
+        "role": "inspector",
+        "status_choices": [
+          403,
+          404
+        ]
+      },
+      {
+        "id": "question_152dba6011c251e0431e",
+        "operation_id": "readKeeper",
+        "question": "inspector 访问值守账号的权限结果应返回 403 还是 404？",
+        "requested_behavior": "确认 inspector 访问值守账号的权限结果",
+        "kind": "permission",
+        "role": "inspector",
+        "status_choices": [
+          403,
+          404
+        ]
+      }
+    ],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "fetchNotice",
+          "checkPulse"
+        ],
+        "operations": [
+          "fetchNotice",
+          "checkPulse"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+        "start": 0,
+        "end": 37,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "再确认 inspector 访问值守账号的拒绝规则",
+        "start": 38,
+        "end": 63,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "同时以匿名方式读取公告",
+        "start": 64,
+        "end": 75,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "并把运行心跳连读两次",
+        "start": 76,
+        "end": 86,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "context_usage": {
+      "requests": 3,
+      "model_calls": 2,
+      "known_tokens": 11604,
+      "total_tokens": 11604,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 12458.185,
+      "planning_ms": 10000.462,
+      "execution_ms": 2040.884
+    },
+    "focus": {
+      "interpretation": "用户请求四项：inspector 访问 /gates 的拒绝状态（403 或 404）规则、inspector 访问 /keepers/{id} 的拒绝规则、匿名读取公告、心跳连读两次。inspector 凭据为 MISSING（服务端受控配置），两个拒绝规则因缺少可用身份与未确认的拒绝规则需审查；公告匿名读取与心跳读取可执行。",
+      "mode": "selected",
+      "operation_ids": [
+        "readGate",
+        "readKeeper",
+        "fetchNotice",
+        "checkPulse"
+      ],
+      "normal_operation_ids": [
+        "fetchNotice",
+        "checkPulse"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "readKeeper",
+          "location": "path_parameters",
+          "name": "keeperId",
+          "path": [],
+          "value": 9,
+          "source_quote": "再确认 inspector 访问值守账号的拒绝规则"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [
+        {
+          "operation_id": "readGate",
+          "question": "inspector 访问闸口状态的权限结果应返回 403 还是 404？",
+          "requested_behavior": "确认 inspector 访问闸口状态的权限结果",
+          "source_quote": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+          "kind": "permission",
+          "role": "inspector",
+          "status_choices": [
+            403,
+            404
+          ]
+        },
+        {
+          "operation_id": "readKeeper",
+          "question": "inspector 访问值守账号的权限结果应返回 403 还是 404？",
+          "requested_behavior": "确认 inspector 访问值守账号的权限结果",
+          "source_quote": "再确认 inspector 访问值守账号的拒绝规则",
+          "kind": "permission",
+          "role": "inspector",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "source_conflicts": [],
+      "requirement_ledger": [],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+          "disposition": "needs_review",
+          "actions": [],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "再确认 inspector 访问值守账号的拒绝规则",
+          "disposition": "needs_review",
+          "actions": [],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "同时以匿名方式读取公告",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "fetchNotice",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_4",
+          "source_quote": "并把运行心跳连读两次",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkPulse",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "readGate": "PENDING_PERMISSION",
+        "readKeeper": "USER_REQUIREMENT",
+        "fetchNotice": "USER_REQUIREMENT",
+        "checkPulse": "USER_REQUIREMENT"
+      }
+    },
+    "focus_presentation": {
+      "state": "CHINESE",
+      "has_latin": true,
+      "preserved": true
+    },
+    "requirement_ledger": [],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+        "disposition": "needs_review",
+        "actions": [],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "再确认 inspector 访问值守账号的拒绝规则",
+        "disposition": "needs_review",
+        "actions": [],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "同时以匿名方式读取公告",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "fetchNotice",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_4",
+        "source_quote": "并把运行心跳连读两次",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkPulse",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {
+      "readGate": [],
+      "readKeeper": []
+    },
+    "permission_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+        "operation_id": "readGate",
+        "role": "inspector",
+        "status": "NEEDS_REVIEW",
+        "reason": "PERMISSION_EXPECTATION_NOT_APPROVED"
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "再确认 inspector 访问值守账号的拒绝规则",
+        "operation_id": "readKeeper",
+        "role": "inspector",
+        "status": "NEEDS_REVIEW",
+        "reason": "PERMISSION_EXPECTATION_NOT_APPROVED"
+      }
+    ],
+    "input_blocked_operations": [
+      "readGate",
+      "readKeeper"
+    ],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "闸口状态与值守账号两个接口不属于本组，其 inspector 拒绝规则待上述两个问题确认后再安排验证。",
+      "心跳连读两次仅验证两次均返回已确认的 200，若需要比较两次响应内容一致性，请另行确认比较规则。"
+    ],
+    "checks_passed": true,
+    "coverage": {
+      "operation_denominator": 4,
+      "scenario_denominator": 3,
+      "executed_operations": 2,
+      "executed_scenarios": 3,
+      "started_scenarios": 3,
+      "completed_scenarios": 3,
+      "assertion_passed_scenarios": 3,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "readGate",
+        "method": "GET",
+        "path": "/gates",
+        "summary": "闸口状态",
+        "group": "gates",
+        "state": "READY",
+        "reason": "该原文分项的身份权限预期待确认；不能用其他身份代替。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      },
+      {
+        "operation_id": "readKeeper",
+        "method": "GET",
+        "path": "/keepers/{keeperId}",
+        "summary": "值守账号",
+        "group": "keepers",
+        "state": "READY",
+        "reason": "该原文分项的身份权限预期待确认；不能用其他身份代替。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      }
+    ],
+    "exports": {
+      "78026c9835eb45ec9306608c6fb4774d": {
+        "available": true,
+        "reason": ""
+      },
+      "430b2900fd724c6f95086bd50d1dc02b": {
+        "available": true,
+        "reason": ""
+      },
+      "9be6df7bb4d94f7092c4ac89122dc165": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

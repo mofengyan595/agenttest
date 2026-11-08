@@ -1,0 +1,817 @@
+{
+  "id": "0dc37670ef0f497d8325e2b5c5c2ae77",
+  "project_id": "web_e642d921db7a423ba72e39cd",
+  "project_identity": "69241c7421142ad29309134d67b604f5484560045a8976bea01711dc9cbad220",
+  "request_sha256": "594c405f5bbccce01a4924537c6d563f7c5d2389293b08de84d1b44903cb6e54",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794123276.9548397,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "custodian 读取 shelfId=12 的书架；用它响应中的 $.cards[0].slip 让 custodian 取回凭条；核对凭条的 $.code 等于 \"S-31\"；还要核对卡片标题 $.title 等于 \"散页目录\"。",
+    "scope": "project",
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "showCard",
+          "method": "GET",
+          "path": "/cards/{cardRef}",
+          "summary": "卡片",
+          "group": "cards",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "fetchNotice",
+          "method": "GET",
+          "path": "/notices",
+          "summary": "公告",
+          "group": "notices",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "listShelf",
+          "method": "GET",
+          "path": "/shelves/{shelfId}",
+          "summary": "书架",
+          "group": "shelves",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "fetchSlip",
+          "method": "GET",
+          "path": "/slips/{slipCode}",
+          "summary": "凭条",
+          "group": "slips",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "custodian 读取书架并取回凭条校验凭条代码",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "listShelf",
+          "fetchSlip"
+        ],
+        "planned_steps": 2,
+        "planned_policy_ids": [
+          "web_rule_1",
+          "web_rule_3"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 2,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "response_steps": {
+          "response_1": [
+            {
+              "step_id": "fetch_slip",
+              "operation_id": "fetchSlip",
+              "role": "custodian",
+              "policy_id": "web_rule_3",
+              "check_kind": "equals",
+              "check_index": 1
+            }
+          ]
+        },
+        "data_source_steps": {
+          "data_1": [
+            {
+              "step_id": "fetch_slip",
+              "source_step_id": "list_shelf",
+              "operation_id": "fetchSlip",
+              "policy_id": "web_rule_3",
+              "role": "custodian",
+              "selector": "$.cards[0].slip",
+              "location": "path_parameters",
+              "name": "slipCode"
+            }
+          ]
+        },
+        "run_id": "8caf4344e4044b30bd9e46cb2031f296",
+        "elapsed_ms": 1052.816,
+        "outcome": "PASS",
+        "executed_steps": 2,
+        "executed_operations": [
+          "listShelf",
+          "fetchSlip"
+        ],
+        "http_requests": 2,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "listShelf",
+            "method": "GET",
+            "step_id": "list_shelf",
+            "role": "custodian",
+            "executed": true,
+            "path": "/shelves/{shelfId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "custodian",
+              "values": {
+                "path_parameters": {
+                  "shelfId": 12
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:e90dc49ca8a24fc4d6b24e6694e3b452ae44c6c6ae2f7e305b607fdf58decd85:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "exists",
+                "selector": "$.cards[0].ref",
+                "passed": true,
+                "expected": null,
+                "actual": "[REDACTED]"
+              }
+            ]
+          },
+          {
+            "operation_id": "fetchSlip",
+            "method": "GET",
+            "step_id": "fetch_slip",
+            "role": "custodian",
+            "executed": true,
+            "path": "/slips/{slipCode}",
+            "outcome": "PASS",
+            "request": {
+              "role": "custodian",
+              "values": {
+                "path_parameters": {
+                  "slipCode": "S-31"
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:e90dc49ca8a24fc4d6b24e6694e3b452ae44c6c6ae2f7e305b607fdf58decd85:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "equals",
+                "selector": "$.code",
+                "passed": true,
+                "expected": "[REDACTED]",
+                "actual": "[REDACTED]"
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_1",
+          "web_rule_3"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "custodian 读取 shelfId=12 的书架，用响应中 $.cards[0].slip 作为 slipCode 让 custodian 取回凭条，并核对凭条 $.code 等于 S-31。另请求核对卡片 $.title 等于散页目录，但未指明卡片引用来源且该断言无批准的 expectation，视为需业务规则确认。",
+        "elapsed_ms": 5389.307,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 5344,
+          "request_bytes": 26696,
+          "request_sha256": "29d9092241d6d879c707adf444f1a319004305cc4e156bafc6941bdf5351709e",
+          "response_bytes": 3777,
+          "input_token_upper_bound": 27208,
+          "input_tokens": 7156,
+          "output_tokens": 788,
+          "total_tokens": 7944,
+          "output_sha256": "526f8d0f85d3f48a32c703ec0939feed2f847d9a9d0d119ad98e0e44d8b980a7",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 1
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "本轮按已批准的只读策略执行：custodian 读取 shelfId=12 的书架并核对响应中卡片引用存在，再用响应中的 $.cards[0].slip 取回凭条并核对 $.code 等于 S-31。请求中「核对卡片标题 $.title 等于 散页目录」属于 showCard 操作，本组没有该操作及卡片引用来源，已有待澄清问题，不在本组执行。",
+        "presentation": {
+          "state": "CHINESE",
+          "has_latin": true,
+          "preserved": true
+        },
+        "elapsed_ms": 4560.406,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 4500,
+          "request_bytes": 25776,
+          "request_sha256": "a3b742567aefb1dcfb7782bd2d8753273dc04ada39462bd128d850a437829a75",
+          "response_bytes": 2142,
+          "input_token_upper_bound": 26288,
+          "input_tokens": 5770,
+          "output_tokens": 394,
+          "total_tokens": 6164,
+          "output_sha256": "d0098eca7951d1f2ff39e4ba81896f7e77519dc11bba5d7c2861520cbecdbaa7",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 2,
+            "constructed_nodes": 2,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 1,
+            "independent_contexts": 1
+          }
+        ],
+        "construction_ms": 0.285
+      }
+    ],
+    "questions": [
+      {
+        "id": "question_3b93cf094c40053b14de",
+        "operation_id": "showCard",
+        "question": "核对卡片标题 $.title 等于「散页目录」时，应使用哪个卡片引用（cardRef）？该来源未在请求中给出。",
+        "requested_behavior": "核对卡片标题等于散页目录",
+        "kind": "clarification",
+        "role": null,
+        "status_choices": []
+      }
+    ],
+    "not_covered": [
+      "请求要求核对卡片标题 $.title 等于「散页目录」，但该检查针对 showCard 操作，本组未提供该操作及卡片引用来源，且已有待澄清问题，无法在本轮执行。"
+    ],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "listShelf",
+          "fetchSlip"
+        ],
+        "operations": [
+          "listShelf",
+          "fetchSlip"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "custodian 读取 shelfId=12 的书架",
+        "start": 0,
+        "end": 27,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+        "start": 28,
+        "end": 67,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "核对凭条的 $.code 等于 \"S-31\"",
+        "start": 68,
+        "end": 90,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+        "start": 91,
+        "end": 117,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对凭条的 $.code 等于 \"S-31\"",
+        "start": 74,
+        "end": 90,
+        "selector": "$.code",
+        "operator": "equals",
+        "expected": "S-31",
+        "witnesses": [
+          {
+            "step_id": "fetch_slip",
+            "operation_id": "fetchSlip",
+            "role": "custodian",
+            "policy_id": "web_rule_3",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "8caf4344e4044b30bd9e46cb2031f296",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "continues": false,
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "fetchSlip",
+            "role": "custodian"
+          }
+        ],
+        "approved_action": {
+          "operation_id": "fetchSlip",
+          "role": "custodian"
+        }
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_4",
+        "source_quote": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+        "start": 100,
+        "end": 117,
+        "selector": "$.title",
+        "operator": "equals",
+        "expected": "散页目录",
+        "witnesses": [],
+        "continues": false,
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ],
+        "blocked_operations": [
+          "showCard"
+        ]
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+        "start": 35,
+        "end": 50,
+        "selector": "$.cards[0].slip",
+        "witnesses": [
+          {
+            "step_id": "fetch_slip",
+            "source_step_id": "list_shelf",
+            "operation_id": "fetchSlip",
+            "policy_id": "web_rule_3",
+            "role": "custodian",
+            "selector": "$.cards[0].slip",
+            "location": "path_parameters",
+            "name": "slipCode",
+            "case_id": "group_1_case_1",
+            "status": "EXECUTED",
+            "run_id": "8caf4344e4044b30bd9e46cb2031f296"
+          }
+        ],
+        "status": "EXECUTED",
+        "actions": [
+          {
+            "operation_id": "fetchSlip",
+            "role": "custodian"
+          }
+        ],
+        "approved_bindings": [
+          {
+            "operation_id": "fetchSlip",
+            "roles": [
+              "custodian"
+            ],
+            "policy_id": "web_rule_3",
+            "location": "path_parameters",
+            "name": "slipCode",
+            "selector": "$.cards[0].slip",
+            "source_policy_id": "web_rule_1",
+            "from_operation": "listShelf",
+            "from_method": "GET",
+            "source_roles": [
+              "custodian"
+            ],
+            "role_relation": "same",
+            "source_role": "custodian",
+            "role": "custodian"
+          }
+        ]
+      }
+    ],
+    "context_usage": {
+      "requests": 2,
+      "model_calls": 2,
+      "known_tokens": 14108,
+      "total_tokens": 14108,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 11385.47,
+      "planning_ms": 9949.713,
+      "execution_ms": 1052.816
+    },
+    "focus": {
+      "interpretation": "custodian 读取 shelfId=12 的书架，用响应中 $.cards[0].slip 作为 slipCode 让 custodian 取回凭条，并核对凭条 $.code 等于 S-31。另请求核对卡片 $.title 等于散页目录，但未指明卡片引用来源且该断言无批准的 expectation，视为需业务规则确认。",
+      "mode": "selected",
+      "operation_ids": [
+        "listShelf",
+        "showCard",
+        "fetchSlip"
+      ],
+      "normal_operation_ids": [
+        "listShelf",
+        "showCard",
+        "fetchSlip"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "listShelf",
+          "location": "path_parameters",
+          "name": "shelfId",
+          "path": [],
+          "value": 12,
+          "source_quote": "custodian 读取 shelfId=12 的书架"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [
+        {
+          "operation_id": "showCard",
+          "question": "核对卡片标题 $.title 等于「散页目录」时，应使用哪个卡片引用（cardRef）？该来源未在请求中给出。",
+          "requested_behavior": "核对卡片标题等于散页目录",
+          "source_quote": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+          "kind": "business_rule",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "source_conflicts": [],
+      "requirement_ledger": [
+        {
+          "name": "shelfId",
+          "value": 12,
+          "source_quote": "shelfId=12",
+          "start": 13,
+          "end": 23,
+          "deferred": false,
+          "candidate_operations": [
+            "listShelf"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "listShelf"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "custodian 读取 shelfId=12 的书架",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "listShelf",
+              "role": "custodian"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "listShelf",
+              "role": "custodian",
+              "path": {
+                "shelfId": 12
+              }
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "fetchSlip",
+              "role": "custodian"
+            }
+          ],
+          "before": [
+            {
+              "earlier": "listShelf",
+              "later": "fetchSlip"
+            }
+          ],
+          "same_resource": [
+            {
+              "producer": "listShelf",
+              "consumer": "fetchSlip"
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "核对凭条的 $.code 等于 \"S-31\"",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "fetchSlip",
+              "role": "custodian"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [
+            "expectation_657e2ad673c7ee96741e"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_4",
+          "source_quote": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+          "disposition": "needs_review",
+          "actions": [
+            {
+              "operation_id": "showCard",
+              "role": "curator"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "listShelf": "USER_REQUIREMENT",
+        "showCard": "USER_REQUIREMENT",
+        "fetchSlip": "USER_REQUIREMENT"
+      }
+    },
+    "focus_presentation": {
+      "state": "CHINESE",
+      "has_latin": true,
+      "preserved": true
+    },
+    "requirement_ledger": [
+      {
+        "name": "shelfId",
+        "value": 12,
+        "source_quote": "shelfId=12",
+        "start": 13,
+        "end": 23,
+        "deferred": false,
+        "candidate_operations": [
+          "listShelf"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "listShelf"
+        ]
+      }
+    ],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "custodian 读取 shelfId=12 的书架",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "listShelf",
+            "role": "custodian"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "existing_resources": [
+          {
+            "operation_id": "listShelf",
+            "role": "custodian",
+            "path": {
+              "shelfId": 12
+            }
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "用它响应中的 $.cards[0].slip 让 custodian 取回凭条",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "fetchSlip",
+            "role": "custodian"
+          }
+        ],
+        "before": [
+          {
+            "earlier": "listShelf",
+            "later": "fetchSlip"
+          }
+        ],
+        "same_resource": [
+          {
+            "producer": "listShelf",
+            "consumer": "fetchSlip"
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "核对凭条的 $.code 等于 \"S-31\"",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "fetchSlip",
+            "role": "custodian"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [
+          "expectation_657e2ad673c7ee96741e"
+        ],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_4",
+        "source_quote": "还要核对卡片标题 $.title 等于 \"散页目录\"",
+        "disposition": "needs_review",
+        "actions": [
+          {
+            "operation_id": "showCard",
+            "role": "curator"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {},
+    "input_blocked_operations": [
+      "showCard"
+    ],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "书架响应中已确认存在 $.cards[0].ref，可在后续轮次确认卡片引用后补充卡片标题的读取校验。"
+    ],
+    "checks_passed": false,
+    "coverage": {
+      "operation_denominator": 4,
+      "scenario_denominator": 1,
+      "executed_operations": 2,
+      "executed_scenarios": 1,
+      "started_scenarios": 1,
+      "completed_scenarios": 1,
+      "assertion_passed_scenarios": 1,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "showCard",
+        "method": "GET",
+        "path": "/cards/{cardRef}",
+        "summary": "卡片",
+        "group": "cards",
+        "state": "READY",
+        "reason": "原文指定的响应检查缺少已确认的规则；该读取暂停。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      },
+      {
+        "operation_id": "fetchNotice",
+        "method": "GET",
+        "path": "/notices",
+        "summary": "公告",
+        "group": "notices",
+        "state": "READY",
+        "reason": "本次重点未包含此接口，未发送请求。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      }
+    ],
+    "exports": {
+      "8caf4344e4044b30bd9e46cb2031f296": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

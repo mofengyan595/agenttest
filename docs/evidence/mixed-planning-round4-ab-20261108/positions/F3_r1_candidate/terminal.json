@@ -1,0 +1,612 @@
+{
+  "id": "924d63ffc4af43b880a065c099b9a140",
+  "project_id": "web_4eb65b1c71d0449bb047dbad",
+  "project_identity": "e1851ed5a447a93b0f264f060b0b2a3caae9a9b05c1f32d5b6af2ee53505e36c",
+  "request_sha256": "259363c51b37f900894492b687b565b4ae8eba71c56af4eee21e89b8f748a903",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794123245.0027497,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "先以匿名身份连续读取运行心跳两次；两次都要核对 HTTP 200；最后由 auditor 读取 ledgerId=7 的台账。",
+    "scope": "project",
+    "inventory": {
+      "total": 2,
+      "counts": {
+        "READY": 2,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readLedger",
+          "method": "GET",
+          "path": "/ledgers/{ledgerId}",
+          "summary": "台账",
+          "group": "ledgers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "匿名连续两次读取运行心跳后由 auditor 读取台账 7",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkPulse",
+          "readLedger"
+        ],
+        "planned_steps": 3,
+        "planned_policy_ids": [
+          "web_rule_1",
+          "web_rule_1",
+          "web_rule_2"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 3,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "http_status_steps": {
+          "request_2": [
+            {
+              "step_id": "pulse1",
+              "operation_id": "checkPulse",
+              "role": null,
+              "policy_id": "web_rule_1"
+            },
+            {
+              "step_id": "pulse2",
+              "operation_id": "checkPulse",
+              "role": null,
+              "policy_id": "web_rule_1"
+            }
+          ]
+        },
+        "run_id": "5b230b7a4d7748788bdde3ceb2aa6707",
+        "elapsed_ms": 1268.111,
+        "outcome": "PASS",
+        "executed_steps": 3,
+        "executed_operations": [
+          "checkPulse",
+          "checkPulse",
+          "readLedger"
+        ],
+        "http_requests": 3,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkPulse",
+            "method": "GET",
+            "step_id": "pulse1",
+            "role": null,
+            "executed": true,
+            "path": "/pulse",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          },
+          {
+            "operation_id": "checkPulse",
+            "method": "GET",
+            "step_id": "pulse2",
+            "role": null,
+            "executed": true,
+            "path": "/pulse",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          },
+          {
+            "operation_id": "readLedger",
+            "method": "GET",
+            "step_id": "ledger7",
+            "role": "auditor",
+            "executed": true,
+            "path": "/ledgers/{ledgerId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "auditor",
+              "values": {
+                "path_parameters": {
+                  "ledgerId": 7
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_1",
+          "web_rule_2"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "匿名连续两次读取运行心跳并核对 HTTP 200（同一接口一次选择，设计层处理重复与顺序），随后由 auditor 读取 ledgerId=7 的台账。使用服务端已确认的响应状态 200，不额外请求规则。",
+        "elapsed_ms": 3047.918,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 3016,
+          "request_bytes": 21378,
+          "request_sha256": "23c657f895db0bef2139a0659e8c600f4c8256a05e54a8249e153159fe18b439",
+          "response_bytes": 2076,
+          "input_token_upper_bound": 21890,
+          "input_tokens": 5506,
+          "output_tokens": 376,
+          "total_tokens": 5882,
+          "output_sha256": "ad50433a568f3515a072c7cf28a25946131a0b4cbeec62305e132470680b3cd0",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 0
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "用户要求先以匿名身份连续两次读取运行心跳并分别核对 HTTP 200，随后由 auditor 读取 ledgerId=7 的台账。这些都可在一个按序流程中完成：两次心跳读取后接一次台账读取，auditor 为预配置 bearer，无需登录步骤。",
+        "presentation": {
+          "state": "CHINESE",
+          "has_latin": true,
+          "preserved": true
+        },
+        "elapsed_ms": 3039.905,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 3000,
+          "request_bytes": 23521,
+          "request_sha256": "f46ded78568605198eb4bc32c227a1f8db7617aff1318e87af13db78eec17ba5",
+          "response_bytes": 1686,
+          "input_token_upper_bound": 24033,
+          "input_tokens": 5113,
+          "output_tokens": 272,
+          "total_tokens": 5385,
+          "output_sha256": "8171fd9155d765f17678ac723f5656a4e5e3bb65c3704d403c479dc25448cf0a",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 3,
+            "constructed_nodes": 3,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 2,
+            "independent_contexts": 1
+          }
+        ],
+        "construction_ms": 0.161
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "readLedger",
+          "checkPulse"
+        ],
+        "operations": [
+          "readLedger",
+          "checkPulse"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": true,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "先以匿名身份连续读取运行心跳两次",
+        "start": 0,
+        "end": 16,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "两次都要核对 HTTP 200",
+        "start": 17,
+        "end": 32,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "最后由 auditor 读取 ledgerId=7 的台账",
+        "start": 33,
+        "end": 62,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": true
+      }
+    ],
+    "negative_check_catalog": [],
+    "http_status_requirements": [
+      {
+        "source_id": "request_2",
+        "source_quote": "两次都要核对 HTTP 200",
+        "start": 24,
+        "end": 32,
+        "expected": 200,
+        "status": "PASS",
+        "witnesses": [
+          {
+            "step_id": "pulse1",
+            "operation_id": "checkPulse",
+            "role": null,
+            "policy_id": "web_rule_1",
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "5b230b7a4d7748788bdde3ceb2aa6707",
+            "actual": 200
+          },
+          {
+            "step_id": "pulse2",
+            "operation_id": "checkPulse",
+            "role": null,
+            "policy_id": "web_rule_1",
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "5b230b7a4d7748788bdde3ceb2aa6707",
+            "actual": 200
+          }
+        ]
+      }
+    ],
+    "context_usage": {
+      "requests": 3,
+      "model_calls": 2,
+      "known_tokens": 11267,
+      "total_tokens": 11267,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 7702.624,
+      "planning_ms": 6087.823,
+      "execution_ms": 1268.111
+    },
+    "focus": {
+      "interpretation": "匿名连续两次读取运行心跳并核对 HTTP 200（同一接口一次选择，设计层处理重复与顺序），随后由 auditor 读取 ledgerId=7 的台账。使用服务端已确认的响应状态 200，不额外请求规则。",
+      "mode": "selected",
+      "operation_ids": [
+        "checkPulse",
+        "readLedger"
+      ],
+      "normal_operation_ids": [
+        "checkPulse",
+        "readLedger"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "readLedger",
+          "location": "path_parameters",
+          "name": "ledgerId",
+          "path": [],
+          "value": 7,
+          "source_quote": "最后由 auditor 读取 ledgerId=7 的台账"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [],
+      "source_conflicts": [],
+      "requirement_ledger": [
+        {
+          "name": "ledgerId",
+          "value": 7,
+          "source_quote": "ledgerId=7",
+          "start": 48,
+          "end": 58,
+          "deferred": false,
+          "candidate_operations": [
+            "readLedger"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "readLedger"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "先以匿名身份连续读取运行心跳两次",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkPulse",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "两次都要核对 HTTP 200",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkPulse",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "最后由 auditor 读取 ledgerId=7 的台账",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readLedger",
+              "role": "auditor"
+            }
+          ],
+          "before": [
+            {
+              "earlier": "checkPulse",
+              "later": "readLedger"
+            }
+          ],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "readLedger",
+              "role": "auditor",
+              "path": {
+                "ledgerId": 7
+              }
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "checkPulse": "USER_REQUIREMENT",
+        "readLedger": "USER_REQUIREMENT"
+      }
+    },
+    "focus_presentation": {
+      "state": "CHINESE",
+      "has_latin": true,
+      "preserved": true
+    },
+    "requirement_ledger": [
+      {
+        "name": "ledgerId",
+        "value": 7,
+        "source_quote": "ledgerId=7",
+        "start": 48,
+        "end": 58,
+        "deferred": false,
+        "candidate_operations": [
+          "readLedger"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "readLedger"
+        ]
+      }
+    ],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "先以匿名身份连续读取运行心跳两次",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkPulse",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "两次都要核对 HTTP 200",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkPulse",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "最后由 auditor 读取 ledgerId=7 的台账",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readLedger",
+            "role": "auditor"
+          }
+        ],
+        "before": [
+          {
+            "earlier": "checkPulse",
+            "later": "readLedger"
+          }
+        ],
+        "same_resource": [],
+        "existing_resources": [
+          {
+            "operation_id": "readLedger",
+            "role": "auditor",
+            "path": {
+              "ledgerId": 7
+            }
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {},
+    "input_blocked_operations": [],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "两次心跳读取均为独立匿名只读请求，已分别核对 HTTP 200；台账读取在两次心跳之后执行，符合用户要求的先后顺序。"
+    ],
+    "checks_passed": true,
+    "coverage": {
+      "operation_denominator": 2,
+      "scenario_denominator": 1,
+      "executed_operations": 2,
+      "executed_scenarios": 1,
+      "started_scenarios": 1,
+      "completed_scenarios": 1,
+      "assertion_passed_scenarios": 1,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [],
+    "exports": {
+      "5b230b7a4d7748788bdde3ceb2aa6707": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

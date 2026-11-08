@@ -1,0 +1,262 @@
+{
+  "id": "13cbf7b464f24a018fb48fa520b06c7c",
+  "project_id": "web_4e0bb691cee548db817beb3c",
+  "project_identity": "9bdc3d9f746bb18ea4d7dba3888d8e8fe2d5e1d4fc4e4f9979084070dcb477c5",
+  "request_sha256": "d89e811cc6f9c1bb8304409a381212872e2675fc968872fd43d4daab050ced9a",
+  "status": "NEEDS_REVIEW",
+  "plan_version": 1,
+  "created_at": 1794123394.8582354,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404；再确认 inspector 访问值守账号的拒绝规则；同时以匿名方式读取公告；并把运行心跳连读两次。",
+    "scope": "project",
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readGate",
+          "method": "GET",
+          "path": "/gates",
+          "summary": "闸口状态",
+          "group": "gates",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readKeeper",
+          "method": "GET",
+          "path": "/keepers/{keeperId}",
+          "summary": "值守账号",
+          "group": "keepers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "fetchNotice",
+          "method": "GET",
+          "path": "/notices",
+          "summary": "公告",
+          "group": "notices",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "REJECTED",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION",
+          "fields": []
+        },
+        "reason": "MODEL_INVALID_RESPONSE",
+        "elapsed_ms": 8390.334,
+        "model_call": {
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION",
+            "fields": []
+          },
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 8360,
+          "request_bytes": 22196,
+          "request_sha256": "8726d3510db3a8e9c8a159941b90c87fbf722da0ce10c3343055821f2cf00f8c",
+          "response_bytes": 2989,
+          "input_token_upper_bound": 22708,
+          "input_tokens": 5654,
+          "output_tokens": 592,
+          "total_tokens": 6246,
+          "output_sha256": "ad972daf7f36cec0df00b5c1333e420b35a76ba4148a86df4b923ac09a7575a2",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        "proposed_question_count": 2
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "readGate",
+          "readKeeper",
+          "fetchNotice",
+          "checkPulse"
+        ],
+        "operations": [
+          "readGate",
+          "readKeeper",
+          "fetchNotice",
+          "checkPulse"
+        ],
+        "supported": true,
+        "status": "NOT_EXECUTED",
+        "reason": "测试重点尚未可靠确认。"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404",
+        "start": 0,
+        "end": 37,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "再确认 inspector 访问值守账号的拒绝规则",
+        "start": 38,
+        "end": 63,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "同时以匿名方式读取公告",
+        "start": 64,
+        "end": 75,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "并把运行心跳连读两次",
+        "start": 76,
+        "end": 86,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "context_usage": {
+      "requests": 0,
+      "model_calls": 1,
+      "known_tokens": 6246,
+      "total_tokens": 6246,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 8474.909,
+      "planning_ms": 8390.334,
+      "execution_ms": 0
+    },
+    "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+    "coverage": {
+      "operation_denominator": 4,
+      "scenario_denominator": 0,
+      "executed_operations": 0,
+      "executed_scenarios": 0,
+      "started_scenarios": 0,
+      "completed_scenarios": 0,
+      "assertion_passed_scenarios": 0,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "readGate",
+        "method": "GET",
+        "path": "/gates",
+        "summary": "闸口状态",
+        "group": "gates",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      },
+      {
+        "operation_id": "readKeeper",
+        "method": "GET",
+        "path": "/keepers/{keeperId}",
+        "summary": "值守账号",
+        "group": "keepers",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      },
+      {
+        "operation_id": "fetchNotice",
+        "method": "GET",
+        "path": "/notices",
+        "summary": "公告",
+        "group": "notices",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      },
+      {
+        "operation_id": "checkPulse",
+        "method": "GET",
+        "path": "/pulse",
+        "summary": "运行心跳",
+        "group": "pulse",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      }
+    ],
+    "exports": {}
+  }
+}

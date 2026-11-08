@@ -1,0 +1,213 @@
+{
+  "run_id": "bd20935cfee447e6b7339e0f5868ba31",
+  "revision": 22,
+  "started_at": "2026-11-08T07:35:57.965085+00:00",
+  "scenario_sha256": "4c1ce5db5ede0f0f4a2f8f7ef0ef45e8d03b3518a1f5d83da24d29d4191e9744",
+  "contract_sha256": "122f4bf4ec01a47cfd2ac01a73928d63a0d9591eb99abc0c4142fcfcb9b12c75",
+  "outcome": "PASS",
+  "steps": [
+    {
+      "step_id": "pulse_first",
+      "step_run_id": "22b523792a084628b94c0e9d7cc27be2",
+      "operation_id": "checkPulse",
+      "method": "GET",
+      "path_template": "/pulse",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "40df3e20669671fce7dcd76efc4e9eb15c6a2490fae21b50abbd4ea5bb7f71fd",
+      "policy_template_sha256": "40df3e20669671fce7dcd76efc4e9eb15c6a2490fae21b50abbd4ea5bb7f71fd",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "10a5ededcbc643c082af21b7e3e9f8b1",
+          "status_code": 200,
+          "elapsed_ms": 35.233,
+          "response_bytes": 18,
+          "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": null,
+        "values": {
+          "path_parameters": {},
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+      }
+    },
+    {
+      "step_id": "pulse_second",
+      "step_run_id": "69df63b26cea44359ef5ecdb641ae01e",
+      "operation_id": "checkPulse",
+      "method": "GET",
+      "path_template": "/pulse",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "40df3e20669671fce7dcd76efc4e9eb15c6a2490fae21b50abbd4ea5bb7f71fd",
+      "policy_template_sha256": "40df3e20669671fce7dcd76efc4e9eb15c6a2490fae21b50abbd4ea5bb7f71fd",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "3bc9f7b78ad94d65a4ae1e17b1c0fc45",
+          "status_code": 200,
+          "elapsed_ms": 20.488,
+          "response_bytes": 18,
+          "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": null,
+        "values": {
+          "path_parameters": {},
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+      }
+    },
+    {
+      "step_id": "ledger_read",
+      "step_run_id": "9f50e22bcccd4fc1b188631ed6acee2e",
+      "operation_id": "readLedger",
+      "method": "GET",
+      "path_template": "/ledgers/{ledgerId}",
+      "outcome": "PASS",
+      "reason": "POLICY_EVALUATED",
+      "policy_sha256": "9fe63c0ce3d30704052f42757140feccbdcf11f3f81705fc2b42270e20c480bd",
+      "policy_template_sha256": "9fe63c0ce3d30704052f42757140feccbdcf11f3f81705fc2b42270e20c480bd",
+      "checks": [
+        {
+          "kind": "http_status",
+          "selector": null,
+          "passed": true,
+          "expected": [
+            200
+          ],
+          "actual": 200
+        }
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "attempt_id": "229605c1a65748689ad6bb5b46cfaa11",
+          "status_code": 200,
+          "elapsed_ms": 38.339,
+          "response_bytes": 29,
+          "response_sha256": "ba9d5ae65d883d0681d6781ec916ef0960a9c29d50e6aa91ba9f5e84be4f7dd5",
+          "error_code": null
+        }
+      ],
+      "input_validation": "NORMAL_VALIDATED",
+      "request_evidence": {
+        "role": "auditor",
+        "values": {
+          "path_parameters": {
+            "ledgerId": 7
+          },
+          "query": {},
+          "body": {}
+        },
+        "credentials": "由执行器管理，未记录",
+        "source": "WEB_OPERATOR_CONFIRMED:e0e5ac281be437bb26dbff23a7e4a8a395afab725a471f60fee8555ccd1a074e:Operator-approved immutable read-only fixture, round 4."
+      }
+    }
+  ],
+  "completed": true,
+  "reason": "",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:19091",
+  "target_config_sha256": "f11f51561c29bf314e305f25bb66a474c3108a1206827bf9cfbaea03e4b21b8e",
+  "policy_registry_sha256": "708585cf5831852b3cb47e1f6733cf8db8641665591dd8b276e522473b1fa2bf",
+  "workflow_nodes": [
+    "load_contract",
+    "plan",
+    "validate",
+    "execute",
+    "analyze_or_finish",
+    "report"
+  ],
+  "planner_calls": 0,
+  "tool_calls": 1,
+  "analysis_code": "APPROVED_PLAN_COMPLETED",
+  "workflow_completed": true,
+  "user_task_sha256": "259363c51b37f900894492b687b565b4ae8eba71c56af4eee21e89b8f748a903",
+  "plan_valid": true,
+  "dsl_valid": true,
+  "policy_authorized": true,
+  "selected_policy_ids": [
+    "web_rule_1",
+    "web_rule_1",
+    "web_rule_2"
+  ],
+  "model_call": null,
+  "plan_structure": [
+    {
+      "step_id": "pulse_first",
+      "operation_id": "checkPulse",
+      "role": null,
+      "policy_id": "web_rule_1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "pulse_second",
+      "operation_id": "checkPulse",
+      "role": null,
+      "policy_id": "web_rule_1",
+      "argument_sha256": {},
+      "dependencies": {}
+    },
+    {
+      "step_id": "ledger_read",
+      "operation_id": "readLedger",
+      "role": "auditor",
+      "policy_id": "web_rule_2",
+      "argument_sha256": {
+        "path_parameters.ledgerId": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451"
+      },
+      "dependencies": {}
+    }
+  ],
+  "plan_derivation": {
+    "source": "MODEL_DESIGN",
+    "group": "group_1",
+    "model_request_sha256": "f46ded78568605198eb4bc32c227a1f8db7617aff1318e87af13db78eec17ba5"
+  },
+  "validation_issue": null,
+  "diagnostic": null,
+  "intent_verified": false,
+  "task_mode": "model_designed",
+  "task_satisfied": null,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。"
+}

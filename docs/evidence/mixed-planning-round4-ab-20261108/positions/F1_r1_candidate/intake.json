@@ -1,0 +1,256 @@
+{
+  "status": 201,
+  "project": {
+    "id": "web_af8773adaf1547eabaf02ddc",
+    "name": "第四轮隔离读取 flow",
+    "version": 1,
+    "business_notes": "",
+    "state": "READY",
+    "ready": true,
+    "missing": [],
+    "profile": {
+      "id": "web_af8773adaf1547eabaf02ddc",
+      "identity": "bf2d0536887011f6e475e6550db79b1afb2147ec5fbbbbe92769e3dfe39a4298",
+      "name": "本项目",
+      "environment": "授权测试环境",
+      "address": "http://127.0.0.1:19091",
+      "identities": [
+        {
+          "alias": "custodian",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN"
+        },
+        {
+          "alias": "curator",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_R4_CURATOR_TOKEN"
+        }
+      ],
+      "rules": [
+        {
+          "id": "web_rule_1",
+          "behavior": "书架",
+          "role": "custodian",
+          "operation": "listShelf",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [
+            {
+              "field": "$.cards[0].ref",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "id": "web_rule_2",
+          "behavior": "卡片",
+          "role": "curator",
+          "operation": "showCard",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [
+            {
+              "field": "$.marker",
+              "operator": "equals",
+              "expected": "catalogued"
+            }
+          ],
+          "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "id": "web_rule_3",
+          "behavior": "运行心跳",
+          "role": null,
+          "operation": "checkPulse",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d:Operator-approved immutable read-only fixture, round 4."
+        }
+      ],
+      "examples": [
+        "先安排一轮常规检查，说明还有哪些没有覆盖",
+        "帮我检查参数边界和已确认的身份访问规则"
+      ],
+      "require_review": false
+    },
+    "profile_id": null,
+    "generic": {
+      "base_url": "http://127.0.0.1:19091",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "roles": [
+        {
+          "alias": "custodian",
+          "bearer_env": "AGENTTEST_TARGET_R4_CUSTODIAN_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "curator",
+          "bearer_env": "AGENTTEST_TARGET_R4_CURATOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "auditor",
+          "bearer_env": "AGENTTEST_TARGET_R4_AUDITOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "inspector",
+          "bearer_env": "AGENTTEST_TARGET_R4_INSPECTOR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "listShelf",
+          "alias": "书架",
+          "enabled": true,
+          "role": "custodian",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "shelfId",
+              "value": 12,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.cards[0].ref",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "showCard",
+          "alias": "卡片",
+          "enabled": true,
+          "role": "curator",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "cardRef",
+              "value": null,
+              "source_operation": "listShelf",
+              "selector": "$.cards[0].ref"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.marker",
+              "operator": "equals",
+              "expected": "catalogued"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        },
+        {
+          "operation_id": "checkPulse",
+          "alias": "运行心跳",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, round 4."
+        }
+      ],
+      "assisted": true
+    },
+    "inventory": {
+      "total": 3,
+      "counts": {
+        "READY": 3,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "showCard",
+          "method": "GET",
+          "path": "/cards/{cardRef}",
+          "summary": "卡片",
+          "group": "cards",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "checkPulse",
+          "method": "GET",
+          "path": "/pulse",
+          "summary": "运行心跳",
+          "group": "pulse",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "listShelf",
+          "method": "GET",
+          "path": "/shelves/{shelfId}",
+          "summary": "书架",
+          "group": "shelves",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    },
+    "testing_mode": "MODEL_DESIGNED",
+    "confirmation": {
+      "source": "WEB_OPERATOR_SESSION",
+      "actor": "37687902e96be90f495c1665bb83f0f001587ee2341b49a3f645aa86b142c8e8",
+      "configuration_version": "0648dcc79e066ee14a763e2940837e080b3443bb56ac90cf571849ba8bdca86d",
+      "at": 1794123181.050768
+    },
+    "identity": "b0400ae65aeb915a0b6d553b0a93f7c74192449c19aa10fe3f4066098819158c"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "id": "F2_r1_baseline",
+  "digest": "457d90967b5119cd0d955a1adbf83655ac161a7a6293dde4619435249f407faf",
+  "request": "先确认 inspector 访问闸口状态的拒绝规则是 403 还是 404；再确认 inspector 访问值守账号的拒绝规则；同时以匿名方式读取公告；并把运行心跳连读两次。",
+  "projectId": "web_18e6fc7402a34109a0973b7e"
+}

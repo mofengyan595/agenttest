@@ -1,0 +1,6 @@
+{
+  "id": "F4_r2_candidate",
+  "digest": "457d90967b5119cd0d955a1adbf83655ac161a7a6293dde4619435249f407faf",
+  "request": "custodian 读取 shelfId=12 的书架；用它响应中的 $.cards[0].slip 让 custodian 取回凭条；核对凭条的 $.code 等于 \"S-31\"；还要核对卡片标题 $.title 等于 \"散页目录\"。",
+  "projectId": "web_d0213cbf259f40e39a91a79d"
+}

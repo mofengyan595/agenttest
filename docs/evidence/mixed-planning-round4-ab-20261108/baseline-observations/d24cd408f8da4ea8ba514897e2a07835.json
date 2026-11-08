@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "d326706315534ca69246456e3ed2960a", "plan": {"name": "书架到卡片再心跳的完整依赖流程", "steps": [{"id": "check_pulse", "operation_id": "checkPulse", "role": null, "path_parameters": {}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_3", "poll": false, "read_retries": 0}]}}

@@ -1,0 +1,52 @@
+[
+  {
+    "sequence": 61,
+    "position": "F2_r2_candidate",
+    "config": "perm",
+    "operation_id": "fetchNotice",
+    "method": "GET",
+    "path": "/notices",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "notices": [
+        "maintenance"
+      ]
+    },
+    "response_sha256": "5f694f3d13ae325bf4dd49461a3075c705df3c099e349745874c7538633f4db8",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 62,
+    "position": "F2_r2_candidate",
+    "config": "perm",
+    "operation_id": "checkPulse",
+    "method": "GET",
+    "path": "/pulse",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "pulse": "steady"
+    },
+    "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  },
+  {
+    "sequence": 63,
+    "position": "F2_r2_candidate",
+    "config": "perm",
+    "operation_id": "checkPulse",
+    "method": "GET",
+    "path": "/pulse",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "pulse": "steady"
+    },
+    "response_sha256": "e2c9baf42e1df53d234d530e17988d72270e68c69bd73ec5c8b6393a2f4cfd79",
+    "state_sha256": "864b998714ca2154f4fa8ed1a751d4a043a065a84326751990666a63abcf4ae0"
+  }
+]
