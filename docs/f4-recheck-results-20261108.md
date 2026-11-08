@@ -143,8 +143,14 @@ lint 不是"恒返回空"：删步骤→`missing_action`，改身份→`wrong_id
 | `9b58036` | 链条动态绑定声明 + lint 测试改为按路径加载（不再污染 `sys.path`） |
 
 测试：`tests/test_f4_rubric_consistency.py` 11 项、`tests/test_rw_lifecycle_preparation.py`
-12 项、评估侧 27 项；`ruff check .` 全绿。预检全部在冻结前完成：22 项身份/响应/intake
+12 项、评估侧 27 项；`ruff check .` 全绿。**完整离线回归**（`scripts/check_full.py --jobs 4`）：
+2462 收集 / 2447 通过 / 0 失败 / 0 错误 / 15 跳过，墙钟 760.97 秒，测试 ID 逐项覆盖一致。
+预检全部在冻结前完成：22 项身份/响应/intake
 检查、两臂各 2 条执行流、两臂各 8 个评分器负控、2 个项目 schema 编译（6 个离线载荷/臂）。
+
+期间修掉一个真实副作用：第一版 lint 测试把 `scripts/f4_recheck` 加进 `sys.path`，会在同一进程里
+遮蔽其他测试的 `fixture`/`budget`，导致 `tests/test_composed_planning.py` 一项顺序相关失败。
+改为按路径加载模块后，该测试与全部评估测试同批通过，完整回归也回到 0 失败。
 
 一处如实记录的准备期修正：链条项目原本把 `entryId` 声明成字面量，导致真实执行预检报
 `POLICY_LITERAL_REQUIRED`；改为 `source_operation=openRegister / selector=$.entries[0].entryId`
