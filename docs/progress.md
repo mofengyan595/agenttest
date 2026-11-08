@@ -3542,7 +3542,9 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   按新规则仍整体扣住，未改动。
 - 测试：新增 `tests/test_partial_review_scope.py`（4）与 `tests/test_required_header.py`（14）；
   相关回归批 240 项全绿；完整离线回归（4 进程）2480 收集 / 2465 通过 / 0 失败 / 0 错误 /
-  15 跳过，墙钟 1002.19 秒，测试 ID 覆盖一致；`ruff check .` 全绿。
+  15 跳过，墙钟 1002.19 秒，测试 ID 覆盖一致；提交 `f508b70` 之后又在同一 HEAD 上复跑一次，
+  2480 收集 / 2465 通过 / 0 失败 / 0 错误 / 15 跳过，墙钟 971.81 秒，测试 ID 覆盖一致
+  （`runs/full-checks/8cc904558f004897b88ad3e85e6fdbe8`，快照等于该提交）；`ruff check .` 全绿。
 - 兼容性：`Step.headers` 为空时从 `model_dump()` 中省略，历史计划指纹与已导出的回归资产
   （`tests/test_regression_examples.py`、`tests/test_petclinic_chain.py`）保持不变；
   新测试 `test_header_field_does_not_change_header_free_plan_fingerprints` 固定该约束。
