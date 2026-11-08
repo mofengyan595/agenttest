@@ -8,6 +8,7 @@ import httpx
 from pydantic import ValidationError
 
 from agenttest.credentials import CredentialVault, sensitive_field
+from agenttest.diagnostics import presentation_language
 from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
@@ -216,6 +217,8 @@ class ProductTasks:
                                 timeout=getattr(getattr(raw_focus, "_settings", None),
                                                 "timeout", 90.0) + 1)
                             summary["focus"] = selection.model_dump()
+                            summary["focus_presentation"] = presentation_language(
+                                selection.interpretation)
                             summary["requirement_ledger"] = selection.requirement_ledger
                             required_sources = {r.source_id for r in selection.requirements
                                                 if r.disposition == 'required'}
@@ -489,7 +492,9 @@ class ProductTasks:
                                     row["project_id"])["generic"]["roles"]],
                                 timeout=getattr(getattr(raw_model, "_settings", None),
                                                 "timeout", 30.0) + 1)
-                            record.update(status="PROPOSED", interpretation=design.interpretation)
+                            record.update(status="PROPOSED", interpretation=design.interpretation,
+                                          presentation=presentation_language(
+                                              design.interpretation))
                             if design._coalesced_read_cases:
                                 record['coalesced_read_cases'] = design._coalesced_read_cases
                             if not design.relevant:

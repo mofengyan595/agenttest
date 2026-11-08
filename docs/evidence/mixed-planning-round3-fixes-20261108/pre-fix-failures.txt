@@ -1,0 +1,118 @@
+﻿F.FFFFFFFFFFFFFFFFF.F                                                    [100%]
+================================== FAILURES ===================================
+E   AssertionError: assert [] == ['$.links[0].id']
+      
+      Right contains one more item: '$.links[0].id'
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:232: AssertionError: assert [] == ['$.links[0].id']
+E   assert not [{'id': 'response_1', 'source_id': 'request_2', 'source_quote': '�������Ӧ�е� $.links[0].id �� reader ������Ŀ��ȷ�� $.label ���� "ready-for-review"', 'start': 32, ...}]
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:235: assert not [{'id': 'response_1', 'source_id': 'request_2', 'source_quote': '�������Ӧ�е� $.links[0].id �� reader ������Ŀ��ȷ�� $.label ���� "ready-for-review"', 'start': 32, ...}]
+E   AssertionError: assert [('$.code', None, None)] == [('$.code', 'equals', 'R73')]
+      
+      At index 0 diff: ('$.code', None, None) != ('$.code', 'equals', 'R73')
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:241: AssertionError: assert [('$.code', None, None)] == [('$.code', 'equals', 'R73')]
+E   AssertionError: assert [('$.links[0]...l', 'equals')] == [('$.label', 'equals')]
+      
+      At index 0 diff: ('$.links[0].id', None) != ('$.label', 'equals')
+      Left contains one more item: ('$.label', 'equals')
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:249: AssertionError: assert [('$.links[0]...l', 'equals')] == [('$.label', 'equals')]
+E   AssertionError: assert [('$.link.id', None)] == [(None, None)]
+      
+      At index 0 diff: ('$.link.id', None) != (None, None)
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:257: AssertionError: assert [('$.link.id', None)] == [(None, None)]
+E   AssertionError: {'status': 'INTERRUPTED', 'reason': 'ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����', 'focus': ('PLANNING', None, None), 'groups': [('group_1', None, None, None), ('group_2', None, None, None)], ...}
+    assert 'INTERRUPTED' == 'FINISHED'
+      
+      - FINISHED
+      + INTERRUPTED
+---------------------------- Captured stdout call -----------------------------
+DETAIL {"status": "INTERRUPTED", "reason": "ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����", "focus": ["PLANNING", null, null], "groups": [["group_1", null, null, null], ["group_2", null, null, null]], "blocked": null, "questions": []}
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:215: AssertionError: {'status': 'INTERRUPTED', 'reason': 'ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����', 'focus': ('PLANNING', None, None), 'groups': [('group_1', None, None, None), ('group_2', None, None, None)], ...}
+E   AssertionError: {'status': 'INTERRUPTED', 'reason': 'ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����', 'focus': ('SELECTED', None, None), 'groups': [('group_1', None, None, None)], ...}
+    assert 'INTERRUPTED' == 'FINISHED'
+      
+      - FINISHED
+      + INTERRUPTED
+---------------------------- Captured stdout call -----------------------------
+DETAIL {"status": "INTERRUPTED", "reason": "ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����", "focus": ["SELECTED", null, null], "groups": [["group_1", null, null, null]], "blocked": ["readHealth", "readReceipt"], "questions": []}
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:215: AssertionError: {'status': 'INTERRUPTED', 'reason': 'ִ�����������仯�򹤾�ֹͣ�������ѷ�����֤�ݣ����ط�����', 'focus': ('SELECTED', None, None), 'groups': [('group_1', None, None, None)], ...}
+E   ValueError: too many values to unpack (expected 1)
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:374: ValueError: too many values to unpack (expected 1)
+E   AssertionError: assert False
+     +  where False = permission_inquiry('��ȷ�� reviewer �鿴������Ϣ�ľܾ�����')
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:384: AssertionError: assert False
+E   ImportError: cannot import name 'permission_inquiry_operations' from 'agenttest.request_requirements' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\request_requirements.py)
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:407: ImportError: cannot import name 'permission_inquiry_operations' from 'agenttest.request_requirements' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\request_requirements.py)
+E   ImportError: cannot import name 'named_role' from 'agenttest.request_requirements' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\request_requirements.py)
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:427: ImportError: cannot import name 'named_role' from 'agenttest.request_requirements' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\request_requirements.py)
+E   AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+    assert 'NEEDS_REVIEW' == 'FINISHED'
+      
+      - FINISHED
+      + NEEDS_REVIEW
+---------------------------- Captured stdout call -----------------------------
+DETAIL {"status": "NEEDS_REVIEW", "reason": "ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�", "focus": ["REJECTED", "MODEL_INVALID_RESPONSE", {"layer": "model", "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE", "fields": []}], "groups": [["group_1", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null], ["group_2", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null]], "blocked": null, "questions": []}
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:215: AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+E   AssertionError: assert [('readBuild', 'reviewer')] == [('readAccoun..., 'reviewer')]
+      
+      At index 0 diff: ('readBuild', 'reviewer') != ('readAccount', 'reviewer')
+      Right contains one more item: ('readBuild', 'reviewer')
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:504: AssertionError: assert [('readBuild', 'reviewer')] == [('readAccoun..., 'reviewer')]
+E   AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+    assert 'NEEDS_REVIEW' == 'FINISHED'
+      
+      - FINISHED
+      + NEEDS_REVIEW
+---------------------------- Captured stdout call -----------------------------
+DETAIL {"status": "NEEDS_REVIEW", "reason": "ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�", "focus": ["REJECTED", "MODEL_INVALID_RESPONSE", {"layer": "model", "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE", "fields": []}], "groups": [["group_1", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null], ["group_2", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null]], "blocked": null, "questions": []}
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:215: AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+E   AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+    assert 'NEEDS_REVIEW' == 'FINISHED'
+      
+      - FINISHED
+      + NEEDS_REVIEW
+---------------------------- Captured stdout call -----------------------------
+DETAIL {"status": "NEEDS_REVIEW", "reason": "ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�", "focus": ["REJECTED", "MODEL_INVALID_RESPONSE", {"layer": "model", "code": "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION", "fields": []}], "groups": [["group_1", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null], ["group_2", "NOT_EXECUTED", "�����ص���δ�ɿ�ȷ�ϡ�", null]], "blocked": null, "questions": []}
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:215: AssertionError: {'status': 'NEEDS_REVIEW', 'reason': 'ģ��δ����ͨ��У��Ĳ��Է�Χ������û�з���ҵ��������鿴����ԭ���ٰ����µĶ������ԡ�', 'focus': ('REJECTED', 'MODEL_INVA...), 'groups': [('group_1', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None), ('group_2', 'NOT_EXECUTED', '�����ص���δ�ɿ�ȷ�ϡ�', None)], ...}
+E   ImportError: cannot import name 'presentation_language' from 'agenttest.diagnostics' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\diagnostics.py)
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:595: ImportError: cannot import name 'presentation_language' from 'agenttest.diagnostics' (D:\Desktop\project\agenttest\runs\prefix-head\src\agenttest\diagnostics.py)
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for FocusSelection
+    interpretation
+      String should match pattern '.*[\u4e00-\u9fff].*' [type=string_pattern_mismatch, input_value='Owner reads the index, t...reader opens the entry.', input_type=str]
+        For further information visit https://errors.pydantic.dev/2.14/v/string_pattern_mismatch
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:606: pydantic_core._pydantic_core.ValidationError: 1 validation error for FocusSelection
+E   AssertionError: assert [] == ['/indexes/41']
+      
+      Right contains one more item: '/indexes/41'
+      Use -v to get more diff
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:636: AssertionError: assert [] == ['/indexes/41']
+E   AssertionError: assert ('required' == 'needs_review'
+      
+      - needs_review
+      + required)
+D:\Desktop\project\agenttest\runs\prefix-head\tests\test_mixed_planning_round3.py:696: AssertionError: assert ('required' == 'needs_review'
+=========================== short test summary info ===========================
+FAILED tests/test_mixed_planning_round3.py::test_response_anaphora_is_a_data_source_not_an_assertion[owner \u67e5\u8be2 indexId=41 \u7684\u7d22\u5f15\uff1b\u5c06\u5b83\u54cd\u5e94\u91cc\u7684 $.links[0].id \u4ea4\u7ed9 reader \u6253\u5f00\u6761\u76ee\uff1b\u9a8c\u8bc1 $.id \u7b49\u4e8e 73\uff1b\u6700\u540e\u533f\u540d\u8bfb\u53d6\u5065\u5eb7\u72b6\u6001]
+FAILED tests/test_mixed_planning_round3.py::test_response_anaphora_is_a_data_source_not_an_assertion[owner \u83b7\u53d6 indexId=41 \u7684\u7d22\u5f15\uff1b\u7528\u8fd9\u4efd\u54cd\u5e94\u4e2d\u7684 $.links[0].id \u7531 reader \u8bbf\u95ee\u6761\u76ee\u5e76\u786e\u8ba4 $.label \u7b49\u4e8e "ready-for-review"\uff1b\u53e6\u533f\u540d\u8bfb\u53d6\u5065\u5eb7\u72b6\u6001]
+FAILED tests/test_mixed_planning_round3.py::test_response_predicate_survives_a_following_independent_action
+FAILED tests/test_mixed_planning_round3.py::test_content_assertion_after_a_data_source_stays_its_own_check
+FAILED tests/test_mixed_planning_round3.py::test_assertion_on_the_transferred_value_has_no_borrowed_selector
+FAILED tests/test_mixed_planning_round3.py::test_requested_data_source_flow_executes_its_binding
+FAILED tests/test_mixed_planning_round3.py::test_approved_predicate_and_independent_clause_action_both_execute
+FAILED tests/test_mixed_planning_round3.py::test_unapproved_content_assertion_still_holds_its_read
+FAILED tests/test_mixed_planning_round3.py::test_permission_inquiry_wording_covers_refusal_rules
+FAILED tests/test_mixed_planning_round3.py::test_permission_inquiry_targets_come_from_trusted_labels
+FAILED tests/test_mixed_planning_round3.py::test_named_role_requires_the_exact_alias
+FAILED tests/test_mixed_planning_round3.py::test_permission_inquiry_without_a_model_question_keeps_its_own_witness
+FAILED tests/test_mixed_planning_round3.py::test_declared_and_derived_permission_questions_are_both_kept
+FAILED tests/test_mixed_planning_round3.py::test_pending_permission_does_not_block_independent_legal_reads
+FAILED tests/test_mixed_planning_round3.py::test_required_order_across_independent_cases_still_executes_in_order
+FAILED tests/test_mixed_planning_round3.py::test_presentation_language_is_reported_without_rewriting
+FAILED tests/test_mixed_planning_round3.py::test_non_chinese_focus_interpretation_is_accepted_and_preserved
+FAILED tests/test_mixed_planning_round3.py::test_non_chinese_design_prose_does_not_become_a_schema_failure
+FAILED tests/test_mixed_planning_round3.py::test_review_scope_removes_a_pending_identity_action_even_in_another_clause
+19 failed, 2 passed in 10.00s

@@ -1,5 +1,6 @@
 """Closed diagnostic vocabulary. Never serialize exception text, context or inputs."""
 
+import re
 from enum import Enum
 from typing import Literal
 
@@ -62,6 +63,19 @@ SAFE_FIELDS = frozenset({
     "value", "from_step", "select", "body", "path_parameters", "query", "upload", "field",
     "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id",
 })
+
+
+def presentation_language(text):
+    """Report the prose language of model text without rewriting or gating it.
+
+    Presentation is separate from structure, authorization and safety failures: a
+    non-Chinese explanation is recorded, and the original words stay traceable.
+    """
+    body = (text or '').strip()
+    if not body:
+        return dict(state="EMPTY", preserved=True)
+    return dict(state="CHINESE" if re.search(r'[\u4e00-\u9fff]', body) else "NON_CHINESE",
+                has_latin=bool(re.search(r'[A-Za-z]', body)), preserved=True)
 
 
 def schema_diagnostic(exc: ValidationError, layer: Layer) -> Diagnostic:

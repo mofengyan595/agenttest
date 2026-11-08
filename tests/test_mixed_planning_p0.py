@@ -220,8 +220,11 @@ def test_data_reference_and_predicate_classification_is_per_occurrence():
             '核对响应 $.unapproved 的业务含义。')
     refs, checks = explicit_data_references(text), explicit_response_checks(text)
     assert len(refs) == 2
-    assert [check['selector'] for check in checks] == ['$.link.id', '$.link.id', '$.unapproved']
-    assert checks[1]['operator'] is None  # Ambiguous dual use remains pending, not discarded.
+    # A transferred value is a source even when the same clause later asserts that value.
+    # The unnamed assertion keeps its own pending record instead of borrowing a selector.
+    assert [(check['selector'], check['operator']) for check in checks] == [
+        ('$.link.id', 'exists'), (None, None), ('$.unapproved', None)]
+    assert checks[1]['reason'] == 'RESPONSE_ANAPHOR_UNRESOLVED'
 
 
 @pytest.mark.parametrize('fault', ['source_op', 'source_role', 'use_role', 'selector', 'relation'])

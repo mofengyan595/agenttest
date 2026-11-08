@@ -269,7 +269,9 @@ def explicit_anonymous_read(text):
 
 
 def permission_inquiry(text):
-    return bool(re.search(r'权限|403|404|是否.*(?:允许|访问|读取)', text))
+    """Any wording that asks what an identity is allowed to receive, including refusals."""
+    return bool(re.search(r'权限|403|404|拒绝(?:规则|状态|行为|结果|方式)|是否拒绝|'
+                          r'是否.*(?:允许|访问|读取)', text))
 
 
 def interface_anaphor(text):
@@ -293,6 +295,45 @@ def permission_question_witness(question, item, context):
                  or explicit_anonymous_read(item.source_quote) and bool(item.actions) and all(
                      a.operation_id == question.operation_id and a.role is None
                      for a in item.actions))))
+
+
+def common_phrase(text, label, *, minimum=2):
+    """Longest letter-only phrase shared by one clause and one operation label."""
+    best = ''
+    for start in range(len(label)):
+        for end in range(len(label), start + len(best), -1):
+            phrase = label[start:end]
+            if re.fullmatch(r'[^\W\d_]+', phrase) and phrase in text:
+                best = phrase
+                break
+    return best if len(best) >= minimum else ''
+
+
+def named_role(text, role):
+    return bool(re.search(r'(?<![A-Za-z0-9_-])' + re.escape(role) + r'(?![A-Za-z0-9_-])', text))
+
+
+def permission_inquiry_operations(text, context):
+    """Resolve the operations an explicit permission inquiry names, never a guess.
+
+    The witness is the operator's own operation label. A label phrase shared by two
+    operations identifies neither, and a clause with no resolvable label yields nothing.
+    A shorter shared phrase inside a longer matched label is the weaker reading, so it
+    never adds a second operation.
+    """
+    labels = {operation['id']: operation.get('summary') or ''
+              for group in context.get('grouped_index', [])
+              for operation in group['operations']
+              if operation.get('method') in {'GET', 'HEAD', 'OPTIONS'}}
+    phrases = {}
+    for operation in context.get('permission_question_roles', {}):
+        phrase = common_phrase(text, labels.get(operation, ''))
+        if phrase:
+            phrases.setdefault(phrase, set()).add(operation)
+    specific = {phrase for phrase in phrases
+                if not any(phrase != other and phrase in other for other in phrases)}
+    return sorted({operation for phrase, operations in phrases.items()
+                   if phrase in specific and len(operations) == 1 for operation in operations})
 
 
 def same_interface_question_reference(item, atom, requirements, questions, context):
@@ -783,8 +824,8 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
         for order in item.before:
             if order.later not in primary:
                 continue
-            if not any(read_order_witness(scenario.steps, order, repeated)
-                       for scenario in scenarios):
+            # Cases execute in list order, so one required order may span them.
+            if not read_order_witness(steps, order, repeated):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_MISSING')
         producers = {r.producer for r in item.same_resource if r.consumer in primary}
         for producer in producers:

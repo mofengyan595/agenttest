@@ -25,9 +25,53 @@ _RESPONSE_EQUAL = re.compile(r'\s*(?:==?|＝|等于|应为)\s*(.+?)\s*$')
 _RESPONSE_COUNT = re.compile(
     r'\s*(?:数量|条数|长度)\s*(?:为|是|[=＝])\s*([0-9]{1,8})\s*(?:条|项)?\s*$')
 _RESPONSE_VERB = re.compile(r'响应|返回|确认|核对|检查|验证|断言')
-_DATA_PREFIX = re.compile(r'(?:用|使用|将|根据|依据)[^，；。$]{0,24}响应(?:中的?|的)?\s*$')
+# A response field can be a value source instead of an assertion. The marker may be a
+# transfer preposition, an anaphor, or both ("将它响应里的", "以该响应中的", "用这份响应中的").
+_DATA_MARKER = (r'(?:用|使用|将|把|以|根据|依据|按照|从|拿|'
+                r'它|其|该|此|这份|这个|这些|上述|前面)')
+_DATA_PREFIX = re.compile(_DATA_MARKER + r'[^，,；。$]{0,28}?'
+                          r'响应(?:中|里|内)?(?:的|里面|之中)?\s*$')
 _CHECK_VERB = re.compile(r'验证|断言|确认|核对|检查')
 _PREDICATE_TAIL = re.compile(r'\s*(?:[=＝]|等于|应|存在|非空|不为空|数量|条数|长度)')
+# A complete literal predicate can be followed by another independent action clause.
+_RESPONSE_TAIL = re.compile(r'^\s*(?:后|之后|以后|然后|随后|接着|最后|并且|并|再|同时|顺便|'
+                            r'，|,|；|;|。|$)')
+# "读取后验证该字段存在" asserts an unnamed value; the selector stays unresolved.
+_RESPONSE_ANAPHOR = re.compile(
+    r'(?:验证|断言|确认|核对|检查)[^，,；;。$]{0,12}?'
+    r'(?:该字段|该值|该选择器|该属性|这个字段|这个值|它|其)'
+    r'[^，,；;。]{0,10}?(?:存在|非空|不为空|等于|应|==?|＝)')
+
+
+def _continued_predicate(tail):
+    """Read a complete literal predicate that a following action clause continues past.
+
+    An approved selector predicate stays a predicate even when one original clause also
+    schedules another action ("核对回执 $.code 等于 "R73" 后匿名读取健康状态"). Returning the
+    literal and the end offset keeps the continuation visible instead of downgrading the
+    predicate to an unwitnessed assertion.
+    """
+    for pattern, operator in (
+            (re.compile(r'\s*(?:应)?存在'), 'exists'),
+            (re.compile(r'\s*(?:应)?(?:非空|不为空)'), 'nonempty'),
+            (_RESPONSE_COUNT, 'count')):
+        match = pattern.match(tail)
+        if match is None:
+            continue
+        if not _RESPONSE_TAIL.match(tail[match.end():]):
+            return None
+        expected = int(match[1]) if operator == 'count' else None
+        return operator, expected, match.end()
+    equal = re.match(r'\s*(?:==?|＝|等于|应为)\s*', tail)
+    if equal is None:
+        return None
+    literals = explicit_assignments('v=' + tail[equal.end():])
+    if not literals:
+        return None
+    end = equal.end() + literals[0]['end'] - 2
+    if not _RESPONSE_TAIL.match(tail[end:]):
+        return None
+    return 'equals', literals[0]['value'], end
 
 
 def explicit_data_references(text):
@@ -69,10 +113,18 @@ def explicit_response_checks(text):
         plain = _QUOTED.sub(lambda match: ' ' * len(match.group()), source)
         for match in _RESPONSE_PATH.finditer(plain):
             prefix, tail = source[:match.start()], source[match.end():]
-            if (atom['start'] + match.start() in data_offsets
-                    and not re.search(r'验证|断言|确认|核对|检查', tail)):
+            if atom['start'] + match.start() in data_offsets:
+                # One occurrence is either a value source or an assertion, never both.
+                # An assertion on the transferred value itself has no selector; it stays
+                # pending instead of being attributed to the source selector.
+                if _RESPONSE_VERB.search(prefix) and _RESPONSE_ANAPHOR.search(tail):
+                    entries.append(dict(id=f'response_{len(entries) + 1}',
+                        source_id=atom['source_id'], source_quote=source,
+                        start=atom['start'] + match.start(), end=atom['end'], selector=None,
+                        operator=None, expected=None, witnesses=[], continues=False,
+                        status='NEEDS_REVIEW', reason='RESPONSE_ANAPHOR_UNRESOLVED'))
                 continue
-            operator, expected = None, None
+            operator, expected, continues = None, None, False
             if re.fullmatch(r'\s*(?:应)?存在\s*', tail):
                 operator = 'exists'
             elif re.fullmatch(r'\s*(?:应)?(?:非空|不为空)\s*', tail):
@@ -83,6 +135,9 @@ def explicit_response_checks(text):
                 literals = explicit_assignments('v=' + equal[1])
                 if literals and literals[0]['end'] == len(equal[1]) + 2:
                     operator, expected = 'equals', literals[0]['value']
+            if operator is None and (continued := _continued_predicate(tail)):
+                operator, expected, end = continued
+                continues = bool(tail[end:].strip())
             if operator is None and not _RESPONSE_VERB.search(prefix):
                 continue
             try:
@@ -92,14 +147,15 @@ def explicit_response_checks(text):
             entries.append(dict(id=f'response_{len(entries) + 1}', source_id=atom['source_id'],
                 source_quote=source, start=atom['start'] + match.start(), end=atom['end'],
                 selector=selector, operator=operator, expected=expected, witnesses=[],
-                status='NEEDS_REVIEW', reason='RESPONSE_CHECK_UNWITNESSED'))
+                continues=continues, status='NEEDS_REVIEW',
+                reason='RESPONSE_CHECK_UNWITNESSED'))
         # Plain-language nonempty is actionable only when the selector is explicit.
         if not _RESPONSE_PATH.search(plain) and (match := re.search(
                 r'(?:列表|数组|结果集)\s*(?:应当|应该|应)?\s*(?:非空|不为空)', plain)):
             entries.append(dict(id=f'response_{len(entries) + 1}', source_id=atom['source_id'],
                 source_quote=source, start=atom['start'] + match.start(),
                 end=atom['start'] + match.end(), selector=None, operator='nonempty',
-                expected=None, witnesses=[], status='NEEDS_REVIEW',
+                expected=None, witnesses=[], continues=False, status='NEEDS_REVIEW',
                 reason='RESPONSE_SELECTOR_UNRESOLVED'))
     return entries
 
@@ -223,15 +279,18 @@ def unresolved_response_operations(ledger, selection, project, requested):
                               and question.source_quote == item.source_quote)
         if not operations:
             continue
-        if item.disposition == 'required' and len(item.actions) == 1:
-            action = item.actions[0]
-            if (any(r['source_quote'] in item.source_quote for r in requested)
-                    or any(rule['operation_id'] == action.operation_id
-                           and action.role in rule['roles']
-                           and response_predicate_matches(entry, rule)
-                           for rule in catalog.values())):
-                entry['status'] = 'NOT_EXECUTED'
-                continue
+        approved = [action for action in item.actions if any(
+            rule['operation_id'] == action.operation_id and action.role in rule['roles']
+            and response_predicate_matches(entry, rule) for rule in catalog.values())]
+        negative = any(r['source_quote'] in item.source_quote for r in requested)
+        # The check itself names one approved action, so another action in the same
+        # original clause ("... 后匿名读取健康状态") is an independent read, not ambiguity.
+        attributed = len(approved) == 1 and (len(item.actions) == 1 or entry.get('continues'))
+        if item.disposition == 'required' and (attributed or len(item.actions) == 1 and negative):
+            entry['status'] = 'NOT_EXECUTED'
+            if attributed:
+                entry['approved_action'] = approved[0].model_dump()
+            continue
         entry['reason'] = ('RESPONSE_SCOPE_AMBIGUOUS' if len(item.actions) > 1 else
                            'RESPONSE_CHECK_NOT_APPROVED' if entry['selector'] else entry['reason'])
         entry['blocked_operations'] = sorted(operations)
@@ -247,27 +306,34 @@ def validate_response_witnesses(design, primary, requirements, ledger, policies,
         if item is None or not any(action.operation_id in primary for action in item.actions):
             continue
         negative_ids = {r['policy_id'] for r in requested if r['source_quote'] in item.source_quote}
+        actions = item.actions
+        if entry.get('approved_action') is not None:
+            actions = [action for action in actions
+                       if action.model_dump() == entry['approved_action']]
+        if len(actions) != 1:
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING')
+            error.diagnostic.fields = [f'requirement_map.{item.source_id}']
+            raise error
+        action = actions[0]
         found = False
-        if len(item.actions) == 1:
-            action = item.actions[0]
-            for case in design.cases:
-                for step in case.plan.steps:
-                    policy = policies.get(step.policy_id)
-                    if (policy is None or step.operation_id != action.operation_id
-                            or policy.operation_id != action.operation_id
-                            or step.role != action.role
-                            or step.role not in policy.roles or not policy.assertions.reviewed
-                            or not policy.assertions.source.strip()
-                            or (policy.id not in negative_ids if negative_ids
-                                else policy.negative)):
-                        continue
-                    for index, field in enumerate(policy.assertions.fields):
-                        if response_predicate_matches(entry, field.model_dump()):
-                            found = True
-                            case._response_steps.setdefault(entry['id'], []).append(dict(
-                                step_id=step.id, operation_id=step.operation_id, role=step.role,
-                                policy_id=step.policy_id, check_kind=field.operator,
-                                check_index=index + int(policy.assertions.status is not None)))
+        for case in design.cases:
+            for step in case.plan.steps:
+                policy = policies.get(step.policy_id)
+                if (policy is None or step.operation_id != action.operation_id
+                        or policy.operation_id != action.operation_id
+                        or step.role != action.role
+                        or step.role not in policy.roles or not policy.assertions.reviewed
+                        or not policy.assertions.source.strip()
+                        or (policy.id not in negative_ids if negative_ids
+                            else policy.negative)):
+                    continue
+                for index, field in enumerate(policy.assertions.fields):
+                    if response_predicate_matches(entry, field.model_dump()):
+                        found = True
+                        case._response_steps.setdefault(entry['id'], []).append(dict(
+                            step_id=step.id, operation_id=step.operation_id, role=step.role,
+                            policy_id=step.policy_id, check_kind=field.operator,
+                            check_index=index + int(policy.assertions.status is not None)))
         if not found:
             error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING')
             error.diagnostic.fields = [f'requirement_map.{item.source_id}']

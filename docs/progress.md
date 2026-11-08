@@ -1,5 +1,15 @@
 # 开发进度
 
+## 2026-11-08 — 第三轮缺陷修复与离线验收
+
+- 第三轮真实 ecnu-max A/B 结果保持冻结（baseline `77effe8`、candidate `f5e3e35`；错误拒绝 14→14、静默漏项 71/186→81/186、正确局部待审 7/20→9/20、任务范围越界 1→0、可完整执行 0/4，判定不接受）。本轮不重跑、不重调任何已用位置，也不改动第三轮证据。
+- 按第三轮原始输出定位并修复五类系统性缺陷：数据来源与响应断言互斥（含“将它响应里的/以该响应中的”、字面量谓词后的独立动作、无选择器断言待审、断言归属唯一批准动作）；用可信配置 + 原文补出权限待审问题（`derive_permission_questions`），不再因一个待审项停掉同轮独立合法读取；权限询问识别“拒绝规则”，一个分句点名两个接口时各自保留问题，待审身份不被匿名/他人顶替；跨用例顺序按展开步骤校验并可执行；`interpretation` 的中文约束改为表述观察（`presentation_language`），schema 与解码一致。
+- 新增 `tests/test_mixed_planning_round3.py`（21 项确定性反例，原文逐字取自第三轮）与 `tests/test_round3_ab_evaluation.py`（冻结评分器/夹具小规模校验）。用 `git archive 8111a37` 导出修复前源码树，同批反例 **19 失败 / 2 通过**（通过项为 D04 参数化用例与安全负例），修复后 **21 通过**；`tests/test_mixed_planning_p0.py` 的旧“双重用途”断言同步更新为“来源不是断言”。
+- 相关模块 203 项、安全与产品 108 项、`ruff check .` 全绿；完整离线回归（4 进程、冻结源码）结果为 2435 collected / 2420 passed / 0 failed / 0 errors / 15 skipped。
+- 报告：[mixed-planning-round3-fixes-20261108.md](mixed-planning-round3-fixes-20261108.md)；证据：[pre-fix-failures.txt](evidence/mixed-planning-round3-fixes-20261108/pre-fix-failures.txt)。
+- 下一步（需单独授权）：第 4 轮只读 A/B，使用 4 条全新原文与新建第 4 个 loopback 夹具；API 读写生命周期验收暂不开始（需专用隔离环境与写入授权）。
+
+
 ## 全量回归存储开销优化（2026-11-07）
 
 分析发现 Windows 安全存储逐级锁定目录前重复查询状态、尝试创建已有目录。现改为先安全
@@ -3457,3 +3467,8 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 全量跳过原因：Windows symlink privilege unavailable（2 项）；could not import 'schemathesis': No module named 'schemathesis'（1 项）；POSIX link semantics（1 项）；POSIX directory replacement semantics（1 项）；POSIX FIFO semantics（1 项）；POSIX nofollow/dir_fd semantics（1 项）；Symlink creation unavailable: 1314（7 项）；OS does not grant symlink creation（1 项）。
 
 最终各批次 HEAD 与正式文件摘要均不变；历史 54 个证据文件摘要保持一致。未调用付费模型、未访问真实业务目标、未改 CourseInsight。详见 [修复报告](mixed-planning-c02-c03-20261107.md)。下一准确里程碑：按 [12 条全新需求方案](mixed-planning-c02-c03-ab-plan-20261107.md) 完成隔离只读夹具和评分器预检，封印后另行确认真实 A/B 执行。
+
+
+## 第三轮真实模型 A/B（2026-11-07）
+
+48 个 ecnu-max 首次位置全部完成，原评分冷复算一致，未重跑。baseline 77effe8 / candidate f5e3e35，未纳入性能优化。整体未达标：错误拒绝 14→14，静默漏项 71/186→81/186，正确局部待审 7/20→9/20，完整可执行子集两版均 0/4。候选三类范围违规均为 0；基线有 1 次任务范围外读取。模型调用各 38 次，Token 235219/236381，UNKNOWN/基础设施失败均 0。G02 保护题未通过。31 项确定性预检通过，未重复全量；源码/目标未漂移，服务已停止。详见[报告与可复算证据](mixed-planning-round3-ab-20261107.md)。下一步只做离线根因修复新里程碑，不调参补跑本批位置。

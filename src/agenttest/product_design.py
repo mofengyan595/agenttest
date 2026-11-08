@@ -21,7 +21,7 @@ from agenttest.safety import StrictModel
 
 
 class DesignCase(StrictModel):
-    title: str = Field(min_length=1, max_length=100, pattern=r".*[\u4e00-\u9fff].*")
+    title: str = Field(min_length=1, max_length=100)
     kind: Literal["normal", "boundary", "negative", "permission", "flow"]
     plan: GenericPlannerDraft
     _http_status_steps: dict[str, list[dict]] = PrivateAttr(default_factory=dict)
@@ -53,7 +53,7 @@ class DesignQuestion(StrictModel):
 
 
 class TestDesign(StrictModel):
-    interpretation: str = Field(min_length=4, max_length=500, pattern=r".*[\u4e00-\u9fff].*")
+    interpretation: str = Field(min_length=4, max_length=500)
     relevant: bool = True
     cases: list[DesignCase] = Field(max_length=12)
     questions: list[DesignQuestion] = Field(max_length=8)
@@ -259,8 +259,6 @@ The executor still owns the approved invalid mutation; supply its complete VALID
 class TestDesignModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
         schema = TestDesign.model_json_schema()
-        schema["properties"]["interpretation"].pop("pattern", None)
-        schema["$defs"]["DesignCase"]["properties"]["title"].pop("pattern", None)
         plan_type = schema["$defs"]["DesignCase"]["properties"]["plan"]["$ref"].rsplit("/", 1)[1]
         schema["$defs"][plan_type]["properties"]["steps"]["minItems"] = 1
         if context.get('plan_construction'):

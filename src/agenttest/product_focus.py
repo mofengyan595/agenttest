@@ -139,6 +139,7 @@ def permission_review_scope(selection):
     from agenttest.request_requirements import explicit_anonymous_read
 
     questions = [q for q in selection.expectation_questions if q.kind == 'permission']
+    pending_pairs = {(q.operation_id, q.role) for q in questions}
     scopes = {q.operation_id: set() for q in questions}
     planning, pending = [], []
     for item in selection.requirements:
@@ -146,6 +147,10 @@ def permission_review_scope(selection):
         explicit_anonymous = explicit_anonymous_read(item.source_quote)
         actions = [a for a in item.actions if not any(q.operation_id == a.operation_id
             and not (a.role is None and explicit_anonymous) for q in own)]
+        # A pending actor question keeps that exact identity unanswered everywhere,
+        # even when another clause of the same request maps it as a required action.
+        held = [a for a in actions if (a.operation_id, a.role) in pending_pairs]
+        actions = [a for a in actions if a not in held]
         anonymous_required = (bool(own) and explicit_anonymous and bool(actions)
             and all(a.role is None and any(q.operation_id == a.operation_id for q in own)
                     for a in actions)
@@ -161,15 +166,68 @@ def permission_review_scope(selection):
             pending.append(dict(source_id=item.source_id, source_quote=item.source_quote,
                 operation_id=question.operation_id, role=question.role, status='NEEDS_REVIEW',
                 reason='PERMISSION_EXPECTATION_NOT_APPROVED'))
+        for action in held if not own else []:
+            pending.append(dict(source_id=item.source_id, source_quote=item.source_quote,
+                operation_id=action.operation_id, role=action.role, status='NEEDS_REVIEW',
+                reason='PERMISSION_EXPECTATION_NOT_APPROVED'))
         planning.append(item.model_copy(update=dict(actions=actions,
             disposition='required' if anonymous_required else
-                'needs_review' if own and not actions else item.disposition)).model_dump())
+                'needs_review' if own and not actions or held and not actions
+                else item.disposition)).model_dump())
     return {op for op, roles in scopes.items() if not roles}, planning, {
         op: sorted(roles, key=lambda role: role or '') for op, roles in scopes.items()}, pending
 
 
+def derive_permission_questions(selection, context):
+    """Supply the pending question an explicit permission inquiry requires.
+
+    Only trusted configuration and the original clause supply the witness: an explicit
+    inquiry, an operation label that occurs in that same clause, and a named identity the
+    project already lists for it. Nothing here approves an identity, a status code or an
+    execution.
+    """
+    from agenttest.request_requirements import (
+        named_role,
+        permission_inquiry,
+        permission_inquiry_operations,
+        permission_question_witness,
+    )
+
+    if selection.mode != 'selected' or 'request_atoms' not in context:
+        return [], []
+    labels = {operation['id']: operation.get('summary') or ''
+              for group in context.get('grouped_index', [])
+              for operation in group['operations']}
+    declared = {(q.operation_id, q.role) for q in selection.expectation_questions}
+    derived, added = [], []
+    for item in selection.requirements:
+        if (item.disposition not in {'required', 'needs_review'}
+                or not permission_inquiry(item.source_quote)):
+            continue
+        for operation_id in permission_inquiry_operations(item.source_quote, context):
+            roles = context.get('permission_question_roles', {}).get(operation_id, ())
+            for role in roles:
+                if ((operation_id, role) in declared
+                        or not named_role(item.source_quote, role)
+                        or len(selection.expectation_questions) + len(derived) >= 8):
+                    continue
+                name = labels.get(operation_id) or operation_id
+                question = ExpectationQuestion(operation_id=operation_id,
+                    kind='permission', role=role, status_choices=[403, 404],
+                    question=f'{role} 访问{name}的权限结果应返回 403 还是 404？',
+                    requested_behavior=f'确认 {role} 访问{name}的权限结果',
+                    source_quote=item.source_quote)
+                if not permission_question_witness(question, item, context):
+                    continue
+                declared.add((operation_id, role))
+                derived.append(question)
+                if operation_id not in selection.operation_ids and operation_id not in added:
+                    added.append(operation_id)
+    return derived, added
+
+
 class FocusSelection(StrictModel):
-    interpretation: str = Field(min_length=4, max_length=500, pattern=r".*[\u4e00-\u9fff].*")
+    interpretation: str = Field(min_length=4, max_length=500)
     mode: Literal["selected", "all_ready", "needs_information", "no_current_action"]
     operation_ids: list[str] = Field(max_length=1000)
     normal_operation_ids: list[str] = Field(default_factory=list, max_length=1000)
@@ -323,8 +381,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
         self.proposed_question_count = None
         schema = FocusSelection.model_json_schema()
-        # Prose language is checked after decoding; token grammar need not constrain Unicode.
-        schema["properties"]["interpretation"].pop("pattern", None)
+        # Presentation language is reported separately; it never gates a decode.
         properties = schema["properties"]
         for key in ("mode", "operation_ids", "normal_operation_ids", "question",
                     "blocked_operation_ids",
@@ -464,6 +521,10 @@ class TestFocusModel(OpenAICompatiblePlanner):
         bind_boundary_actions(selection, context)
         self.proposed_question_count = (len(selection.input_questions) +
             len(selection.expectation_questions) + int(selection.mode == 'needs_information'))
+        derived, added = derive_permission_questions(selection, context)
+        if derived:
+            selection.expectation_questions = [*selection.expectation_questions, *derived]
+            selection.operation_ids = [*selection.operation_ids, *added]
         if set(selection.normal_operation_ids) - set(selection.operation_ids):
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
         approved = (context["approved_ids"] if selection.mode == "all_ready"
@@ -585,6 +646,10 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
             raise ValueError("FOCUS_OUTPUT_CONTAINS_CREDENTIAL")
         _public_metadata(selection.model_dump())
         bind_boundary_actions(selection, context)
+        derived, added = derive_permission_questions(selection, context)
+        if derived:
+            selection.expectation_questions = [*selection.expectation_questions, *derived]
+            selection.operation_ids = [*selection.operation_ids, *added]
         if set(selection.operation_ids) - set(project.target.allowed_operations):
             raise ValueError("FOCUS_OPERATION_NOT_APPROVED")
         selected = (context["approved_ids"] if selection.mode == "all_ready"

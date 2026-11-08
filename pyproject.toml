@@ -43,3 +43,7 @@ extend-exclude = [".python311", ".venv-comparison"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Frozen evidence scripts keep their original import order and hashes.
+"docs/evidence/**" = ["E402"]

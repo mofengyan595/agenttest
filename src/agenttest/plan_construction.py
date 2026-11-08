@@ -75,6 +75,10 @@ def construct_plan(plan, context):
                 continue
             earlier = [n['id'] for n in nodes.values() if n['operation_id'] == order['earlier']]
             if not earlier:
+                if order['earlier'] in context.get('design_operations', ()):
+                    # The required order spans execution contexts; the design-level
+                    # witness checks the concatenated case order before any HTTP.
+                    continue
                 raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
             for target in later:
                 edges[target].update(earlier)
@@ -157,8 +161,14 @@ def construct_design(wire, context, *, construction_chains=()):
     chains = dict(construction_chains)
     proposed = wire.get('cases', [])
     joined = join_read_prerequisite(proposed, context) if not chains else proposed
+    # A required order may name an operation this case does not contain but the proposed
+    # design schedules in another execution context.
+    design_operations = {step.get('operation_id') for case in joined
+                         if isinstance(case, dict) and isinstance(case.get('plan'), dict)
+                         for step in case['plan'].get('steps', []) if isinstance(step, dict)}
     for proposed_index, case in enumerate(joined):
         plan, record = construct_plan(case['plan'], {**context,
+            'design_operations': design_operations,
             'composed_negative_chain': chains.get(proposed_index, [])})
         edges = {key: set(value) for key, value in record.pop('node_dependencies').items()}
         nodes = {node['id']: node for node in plan['steps']}

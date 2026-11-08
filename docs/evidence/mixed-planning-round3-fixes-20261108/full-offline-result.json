@@ -1,0 +1,26 @@
+{
+  "classification": "FULL_OFFLINE_ALL_COLLECTED_TESTS",
+  "source_unchanged": true,
+  "source_sha256": "3490637140a8c2293592bc9680ac4d4aa4877767fc2c3eb93793ae4dcc0b0ce3",
+  "exact_test_id_coverage": true,
+  "collected": 2435,
+  "executed": 2435,
+  "missing": [],
+  "unexpected": [],
+  "audit_errors": [],
+  "tests": 2435,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 15,
+  "process_exit_codes": {
+    "batch-2": 0,
+    "batch-4": 0,
+    "batch-3": 0,
+    "batch-1": 0
+  },
+  "passed": 2420,
+  "wall_seconds": 780.686999999918,
+  "suite_seconds_sum": 2908.938,
+  "complete": true,
+  "successful": true
+}
