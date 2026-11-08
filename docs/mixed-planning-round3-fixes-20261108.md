@@ -133,4 +133,7 @@
 
 ## 9. 提交与推送
 
-<<COMMIT>>
+- 第三轮证据与冻结夹具：Â798b\（Preserve the third-round real-model A/B evidence and its frozen harness），第三轮分数与证据未改动。
+- 本轮修复：\779ca5\（Separate response sources from assertions and witness pending permission questions），含 7 个源码模块、2 个测试文件、1 处 ruff 配置与本次报告/证据。
+- 完整离线回归在修复后源码快照 90637140a8c2293592bc9680ac4d4aa4877767fc2c3eb93793ae4dcc0b0ce3\ 上执行并精确覆盖 2435 项；\src/\、\	ests/\、\scripts/\ 的逐文件 SHA-256 见 [full-offline-source-hashes.json](evidence/mixed-planning-round3-fixes-20261108/full-offline-source-hashes.json)。本文件与 SHA 记录所属的提交只改动文档。
+- 推送：正常快进推送 master，无强制推送、无新分支；推送后本地 HEAD 与 \origin/master\ 一致。
