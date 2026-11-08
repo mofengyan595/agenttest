@@ -1,19 +1,26 @@
 """Pre-paid checks for the requirement-to-rubric lint and the F4 recheck fixture."""
 
 import copy
+import importlib.util
 import json
-import sys
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "scripts/f4_recheck") not in sys.path:
-    sys.path.insert(0, str(ROOT / "scripts/f4_recheck"))
-
-import consistency  # noqa: E402
-import fixture  # noqa: E402
-
 PLAN = ROOT / "docs/f4-recheck-plan-20261108.md"
 EVIDENCE = ROOT / "docs/evidence/mixed-planning-round4-ab-20261108"
+
+
+def load(name, path):
+    """Load an evaluation module under a unique name; the tests never touch sys.path."""
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+consistency = load("f4_recheck_consistency", ROOT / "scripts/f4_recheck/consistency.py")
+fixture = load("f4_recheck_fixture", ROOT / "scripts/f4_recheck/fixture.py")
 
 
 def kinds(text, rubric, config):
@@ -32,10 +39,8 @@ def test_proposals_are_the_frozen_plan_rows():
     items = proposals()
     assert list(items) == ["G1", "G2", "G3"]
     for item in items.values():
-        pattern = (
-            r"^\| " + item["id"] + r" \| " + __import__("re").escape(item["request"]) + r" \|$"
-        )
-        assert __import__("re").search(pattern, text, __import__("re").M), item["id"]
+        pattern = r"^\| " + item["id"] + r" \| " + re.escape(item["request"]) + r" \|$"
+        assert re.search(pattern, text, re.M), item["id"]
 
 
 def test_three_new_rubrics_are_consistent():

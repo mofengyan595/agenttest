@@ -152,10 +152,25 @@ def configs():
         readVoucher=[dict(location="path_parameters", name="voucherId", value=41)],
         readRoster=[dict(location="path_parameters", name="rosterId", value=8)],
     )
+    # The chain project must bind the entry to the register's own response, so the model
+    # has to reproduce a real dynamic binding instead of reusing a literal id.
+    dynamic = {
+        "chain": dict(
+            readEntry=[
+                dict(
+                    location="path_parameters",
+                    name="entryId",
+                    source_operation="openRegister",
+                    selector="$.entries[0].entryId",
+                )
+            ]
+        )
+    }
     result = {}
     for key, ids in groups.items():
         paths, operations = {}, []
         for op in ids:
+            arguments = dynamic.get(key, {}).get(op, args.get(op, []))
             path, label, role, _ = FACTS[op]
             parameters = [
                 dict(
@@ -182,7 +197,7 @@ def configs():
                     role=role,
                     statuses=[200],
                     enabled=True,
-                    arguments=args.get(op, []),
+                    arguments=arguments,
                     checks=[
                         dict(select=s, operator=o, expected=e) for s, o, e in fields.get(op, [])
                     ],

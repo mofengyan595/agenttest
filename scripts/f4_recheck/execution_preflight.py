@@ -151,7 +151,7 @@ async def flow(folder, arm, name):
     )
     report = await executor.run(scenario, report=report)
     (folder / "active.json").write_bytes(encoded(dict(id="_idle")))
-    assert report.outcome.value == "PASS", report.reason
+    assert report.outcome.value == "PASS", (report.reason, report.diagnostic)
     audit = [
         json.loads(line)
         for line in (folder / "target-audit.jsonl").read_text(encoding="utf-8").splitlines()
