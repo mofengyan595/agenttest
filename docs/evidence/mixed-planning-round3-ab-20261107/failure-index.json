@@ -1,0 +1,1754 @@
+[
+  {
+    "id": "I01_r1_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I02_r1_baseline",
+    "diagnostics": {
+      "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "1.field.$.alias",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "验证响应 $.alias 等于 \"archive-reader\"",
+        "start": 57,
+        "end": 84,
+        "selector": "$.alias",
+        "operator": "equals",
+        "expected": "archive-reader",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I03_r1_baseline",
+    "diagnostics": {
+      "MODEL_SCHEMA_TYPE_OR_CONSTRAINT": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I04_r1_baseline",
+    "diagnostics": {
+      "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.field.$.build",
+      "gap.0",
+      "gap.1"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "本轮实际只匿名读取构建接口并验证 $.build 等于 \"fixture-r1\"",
+        "start": 47,
+        "end": 70,
+        "selector": "$.build",
+        "operator": "equals",
+        "expected": "fixture-r1",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D01_r1_baseline",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "1.field.$.id",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "将它响应里的 $.links[0].id 交给 reader 打开条目",
+        "start": 31,
+        "end": 59,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "验证 $.id 等于 73",
+        "start": 63,
+        "end": 73,
+        "selector": "$.id",
+        "operator": "equals",
+        "expected": 73,
+        "witnesses": [],
+        "status": "NOT_EXECUTED",
+        "reason": "RESPONSE_CHECK_UNWITNESSED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D02_r1_baseline",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.code",
+      "1.field.$.code",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "依据该响应中的 $.links[0].code 获取对应回执",
+        "start": 33,
+        "end": 55,
+        "selector": "$.links[0].code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          }
+        ],
+        "blocked_operations": [
+          "readReceipt"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "核对回执 $.code 等于 \"R73\" 后匿名读取健康状态",
+        "start": 61,
+        "end": 86,
+        "selector": "$.code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_SCOPE_AMBIGUOUS",
+        "actions": [
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          },
+          {
+            "operation_id": "readHealth",
+            "role": null
+          }
+        ],
+        "blocked_operations": [
+          "readHealth",
+          "readReceipt"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D03_r1_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 92,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 63,
+        "end": 92,
+        "selector": "$.label",
+        "operator": "equals",
+        "expected": "ready-for-review",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readEntry",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "D04_r1_baseline",
+    "diagnostics": {},
+    "missing": [
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "随后用响应中的 $.links[1].id 让 reader 打开条目",
+        "start": 32,
+        "end": 59,
+        "selector": "$.links[1].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G01_r1_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G02_r1_baseline",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.query.page",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G03_r1_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G04_r1_baseline",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "0.field.$.links[0].id",
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "binding.0",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_1",
+        "source_quote": "owner 查询 indexId=41 的索引并确认 $.links[0].id 存在",
+        "start": 27,
+        "end": 43,
+        "selector": "$.links[0].id",
+        "operator": "exists",
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "reader 再以该响应中的 $.links[0].id 打开条目",
+        "start": 59,
+        "end": 77,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G04_r2_baseline",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_ACTION_INVALID": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "0.field.$.links[0].id",
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "binding.0",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_1",
+        "source_quote": "owner 查询 indexId=41 的索引并确认 $.links[0].id 存在",
+        "start": 27,
+        "end": 43,
+        "selector": "$.links[0].id",
+        "operator": "exists",
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "reader 再以该响应中的 $.links[0].id 打开条目",
+        "start": 59,
+        "end": 77,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G03_r2_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G02_r2_baseline",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.query.page",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G01_r2_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "D04_r2_baseline",
+    "diagnostics": {},
+    "missing": [
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "随后用响应中的 $.links[1].id 让 reader 打开条目",
+        "start": 32,
+        "end": 59,
+        "selector": "$.links[1].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D03_r2_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 92,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 63,
+        "end": 92,
+        "selector": "$.label",
+        "operator": "equals",
+        "expected": "ready-for-review",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readEntry",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "D02_r2_baseline",
+    "diagnostics": {},
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "1.action",
+      "1.status",
+      "1.path_parameters.code",
+      "1.field.$.code",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "依据该响应中的 $.links[0].code 获取对应回执",
+        "start": 33,
+        "end": 55,
+        "selector": "$.links[0].code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_SCOPE_AMBIGUOUS",
+        "actions": [
+          {
+            "operation_id": "readIndex",
+            "role": "owner"
+          },
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          }
+        ],
+        "blocked_operations": [
+          "readIndex",
+          "readReceipt"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "核对回执 $.code 等于 \"R73\" 后匿名读取健康状态",
+        "start": 61,
+        "end": 86,
+        "selector": "$.code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_SCOPE_AMBIGUOUS",
+        "actions": [
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          },
+          {
+            "operation_id": "readHealth",
+            "role": null
+          }
+        ],
+        "blocked_operations": [
+          "readHealth",
+          "readReceipt"
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D01_r2_baseline",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "1.field.$.id",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "将它响应里的 $.links[0].id 交给 reader 打开条目",
+        "start": 31,
+        "end": 59,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "验证 $.id 等于 73",
+        "start": 63,
+        "end": 73,
+        "selector": "$.id",
+        "operator": "equals",
+        "expected": 73,
+        "witnesses": [],
+        "status": "NOT_EXECUTED",
+        "reason": "RESPONSE_CHECK_UNWITNESSED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I04_r2_baseline",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "本轮实际只匿名读取构建接口并验证 $.build 等于 \"fixture-r1\"",
+        "start": 47,
+        "end": 70,
+        "selector": "$.build",
+        "operator": "equals",
+        "expected": "fixture-r1",
+        "witnesses": [
+          {
+            "step_id": "read_build",
+            "operation_id": "readBuild",
+            "role": null,
+            "policy_id": "web_rule_1",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "e92d7830a92f4ddaa38c41aa66635dd7",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readBuild",
+            "role": null
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      },
+      {
+        "operation": "readAccount",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I03_r2_baseline",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I02_r2_baseline",
+    "diagnostics": {
+      "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "1.field.$.alias",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "验证响应 $.alias 等于 \"archive-reader\"",
+        "start": 57,
+        "end": 84,
+        "selector": "$.alias",
+        "operator": "equals",
+        "expected": "archive-reader",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I01_r2_baseline",
+    "diagnostics": {
+      "CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "2.action",
+      "2.status",
+      "2.field.$.alias",
+      "order"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I01_r1_candidate",
+    "diagnostics": {
+      "CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "2.action",
+      "2.status",
+      "2.field.$.alias",
+      "order"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I02_r1_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "验证响应 $.alias 等于 \"archive-reader\"",
+        "start": 57,
+        "end": 84,
+        "selector": "$.alias",
+        "operator": "equals",
+        "expected": "archive-reader",
+        "witnesses": [
+          {
+            "step_id": "read_account",
+            "operation_id": "readAccount",
+            "role": "archivist",
+            "policy_id": "web_rule_2",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_2",
+            "status": "PASS",
+            "run_id": "153c358224c140458ffded5483be7d25",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readAccount",
+            "role": "archivist"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I03_r1_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I04_r1_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "本轮实际只匿名读取构建接口并验证 $.build 等于 \"fixture-r1\"",
+        "start": 47,
+        "end": 70,
+        "selector": "$.build",
+        "operator": "equals",
+        "expected": "fixture-r1",
+        "witnesses": [
+          {
+            "step_id": "read_build",
+            "operation_id": "readBuild",
+            "role": null,
+            "policy_id": "web_rule_1",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "c09978cb393e401f9cce12157c93f195",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readBuild",
+            "role": null
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      },
+      {
+        "operation": "readAccount",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "D01_r1_candidate",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "1.field.$.id",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "将它响应里的 $.links[0].id 交给 reader 打开条目",
+        "start": 31,
+        "end": 59,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "验证 $.id 等于 73",
+        "start": 63,
+        "end": 73,
+        "selector": "$.id",
+        "operator": "equals",
+        "expected": 73,
+        "witnesses": [],
+        "status": "NOT_EXECUTED",
+        "reason": "RESPONSE_CHECK_UNWITNESSED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "D02_r1_candidate",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.code",
+      "1.field.$.code",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对回执 $.code 等于 \"R73\" 后匿名读取健康状态",
+        "start": 61,
+        "end": 86,
+        "selector": "$.code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_SCOPE_AMBIGUOUS",
+        "actions": [
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          },
+          {
+            "operation_id": "readHealth",
+            "role": null
+          }
+        ],
+        "blocked_operations": [
+          "readHealth",
+          "readReceipt"
+        ]
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "依据该响应中的 $.links[0].code 获取对应回执",
+        "start": 33,
+        "end": 48,
+        "selector": "$.links[0].code",
+        "witnesses": [],
+        "status": "NOT_EXECUTED",
+        "reason": "DATA_SOURCE_NOT_EXECUTED",
+        "actions": [
+          {
+            "operation_id": "readReceipt",
+            "role": "owner"
+          }
+        ],
+        "approved_bindings": [
+          {
+            "operation_id": "readReceipt",
+            "roles": [
+              "owner"
+            ],
+            "policy_id": "web_rule_3",
+            "location": "path_parameters",
+            "name": "code",
+            "selector": "$.links[0].code",
+            "source_policy_id": "web_rule_1",
+            "from_operation": "readIndex",
+            "from_method": "GET",
+            "source_roles": [
+              "owner"
+            ],
+            "role_relation": "same",
+            "source_role": "owner",
+            "role": "owner"
+          }
+        ]
+      }
+    ],
+    "questions": []
+  },
+  {
+    "id": "D03_r1_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 92,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 63,
+        "end": 92,
+        "selector": "$.label",
+        "operator": "equals",
+        "expected": "ready-for-review",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 45,
+        "selector": "$.links[0].id",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "operation": "readEntry",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "D04_r1_candidate",
+    "diagnostics": {
+      "MODEL_SCHEMA_TYPE_OR_CONSTRAINT": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "1.action",
+      "1.status",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "随后用响应中的 $.links[1].id 让 reader 打开条目",
+        "start": 32,
+        "end": 45,
+        "selector": "$.links[1].id",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED"
+      }
+    ],
+    "questions": []
+  },
+  {
+    "id": "G01_r1_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G02_r1_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.query.page",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G03_r1_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G04_r1_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "0.field.$.links[0].id",
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "binding.0",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_1",
+        "source_quote": "owner 查询 indexId=41 的索引并确认 $.links[0].id 存在",
+        "start": 27,
+        "end": 43,
+        "selector": "$.links[0].id",
+        "operator": "exists",
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "reader 再以该响应中的 $.links[0].id 打开条目",
+        "start": 59,
+        "end": 77,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G04_r2_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "0.field.$.links[0].id",
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "binding.0",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_1",
+        "source_quote": "owner 查询 indexId=41 的索引并确认 $.links[0].id 存在",
+        "start": 27,
+        "end": 43,
+        "selector": "$.links[0].id",
+        "operator": "exists",
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "reader 再以该响应中的 $.links[0].id 打开条目",
+        "start": 59,
+        "end": 77,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G03_r2_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "G02_r2_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.query.page",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "G01_r2_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readUnavailable",
+        "role": null,
+        "kind": "clarification"
+      }
+    ]
+  },
+  {
+    "id": "D04_r2_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "随后用响应中的 $.links[1].id 让 reader 打开条目",
+        "start": 32,
+        "end": 45,
+        "selector": "$.links[1].id",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "questions": []
+  },
+  {
+    "id": "D03_r2_candidate",
+    "diagnostics": {
+      "MODEL_SCHEMA_TYPE_OR_CONSTRAINT": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "1.action",
+      "1.status",
+      "gap.0"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 92,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 63,
+        "end": 92,
+        "selector": "$.label",
+        "operator": "equals",
+        "expected": "ready-for-review",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "用这份响应中的 $.links[0].id 由 reader 访问条目并确认 $.label 等于 \"ready-for-review\"",
+        "start": 32,
+        "end": 45,
+        "selector": "$.links[0].id",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED"
+      }
+    ],
+    "questions": []
+  },
+  {
+    "id": "D02_r2_candidate",
+    "diagnostics": {
+      "MODEL_SCHEMA_TYPE_OR_CONSTRAINT": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "0.path_parameters.indexId",
+      "1.action",
+      "1.status",
+      "1.path_parameters.code",
+      "1.field.$.code",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对回执 $.code 等于 \"R73\" 后匿名读取健康状态",
+        "start": 61,
+        "end": 86,
+        "selector": "$.code",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "依据该响应中的 $.links[0].code 获取对应回执",
+        "start": 33,
+        "end": 48,
+        "selector": "$.links[0].code",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "DATA_SOURCE_NOT_APPROVED"
+      }
+    ],
+    "questions": []
+  },
+  {
+    "id": "D01_r2_candidate",
+    "diagnostics": {},
+    "missing": [
+      "1.action",
+      "1.status",
+      "1.path_parameters.entryId",
+      "1.field.$.id",
+      "2.action",
+      "2.status",
+      "binding.0",
+      "order"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "将它响应里的 $.links[0].id 交给 reader 打开条目",
+        "start": 31,
+        "end": 59,
+        "selector": "$.links[0].id",
+        "operator": null,
+        "expected": null,
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "id": "response_2",
+        "source_id": "request_3",
+        "source_quote": "验证 $.id 等于 73",
+        "start": 63,
+        "end": 73,
+        "selector": "$.id",
+        "operator": "equals",
+        "expected": 73,
+        "witnesses": [],
+        "status": "NOT_EXECUTED",
+        "reason": "RESPONSE_CHECK_UNWITNESSED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "reader"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I04_r2_candidate",
+    "diagnostics": {},
+    "missing": [
+      "gap.1"
+    ],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "本轮实际只匿名读取构建接口并验证 $.build 等于 \"fixture-r1\"",
+        "start": 47,
+        "end": 70,
+        "selector": "$.build",
+        "operator": "equals",
+        "expected": "fixture-r1",
+        "witnesses": [
+          {
+            "step_id": "read_build",
+            "operation_id": "readBuild",
+            "role": null,
+            "policy_id": "web_rule_1",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_1",
+            "status": "PASS",
+            "run_id": "b77198d9dc504285b9bf65330574efcc",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readBuild",
+            "role": null
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I03_r2_candidate",
+    "diagnostics": {
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  },
+  {
+    "id": "I02_r2_candidate",
+    "diagnostics": {},
+    "missing": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "验证响应 $.alias 等于 \"archive-reader\"",
+        "start": 57,
+        "end": 84,
+        "selector": "$.alias",
+        "operator": "equals",
+        "expected": "archive-reader",
+        "witnesses": [
+          {
+            "step_id": "read_account",
+            "operation_id": "readAccount",
+            "role": "archivist",
+            "policy_id": "web_rule_2",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_2",
+            "status": "PASS",
+            "run_id": "3fd7f2fddbc6458fa0927afd2d02de6f",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readAccount",
+            "role": "archivist"
+          }
+        ]
+      }
+    ],
+    "data_references": [],
+    "questions": [
+      {
+        "operation": "readBuild",
+        "role": "reviewer",
+        "kind": "permission"
+      }
+    ]
+  },
+  {
+    "id": "I01_r2_candidate",
+    "diagnostics": {
+      "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+    },
+    "missing": [
+      "0.action",
+      "0.status",
+      "1.action",
+      "1.status",
+      "2.action",
+      "2.status",
+      "2.field.$.alias",
+      "order",
+      "gap.0"
+    ],
+    "response_requirements": [],
+    "data_references": [],
+    "questions": []
+  }
+]

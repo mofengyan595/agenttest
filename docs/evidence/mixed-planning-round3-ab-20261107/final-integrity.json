@@ -1,0 +1,30 @@
+{
+  "head": "8111a37358f1cc161249016035ff0c25c68ea0ca",
+  "root_and_arms_unchanged": true,
+  "target_unchanged": true,
+  "model_journals": {
+    "baseline": {
+      "calls": 38,
+      "known_tokens": 235219,
+      "states": {
+        "KNOWN": 38
+      },
+      "http_status": {
+        "200": 38
+      }
+    },
+    "candidate": {
+      "calls": 38,
+      "known_tokens": 236381,
+      "states": {
+        "KNOWN": 38
+      },
+      "http_status": {
+        "200": 38
+      }
+    }
+  },
+  "target_get_attempts": 49,
+  "all_48_audited": true,
+  "cold_recomputation": "MATCHED"
+}

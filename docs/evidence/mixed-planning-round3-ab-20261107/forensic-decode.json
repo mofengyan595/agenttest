@@ -1,0 +1,50 @@
+[
+  {
+    "id": "D02_r2_candidate",
+    "exact_original_request_reconstructed": true,
+    "model_calls": 0,
+    "target_http": 0,
+    "exception_type": "ValidationError",
+    "errors": [
+      {
+        "type": "string_pattern_mismatch",
+        "loc": [
+          "interpretation"
+        ],
+        "msg": "String should match pattern '.*[\\u4e00-\\u9fff].*'"
+      }
+    ]
+  },
+  {
+    "id": "D03_r2_candidate",
+    "exact_original_request_reconstructed": true,
+    "model_calls": 0,
+    "target_http": 0,
+    "exception_type": "ValidationError",
+    "errors": [
+      {
+        "type": "string_pattern_mismatch",
+        "loc": [
+          "interpretation"
+        ],
+        "msg": "String should match pattern '.*[\\u4e00-\\u9fff].*'"
+      }
+    ]
+  },
+  {
+    "id": "D04_r1_candidate",
+    "exact_original_request_reconstructed": true,
+    "model_calls": 0,
+    "target_http": 0,
+    "exception_type": "ValidationError",
+    "errors": [
+      {
+        "type": "string_pattern_mismatch",
+        "loc": [
+          "interpretation"
+        ],
+        "msg": "String should match pattern '.*[\\u4e00-\\u9fff].*'"
+      }
+    ]
+  }
+]
