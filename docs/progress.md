@@ -3483,3 +3483,36 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 ## 第三轮真实模型 A/B（2026-11-07）
 
 48 个 ecnu-max 首次位置全部完成，原评分冷复算一致，未重跑。baseline 77effe8 / candidate f5e3e35，未纳入性能优化。整体未达标：错误拒绝 14→14，静默漏项 71/186→81/186，正确局部待审 7/20→9/20，完整可执行子集两版均 0/4。候选三类范围违规均为 0；基线有 1 次任务范围外读取。模型调用各 38 次，Token 235219/236381，UNKNOWN/基础设施失败均 0。G02 保护题未通过。31 项确定性预检通过，未重复全量；源码/目标未漂移，服务已停止。详见[报告与可复算证据](mixed-planning-round3-ab-20261107.md)。下一步只做离线根因修复新里程碑，不调参补跑本批位置。
+
+
+## 2026-11-08 — F4 遗留问题独立复验 + 隔离读写生命周期准备
+
+- 先建确定性 rubric 一致性 lint（`scripts/f4_recheck/consistency.py`）：能把 rubric 与原文逐条对齐，
+  检出多余动作、缺漏动作、身份错误、顺序错误、把已批准断言当待审、丢掉未批准断言、无依据重复。
+  对第四轮冻结 F4 只报一条：`extra_action: step 2 fetchNotice（公告）is absent from the requirement`；
+  三条新 rubric 均为 0 条。11 项反例测试证明该 lint 不是恒空。
+- 12 个真实 ecnu-max 首位（3 条全新原文 × 2 版 × 2 轮）一次跑完，未重跑、未改评分；
+  冻结代码 `9b58036`、baseline `8111a37`、candidate `a779ca5`、冻结清单 SHA
+  `bcda9bd5…d60ff1`（详见证据包）。结果：错误拒绝 4→3、静默漏项 28→17、正确局部待审
+  0/4→2/4、完整执行 1/2→1/2、候选三类越权计数 0、无 UNKNOWN、12/12 审计；验收 10 条中 8 条满足，
+  因 `G2 两轮正确待审` 未达标而**不接受**，按冻结纪律不重跑。
+- 归因：G2 r2 baseline 是**产品能力缺口**（模型问对了未批准的 `$.seal`，产品仍把整组扣住、
+  已批准读一次未发）；其余 7 个失败位置为模型规划失败（schema 违规、缺口无原文引用、
+  权限问题未配动作、凭空澄清、顺序颠倒）；本轮夹具与 rubric **0 缺陷**。同时澄清
+  `FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION`、`FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE`
+  在两版源码中都存在，是共享校验而非候选版新增能力。
+- 隔离读写准备（只准备不启动）：`scripts/rw_lifecycle/` 提供可重置写夹具（19097，命名空间/幂等键/
+  所有权/故障注入/审计/重置），`WRITE_AUTHORITY` 默认 `NOT_GRANTED` 且 `startable()` 是唯一闸门；
+  生命周期评分器只读夹具审计与状态哈希；真实 loopback HTTP 上 10 个负控（7 PASS / 3 应有缺陷）
+  全部按预期；`build_generic_project`、`validate_lifecycle_authority`、`lifecycle_plan` 接受该声明
+  与"创建→读→改→替换→删除"计划，6 类不安全计划被拒（12 项测试）。
+- 准备期发现：必填头参数不被 intake 支持（幂等键需走 body/query 或补产品能力）、产品无删除回读校验、
+  审计在夹具侧；另有一条与验收口径相关的风险：产品不支持"部分执行 + 部分待审"。
+- 测试：新增 11+12 项确定性测试；评估侧 27 项通过；`ruff check .` 全绿。冻结前完成 22 项身份/响应/
+  intake 预检、两臂各 2 条真实执行流、两臂各 8 个评分器负控。一处准备期修正（链条 `entryId` 改为
+  动态绑定声明）如实计入 `9b58036`。
+- 报告：[f4-recheck-results-20261108.md](f4-recheck-results-20261108.md)；方案：
+  [f4-recheck-plan-20261108.md](f4-recheck-plan-20261108.md)；读写准备：
+  [rw-lifecycle-plan-20261108.md](rw-lifecycle-plan-20261108.md)；证据包（155 文件、冷重算一致）：
+  [evidence/f4-recheck-20261108/](evidence/f4-recheck-20261108/README.md)。
+- 下一步：等待操作员批准读写授权 6 条与幂等键传输方式后再启动有状态写入验收；不启动第五轮大规模 A/B。

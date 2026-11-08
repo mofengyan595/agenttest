@@ -1,0 +1,549 @@
+{
+  "chain": {
+    "operations": {
+      "checkDock": {
+        "method": "GET",
+        "path": "/docks"
+      },
+      "readEntry": {
+        "method": "GET",
+        "path": "/entries/{entryId}"
+      },
+      "openRegister": {
+        "method": "GET",
+        "path": "/registers/{registerId}"
+      }
+    },
+    "policies": [
+      {
+        "id": "web_rule_1",
+        "operation_id": "openRegister",
+        "roles": [
+          "warden"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "registerId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                31
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_2",
+        "operation_id": "readEntry",
+        "roles": [
+          "registrar"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "entryId",
+            "literal_schema": null,
+            "source_policy_id": "web_rule_1",
+            "source_selector": "$.entries[0].entryId",
+            "role_relation": "different",
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_3",
+        "operation_id": "checkDock",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      }
+    ],
+    "budget": {
+      "max_model_calls": 4,
+      "max_readonly_investigations": 2,
+      "max_input_tokens": 60000,
+      "max_output_tokens": 8192,
+      "max_total_tokens": 70000,
+      "suite_max_model_calls": 4,
+      "suite_max_total_tokens": 500000
+    },
+    "ready": {
+      "total": 3,
+      "counts": {
+        "READY": 3,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    }
+  },
+  "partial": {
+    "operations": {
+      "readEntry": {
+        "method": "GET",
+        "path": "/entries/{entryId}"
+      },
+      "readVoucher": {
+        "method": "GET",
+        "path": "/vouchers/{voucherId}"
+      }
+    },
+    "policies": [
+      {
+        "id": "web_rule_1",
+        "operation_id": "readEntry",
+        "roles": [
+          "registrar"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "entryId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                58
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_2",
+        "operation_id": "readVoucher",
+        "roles": [
+          "clerk"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "voucherId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                41
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      }
+    ],
+    "budget": {
+      "max_model_calls": 4,
+      "max_readonly_investigations": 2,
+      "max_input_tokens": 60000,
+      "max_output_tokens": 8192,
+      "max_total_tokens": 70000,
+      "suite_max_model_calls": 4,
+      "suite_max_total_tokens": 500000
+    },
+    "ready": {
+      "total": 2,
+      "counts": {
+        "READY": 2,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readVoucher",
+          "method": "GET",
+          "path": "/vouchers/{voucherId}",
+          "summary": "凭证",
+          "group": "vouchers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    }
+  },
+  "review": {
+    "operations": {
+      "readBeacon": {
+        "method": "GET",
+        "path": "/beacons"
+      },
+      "checkDock": {
+        "method": "GET",
+        "path": "/docks"
+      },
+      "openRegister": {
+        "method": "GET",
+        "path": "/registers/{registerId}"
+      },
+      "readRoster": {
+        "method": "GET",
+        "path": "/rosters/{rosterId}"
+      }
+    },
+    "policies": [
+      {
+        "id": "web_rule_1",
+        "operation_id": "openRegister",
+        "roles": [
+          "warden"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "registerId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                31
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_2",
+        "operation_id": "readRoster",
+        "roles": [
+          "clerk"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "rosterId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                8
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_3",
+        "operation_id": "readBeacon",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_4",
+        "operation_id": "checkDock",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      }
+    ],
+    "budget": {
+      "max_model_calls": 4,
+      "max_readonly_investigations": 2,
+      "max_input_tokens": 60000,
+      "max_output_tokens": 8192,
+      "max_total_tokens": 70000,
+      "suite_max_model_calls": 4,
+      "suite_max_total_tokens": 500000
+    },
+    "ready": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readBeacon",
+          "method": "GET",
+          "path": "/beacons",
+          "summary": "信标",
+          "group": "beacons",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readRoster",
+          "method": "GET",
+          "path": "/rosters/{rosterId}",
+          "summary": "名册",
+          "group": "rosters",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    }
+  }
+}

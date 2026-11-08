@@ -1,0 +1,165 @@
+[
+  {
+    "id": "G1",
+    "request": "warden 读取 registerId=31 的登记簿；用它响应中的 $.entries[0].entryId 交给 registrar 读取条目；核对条目的 $.label 等于 \"draft\"；随后匿名查询码头状态。",
+    "config": "chain",
+    "category": "G1",
+    "rubric": {
+      "steps": [
+        {
+          "operation": "openRegister",
+          "role": "warden",
+          "values": {
+            "path_parameters": {
+              "registerId": 31
+            }
+          },
+          "status": 200,
+          "fields": []
+        },
+        {
+          "operation": "readEntry",
+          "role": "registrar",
+          "values": {
+            "path_parameters": {
+              "entryId": 58
+            }
+          },
+          "status": 200,
+          "fields": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ]
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "values": {},
+          "status": 200,
+          "fields": []
+        }
+      ],
+      "gaps": [],
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "bindings": [
+        {
+          "producer": "openRegister",
+          "consumer": "readEntry",
+          "source_role": "warden",
+          "role": "registrar",
+          "location": "path_parameters",
+          "name": "entryId",
+          "selector": "$.entries[0].entryId"
+        }
+      ]
+    }
+  },
+  {
+    "id": "G2",
+    "request": "registrar 读取 entryId=58 的条目；核对条目的 $.seal 等于 \"T-77\"；同时由 clerk 读取 voucherId=41 的凭证。",
+    "config": "partial",
+    "category": "G2",
+    "rubric": {
+      "steps": [
+        {
+          "operation": "readEntry",
+          "role": "registrar",
+          "values": {
+            "path_parameters": {
+              "entryId": 58
+            }
+          },
+          "status": 200,
+          "fields": []
+        },
+        {
+          "operation": "readVoucher",
+          "role": "clerk",
+          "values": {
+            "path_parameters": {
+              "voucherId": 41
+            }
+          },
+          "status": 200,
+          "fields": []
+        }
+      ],
+      "gaps": [
+        {
+          "kind": "content",
+          "operation": "readEntry",
+          "role": "registrar",
+          "selector": "$.seal",
+          "operator": "equals",
+          "value": "T-77",
+          "source": "$.seal",
+          "block_all_roles": true
+        }
+      ],
+      "order": [
+        0,
+        1
+      ],
+      "bindings": []
+    }
+  },
+  {
+    "id": "G3",
+    "request": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404；再确认 overseer 访问名册的拒绝规则；同时匿名读取信标；并把码头状态连读两次。",
+    "config": "review",
+    "category": "G3",
+    "rubric": {
+      "steps": [
+        {
+          "operation": "readBeacon",
+          "role": null,
+          "values": {},
+          "status": 200,
+          "fields": []
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "values": {},
+          "status": 200,
+          "fields": []
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "values": {},
+          "status": 200,
+          "fields": []
+        }
+      ],
+      "gaps": [
+        {
+          "kind": "permission",
+          "operation": "openRegister",
+          "role": "overseer",
+          "source": "overseer"
+        },
+        {
+          "kind": "permission",
+          "operation": "readRoster",
+          "role": "overseer",
+          "source": "overseer",
+          "block_all_roles": true
+        }
+      ],
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "bindings": []
+    }
+  }
+]

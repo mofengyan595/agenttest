@@ -1,0 +1,6 @@
+{
+  "id": "G2_r2_candidate",
+  "digest": "bcda9bd50ec07eb6a32bb2486aed86bf1dc410810c02ac20e1ca8e92a3d60ff1",
+  "request": "registrar 读取 entryId=58 的条目；核对条目的 $.seal 等于 \"T-77\"；同时由 clerk 读取 voucherId=41 的凭证。",
+  "projectId": "web_07854f080f2a44c9a2dacafd"
+}

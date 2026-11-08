@@ -1,0 +1,6 @@
+{
+  "id": "G3_r2_candidate",
+  "digest": "bcda9bd50ec07eb6a32bb2486aed86bf1dc410810c02ac20e1ca8e92a3d60ff1",
+  "request": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404；再确认 overseer 访问名册的拒绝规则；同时匿名读取信标；并把码头状态连读两次。",
+  "projectId": "web_1aaa0b18fd374ebfba7360bf"
+}

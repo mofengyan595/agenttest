@@ -1,0 +1,279 @@
+{
+  "status": 201,
+  "project": {
+    "id": "web_964f6bdb0a0a42f0b752ca5b",
+    "name": "F4 复验隔离读取 review",
+    "version": 1,
+    "business_notes": "",
+    "state": "READY",
+    "ready": true,
+    "missing": [],
+    "profile": {
+      "id": "web_964f6bdb0a0a42f0b752ca5b",
+      "identity": "310c11c19eb4cfc445470d27d4ebdbd8a801da8955b3359f3e535c037a757db2",
+      "name": "本项目",
+      "environment": "授权测试环境",
+      "address": "http://127.0.0.1:19094",
+      "identities": [
+        {
+          "alias": "warden",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_F4_WARDEN_TOKEN"
+        },
+        {
+          "alias": "clerk",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_F4_CLERK_TOKEN"
+        }
+      ],
+      "rules": [
+        {
+          "id": "web_rule_1",
+          "behavior": "登记簿",
+          "role": "warden",
+          "operation": "openRegister",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [
+            {
+              "field": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "id": "web_rule_2",
+          "behavior": "名册",
+          "role": "clerk",
+          "operation": "readRoster",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "id": "web_rule_3",
+          "behavior": "信标",
+          "role": null,
+          "operation": "readBeacon",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "id": "web_rule_4",
+          "behavior": "码头状态",
+          "role": null,
+          "operation": "checkDock",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ],
+      "examples": [
+        "先安排一轮常规检查，说明还有哪些没有覆盖",
+        "帮我检查参数边界和已确认的身份访问规则"
+      ],
+      "require_review": false
+    },
+    "profile_id": null,
+    "generic": {
+      "base_url": "http://127.0.0.1:19094",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "roles": [
+        {
+          "alias": "warden",
+          "bearer_env": "AGENTTEST_TARGET_F4_WARDEN_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "registrar",
+          "bearer_env": "AGENTTEST_TARGET_F4_REGISTRAR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "clerk",
+          "bearer_env": "AGENTTEST_TARGET_F4_CLERK_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "overseer",
+          "bearer_env": "AGENTTEST_TARGET_F4_OVERSEER_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "openRegister",
+          "alias": "登记簿",
+          "enabled": true,
+          "role": "warden",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "registerId",
+              "value": 31,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readRoster",
+          "alias": "名册",
+          "enabled": true,
+          "role": "clerk",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "rosterId",
+              "value": 8,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readBeacon",
+          "alias": "信标",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "checkDock",
+          "alias": "码头状态",
+          "enabled": true,
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ],
+      "assisted": true
+    },
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readBeacon",
+          "method": "GET",
+          "path": "/beacons",
+          "summary": "信标",
+          "group": "beacons",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readRoster",
+          "method": "GET",
+          "path": "/rosters/{rosterId}",
+          "summary": "名册",
+          "group": "rosters",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "testing_mode": "MODEL_DESIGNED",
+    "confirmation": {
+      "source": "WEB_OPERATOR_SESSION",
+      "actor": "33175f97b14738583f8e0963cc9b194b0ac1b7c2901cf4e2f390ca9427f129be",
+      "configuration_version": "4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576",
+      "at": 1794128614.1253438
+    },
+    "identity": "a478cd6d39289f65cc684f33d17a39b4b784d40e4fadc298de613b7948a79cd9"
+  }
+}

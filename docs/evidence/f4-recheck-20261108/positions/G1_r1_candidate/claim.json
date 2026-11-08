@@ -1,0 +1,6 @@
+{
+  "id": "G1_r1_candidate",
+  "digest": "bcda9bd50ec07eb6a32bb2486aed86bf1dc410810c02ac20e1ca8e92a3d60ff1",
+  "request": "warden 读取 registerId=31 的登记簿；用它响应中的 $.entries[0].entryId 交给 registrar 读取条目；核对条目的 $.label 等于 \"draft\"；随后匿名查询码头状态。",
+  "projectId": "web_1df9cad032054b17b51877fd"
+}

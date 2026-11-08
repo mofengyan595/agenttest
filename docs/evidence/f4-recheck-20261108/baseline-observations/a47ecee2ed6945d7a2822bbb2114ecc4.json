@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "8553dde43d074779b8aaad270f3b2ede", "plan": {"name": "读取指定凭证", "steps": [{"id": "read_voucher", "operation_id": "readVoucher", "role": "clerk", "path_parameters": {"voucherId": {"value": 41, "from_step": null, "select": "$"}}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_2", "poll": false, "read_retries": 0}]}}

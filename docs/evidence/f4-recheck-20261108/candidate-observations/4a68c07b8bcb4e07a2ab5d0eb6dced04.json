@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "e9264a3a9742425eab1e0690c5da858c", "plan": {"name": "匿名读取信标", "steps": [{"id": "read_beacon", "operation_id": "readBeacon", "role": null, "path_parameters": {}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_3", "poll": false, "read_retries": 0}]}}

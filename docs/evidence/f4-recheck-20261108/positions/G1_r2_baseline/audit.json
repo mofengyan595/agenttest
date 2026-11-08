@@ -1,0 +1,67 @@
+[
+  {
+    "sequence": 42,
+    "position": "G1_r2_baseline",
+    "config": "chain",
+    "operation_id": "checkDock",
+    "method": "GET",
+    "path": "/docks",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "dock": "d2-clear"
+    },
+    "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  },
+  {
+    "sequence": 43,
+    "position": "G1_r2_baseline",
+    "config": "chain",
+    "operation_id": "openRegister",
+    "method": "GET",
+    "path": "/registers/31",
+    "role": "warden",
+    "values": {
+      "path_parameters": {
+        "registerId": 31
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": 31,
+      "entries": [
+        {
+          "entryId": 58,
+          "seal": "T-77"
+        }
+      ],
+      "status": "open"
+    },
+    "response_sha256": "c60b85779ed820933b57392623e964581de88a28017f04f7fe4fa29e783ff2f8",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  },
+  {
+    "sequence": 44,
+    "position": "G1_r2_baseline",
+    "config": "chain",
+    "operation_id": "readEntry",
+    "method": "GET",
+    "path": "/entries/58",
+    "role": "registrar",
+    "values": {
+      "path_parameters": {
+        "entryId": 58
+      }
+    },
+    "status": 200,
+    "response": {
+      "entryId": 58,
+      "label": "draft",
+      "seal": "T-77"
+    },
+    "response_sha256": "dc3a70b9d644c78bce33ae350650ce3e9fa7ee16dd8b879a90e5c0aee09ef71d",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  }
+]

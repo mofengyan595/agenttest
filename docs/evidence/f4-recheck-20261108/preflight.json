@@ -1,0 +1,134 @@
+[
+  {
+    "operation": "openRegister",
+    "role": "warden",
+    "status": 200,
+    "body_sha256": "c60b85779ed820933b57392623e964581de88a28017f04f7fe4fa29e783ff2f8"
+  },
+  {
+    "operation": "openRegister",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "openRegister",
+    "role": null,
+    "status": 401,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readEntry",
+    "role": "registrar",
+    "status": 200,
+    "body_sha256": "dc3a70b9d644c78bce33ae350650ce3e9fa7ee16dd8b879a90e5c0aee09ef71d"
+  },
+  {
+    "operation": "readEntry",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readEntry",
+    "role": null,
+    "status": 401,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readVoucher",
+    "role": "clerk",
+    "status": 200,
+    "body_sha256": "67d42318043fe0c2dc727c07230ea2e7e98939b885e4d42d9192f2bfe1b644f3"
+  },
+  {
+    "operation": "readVoucher",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readVoucher",
+    "role": null,
+    "status": 401,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readRoster",
+    "role": "clerk",
+    "status": 200,
+    "body_sha256": "6bc20f32b03c28ed68c0dfb27bf8356816e5ba485ce1139ef5c35b589e1b682f"
+  },
+  {
+    "operation": "readRoster",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readRoster",
+    "role": null,
+    "status": 401,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "readBeacon",
+    "role": null,
+    "status": 200,
+    "body_sha256": "36f21b57267c6c3c01b9cea55c8fba56ba03a62b9b44c7d9d413505c39f7d005"
+  },
+  {
+    "operation": "readBeacon",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "operation": "checkDock",
+    "role": null,
+    "status": 200,
+    "body_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7"
+  },
+  {
+    "operation": "checkDock",
+    "role": "overseer",
+    "status": 403,
+    "body_sha256": "d3f11c819a54dc8db551b6bf2e2696a8c7ddd4c3564507e8924ef1c41b0439db"
+  },
+  {
+    "arm": "baseline",
+    "config": "chain",
+    "intake_status": 201,
+    "project_id": "web_77076b715f2b47aabb243f27"
+  },
+  {
+    "arm": "baseline",
+    "config": "partial",
+    "intake_status": 201,
+    "project_id": "web_753fc288de5743cabde4b542"
+  },
+  {
+    "arm": "baseline",
+    "config": "review",
+    "intake_status": 201,
+    "project_id": "web_b1b8d588783143cca4508a2d"
+  },
+  {
+    "arm": "candidate",
+    "config": "chain",
+    "intake_status": 201,
+    "project_id": "web_fba0bf935ffd42b29ec3c9e9"
+  },
+  {
+    "arm": "candidate",
+    "config": "partial",
+    "intake_status": 201,
+    "project_id": "web_180f51df2f894b98bb99f705"
+  },
+  {
+    "arm": "candidate",
+    "config": "review",
+    "intake_status": 201,
+    "project_id": "web_1d5a56e233004a7b9e0e6d30"
+  }
+]

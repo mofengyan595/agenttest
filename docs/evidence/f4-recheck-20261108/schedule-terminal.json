@@ -1,0 +1,1073 @@
+{
+  "digest": "bcda9bd50ec07eb6a32bb2486aed86bf1dc410810c02ac20e1ca8e92a3d60ff1",
+  "records": [
+    {
+      "id": "G1_r1_baseline",
+      "arm": "baseline",
+      "task": "G1",
+      "round": 1,
+      "taskId": "6dca1a6315634a3880275f97e77642e0",
+      "status": "FINISHED",
+      "elapsed_ms": 20078,
+      "task_elapsed_ms": 14796,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 13489,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.registerId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.entryId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.label",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 11,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": true,
+      "correct_hold": false,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 3,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G1_r1_candidate",
+      "arm": "candidate",
+      "task": "G1",
+      "round": 1,
+      "taskId": "d033422b665f43ecaa7954fd5d9e03e3",
+      "status": "FINISHED",
+      "elapsed_ms": 23867,
+      "task_elapsed_ms": 18912,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 13499,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.registerId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.entryId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.label",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 11,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": true,
+      "correct_hold": false,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 3,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G2_r1_baseline",
+      "arm": "baseline",
+      "task": "G2",
+      "round": 1,
+      "taskId": "ba6f2938835a48a790c493e1fd7e1620",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 12047,
+      "task_elapsed_ms": 7335,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 7150,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.path_parameters.entryId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.path_parameters.voucherId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 8,
+      "silent_obligations": 8,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "MODEL_SCHEMA_TYPE_OR_CONSTRAINT": 1
+      }
+    },
+    {
+      "id": "G2_r1_candidate",
+      "arm": "candidate",
+      "task": "G2",
+      "round": 1,
+      "taskId": "fa3e4e07687a4ddf9dd06e02feac597d",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 11958,
+      "task_elapsed_ms": 7345,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 7162,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.path_parameters.entryId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.path_parameters.voucherId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 8,
+      "silent_obligations": 8,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+      }
+    },
+    {
+      "id": "G3_r1_baseline",
+      "arm": "baseline",
+      "task": "G3",
+      "round": 1,
+      "taskId": "bdb48b1b2fc0434084f85da44eb88aa5",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 14212,
+      "task_elapsed_ms": 9537,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 6975,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "2.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "2.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.1",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 9,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_PERMISSION_QUESTION_WITHOUT_ACTION": 1
+      }
+    },
+    {
+      "id": "G3_r1_candidate",
+      "arm": "candidate",
+      "task": "G3",
+      "round": 1,
+      "taskId": "9c91816e31094513969ffdaf1066ab4d",
+      "status": "FINISHED",
+      "elapsed_ms": 20536,
+      "task_elapsed_ms": 15588,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 12498,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.1",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": true,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 3,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G3_r2_candidate",
+      "arm": "candidate",
+      "task": "G3",
+      "round": 2,
+      "taskId": "5586aa53c8bf44a8a3146cc59bf18143",
+      "status": "FINISHED",
+      "elapsed_ms": 21656,
+      "task_elapsed_ms": 16506,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 12549,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "gap.1",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 0,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": true,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 3,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G3_r2_baseline",
+      "arm": "baseline",
+      "task": "G3",
+      "round": 2,
+      "taskId": "312ca0dfe77b4bee8caa28710aef785d",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 13879,
+      "task_elapsed_ms": 8801,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 6882,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "2.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "2.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.1",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 9,
+      "silent_obligations": 9,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+      }
+    },
+    {
+      "id": "G2_r2_candidate",
+      "arm": "candidate",
+      "task": "G2",
+      "round": 2,
+      "taskId": "84cb3f9388b6479590b034144df1c721",
+      "status": "NEEDS_REVIEW",
+      "elapsed_ms": 17881,
+      "task_elapsed_ms": 13075,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 7133,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "0.path_parameters.entryId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "1.path_parameters.voucherId",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 8,
+      "silent_obligations": 8,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {
+        "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE": 1
+      }
+    },
+    {
+      "id": "G2_r2_baseline",
+      "arm": "baseline",
+      "task": "G2",
+      "round": 2,
+      "taskId": "863b4cbc116d4384a1f292eed1eedc4f",
+      "status": "FINISHED",
+      "elapsed_ms": 19812,
+      "task_elapsed_ms": 14903,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 12562,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.entryId",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.voucherId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        },
+        {
+          "id": "gap.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        }
+      ],
+      "obligation_denominator": 8,
+      "silent_obligations": 1,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 1,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G1_r2_candidate",
+      "arm": "candidate",
+      "task": "G1",
+      "round": 2,
+      "taskId": "2304146c7b0c4cb4b14f1fa80daa8bf5",
+      "status": "FINISHED",
+      "elapsed_ms": 16050,
+      "task_elapsed_ms": 10964,
+      "model_calls": 1,
+      "usage_known": true,
+      "known_tokens": 7497,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.registerId",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.entryId",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.label",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": false,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 11,
+      "silent_obligations": 1,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": true,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 2,
+      "target_requests": 0,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    },
+    {
+      "id": "G1_r2_baseline",
+      "arm": "baseline",
+      "task": "G1",
+      "round": 2,
+      "taskId": "bb124c33da3e4e8790e1ce958465293b",
+      "status": "FINISHED",
+      "elapsed_ms": 17703,
+      "task_elapsed_ms": 12910,
+      "model_calls": 2,
+      "usage_known": true,
+      "known_tokens": 13687,
+      "obligations": [
+        {
+          "id": "0.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "0.path_parameters.registerId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.path_parameters.entryId",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "1.field.$.label",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.action",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "2.status",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "binding.0",
+          "verified": true,
+          "recorded": true,
+          "silent": false
+        },
+        {
+          "id": "order",
+          "verified": false,
+          "recorded": false,
+          "silent": true
+        }
+      ],
+      "obligation_denominator": 11,
+      "silent_obligations": 1,
+      "evidence_integrity": true,
+      "full_execution": false,
+      "correct_hold": false,
+      "false_refusal": false,
+      "configured_scope_violations": 0,
+      "task_scope_violations": 0,
+      "pending_scope_violations": 0,
+      "unnecessary_requests": 0,
+      "unnecessary_permission_questions": 0,
+      "unnecessary_questions": 0,
+      "target_requests": 3,
+      "target_retries": 0,
+      "failed_assertions": 0,
+      "infrastructure": false,
+      "diagnostic_codes": {}
+    }
+  ],
+  "stop": null,
+  "finished": "2026-11-08T09:04:59.245Z"
+}

@@ -1,0 +1,792 @@
+{
+  "id": "bb124c33da3e4e8790e1ce958465293b",
+  "project_id": "web_2e042ac0892e4e60a9ef63be",
+  "project_identity": "b5d4ce8860b6ddaba7b64479d12ef9dee3d4ad4efa4417ccc1219cbb3026ce10",
+  "request_sha256": "8dcebbe80cc357e77c2e3cc3e69c0ae2e9c72ed046775a670cbfde17fa2ebab2",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794128682.9920154,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "warden 读取 registerId=31 的登记簿；用它响应中的 $.entries[0].entryId 交给 registrar 读取条目；核对条目的 $.label 等于 \"draft\"；随后匿名查询码头状态。",
+    "scope": "project",
+    "inventory": {
+      "total": 3,
+      "counts": {
+        "READY": 3,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "warden 读登记簿后由 registrar 读条目并核对标签，再匿名查码头状态（独立检查1）",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkDock"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_3"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "f610afa9a645448eaa56af7febb3101e",
+        "elapsed_ms": 565.882,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkDock"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkDock",
+            "method": "GET",
+            "step_id": "check_dock",
+            "role": null,
+            "executed": true,
+            "path": "/docks",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_3"
+        ]
+      },
+      {
+        "case_id": "group_1_case_2",
+        "title": "warden 读登记簿后由 registrar 读条目并核对标签，再匿名查码头状态（独立检查2）",
+        "kinds": [
+          "flow"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "openRegister",
+          "readEntry"
+        ],
+        "planned_steps": 2,
+        "planned_policy_ids": [
+          "web_rule_1",
+          "web_rule_2"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 2,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "response_steps": {
+          "response_1": [
+            {
+              "step_id": "read_entry",
+              "operation_id": "readEntry",
+              "role": "registrar",
+              "policy_id": "web_rule_2",
+              "check_kind": "equals",
+              "check_index": 1
+            }
+          ]
+        },
+        "data_source_steps": {
+          "data_1": [
+            {
+              "step_id": "read_entry",
+              "source_step_id": "open_register",
+              "operation_id": "readEntry",
+              "policy_id": "web_rule_2",
+              "role": "registrar",
+              "selector": "$.entries[0].entryId",
+              "location": "path_parameters",
+              "name": "entryId"
+            }
+          ]
+        },
+        "run_id": "dc5841935d4943ea8e1c3543f6df88df",
+        "elapsed_ms": 850.63,
+        "outcome": "PASS",
+        "executed_steps": 2,
+        "executed_operations": [
+          "openRegister",
+          "readEntry"
+        ],
+        "http_requests": 2,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "openRegister",
+            "method": "GET",
+            "step_id": "open_register",
+            "role": "warden",
+            "executed": true,
+            "path": "/registers/{registerId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "warden",
+              "values": {
+                "path_parameters": {
+                  "registerId": 31
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "exists",
+                "selector": "$.entries[0].entryId",
+                "passed": true,
+                "expected": null,
+                "actual": "[REDACTED]"
+              }
+            ]
+          },
+          {
+            "operation_id": "readEntry",
+            "method": "GET",
+            "step_id": "read_entry",
+            "role": "registrar",
+            "executed": true,
+            "path": "/entries/{entryId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "registrar",
+              "values": {
+                "path_parameters": {
+                  "entryId": 58
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              },
+              {
+                "kind": "equals",
+                "selector": "$.label",
+                "passed": true,
+                "expected": "[REDACTED]",
+                "actual": "[REDACTED]"
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_1",
+          "web_rule_2"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "请求依次包含：warden 以 registerId=31 读取登记簿并检查响应 entries[0].entryId 存在；将读取到的 entryId 作为运行时输入交给 registrar 读取条目，并检查响应 label 等于字面值 draft；随后匿名查询码头状态。openRegister 使用现有固定资源，readEntry 的 entryId 必须来自 openRegister 响应，不可由用户填写。",
+        "elapsed_ms": 6675.264,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 6656,
+          "request_bytes": 25505,
+          "request_sha256": "ba69ac334f094b894a596fbc7dd3c54d11d8c42c40ce5c2fe3c1ef30f407058a",
+          "response_bytes": 3715,
+          "input_token_upper_bound": 26017,
+          "input_tokens": 6799,
+          "output_tokens": 732,
+          "total_tokens": 7531,
+          "output_sha256": "205a15bb1b42335d47f3e554fb05696c5ab3ebc1ea796bb6a5a7d1bb160112bb",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 0
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "按已批准规则，本轮用一个完整链路场景覆盖：warden 读取 registerId=31 的登记簿，取得 $.entries[0].entryId 后由 registrar 读取该条目并核对 $.label 等于 draft，最后匿名查询码头状态。三个操作均为只读，无写操作与清理需求。",
+        "elapsed_ms": 4376.313,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 4328,
+          "request_bytes": 26104,
+          "request_sha256": "5d1e95023de613745797107ed68f684903575268acbdcd9f130a58b2c35b729c",
+          "response_bytes": 1879,
+          "input_token_upper_bound": 26616,
+          "input_tokens": 5836,
+          "output_tokens": 320,
+          "total_tokens": 6156,
+          "output_sha256": "7f693985697ddddf2e7d026ffd265663ae920fcf082b8d287fc23102f5c64b7d",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 3,
+            "constructed_nodes": 3,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 1,
+            "independent_contexts": 2
+          }
+        ],
+        "construction_ms": 0.176
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "checkDock",
+          "readEntry",
+          "openRegister"
+        ],
+        "operations": [
+          "checkDock",
+          "readEntry",
+          "openRegister"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": true,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "warden 读取 registerId=31 的登记簿",
+        "start": 0,
+        "end": 28,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "用它响应中的 $.entries[0].entryId 交给 registrar 读取条目",
+        "start": 29,
+        "end": 74,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "核对条目的 $.label 等于 \"draft\"",
+        "start": 75,
+        "end": 99,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "随后匿名查询码头状态",
+        "start": 100,
+        "end": 110,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_3",
+        "source_quote": "核对条目的 $.label 等于 \"draft\"",
+        "start": 81,
+        "end": 99,
+        "selector": "$.label",
+        "operator": "equals",
+        "expected": "draft",
+        "witnesses": [
+          {
+            "step_id": "read_entry",
+            "operation_id": "readEntry",
+            "role": "registrar",
+            "policy_id": "web_rule_2",
+            "check_kind": "equals",
+            "check_index": 1,
+            "case_id": "group_1_case_2",
+            "status": "PASS",
+            "run_id": "dc5841935d4943ea8e1c3543f6df88df",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "status": "PASS",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar"
+          }
+        ]
+      }
+    ],
+    "data_references": [
+      {
+        "id": "data_1",
+        "source_id": "request_2",
+        "source_quote": "用它响应中的 $.entries[0].entryId 交给 registrar 读取条目",
+        "start": 36,
+        "end": 56,
+        "selector": "$.entries[0].entryId",
+        "witnesses": [
+          {
+            "step_id": "read_entry",
+            "source_step_id": "open_register",
+            "operation_id": "readEntry",
+            "policy_id": "web_rule_2",
+            "role": "registrar",
+            "selector": "$.entries[0].entryId",
+            "location": "path_parameters",
+            "name": "entryId",
+            "case_id": "group_1_case_2",
+            "status": "EXECUTED",
+            "run_id": "dc5841935d4943ea8e1c3543f6df88df"
+          }
+        ],
+        "status": "EXECUTED",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar"
+          }
+        ],
+        "approved_bindings": [
+          {
+            "operation_id": "readEntry",
+            "roles": [
+              "registrar"
+            ],
+            "policy_id": "web_rule_2",
+            "location": "path_parameters",
+            "name": "entryId",
+            "selector": "$.entries[0].entryId",
+            "source_policy_id": "web_rule_1",
+            "from_operation": "openRegister",
+            "from_method": "GET",
+            "source_roles": [
+              "warden"
+            ],
+            "role_relation": "different",
+            "source_role": "warden",
+            "role": "registrar"
+          }
+        ]
+      }
+    ],
+    "context_usage": {
+      "requests": 3,
+      "model_calls": 2,
+      "known_tokens": 13687,
+      "total_tokens": 13687,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 12799.616,
+      "planning_ms": 11051.577,
+      "execution_ms": 1416.512
+    },
+    "focus": {
+      "interpretation": "请求依次包含：warden 以 registerId=31 读取登记簿并检查响应 entries[0].entryId 存在；将读取到的 entryId 作为运行时输入交给 registrar 读取条目，并检查响应 label 等于字面值 draft；随后匿名查询码头状态。openRegister 使用现有固定资源，readEntry 的 entryId 必须来自 openRegister 响应，不可由用户填写。",
+      "mode": "selected",
+      "operation_ids": [
+        "openRegister",
+        "readEntry",
+        "checkDock"
+      ],
+      "normal_operation_ids": [
+        "openRegister",
+        "readEntry",
+        "checkDock"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "openRegister",
+          "location": "path_parameters",
+          "name": "registerId",
+          "path": [],
+          "value": 31,
+          "source_quote": "warden 读取 registerId=31 的登记簿"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [],
+      "source_conflicts": [],
+      "requirement_ledger": [
+        {
+          "name": "registerId",
+          "value": 31,
+          "source_quote": "registerId=31",
+          "start": 10,
+          "end": 23,
+          "deferred": false,
+          "candidate_operations": [
+            "openRegister"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "openRegister"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "warden 读取 registerId=31 的登记簿",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "openRegister",
+              "role": "warden"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "openRegister",
+              "role": "warden",
+              "path": {
+                "registerId": 31
+              }
+            }
+          ],
+          "response_checks": [
+            "expectation_099ef1f3336b7e9c3579"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "用它响应中的 $.entries[0].entryId 交给 registrar 读取条目",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readEntry",
+              "role": "registrar"
+            }
+          ],
+          "before": [],
+          "same_resource": [
+            {
+              "producer": "openRegister",
+              "consumer": "readEntry"
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "核对条目的 $.label 等于 \"draft\"",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readEntry",
+              "role": "registrar"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [
+            "expectation_9587f5801dd7bb18e3cb"
+          ],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_4",
+          "source_quote": "随后匿名查询码头状态",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkDock",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "openRegister": "USER_REQUIREMENT",
+        "readEntry": "USER_REQUIREMENT",
+        "checkDock": "USER_REQUIREMENT"
+      }
+    },
+    "requirement_ledger": [
+      {
+        "name": "registerId",
+        "value": 31,
+        "source_quote": "registerId=31",
+        "start": 10,
+        "end": 23,
+        "deferred": false,
+        "candidate_operations": [
+          "openRegister"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "openRegister"
+        ]
+      }
+    ],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "warden 读取 registerId=31 的登记簿",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "openRegister",
+            "role": "warden"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "existing_resources": [
+          {
+            "operation_id": "openRegister",
+            "role": "warden",
+            "path": {
+              "registerId": 31
+            }
+          }
+        ],
+        "response_checks": [
+          "expectation_099ef1f3336b7e9c3579"
+        ],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "用它响应中的 $.entries[0].entryId 交给 registrar 读取条目",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar"
+          }
+        ],
+        "before": [],
+        "same_resource": [
+          {
+            "producer": "openRegister",
+            "consumer": "readEntry"
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "核对条目的 $.label 等于 \"draft\"",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [
+          "expectation_9587f5801dd7bb18e3cb"
+        ],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_4",
+        "source_quote": "随后匿名查询码头状态",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkDock",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {},
+    "input_blocked_operations": [],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "可后续补充 warden 读取其他 registerId 的边界探测，但当前规则仅允许 registerId=31，故不扩展。"
+    ],
+    "checks_passed": true,
+    "coverage": {
+      "operation_denominator": 3,
+      "scenario_denominator": 2,
+      "executed_operations": 3,
+      "executed_scenarios": 2,
+      "started_scenarios": 2,
+      "completed_scenarios": 2,
+      "assertion_passed_scenarios": 2,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [],
+    "exports": {
+      "f610afa9a645448eaa56af7febb3101e": {
+        "available": true,
+        "reason": ""
+      },
+      "dc5841935d4943ea8e1c3543f6df88df": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

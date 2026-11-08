@@ -1,0 +1,669 @@
+{
+  "result": {
+    "obligations": [
+      {
+        "id": "0.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "0.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "0.path_parameters.registerId",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.path_parameters.entryId",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.field.$.label",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "2.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "2.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "binding.0",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "order",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      }
+    ],
+    "obligation_denominator": 11,
+    "silent_obligations": 0,
+    "evidence_integrity": true,
+    "full_execution": true,
+    "correct_hold": false,
+    "false_refusal": false,
+    "configured_scope_violations": 0,
+    "task_scope_violations": 0,
+    "pending_scope_violations": 0,
+    "unnecessary_requests": 0,
+    "unnecessary_permission_questions": 0,
+    "unnecessary_questions": 0,
+    "target_requests": 3,
+    "target_retries": 0,
+    "failed_assertions": 0,
+    "infrastructure": false,
+    "diagnostic_codes": {}
+  },
+  "report": {
+    "run_id": "37d25fcf363d427f8bb83d557d8366f5",
+    "revision": 15,
+    "started_at": "2026-11-08T09:00:52.852255+00:00",
+    "scenario_sha256": "16d60943c5a45094bdd2ace487e5d314df6bfadc99c9d9152a1c11d40b6a2fc4",
+    "contract_sha256": "41e63a51c48b238b8fab29d3209fa06eda0c815daafa3ec1d25547a870b46fc5",
+    "outcome": "PASS",
+    "steps": [
+      {
+        "step_id": "register",
+        "step_run_id": "9cf9e0258ef94d7aa6214eba89316502",
+        "operation_id": "openRegister",
+        "method": "GET",
+        "path_template": "/registers/{registerId}",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "803308f0df769d71f084278a0f2da4e28e026fec8c27e54068013e0b0433fcc6",
+        "policy_template_sha256": "803308f0df769d71f084278a0f2da4e28e026fec8c27e54068013e0b0433fcc6",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          },
+          {
+            "kind": "exists",
+            "selector": "$.entries[0].entryId",
+            "passed": true,
+            "expected": null,
+            "actual": "[REDACTED]"
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "bebe1356058c4febaa47dfea37bbfb16",
+            "status_code": 200,
+            "elapsed_ms": 69.957,
+            "response_bytes": 66,
+            "response_sha256": "c60b85779ed820933b57392623e964581de88a28017f04f7fe4fa29e783ff2f8",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": "warden",
+          "values": {
+            "path_parameters": {
+              "registerId": 31
+            },
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      },
+      {
+        "step_id": "entry",
+        "step_run_id": "edfecc5e3a5740a895d4974e7a2e36aa",
+        "operation_id": "readEntry",
+        "method": "GET",
+        "path_template": "/entries/{entryId}",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "3c508873a08efa25611cabdc3bdecbe14402e3c0c5e879c90b636b081b858e63",
+        "policy_template_sha256": "3c508873a08efa25611cabdc3bdecbe14402e3c0c5e879c90b636b081b858e63",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          },
+          {
+            "kind": "equals",
+            "selector": "$.label",
+            "passed": true,
+            "expected": "[REDACTED]",
+            "actual": "[REDACTED]"
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "4e12d33a352e4352b8742f299d8ed9d7",
+            "status_code": 200,
+            "elapsed_ms": 13.327,
+            "response_bytes": 44,
+            "response_sha256": "dc3a70b9d644c78bce33ae350650ce3e9fa7ee16dd8b879a90e5c0aee09ef71d",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": "registrar",
+          "values": {
+            "path_parameters": {
+              "entryId": 58
+            },
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      },
+      {
+        "step_id": "dock",
+        "step_run_id": "de2804c21e04499292053997e6aeb322",
+        "operation_id": "checkDock",
+        "method": "GET",
+        "path_template": "/docks",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "bd00c89917598ed61a375642c5940e314020ea1c4d11e05fdf449858220d020f",
+        "policy_template_sha256": "bd00c89917598ed61a375642c5940e314020ea1c4d11e05fdf449858220d020f",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "277e8aa560fb48bab0418151e723c2e9",
+            "status_code": 200,
+            "elapsed_ms": 12.696,
+            "response_bytes": 19,
+            "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      }
+    ],
+    "completed": true,
+    "reason": "",
+    "environment": "isolated",
+    "target_origin": "http://127.0.0.1:19094",
+    "target_config_sha256": "133a0dd3c6046c5fc18d11bca0752c055bf9f4841ac6ba9ca91daa9ddc7ec779",
+    "policy_registry_sha256": "2c4b76c087a63392c2b900b809a2c6d85ec5784f47eae2829ce50eb741052dad",
+    "workflow_nodes": [],
+    "planner_calls": 0,
+    "tool_calls": 0,
+    "analysis_code": null,
+    "workflow_completed": null,
+    "user_task_sha256": null,
+    "plan_valid": false,
+    "dsl_valid": true,
+    "policy_authorized": true,
+    "selected_policy_ids": [],
+    "model_call": null,
+    "plan_structure": [
+      {
+        "step_id": "register",
+        "operation_id": "openRegister",
+        "role": "warden",
+        "policy_id": "web_rule_1",
+        "argument_sha256": {},
+        "dependencies": {}
+      },
+      {
+        "step_id": "entry",
+        "operation_id": "readEntry",
+        "role": "registrar",
+        "policy_id": "web_rule_2",
+        "argument_sha256": {},
+        "dependencies": {
+          "path_parameters.entryId": "register"
+        }
+      },
+      {
+        "step_id": "dock",
+        "operation_id": "checkDock",
+        "role": null,
+        "policy_id": "web_rule_3",
+        "argument_sha256": {},
+        "dependencies": {}
+      }
+    ],
+    "validation_issue": null,
+    "diagnostic": null,
+    "intent_verified": false,
+    "task_mode": "model_designed",
+    "task_satisfied": null,
+    "investigations": [],
+    "investigation_error": null,
+    "cleanup": "未记录数据清理结论，请结合本轮资源记录核查。"
+  },
+  "observations": [
+    {
+      "kind": "execution_plan",
+      "run_id": "37d25fcf363d427f8bb83d557d8366f5",
+      "plan": {
+        "name": "technical_fixture_preflight_chain",
+        "steps": [
+          {
+            "id": "register",
+            "operation_id": "openRegister",
+            "role": "warden",
+            "path_parameters": {
+              "registerId": {
+                "value": 31,
+                "from_step": null,
+                "select": "$"
+              }
+            },
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_1",
+            "poll": false,
+            "read_retries": 0
+          },
+          {
+            "id": "entry",
+            "operation_id": "readEntry",
+            "role": "registrar",
+            "path_parameters": {
+              "entryId": {
+                "from_step": "register",
+                "select": "$.entries[0].entryId"
+              }
+            },
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_2",
+            "poll": false,
+            "read_retries": 0
+          },
+          {
+            "id": "dock",
+            "operation_id": "checkDock",
+            "role": null,
+            "path_parameters": {},
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_3",
+            "poll": false,
+            "read_retries": 0
+          }
+        ]
+      }
+    }
+  ],
+  "audit": [
+    {
+      "sequence": 23,
+      "position": "_deterministic_candidate_chain_37d25fcf363d427f8bb83d557d8366f5",
+      "config": "chain",
+      "operation_id": "openRegister",
+      "method": "GET",
+      "path": "/registers/31",
+      "role": "warden",
+      "values": {
+        "path_parameters": {
+          "registerId": 31
+        }
+      },
+      "status": 200,
+      "response": {
+        "id": 31,
+        "entries": [
+          {
+            "entryId": 58,
+            "seal": "T-77"
+          }
+        ],
+        "status": "open"
+      },
+      "response_sha256": "c60b85779ed820933b57392623e964581de88a28017f04f7fe4fa29e783ff2f8",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    },
+    {
+      "sequence": 24,
+      "position": "_deterministic_candidate_chain_37d25fcf363d427f8bb83d557d8366f5",
+      "config": "chain",
+      "operation_id": "readEntry",
+      "method": "GET",
+      "path": "/entries/58",
+      "role": "registrar",
+      "values": {
+        "path_parameters": {
+          "entryId": 58
+        }
+      },
+      "status": 200,
+      "response": {
+        "entryId": 58,
+        "label": "draft",
+        "seal": "T-77"
+      },
+      "response_sha256": "dc3a70b9d644c78bce33ae350650ce3e9fa7ee16dd8b879a90e5c0aee09ef71d",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    },
+    {
+      "sequence": 25,
+      "position": "_deterministic_candidate_chain_37d25fcf363d427f8bb83d557d8366f5",
+      "config": "chain",
+      "operation_id": "checkDock",
+      "method": "GET",
+      "path": "/docks",
+      "role": null,
+      "values": {},
+      "status": 200,
+      "response": {
+        "dock": "d2-clear"
+      },
+      "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    }
+  ],
+  "authority": {
+    "operations": {
+      "checkDock": {
+        "method": "GET",
+        "path": "/docks"
+      },
+      "readEntry": {
+        "method": "GET",
+        "path": "/entries/{entryId}"
+      },
+      "openRegister": {
+        "method": "GET",
+        "path": "/registers/{registerId}"
+      }
+    },
+    "policies": [
+      {
+        "id": "web_rule_1",
+        "operation_id": "openRegister",
+        "roles": [
+          "warden"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "registerId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                31
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_2",
+        "operation_id": "readEntry",
+        "roles": [
+          "registrar"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "entryId",
+            "literal_schema": null,
+            "source_policy_id": "web_rule_1",
+            "source_selector": "$.entries[0].entryId",
+            "role_relation": "different",
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_3",
+        "operation_id": "checkDock",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:a2672f541c3d069c48b831d55058e68c55449910ee44b9006c37a5722ac6c2b6:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      }
+    ],
+    "budget": {
+      "max_model_calls": 4,
+      "max_readonly_investigations": 2,
+      "max_input_tokens": 60000,
+      "max_output_tokens": 8192,
+      "max_total_tokens": 70000,
+      "suite_max_model_calls": 4,
+      "suite_max_total_tokens": 500000
+    },
+    "ready": {
+      "total": 3,
+      "counts": {
+        "READY": 3,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        }
+      ],
+      "pending_checks": []
+    }
+  },
+  "item": {
+    "rubric": {
+      "steps": [
+        {
+          "operation": "openRegister",
+          "role": "warden",
+          "status": 200,
+          "values": {
+            "path_parameters": {
+              "registerId": 31
+            }
+          },
+          "fields": []
+        },
+        {
+          "operation": "readEntry",
+          "role": "registrar",
+          "status": 200,
+          "values": {
+            "path_parameters": {
+              "entryId": 58
+            }
+          },
+          "fields": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ]
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "status": 200,
+          "values": {},
+          "fields": []
+        }
+      ],
+      "gaps": [],
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "bindings": [
+        {
+          "producer": "openRegister",
+          "consumer": "readEntry",
+          "source_role": "warden",
+          "role": "registrar",
+          "location": "path_parameters",
+          "name": "entryId",
+          "selector": "$.entries[0].entryId"
+        }
+      ]
+    }
+  },
+  "model_calls": 0
+}

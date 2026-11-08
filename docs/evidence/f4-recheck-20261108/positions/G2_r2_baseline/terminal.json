@@ -1,0 +1,577 @@
+{
+  "id": "863b4cbc116d4384a1f292eed1eedc4f",
+  "project_id": "web_186ddc8b64754a90897fb1fb",
+  "project_identity": "b7447e5f47842d99898f28aaa24d4245eaa7db37e8d1ff07b94a50726f5f4073",
+  "request_sha256": "b099b8ca361d63ecb0798477322f94eb5aef954501223a8043c6fcf5ef5c99c8",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794128646.658889,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "registrar 读取 entryId=58 的条目；核对条目的 $.seal 等于 \"T-77\"；同时由 clerk 读取 voucherId=41 的凭证。",
+    "scope": "project",
+    "inventory": {
+      "total": 2,
+      "counts": {
+        "READY": 2,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readVoucher",
+          "method": "GET",
+          "path": "/vouchers/{voucherId}",
+          "summary": "凭证",
+          "group": "vouchers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "clerk 读取指定凭证",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "readVoucher"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_2"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "8553dde43d074779b8aaad270f3b2ede",
+        "elapsed_ms": 593.945,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "readVoucher"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "readVoucher",
+            "method": "GET",
+            "step_id": "read_voucher",
+            "role": "clerk",
+            "executed": true,
+            "path": "/vouchers/{voucherId}",
+            "outcome": "PASS",
+            "request": {
+              "role": "clerk",
+              "values": {
+                "path_parameters": {
+                  "voucherId": 41
+                },
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_2"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "registrar 以 entryId=58 读取条目；clerk 以 voucherId=41 读取凭证；用户要求核对条目 $.seal 是否为 T-77，但已批准响应检查为 $.label=draft，$.seal 规则未知，需项目确认；两项读取均为普通有效读取。",
+        "elapsed_ms": 8562.508,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 8516,
+          "request_bytes": 24804,
+          "request_sha256": "733cb01fdc47fabcfbf57b729077a0bb2f25346895399beeeda5200292af06d2",
+          "response_bytes": 2468,
+          "input_token_upper_bound": 25316,
+          "input_tokens": 6747,
+          "output_tokens": 486,
+          "total_tokens": 7233,
+          "output_sha256": "0a537b07f82faeed7db33fade8e32f53fbb70a23d594eab436b0912d80a33b5c",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 1
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "本组仅包含已批准的 clerk 读取 voucherId=41 凭证的只读操作，registrar 读取 entryId=58 与核对 $.seal 的需求不属于本组已批准操作，等待调度器已有的澄清问题解决。",
+        "elapsed_ms": 5052.062,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 5016,
+          "request_bytes": 23392,
+          "request_sha256": "0c6898f405406400d8c56eb57b1421b3ee33353c01db199d2ed38bd56176dfb4",
+          "response_bytes": 1612,
+          "input_token_upper_bound": 23904,
+          "input_tokens": 5064,
+          "output_tokens": 265,
+          "total_tokens": 5329,
+          "output_sha256": "44b4fa2abb23e7e40e82d3095962e67cc008280265151a7ea5048cd7168cbbbc",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 1,
+            "constructed_nodes": 1,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 0,
+            "independent_contexts": 1
+          }
+        ],
+        "construction_ms": 0.12
+      }
+    ],
+    "questions": [
+      {
+        "id": "question_e5204da4cf06b8704992",
+        "operation_id": "readEntry",
+        "question": "条目响应的 $.seal 是否应等于用户指定的值？当前审核通过的响应检查仅覆盖 $.label，未批准 $.seal 的预期值。",
+        "requested_behavior": "确认 readEntry 响应的 $.seal 必须等于所请求值。",
+        "kind": "clarification",
+        "role": null,
+        "status_choices": []
+      }
+    ],
+    "not_covered": [
+      "本组仅有已批准的 clerk 读取 voucherId=41 凭证操作，已覆盖；registrar 读取 entryId=58 与 $.seal 校验不属于本组已批准接口，暂无法执行。"
+    ],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "readVoucher"
+        ],
+        "operations": [
+          "readVoucher"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "registrar 读取 entryId=58 的条目",
+        "start": 0,
+        "end": 27,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "核对条目的 $.seal 等于 \"T-77\"",
+        "start": 28,
+        "end": 50,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "同时由 clerk 读取 voucherId=41 的凭证",
+        "start": 51,
+        "end": 80,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "核对条目的 $.seal 等于 \"T-77\"",
+        "start": 34,
+        "end": 50,
+        "selector": "$.seal",
+        "operator": "equals",
+        "expected": "T-77",
+        "witnesses": [],
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_NOT_APPROVED",
+        "actions": [],
+        "blocked_operations": [
+          "readEntry"
+        ]
+      }
+    ],
+    "context_usage": {
+      "requests": 1,
+      "model_calls": 2,
+      "known_tokens": 12562,
+      "total_tokens": 12562,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 14451.79,
+      "planning_ms": 13614.57,
+      "execution_ms": 593.945
+    },
+    "focus": {
+      "interpretation": "registrar 以 entryId=58 读取条目；clerk 以 voucherId=41 读取凭证；用户要求核对条目 $.seal 是否为 T-77，但已批准响应检查为 $.label=draft，$.seal 规则未知，需项目确认；两项读取均为普通有效读取。",
+      "mode": "selected",
+      "operation_ids": [
+        "readEntry",
+        "readVoucher"
+      ],
+      "normal_operation_ids": [
+        "readEntry",
+        "readVoucher"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "readEntry",
+          "location": "path_parameters",
+          "name": "entryId",
+          "path": [],
+          "value": 58,
+          "source_quote": "registrar 读取 entryId=58 的条目"
+        },
+        {
+          "operation_id": "readVoucher",
+          "location": "path_parameters",
+          "name": "voucherId",
+          "path": [],
+          "value": 41,
+          "source_quote": "同时由 clerk 读取 voucherId=41 的凭证"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [
+        {
+          "operation_id": "readEntry",
+          "question": "条目响应的 $.seal 是否应等于用户指定的值？当前审核通过的响应检查仅覆盖 $.label，未批准 $.seal 的预期值。",
+          "requested_behavior": "确认 readEntry 响应的 $.seal 必须等于所请求值。",
+          "source_quote": "核对条目的 $.seal 等于 \"T-77\"",
+          "kind": "business_rule",
+          "role": null,
+          "status_choices": []
+        }
+      ],
+      "source_conflicts": [],
+      "requirement_ledger": [
+        {
+          "name": "entryId",
+          "value": 58,
+          "source_quote": "entryId=58",
+          "start": 13,
+          "end": 23,
+          "deferred": false,
+          "candidate_operations": [
+            "readEntry"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "readEntry"
+          ]
+        },
+        {
+          "name": "voucherId",
+          "value": 41,
+          "source_quote": "voucherId=41",
+          "start": 64,
+          "end": 76,
+          "deferred": false,
+          "candidate_operations": [
+            "readVoucher"
+          ],
+          "status": "ACCOUNTED",
+          "matched_operations": [
+            "readVoucher"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "registrar 读取 entryId=58 的条目",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readEntry",
+              "role": "registrar"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "readEntry",
+              "role": "registrar",
+              "path": {
+                "entryId": 58
+              }
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "核对条目的 $.seal 等于 \"T-77\"",
+          "disposition": "needs_review",
+          "actions": [],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "同时由 clerk 读取 voucherId=41 的凭证",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readVoucher",
+              "role": "clerk"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "existing_resources": [
+            {
+              "operation_id": "readVoucher",
+              "role": "clerk",
+              "path": {
+                "voucherId": 41
+              }
+            }
+          ],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "readEntry": "USER_REQUIREMENT",
+        "readVoucher": "USER_REQUIREMENT"
+      }
+    },
+    "requirement_ledger": [
+      {
+        "name": "entryId",
+        "value": 58,
+        "source_quote": "entryId=58",
+        "start": 13,
+        "end": 23,
+        "deferred": false,
+        "candidate_operations": [
+          "readEntry"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "readEntry"
+        ]
+      },
+      {
+        "name": "voucherId",
+        "value": 41,
+        "source_quote": "voucherId=41",
+        "start": 64,
+        "end": 76,
+        "deferred": false,
+        "candidate_operations": [
+          "readVoucher"
+        ],
+        "status": "ACCOUNTED",
+        "matched_operations": [
+          "readVoucher"
+        ]
+      }
+    ],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "registrar 读取 entryId=58 的条目",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "existing_resources": [
+          {
+            "operation_id": "readEntry",
+            "role": "registrar",
+            "path": {
+              "entryId": 58
+            }
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "核对条目的 $.seal 等于 \"T-77\"",
+        "disposition": "needs_review",
+        "actions": [],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "同时由 clerk 读取 voucherId=41 的凭证",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readVoucher",
+            "role": "clerk"
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "existing_resources": [
+          {
+            "operation_id": "readVoucher",
+            "role": "clerk",
+            "path": {
+              "voucherId": 41
+            }
+          }
+        ],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {},
+    "input_blocked_operations": [
+      "readEntry"
+    ],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "$.seal 预期值确认后，可在包含 readEntry 的组中补充响应字段校验。"
+    ],
+    "checks_passed": false,
+    "coverage": {
+      "operation_denominator": 2,
+      "scenario_denominator": 1,
+      "executed_operations": 1,
+      "executed_scenarios": 1,
+      "started_scenarios": 1,
+      "completed_scenarios": 1,
+      "assertion_passed_scenarios": 1,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "readEntry",
+        "method": "GET",
+        "path": "/entries/{entryId}",
+        "summary": "条目",
+        "group": "entries",
+        "state": "READY",
+        "reason": "原文指定的响应检查缺少已确认的规则；该读取暂停。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      }
+    ],
+    "exports": {
+      "8553dde43d074779b8aaad270f3b2ede": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

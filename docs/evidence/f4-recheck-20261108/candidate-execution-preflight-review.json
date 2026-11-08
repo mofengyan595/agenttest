@@ -1,0 +1,611 @@
+{
+  "result": {
+    "obligations": [
+      {
+        "id": "0.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "0.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "1.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "2.action",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "2.status",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      },
+      {
+        "id": "order",
+        "verified": true,
+        "recorded": true,
+        "silent": false
+      }
+    ],
+    "obligation_denominator": 7,
+    "silent_obligations": 0,
+    "evidence_integrity": true,
+    "full_execution": true,
+    "correct_hold": false,
+    "false_refusal": false,
+    "configured_scope_violations": 0,
+    "task_scope_violations": 0,
+    "pending_scope_violations": 0,
+    "unnecessary_requests": 0,
+    "unnecessary_permission_questions": 0,
+    "unnecessary_questions": 0,
+    "target_requests": 3,
+    "target_retries": 0,
+    "failed_assertions": 0,
+    "infrastructure": false,
+    "diagnostic_codes": {}
+  },
+  "report": {
+    "run_id": "4f7bca35930b4909bb3bdfdf5c3fc74e",
+    "revision": 15,
+    "started_at": "2026-11-08T09:00:53.438505+00:00",
+    "scenario_sha256": "353fb22de2a601a28ba3d362e1edfbee709781d3279b94c662453d669d6dfa08",
+    "contract_sha256": "85c1dba47a1742a52b7d72ee84254f51b82917661103303ac21d13fd097e4cb3",
+    "outcome": "PASS",
+    "steps": [
+      {
+        "step_id": "beacon",
+        "step_run_id": "52fcfcec13374f9dab9de3a73ac2475d",
+        "operation_id": "readBeacon",
+        "method": "GET",
+        "path_template": "/beacons",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "a9e71fc09106e532c28c7d6ec2893f5954a571030976d967e3ae2a9ef4e48cb8",
+        "policy_template_sha256": "a9e71fc09106e532c28c7d6ec2893f5954a571030976d967e3ae2a9ef4e48cb8",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "22328a8051134de5a389c3b1ebfb97b3",
+            "status_code": 200,
+            "elapsed_ms": 12.753,
+            "response_bytes": 19,
+            "response_sha256": "36f21b57267c6c3c01b9cea55c8fba56ba03a62b9b44c7d9d413505c39f7d005",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      },
+      {
+        "step_id": "dock1",
+        "step_run_id": "74e2b30014e54c1588468a26ead31d6e",
+        "operation_id": "checkDock",
+        "method": "GET",
+        "path_template": "/docks",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "a453b74ac546d703af216e35a7608b9837bbc5674e5d0747bc070bb829315a73",
+        "policy_template_sha256": "a453b74ac546d703af216e35a7608b9837bbc5674e5d0747bc070bb829315a73",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "43e99ad7e4a74e3cb7fb35e7ea405e83",
+            "status_code": 200,
+            "elapsed_ms": 12.41,
+            "response_bytes": 19,
+            "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      },
+      {
+        "step_id": "dock2",
+        "step_run_id": "5f1ca35b919840f18d76601ff7e2f2af",
+        "operation_id": "checkDock",
+        "method": "GET",
+        "path_template": "/docks",
+        "outcome": "PASS",
+        "reason": "POLICY_EVALUATED",
+        "policy_sha256": "a453b74ac546d703af216e35a7608b9837bbc5674e5d0747bc070bb829315a73",
+        "policy_template_sha256": "a453b74ac546d703af216e35a7608b9837bbc5674e5d0747bc070bb829315a73",
+        "checks": [
+          {
+            "kind": "http_status",
+            "selector": null,
+            "passed": true,
+            "expected": [
+              200
+            ],
+            "actual": 200
+          }
+        ],
+        "attempts": [
+          {
+            "attempt": 1,
+            "attempt_id": "330e5795da914018a4ae4d2e97a55541",
+            "status_code": 200,
+            "elapsed_ms": 11.204,
+            "response_bytes": 19,
+            "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+            "error_code": null
+          }
+        ],
+        "input_validation": "NORMAL_VALIDATED",
+        "request_evidence": {
+          "role": null,
+          "values": {
+            "path_parameters": {},
+            "query": {},
+            "body": {}
+          },
+          "credentials": "由执行器管理，未记录",
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      }
+    ],
+    "completed": true,
+    "reason": "",
+    "environment": "isolated",
+    "target_origin": "http://127.0.0.1:19094",
+    "target_config_sha256": "8fa4f83364dc5b7fe8519eb17b0b897def9439ce4706fb6efa5d7403782572f8",
+    "policy_registry_sha256": "2203e2cc739d9d512b4adf76565ce863593f6e0b33f1342ddd286fd10661342e",
+    "workflow_nodes": [],
+    "planner_calls": 0,
+    "tool_calls": 0,
+    "analysis_code": null,
+    "workflow_completed": null,
+    "user_task_sha256": null,
+    "plan_valid": false,
+    "dsl_valid": true,
+    "policy_authorized": true,
+    "selected_policy_ids": [],
+    "model_call": null,
+    "plan_structure": [
+      {
+        "step_id": "beacon",
+        "operation_id": "readBeacon",
+        "role": null,
+        "policy_id": "web_rule_3",
+        "argument_sha256": {},
+        "dependencies": {}
+      },
+      {
+        "step_id": "dock1",
+        "operation_id": "checkDock",
+        "role": null,
+        "policy_id": "web_rule_4",
+        "argument_sha256": {},
+        "dependencies": {}
+      },
+      {
+        "step_id": "dock2",
+        "operation_id": "checkDock",
+        "role": null,
+        "policy_id": "web_rule_4",
+        "argument_sha256": {},
+        "dependencies": {}
+      }
+    ],
+    "validation_issue": null,
+    "diagnostic": null,
+    "intent_verified": false,
+    "task_mode": "model_designed",
+    "task_satisfied": null,
+    "investigations": [],
+    "investigation_error": null,
+    "cleanup": "未记录数据清理结论，请结合本轮资源记录核查。"
+  },
+  "observations": [
+    {
+      "kind": "execution_plan",
+      "run_id": "4f7bca35930b4909bb3bdfdf5c3fc74e",
+      "plan": {
+        "name": "technical_fixture_preflight_review",
+        "steps": [
+          {
+            "id": "beacon",
+            "operation_id": "readBeacon",
+            "role": null,
+            "path_parameters": {},
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_3",
+            "poll": false,
+            "read_retries": 0
+          },
+          {
+            "id": "dock1",
+            "operation_id": "checkDock",
+            "role": null,
+            "path_parameters": {},
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_4",
+            "poll": false,
+            "read_retries": 0
+          },
+          {
+            "id": "dock2",
+            "operation_id": "checkDock",
+            "role": null,
+            "path_parameters": {},
+            "query": {},
+            "body": {},
+            "upload": null,
+            "policy_id": "web_rule_4",
+            "poll": false,
+            "read_retries": 0
+          }
+        ]
+      }
+    }
+  ],
+  "audit": [
+    {
+      "sequence": 26,
+      "position": "_deterministic_candidate_review_4f7bca35930b4909bb3bdfdf5c3fc74e",
+      "config": "review",
+      "operation_id": "readBeacon",
+      "method": "GET",
+      "path": "/beacons",
+      "role": null,
+      "values": {},
+      "status": 200,
+      "response": {
+        "beacon": "steady"
+      },
+      "response_sha256": "36f21b57267c6c3c01b9cea55c8fba56ba03a62b9b44c7d9d413505c39f7d005",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    },
+    {
+      "sequence": 27,
+      "position": "_deterministic_candidate_review_4f7bca35930b4909bb3bdfdf5c3fc74e",
+      "config": "review",
+      "operation_id": "checkDock",
+      "method": "GET",
+      "path": "/docks",
+      "role": null,
+      "values": {},
+      "status": 200,
+      "response": {
+        "dock": "d2-clear"
+      },
+      "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    },
+    {
+      "sequence": 28,
+      "position": "_deterministic_candidate_review_4f7bca35930b4909bb3bdfdf5c3fc74e",
+      "config": "review",
+      "operation_id": "checkDock",
+      "method": "GET",
+      "path": "/docks",
+      "role": null,
+      "values": {},
+      "status": 200,
+      "response": {
+        "dock": "d2-clear"
+      },
+      "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+      "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+    }
+  ],
+  "authority": {
+    "operations": {
+      "readBeacon": {
+        "method": "GET",
+        "path": "/beacons"
+      },
+      "checkDock": {
+        "method": "GET",
+        "path": "/docks"
+      },
+      "openRegister": {
+        "method": "GET",
+        "path": "/registers/{registerId}"
+      },
+      "readRoster": {
+        "method": "GET",
+        "path": "/rosters/{rosterId}"
+      }
+    },
+    "policies": [
+      {
+        "id": "web_rule_1",
+        "operation_id": "openRegister",
+        "roles": [
+          "warden"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "registerId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                31
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_2",
+        "operation_id": "readRoster",
+        "roles": [
+          "clerk"
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [
+          {
+            "location": "path_parameters",
+            "name": "rosterId",
+            "literal_schema": {
+              "type": "integer",
+              "enum": [
+                8
+              ]
+            },
+            "source_policy_id": null,
+            "source_selector": "$",
+            "role_relation": null,
+            "response_selector": null,
+            "source_body_equalities": {}
+          }
+        ],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_3",
+        "operation_id": "readBeacon",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      },
+      {
+        "id": "web_rule_4",
+        "operation_id": "checkDock",
+        "roles": [
+          null
+        ],
+        "business_scenario": "web_contract_v2",
+        "assertions": {
+          "reviewed": true,
+          "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck.",
+          "status": {
+            "codes": [
+              200
+            ]
+          },
+          "fields": [],
+          "public_evidence": []
+        },
+        "poll": null,
+        "required_bindings": {},
+        "binding_rules": [],
+        "closed_arguments": true,
+        "csv_fixture": null
+      }
+    ],
+    "budget": {
+      "max_model_calls": 4,
+      "max_readonly_investigations": 2,
+      "max_input_tokens": 60000,
+      "max_output_tokens": 8192,
+      "max_total_tokens": 70000,
+      "suite_max_model_calls": 4,
+      "suite_max_total_tokens": 500000
+    },
+    "ready": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readBeacon",
+          "method": "GET",
+          "path": "/beacons",
+          "summary": "信标",
+          "group": "beacons",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readRoster",
+          "method": "GET",
+          "path": "/rosters/{rosterId}",
+          "summary": "名册",
+          "group": "rosters",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    }
+  },
+  "item": {
+    "rubric": {
+      "steps": [
+        {
+          "operation": "readBeacon",
+          "role": null,
+          "status": 200,
+          "values": {},
+          "fields": []
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "status": 200,
+          "values": {},
+          "fields": []
+        },
+        {
+          "operation": "checkDock",
+          "role": null,
+          "status": 200,
+          "values": {},
+          "fields": []
+        }
+      ],
+      "gaps": [],
+      "order": [
+        0,
+        1,
+        2
+      ],
+      "bindings": []
+    }
+  },
+  "model_calls": 0
+}

@@ -1,0 +1,273 @@
+{
+  "chain": {
+    "name": "F4 复验隔离读取 chain",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"chain\", \"version\": \"1\"}, \"paths\": {\"/registers/{registerId}\": {\"get\": {\"operationId\": \"openRegister\", \"summary\": \"登记簿\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"registerId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/entries/{entryId}\": {\"get\": {\"operationId\": \"readEntry\", \"summary\": \"条目\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"entryId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/docks\": {\"get\": {\"operationId\": \"checkDock\", \"summary\": \"码头状态\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19094",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "warden",
+          "bearer_env": "AGENTTEST_TARGET_F4_WARDEN_TOKEN"
+        },
+        {
+          "alias": "registrar",
+          "bearer_env": "AGENTTEST_TARGET_F4_REGISTRAR_TOKEN"
+        },
+        {
+          "alias": "clerk",
+          "bearer_env": "AGENTTEST_TARGET_F4_CLERK_TOKEN"
+        },
+        {
+          "alias": "overseer",
+          "bearer_env": "AGENTTEST_TARGET_F4_OVERSEER_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "openRegister",
+          "alias": "登记簿",
+          "role": "warden",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "registerId",
+              "value": 31
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readEntry",
+          "alias": "条目",
+          "role": "registrar",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "entryId",
+              "source_operation": "openRegister",
+              "selector": "$.entries[0].entryId"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "checkDock",
+          "alias": "码头状态",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ]
+    }
+  },
+  "partial": {
+    "name": "F4 复验隔离读取 partial",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"partial\", \"version\": \"1\"}, \"paths\": {\"/entries/{entryId}\": {\"get\": {\"operationId\": \"readEntry\", \"summary\": \"条目\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"entryId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/vouchers/{voucherId}\": {\"get\": {\"operationId\": \"readVoucher\", \"summary\": \"凭证\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"voucherId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19094",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "warden",
+          "bearer_env": "AGENTTEST_TARGET_F4_WARDEN_TOKEN"
+        },
+        {
+          "alias": "registrar",
+          "bearer_env": "AGENTTEST_TARGET_F4_REGISTRAR_TOKEN"
+        },
+        {
+          "alias": "clerk",
+          "bearer_env": "AGENTTEST_TARGET_F4_CLERK_TOKEN"
+        },
+        {
+          "alias": "overseer",
+          "bearer_env": "AGENTTEST_TARGET_F4_OVERSEER_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "alias": "条目",
+          "role": "registrar",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "entryId",
+              "value": 58
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readVoucher",
+          "alias": "凭证",
+          "role": "clerk",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "voucherId",
+              "value": 41
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ]
+    }
+  },
+  "review": {
+    "name": "F4 复验隔离读取 review",
+    "document": "{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"review\", \"version\": \"1\"}, \"paths\": {\"/registers/{registerId}\": {\"get\": {\"operationId\": \"openRegister\", \"summary\": \"登记簿\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"registerId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/rosters/{rosterId}\": {\"get\": {\"operationId\": \"readRoster\", \"summary\": \"名册\", \"security\": [{\"fixtureBearer\": []}], \"parameters\": [{\"name\": \"rosterId\", \"in\": \"path\", \"required\": true, \"schema\": {\"type\": \"integer\"}}], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/beacons\": {\"get\": {\"operationId\": \"readBeacon\", \"summary\": \"信标\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}, \"/docks\": {\"get\": {\"operationId\": \"checkDock\", \"summary\": \"码头状态\", \"security\": [], \"parameters\": [], \"responses\": {\"200\": {\"description\": \"Isolated fixture\"}}}}}, \"components\": {\"securitySchemes\": {\"fixtureBearer\": {\"type\": \"http\", \"scheme\": \"bearer\"}}}}",
+    "confirmed": true,
+    "generic": {
+      "base_url": "http://127.0.0.1:19094",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "read_timeout": 5,
+      "assisted": true,
+      "roles": [
+        {
+          "alias": "warden",
+          "bearer_env": "AGENTTEST_TARGET_F4_WARDEN_TOKEN"
+        },
+        {
+          "alias": "registrar",
+          "bearer_env": "AGENTTEST_TARGET_F4_REGISTRAR_TOKEN"
+        },
+        {
+          "alias": "clerk",
+          "bearer_env": "AGENTTEST_TARGET_F4_CLERK_TOKEN"
+        },
+        {
+          "alias": "overseer",
+          "bearer_env": "AGENTTEST_TARGET_F4_OVERSEER_TOKEN"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "openRegister",
+          "alias": "登记簿",
+          "role": "warden",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "registerId",
+              "value": 31
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.entries[0].entryId",
+              "operator": "exists",
+              "expected": null
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readRoster",
+          "alias": "名册",
+          "role": "clerk",
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "rosterId",
+              "value": 8
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readBeacon",
+          "alias": "信标",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "checkDock",
+          "alias": "码头状态",
+          "role": null,
+          "statuses": [
+            200
+          ],
+          "enabled": true,
+          "arguments": [],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ]
+    }
+  }
+}

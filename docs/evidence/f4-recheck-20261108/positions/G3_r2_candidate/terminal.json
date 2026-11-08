@@ -1,0 +1,759 @@
+{
+  "id": "5586aa53c8bf44a8a3146cc59bf18143",
+  "project_id": "web_1aaa0b18fd374ebfba7360bf",
+  "project_identity": "fb60010698be59797f0137981b300b82cba5b274e05a0f5646c70ea558f3b675",
+  "request_sha256": "fb704b3c14318eef7c44676f8ceed1f9d9c5e9398032ba345ebb5c8f3ab65da1",
+  "status": "FINISHED",
+  "plan_version": 1,
+  "created_at": 1794128592.575247,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404；再确认 overseer 访问名册的拒绝规则；同时匿名读取信标；并把码头状态连读两次。",
+    "scope": "project",
+    "inventory": {
+      "total": 4,
+      "counts": {
+        "READY": 4,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readBeacon",
+          "method": "GET",
+          "path": "/beacons",
+          "summary": "信标",
+          "group": "beacons",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "checkDock",
+          "method": "GET",
+          "path": "/docks",
+          "summary": "码头状态",
+          "group": "docks",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        },
+        {
+          "operation_id": "openRegister",
+          "method": "GET",
+          "path": "/registers/{registerId}",
+          "summary": "登记簿",
+          "group": "registers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readRoster",
+          "method": "GET",
+          "path": "/rosters/{rosterId}",
+          "summary": "名册",
+          "group": "rosters",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [
+      {
+        "case_id": "group_1_case_1",
+        "title": "匿名读取信标",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "readBeacon"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_3"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "61c38703a3564406a06c4436f99cf1f8",
+        "elapsed_ms": 629.313,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "readBeacon"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "readBeacon",
+            "method": "GET",
+            "step_id": "read_beacon",
+            "role": null,
+            "executed": true,
+            "path": "/beacons",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_3"
+        ]
+      },
+      {
+        "case_id": "group_1_case_2",
+        "title": "连续两次读取码头状态（独立检查1）",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkDock"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_4"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "2bf6b394a28a4c4895553ee348fec09f",
+        "elapsed_ms": 624.083,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkDock"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkDock",
+            "method": "GET",
+            "step_id": "check_dock_first",
+            "role": null,
+            "executed": true,
+            "path": "/docks",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_4"
+        ]
+      },
+      {
+        "case_id": "group_1_case_3",
+        "title": "连续两次读取码头状态（独立检查2）",
+        "kinds": [
+          "normal"
+        ],
+        "operation_id": null,
+        "planned_operations": [
+          "checkDock"
+        ],
+        "planned_steps": 1,
+        "planned_policy_ids": [
+          "web_rule_4"
+        ],
+        "status": "FINISHED",
+        "max_business_requests": 1,
+        "plan_source": "MODEL_SUGGESTION",
+        "task_satisfied": null,
+        "run_id": "3700c69eec364197a17e4612b2084748",
+        "elapsed_ms": 619.88,
+        "outcome": "PASS",
+        "executed_steps": 1,
+        "executed_operations": [
+          "checkDock"
+        ],
+        "http_requests": 1,
+        "resource_lifecycle": [],
+        "created_resources": [],
+        "cleanup": "本场景仅包含读取和登录，无业务数据需要清理。",
+        "failure_explanation": null,
+        "probe_decisions": [],
+        "cleanup_requests": 0,
+        "approved_negative_steps": 0,
+        "negative_rejections_passed": 0,
+        "investigations": [],
+        "evidence": [
+          {
+            "operation_id": "checkDock",
+            "method": "GET",
+            "step_id": "check_dock_second",
+            "role": null,
+            "executed": true,
+            "path": "/docks",
+            "outcome": "PASS",
+            "request": {
+              "role": null,
+              "values": {
+                "path_parameters": {},
+                "query": {},
+                "body": {}
+              },
+              "credentials": "由执行器管理，未记录",
+              "source": "WEB_OPERATOR_CONFIRMED:4b071985d96f70fc3d344623ccd0a6ff1d3e920869fa97e87b5afa4c4c4dd576:Operator-approved immutable read-only fixture, F4 recheck."
+            },
+            "checks": [
+              {
+                "kind": "http_status",
+                "selector": null,
+                "passed": true,
+                "expected": [
+                  200
+                ],
+                "actual": 200
+              }
+            ]
+          }
+        ],
+        "executed_policy_ids": [
+          "web_rule_4"
+        ]
+      }
+    ],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "SELECTED",
+        "interpretation": "用户先查询 overseer 访问登记簿的拒绝状态是 403 还是 404，再查询 overseer 访问名册的拒绝规则，同时匿名读取信标，并把码头状态读取两次。overseer 凭据为 MISSING，两个权限查询均为需复核（needs_review），不执行 HTTP。匿名读取信标是一次正常读取；码头状态读取两次共享同一接口包。",
+        "elapsed_ms": 9722.788,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 9703,
+          "request_bytes": 24285,
+          "request_sha256": "f13f00907802da12a4408845af9069cf0e688d96455a8c93c7e991e7e35e748c",
+          "response_bytes": 3279,
+          "input_token_upper_bound": 24797,
+          "input_tokens": 6366,
+          "output_tokens": 678,
+          "total_tokens": 7044,
+          "output_sha256": "7ba880af742be3f0d3823c3004e2d09bddc1f9689a8ad82cdf9f7063e02bfde5",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "proposed_question_count": 2
+      },
+      {
+        "group_id": "group_1",
+        "status": "PROPOSED",
+        "interpretation": "用户要求先确认 overseer 访问登记簿与名册的拒绝规则，但这两个接口不在本组已批准策略范围内，只能沿用已挂起的两个权限问题；本组可执行的是匿名读取信标与连续两次读取码头状态，均按已确认的 200 规则验证。",
+        "presentation": {
+          "state": "CHINESE",
+          "has_latin": true,
+          "preserved": true
+        },
+        "elapsed_ms": 3827.265,
+        "model_call": {
+          "diagnostic": null,
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 3782,
+          "request_bytes": 23710,
+          "request_sha256": "dc7676b877a008a534165b706995419fddbf83590cd40e274c8725ce8159ba71",
+          "response_bytes": 1884,
+          "input_token_upper_bound": 24222,
+          "input_tokens": 5182,
+          "output_tokens": 323,
+          "total_tokens": 5505,
+          "output_sha256": "db7f8af8b7d4331364fa56a386cfcd0ed248eded379c160ca2a0632ccf0f091c",
+          "reason": "MODEL_OUTPUT_RECEIVED"
+        },
+        "plan_construction": [
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 1,
+            "constructed_nodes": 1,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 0,
+            "independent_contexts": 1
+          },
+          {
+            "encoding": "UNORDERED_APPROVED_NODES_V1",
+            "proposed_nodes": 2,
+            "constructed_nodes": 2,
+            "managed_authentication_nodes": 0,
+            "dependency_edges": 0,
+            "independent_contexts": 2
+          }
+        ],
+        "construction_ms": 0.127
+      }
+    ],
+    "questions": [
+      {
+        "id": "question_126cdbbe2d9da33382ac",
+        "operation_id": "openRegister",
+        "question": "overseer 访问登记簿（registerId=31）时应返回 403 还是 404？",
+        "requested_behavior": "确认 overseer 访问登记簿的拒绝状态码",
+        "kind": "permission",
+        "role": "overseer",
+        "status_choices": [
+          403,
+          404
+        ]
+      },
+      {
+        "id": "question_d4c4dd1d151f7e9b457b",
+        "operation_id": "readRoster",
+        "question": "overseer 访问名册（rosterId=8）时，拒绝规则是什么？应返回 403 还是 404？",
+        "requested_behavior": "确认 overseer 访问名册的拒绝状态码",
+        "kind": "permission",
+        "role": "overseer",
+        "status_choices": [
+          403,
+          404
+        ]
+      }
+    ],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "readBeacon",
+          "checkDock"
+        ],
+        "operations": [
+          "readBeacon",
+          "checkDock"
+        ],
+        "supported": true,
+        "status": "DESIGNED"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404",
+        "start": 0,
+        "end": 35,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "再确认 overseer 访问名册的拒绝规则",
+        "start": 36,
+        "end": 58,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "同时匿名读取信标",
+        "start": 59,
+        "end": 67,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_4",
+        "text": "并把码头状态连读两次",
+        "start": 68,
+        "end": 78,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "context_usage": {
+      "requests": 3,
+      "model_calls": 2,
+      "known_tokens": 12549,
+      "total_tokens": 12549,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 15853.95,
+      "planning_ms": 13550.053,
+      "execution_ms": 1873.276
+    },
+    "focus": {
+      "interpretation": "用户先查询 overseer 访问登记簿的拒绝状态是 403 还是 404，再查询 overseer 访问名册的拒绝规则，同时匿名读取信标，并把码头状态读取两次。overseer 凭据为 MISSING，两个权限查询均为需复核（needs_review），不执行 HTTP。匿名读取信标是一次正常读取；码头状态读取两次共享同一接口包。",
+      "mode": "selected",
+      "operation_ids": [
+        "openRegister",
+        "readRoster",
+        "readBeacon",
+        "checkDock"
+      ],
+      "normal_operation_ids": [
+        "readBeacon",
+        "checkDock"
+      ],
+      "question": null,
+      "pending_questions": [],
+      "not_covered": [],
+      "blocked_operation_ids": [],
+      "input_requirements": [
+        {
+          "operation_id": "openRegister",
+          "location": "path_parameters",
+          "name": "registerId",
+          "path": [],
+          "value": 31,
+          "source_quote": "再确认 overseer 访问名册的拒绝规则"
+        },
+        {
+          "operation_id": "readRoster",
+          "location": "path_parameters",
+          "name": "rosterId",
+          "path": [],
+          "value": 8,
+          "source_quote": "再确认 overseer 访问名册的拒绝规则"
+        }
+      ],
+      "input_questions": [],
+      "requested_checks": [],
+      "expectation_questions": [
+        {
+          "operation_id": "openRegister",
+          "question": "overseer 访问登记簿（registerId=31）时应返回 403 还是 404？",
+          "requested_behavior": "确认 overseer 访问登记簿的拒绝状态码",
+          "source_quote": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404",
+          "kind": "permission",
+          "role": "overseer",
+          "status_choices": [
+            403,
+            404
+          ]
+        },
+        {
+          "operation_id": "readRoster",
+          "question": "overseer 访问名册（rosterId=8）时，拒绝规则是什么？应返回 403 还是 404？",
+          "requested_behavior": "确认 overseer 访问名册的拒绝状态码",
+          "source_quote": "再确认 overseer 访问名册的拒绝规则",
+          "kind": "permission",
+          "role": "overseer",
+          "status_choices": [
+            403,
+            404
+          ]
+        }
+      ],
+      "source_conflicts": [],
+      "requirement_ledger": [],
+      "requirements": [
+        {
+          "source_id": "request_1",
+          "source_quote": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404",
+          "disposition": "needs_review",
+          "actions": [
+            {
+              "operation_id": "openRegister",
+              "role": "overseer"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_2",
+          "source_quote": "再确认 overseer 访问名册的拒绝规则",
+          "disposition": "needs_review",
+          "actions": [
+            {
+              "operation_id": "readRoster",
+              "role": "overseer"
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_3",
+          "source_quote": "同时匿名读取信标",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "readBeacon",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        },
+        {
+          "source_id": "request_4",
+          "source_quote": "并把码头状态连读两次",
+          "disposition": "required",
+          "actions": [
+            {
+              "operation_id": "checkDock",
+              "role": null
+            }
+          ],
+          "before": [],
+          "same_resource": [],
+          "response_checks": [],
+          "forbidden_operation_ids": [],
+          "blocked_operation_ids": []
+        }
+      ],
+      "operation_sources": {
+        "openRegister": "USER_REQUIREMENT",
+        "readRoster": "USER_REQUIREMENT",
+        "readBeacon": "USER_REQUIREMENT",
+        "checkDock": "USER_REQUIREMENT"
+      }
+    },
+    "focus_presentation": {
+      "state": "CHINESE",
+      "has_latin": true,
+      "preserved": true
+    },
+    "requirement_ledger": [],
+    "requested_checks": [],
+    "pending_negative_values": [],
+    "pending_input_questions": [],
+    "planning_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404",
+        "disposition": "needs_review",
+        "actions": [],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "再确认 overseer 访问名册的拒绝规则",
+        "disposition": "needs_review",
+        "actions": [],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_3",
+        "source_quote": "同时匿名读取信标",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "readBeacon",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      },
+      {
+        "source_id": "request_4",
+        "source_quote": "并把码头状态连读两次",
+        "disposition": "required",
+        "actions": [
+          {
+            "operation_id": "checkDock",
+            "role": null
+          }
+        ],
+        "before": [],
+        "same_resource": [],
+        "response_checks": [],
+        "forbidden_operation_ids": [],
+        "blocked_operation_ids": []
+      }
+    ],
+    "permission_action_scope": {
+      "openRegister": [],
+      "readRoster": []
+    },
+    "permission_requirements": [
+      {
+        "source_id": "request_1",
+        "source_quote": "先确认 overseer 访问登记簿的拒绝规则是 403 还是 404",
+        "operation_id": "openRegister",
+        "role": "overseer",
+        "status": "NEEDS_REVIEW",
+        "reason": "PERMISSION_EXPECTATION_NOT_APPROVED"
+      },
+      {
+        "source_id": "request_2",
+        "source_quote": "再确认 overseer 访问名册的拒绝规则",
+        "operation_id": "readRoster",
+        "role": "overseer",
+        "status": "NEEDS_REVIEW",
+        "reason": "PERMISSION_EXPECTATION_NOT_APPROVED"
+      }
+    ],
+    "input_blocked_operations": [
+      "openRegister",
+      "readRoster"
+    ],
+    "source_blocked_operations": [],
+    "suggestions": [
+      "两次读取码头状态应分别断言各自返回 200，用于观察重复读取结果是否一致。",
+      "登记簿与名册的拒绝规则待 overseer 权限问题确认后再补充相应的权限验证场景。"
+    ],
+    "checks_passed": true,
+    "coverage": {
+      "operation_denominator": 4,
+      "scenario_denominator": 3,
+      "executed_operations": 2,
+      "executed_scenarios": 3,
+      "started_scenarios": 3,
+      "completed_scenarios": 3,
+      "assertion_passed_scenarios": 3,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "openRegister",
+        "method": "GET",
+        "path": "/registers/{registerId}",
+        "summary": "登记簿",
+        "group": "registers",
+        "state": "READY",
+        "reason": "该原文分项的身份权限预期待确认；不能用其他身份代替。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      },
+      {
+        "operation_id": "readRoster",
+        "method": "GET",
+        "path": "/rosters/{rosterId}",
+        "summary": "名册",
+        "group": "rosters",
+        "state": "READY",
+        "reason": "该原文分项的身份权限预期待确认；不能用其他身份代替。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      }
+    ],
+    "exports": {
+      "61c38703a3564406a06c4436f99cf1f8": {
+        "available": true,
+        "reason": ""
+      },
+      "2bf6b394a28a4c4895553ee348fec09f": {
+        "available": true,
+        "reason": ""
+      },
+      "3700c69eec364197a17e4612b2084748": {
+        "available": true,
+        "reason": ""
+      }
+    }
+  }
+}

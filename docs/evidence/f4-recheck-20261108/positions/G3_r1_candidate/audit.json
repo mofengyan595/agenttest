@@ -1,0 +1,50 @@
+[
+  {
+    "sequence": 35,
+    "position": "G3_r1_candidate",
+    "config": "review",
+    "operation_id": "readBeacon",
+    "method": "GET",
+    "path": "/beacons",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "beacon": "steady"
+    },
+    "response_sha256": "36f21b57267c6c3c01b9cea55c8fba56ba03a62b9b44c7d9d413505c39f7d005",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  },
+  {
+    "sequence": 36,
+    "position": "G3_r1_candidate",
+    "config": "review",
+    "operation_id": "checkDock",
+    "method": "GET",
+    "path": "/docks",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "dock": "d2-clear"
+    },
+    "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  },
+  {
+    "sequence": 37,
+    "position": "G3_r1_candidate",
+    "config": "review",
+    "operation_id": "checkDock",
+    "method": "GET",
+    "path": "/docks",
+    "role": null,
+    "values": {},
+    "status": 200,
+    "response": {
+      "dock": "d2-clear"
+    },
+    "response_sha256": "34099b283b8623ff29429f6f2bec68a13708e7ed380eb2e8cafd56a705f7d9e7",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  }
+]

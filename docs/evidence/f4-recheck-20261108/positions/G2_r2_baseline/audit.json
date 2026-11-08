@@ -1,0 +1,23 @@
+[
+  {
+    "sequence": 41,
+    "position": "G2_r2_baseline",
+    "config": "partial",
+    "operation_id": "readVoucher",
+    "method": "GET",
+    "path": "/vouchers/41",
+    "role": "clerk",
+    "values": {
+      "path_parameters": {
+        "voucherId": 41
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": 41,
+      "amount": 12
+    },
+    "response_sha256": "67d42318043fe0c2dc727c07230ea2e7e98939b885e4d42d9192f2bfe1b644f3",
+    "state_sha256": "271bcf3d36a8737f25405f8448bd23c4bf7054b758e906c8b5469cfc38d9b37f"
+  }
+]

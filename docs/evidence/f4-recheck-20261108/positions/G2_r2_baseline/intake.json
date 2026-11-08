@@ -1,0 +1,209 @@
+{
+  "status": 201,
+  "project": {
+    "id": "web_186ddc8b64754a90897fb1fb",
+    "name": "F4 复验隔离读取 partial",
+    "version": 1,
+    "business_notes": "",
+    "state": "READY",
+    "ready": true,
+    "missing": [],
+    "profile": {
+      "id": "web_186ddc8b64754a90897fb1fb",
+      "identity": "448fcc3e0add61bba43135f02264ef8740924c055533aea2edd9d55339244bf0",
+      "name": "本项目",
+      "environment": "授权测试环境",
+      "address": "http://127.0.0.1:19094",
+      "identities": [
+        {
+          "alias": "registrar",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_F4_REGISTRAR_TOKEN"
+        },
+        {
+          "alias": "clerk",
+          "ready": true,
+          "instruction": "请在启动服务的环境变量中配置：AGENTTEST_TARGET_F4_CLERK_TOKEN"
+        }
+      ],
+      "rules": [
+        {
+          "id": "web_rule_1",
+          "behavior": "条目",
+          "role": "registrar",
+          "operation": "readEntry",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [
+            {
+              "field": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "source": "WEB_OPERATOR_CONFIRMED:1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533:Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "id": "web_rule_2",
+          "behavior": "凭证",
+          "role": "clerk",
+          "operation": "readVoucher",
+          "permitted": true,
+          "statuses": [
+            200
+          ],
+          "fields": [],
+          "source": "WEB_OPERATOR_CONFIRMED:1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533:Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ],
+      "examples": [
+        "先安排一轮常规检查，说明还有哪些没有覆盖",
+        "帮我检查参数边界和已确认的身份访问规则"
+      ],
+      "require_review": false
+    },
+    "profile_id": null,
+    "generic": {
+      "base_url": "http://127.0.0.1:19094",
+      "isolated_confirmed": true,
+      "allow_mutations": false,
+      "max_requests": 8,
+      "run_timeout": 180,
+      "roles": [
+        {
+          "alias": "warden",
+          "bearer_env": "AGENTTEST_TARGET_F4_WARDEN_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "registrar",
+          "bearer_env": "AGENTTEST_TARGET_F4_REGISTRAR_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "clerk",
+          "bearer_env": "AGENTTEST_TARGET_F4_CLERK_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        },
+        {
+          "alias": "overseer",
+          "bearer_env": "AGENTTEST_TARGET_F4_OVERSEER_TOKEN",
+          "login_operation": null,
+          "username_env": null,
+          "password_env": null,
+          "username_field": "username",
+          "password_field": "password",
+          "token_selector": "$.access_token"
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "alias": "条目",
+          "enabled": true,
+          "role": "registrar",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "entryId",
+              "value": 58,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [
+            {
+              "select": "$.label",
+              "operator": "equals",
+              "expected": "draft"
+            }
+          ],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        },
+        {
+          "operation_id": "readVoucher",
+          "alias": "凭证",
+          "enabled": true,
+          "role": "clerk",
+          "statuses": [
+            200
+          ],
+          "arguments": [
+            {
+              "location": "path_parameters",
+              "name": "voucherId",
+              "value": 41,
+              "source_operation": null,
+              "selector": "$"
+            }
+          ],
+          "checks": [],
+          "check_source": "Operator-approved immutable read-only fixture, F4 recheck."
+        }
+      ],
+      "assisted": true
+    },
+    "inventory": {
+      "total": 2,
+      "counts": {
+        "READY": 2,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readVoucher",
+          "method": "GET",
+          "path": "/vouchers/{voucherId}",
+          "summary": "凭证",
+          "group": "vouchers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "testing_mode": "MODEL_DESIGNED",
+    "confirmation": {
+      "source": "WEB_OPERATOR_SESSION",
+      "actor": "b5b3e1a7042cac6e70b989e7ccafd04e80051729fdeb447bc92dd9052e2b13f4",
+      "configuration_version": "1ad10c38cfc61cc90c857fc7cb1c3dd2d8089e74e297ee777912d2b1fb59a533",
+      "at": 1794128646.2541246
+    },
+    "identity": "85997b3d976293bdacc7cf3d269a1a632d80b59917edd5be3d6c129791b7b2c1"
+  }
+}

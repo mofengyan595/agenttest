@@ -1,0 +1,1 @@
+{"kind": "execution_plan", "run_id": "2bf6b394a28a4c4895553ee348fec09f", "plan": {"name": "连续两次读取码头状态", "steps": [{"id": "check_dock_first", "operation_id": "checkDock", "role": null, "path_parameters": {}, "query": {}, "body": {}, "upload": null, "policy_id": "web_rule_4", "poll": false, "read_retries": 0}]}}

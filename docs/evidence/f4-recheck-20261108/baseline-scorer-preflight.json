@@ -1,0 +1,91 @@
+{
+  "arm": "baseline",
+  "controls": [
+    {
+      "control": "positive_full_execution",
+      "detected": true,
+      "detail": {
+        "full_execution": true,
+        "integrity": true,
+        "failing": []
+      }
+    },
+    {
+      "control": "wrong_identity",
+      "detected": true,
+      "detail": {
+        "failing": [
+          "0.action",
+          "0.status",
+          "0.path_parameters.registerId",
+          "order"
+        ],
+        "silent": 4
+      }
+    },
+    {
+      "control": "wrong_source",
+      "detected": true,
+      "detail": {
+        "failing": [
+          "1.action",
+          "1.status",
+          "1.field.$.label",
+          "binding.0"
+        ],
+        "configured": 1
+      }
+    },
+    {
+      "control": "missing_requirement",
+      "detected": true,
+      "detail": {
+        "failing": [
+          "2.action",
+          "2.status",
+          "order"
+        ],
+        "silent": 3
+      }
+    },
+    {
+      "control": "insufficient_repeats",
+      "detected": true,
+      "detail": {
+        "failing": [
+          "2.action",
+          "2.status",
+          "order"
+        ],
+        "silent": 3
+      }
+    },
+    {
+      "control": "wrong_order",
+      "detected": true,
+      "detail": {
+        "failing": [
+          "order"
+        ]
+      }
+    },
+    {
+      "control": "unapproved_request",
+      "detected": true,
+      "detail": {
+        "task": 1,
+        "configured": 1
+      }
+    },
+    {
+      "control": "global_block_without_question",
+      "detected": true,
+      "detail": {
+        "false_refusal": true,
+        "correct_hold": false
+      }
+    }
+  ],
+  "model_calls": 0,
+  "passed": true
+}

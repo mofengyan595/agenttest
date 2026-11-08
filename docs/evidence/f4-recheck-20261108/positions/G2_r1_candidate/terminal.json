@@ -1,0 +1,219 @@
+{
+  "id": "fa3e4e07687a4ddf9dd06e02feac597d",
+  "project_id": "web_bc267086d1bc450ea2f38cde",
+  "project_identity": "b1e95b81e0040a646a09188cad1e37e345d16426cd23f4f9a9db859faf363218",
+  "request_sha256": "b099b8ca361d63ecb0798477322f94eb5aef954501223a8043c6fcf5ef5c99c8",
+  "status": "NEEDS_REVIEW",
+  "plan_version": 1,
+  "created_at": 1794128544.9931948,
+  "summary": {
+    "mode": "MODEL_DESIGNED",
+    "display_title": "一轮接口测试",
+    "user_request": "registrar 读取 entryId=58 的条目；核对条目的 $.seal 等于 \"T-77\"；同时由 clerk 读取 voucherId=41 的凭证。",
+    "scope": "project",
+    "inventory": {
+      "total": 2,
+      "counts": {
+        "READY": 2,
+        "NEEDS_INPUT": 0,
+        "UNAUTHORIZED": 0,
+        "UNSUPPORTED": 0
+      },
+      "operations": [
+        {
+          "operation_id": "readEntry",
+          "method": "GET",
+          "path": "/entries/{entryId}",
+          "summary": "条目",
+          "group": "entries",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "OPERATOR_RULE"
+        },
+        {
+          "operation_id": "readVoucher",
+          "method": "GET",
+          "path": "/vouchers/{voucherId}",
+          "summary": "凭证",
+          "group": "vouchers",
+          "state": "READY",
+          "reason": "已具备文档检查依据和执行授权。",
+          "next_step": "可以开始测试。",
+          "response_basis": "STATUS_ONLY"
+        }
+      ],
+      "pending_checks": []
+    },
+    "budget": {
+      "max_requests": 8,
+      "max_model_calls": 4,
+      "max_total_tokens": 500000,
+      "max_steps_per_case": 20,
+      "max_seconds": 180,
+      "max_readonly_investigations": 2
+    },
+    "cases": [],
+    "design_records": [
+      {
+        "group_id": "focus",
+        "status": "REJECTED",
+        "diagnostic": {
+          "layer": "model",
+          "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+          "fields": []
+        },
+        "reason": "MODEL_INVALID_RESPONSE",
+        "elapsed_ms": 6879.839,
+        "model_call": {
+          "diagnostic": {
+            "layer": "model",
+            "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+            "fields": []
+          },
+          "calls": 1,
+          "model_name": "ecnu-max",
+          "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+          "http_status": 200,
+          "elapsed_ms": 6844,
+          "request_bytes": 24804,
+          "request_sha256": "733cb01fdc47fabcfbf57b729077a0bb2f25346895399beeeda5200292af06d2",
+          "response_bytes": 2171,
+          "input_token_upper_bound": 25316,
+          "input_tokens": 6747,
+          "output_tokens": 415,
+          "total_tokens": 7162,
+          "output_sha256": "eb25a8a60d4148f123d18c00c4582799e7166a12ef817c791a68c06266a02e9b",
+          "reason": "MODEL_INVALID_RESPONSE"
+        },
+        "proposed_question_count": 0
+      }
+    ],
+    "questions": [],
+    "not_covered": [],
+    "groups": [
+      {
+        "id": "group_1",
+        "primary": [
+          "readEntry",
+          "readVoucher"
+        ],
+        "operations": [
+          "readEntry",
+          "readVoucher"
+        ],
+        "supported": true,
+        "status": "NOT_EXECUTED",
+        "reason": "测试重点尚未可靠确认。"
+      }
+    ],
+    "model_source": "CONFIGURED_MODEL",
+    "execution_target": "AUTHORIZED_TEST_ENVIRONMENT",
+    "complete": false,
+    "task_satisfied": null,
+    "requirement_sources": [
+      {
+        "source_id": "request_1",
+        "text": "registrar 读取 entryId=58 的条目",
+        "start": 0,
+        "end": 27,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_2",
+        "text": "核对条目的 $.seal 等于 \"T-77\"",
+        "start": 28,
+        "end": 50,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      },
+      {
+        "source_id": "request_3",
+        "text": "同时由 clerk 读取 voucherId=41 的凭证",
+        "start": 51,
+        "end": 80,
+        "future": false,
+        "future_only": false,
+        "same_resource": false,
+        "constraint": false,
+        "ordered": false
+      }
+    ],
+    "negative_check_catalog": [],
+    "response_requirements": [
+      {
+        "id": "response_1",
+        "source_id": "request_2",
+        "source_quote": "核对条目的 $.seal 等于 \"T-77\"",
+        "start": 34,
+        "end": 50,
+        "selector": "$.seal",
+        "operator": "equals",
+        "expected": "T-77",
+        "witnesses": [],
+        "continues": false,
+        "status": "NEEDS_REVIEW",
+        "reason": "RESPONSE_CHECK_UNWITNESSED"
+      }
+    ],
+    "context_usage": {
+      "requests": 0,
+      "model_calls": 1,
+      "known_tokens": 7162,
+      "total_tokens": 7162,
+      "usage_known": true
+    },
+    "timings": {
+      "total_ms": 6947.888,
+      "planning_ms": 6879.839,
+      "execution_ms": 0
+    },
+    "reason": "模型未给出通过校验的测试范围，本次没有发送业务请求。请查看方案原因，再安排新的独立测试。",
+    "coverage": {
+      "operation_denominator": 2,
+      "scenario_denominator": 0,
+      "executed_operations": 0,
+      "executed_scenarios": 0,
+      "started_scenarios": 0,
+      "completed_scenarios": 0,
+      "assertion_passed_scenarios": 0,
+      "requested_check_denominator": 0,
+      "executed_requested_checks": 0,
+      "approved_check_denominator": 0,
+      "attempted_approved_checks": 0
+    },
+    "uncovered_negative_checks": [],
+    "untested_operations": [
+      {
+        "operation_id": "readEntry",
+        "method": "GET",
+        "path": "/entries/{entryId}",
+        "summary": "条目",
+        "group": "entries",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "OPERATOR_RULE"
+      },
+      {
+        "operation_id": "readVoucher",
+        "method": "GET",
+        "path": "/vouchers/{voucherId}",
+        "summary": "凭证",
+        "group": "vouchers",
+        "state": "READY",
+        "reason": "测试重点尚未可靠确认。",
+        "next_step": "可以开始测试。",
+        "response_basis": "STATUS_ONLY"
+      }
+    ],
+    "exports": {}
+  }
+}
