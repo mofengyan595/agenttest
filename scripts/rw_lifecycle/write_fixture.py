@@ -169,9 +169,9 @@ def create_fixture(reset_token, tokens):
     async def create_item(request: Request):
         role, before = role_of(request), store.state()
         body = await request.json()
-        # The realistic transport is the Idempotency-Key header. The existing intake cannot
-        # declare a required header parameter (request_validation rejects it), so the same
-        # key is also accepted in the body or query where the product can put it today.
+        # The realistic transport is the Idempotency-Key header. The product now declares it
+        # as a required header parameter, and the body/query spellings remain accepted so an
+        # older approved plan keeps working; all three must resolve to one key.
         key = (
             request.headers.get("idempotency-key")
             or (body or {}).get("idempotencyKey")

@@ -627,7 +627,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     unavailable = {o['operation_id'] for o in context['unavailable_operations']}
     # Schema facts for held inputs are separate from approved executable input slots.
     context['unavailable_input_fields'] = [dict(operation_id=op.operation_id,
-        location='path_parameters' if p['in'] == 'path' else 'query', name=p['name'])
+        location={'path': 'path_parameters', 'header': 'headers'}.get(p['in'],
+                        'query'), name=p['name'])
         for op in project.contract.operations if op.operation_id in unavailable
         for p in op.parameters if p.get('in') in {'path', 'query'}]
     from agenttest.boundary_obligations import bind_boundary_actions, boundary_links

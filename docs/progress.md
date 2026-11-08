@@ -3518,3 +3518,34 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   [rw-lifecycle-plan-20261108.md](rw-lifecycle-plan-20261108.md)；证据包（155 文件、冷重算一致）：
   [evidence/f4-recheck-20261108/](evidence/f4-recheck-20261108/README.md)。
 - 下一步：等待操作员批准读写授权 6 条与幂等键传输方式后再启动有状态写入验收；不启动第五轮大规模 A/B。
+
+## 2026-11-08 产品能力修复：局部待审与必填 Header
+
+- 修前证据链（G2 第二轮 baseline，`docs/evidence/f4-recheck-20261108/positions/G2_r2_baseline/terminal.json`）：
+  模型对未批准的 `$.seal` 主动提问并把 `readEntry` 标为 `required`，产品却把
+  `response_requirements[0].blocked_operations=["readEntry"]` 回灌成 `input_blocked_operations`，
+  再于 `design_groups(...)` 中剔除该操作，导致已批准读取一次未发（1 个请求而非 2 个）。
+  归因：**产品执行策略错误**，不是模型错误。
+- 修复：`requirement_ledger.releases_held_operation` 只在四种条件同时成立时释放断言扣住的操作——
+  被独立 `required` 子句要求、断言子句无 `before`/`same_resource`/固定资源、引用它的 `required`
+  子句也无上述结构、方法是 GET/HEAD/OPTIONS。释放时写 `held_operations` 并产生可见澄清问题，
+  断言仍 `NEEDS_REVIEW`、`complete` 仍为 False；变更操作与依赖链场景继续整体待审，
+  因此不存在部分写入路径，安全等级未降低、待审项未减少。
+- 必填 Header：`in: header` 打通 OpenAPI 解析 → 输入校验 → 审批作用域 → DSL 绑定 → 执行器发送 →
+  证据脱敏六层；头名大小写不敏感、缺失被拒、未批准头绝不隐式注入（`POLICY_ARGUMENT_MISMATCH`）、
+  保留头（`Authorization`/`Cookie` 等）在契约与执行器两处拒绝、敏感头值在报告中 `[REDACTED]`、
+  幂等键复用返回同一资源、结果未知的写请求不重放；既有 query/body/path 行为不变。
+- 有意更新的旧测试：`tests/test_requirement_ledger.py::test_explicit_response_cannot_disappear_from_focus`
+  （5 个参数，原期望固化上述缺陷）；`tests/test_mixed_planning_round3.py` 的
+  `test_unapproved_content_assertion_still_holds_its_read`、`tests/test_mixed_planning_gaps.py`、
+  `tests/test_mixed_planning_p0.py` 描述的是带 `before`/`same_resource`/固定资源链接的断言，
+  按新规则仍整体扣住，未改动。
+- 测试：新增 `tests/test_partial_review_scope.py`（4）与 `tests/test_required_header.py`（14）；
+  相关回归批 240 项全绿；完整离线回归（4 进程）2480 收集 / 2465 通过 / 0 失败 / 0 错误 /
+  15 跳过，墙钟 1002.19 秒，测试 ID 覆盖一致；`ruff check .` 全绿。
+- 兼容性：`Step.headers` 为空时从 `model_dump()` 中省略，历史计划指纹与已导出的回归资产
+  （`tests/test_regression_examples.py`、`tests/test_petclinic_chain.py`）保持不变；
+  新测试 `test_header_field_does_not_change_header_free_plan_fingerprints` 固定该约束。
+  本轮 0 次真实模型调用、0 个真实写入，`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
+- 报告：[product-fix-partial-review-and-headers-20261108.md](product-fix-partial-review-and-headers-20261108.md)。
+- 下一步：等待操作员按第 6 节 6 条授权后启动隔离写验收；不重跑已冻结的真实模型位置。

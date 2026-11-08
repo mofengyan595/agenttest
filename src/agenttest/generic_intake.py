@@ -40,7 +40,7 @@ from agenttest.selectors import validate_selector
 
 
 class IntakeArgument(StrictModel):
-    location: Literal["body", "path_parameters", "query"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str = Field(min_length=1, max_length=80)
     value: Any = None
     source_operation: str | None = None

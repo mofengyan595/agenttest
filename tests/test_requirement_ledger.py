@@ -89,11 +89,12 @@ def test_approved_negative_is_accounted_without_creating_a_new_expectation():
 @pytest.mark.parametrize('assertion,extra,status,requests', [
     ('$.items 存在', '', 'PASS', ['/records']),
     ('$.items 存在', '', 'ASSERTION_FAILED', ['/records', '/records']),
-    ('$.items 非空', '', 'NEEDS_REVIEW', []),
-    ('$.items 数量为 2', '', 'NEEDS_REVIEW', []),
-    ('$.items 非空', '；检查健康', 'NEEDS_REVIEW', ['/health']),
-    ('$.items 数量为 3', '；检查健康', 'NEEDS_REVIEW', ['/health']),
-    ('$.items 数量为 4', '；检查健康', 'NEEDS_REVIEW', ['/health']),
+    # The approved read still runs; only the unapproved content assertion is held.
+    ('$.items 非空', '', 'NEEDS_REVIEW', ['/records']),
+    ('$.items 数量为 2', '', 'NEEDS_REVIEW', ['/records']),
+    ('$.items 非空', '；检查健康', 'NEEDS_REVIEW', ['/health', '/records']),
+    ('$.items 数量为 3', '；检查健康', 'NEEDS_REVIEW', ['/health', '/records']),
+    ('$.items 数量为 4', '；检查健康', 'NEEDS_REVIEW', ['/health', '/records']),
     ('只用未确认的方式检查记录', '；检查健康', 'NEEDS_REVIEW', ['/health']),
 ])
 @pytest.mark.asyncio
@@ -175,11 +176,17 @@ async def test_explicit_response_cannot_disappear_from_focus(tmp_path, monkeypat
         result = await finished(svc, await svc.submit('operator', saved['id'], text,
                                                       'response-witness'))
         summary = result['summary']
-        assert seen == requests, summary.get('design_records')
+        assert sorted(seen) == sorted(requests), summary.get('design_records')
         assert summary['complete'] is (status in {'PASS', 'ASSERTION_FAILED'})
         if review_only:
+            # No separate approved read exists here, so the whole action stays held.
             assert summary['input_blocked_operations'] == ['records']
             return
+        entry, = summary['response_requirements']
+        if status == 'NEEDS_REVIEW':
+            assert entry['held_operations'] == ['records']
+            assert entry['blocked_operations'] == []
+            assert not summary.get('input_blocked_operations')
         assert summary['checks_passed'] is (status == 'PASS')
         entry, = summary['response_requirements']
         assert entry['status'] == status

@@ -260,6 +260,36 @@ def response_predicate_matches(entry, rule):
         rule['operator'] == 'exists' or json_equal(rule['expected'], entry['expected']))
 
 
+def independently_required_actions(selection):
+    """Operations the original text asks for in a clause of their own."""
+    return {action.operation_id for item in selection.requirements
+            if item.disposition == 'required' for action in item.actions}
+
+
+def releases_held_operation(project, selection, operations, item=None):
+    """Decide whether an unapproved content assertion may keep only the assertion.
+
+    The assertion holds itself; the action keeps its own approval and therefore still
+    runs when the requirement asks for that action independently and the operation
+    cannot change target state. A mutation stays blocked, so a half-approved write
+    never reaches the target and no partial write can leave a state behind. An
+    assertion clause that carries an order edge, a resource link or a fixed existing
+    resource is not released: its scope is entangled with another action.
+    """
+    if not operations or not operations <= independently_required_actions(selection):
+        return False
+    if item is not None and (item.before or item.same_resource or item.existing_resources):
+        return False
+    for other in selection.requirements:
+        if other.disposition == 'required' and {action.operation_id
+                                               for action in other.actions} & operations:
+            if other.before or other.same_resource or other.existing_resources:
+                return False
+    methods = {operation.operation_id: operation.method
+               for operation in project.contract.operations}
+    return all(methods.get(operation) in {'GET', 'HEAD', 'OPTIONS'} for operation in operations)
+
+
 def unresolved_response_operations(ledger, selection, project, requested):
     """Hold the linked component when an explicit response check lacks an approved rule."""
     from agenttest.request_requirements import response_expectations
@@ -293,6 +323,10 @@ def unresolved_response_operations(ledger, selection, project, requested):
             continue
         entry['reason'] = ('RESPONSE_SCOPE_AMBIGUOUS' if len(item.actions) > 1 else
                            'RESPONSE_CHECK_NOT_APPROVED' if entry['selector'] else entry['reason'])
+        entry['held_operations'] = sorted(operations)
+        if releases_held_operation(project, selection, operations, item):
+            entry['blocked_operations'] = []
+            continue
         entry['blocked_operations'] = sorted(operations)
         blocked.update(operations)
     return blocked
@@ -302,6 +336,9 @@ def validate_response_witnesses(design, primary, requirements, ledger, policies,
     """Match explicit predicates to reviewed assertions on the same case step and identity."""
     by_source = {item.source_id: item for item in requirements if item.disposition == 'required'}
     for entry in ledger:
+        # A held assertion is not part of the plan, so it needs no witness yet.
+        if entry.get('blocked_operations') or entry.get('held_operations'):
+            continue
         item = by_source.get(entry['source_id'])
         if item is None or not any(action.operation_id in primary for action in item.actions):
             continue

@@ -17,7 +17,7 @@ from agenttest.safety import StrictModel
 
 class InputRequirement(StrictModel):
     operation_id: str
-    location: Literal["body", "query", "path_parameters"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str
     path: list[str] = Field(max_length=10)
     value: LiteralValue
@@ -26,7 +26,7 @@ class InputRequirement(StrictModel):
 
 class InputQuestion(StrictModel):
     operation_id: str
-    location: Literal["body", "query", "path_parameters"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str
     path: list[str] = Field(max_length=10)
     source_quote: str = Field(min_length=1, max_length=300)

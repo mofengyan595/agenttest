@@ -122,6 +122,9 @@ class Step(StrictModel):
     path_parameters: dict[str, ArgumentBinding] = Field(default_factory=dict)
     query: dict[str, ArgumentBinding] = Field(default_factory=dict)
     body: dict[str, ArgumentBinding] = Field(default_factory=dict)
+    # Only contract-declared, operator-approved header parameters may appear here;
+    # credentials and framing headers stay executor-owned.
+    headers: dict[str, ArgumentBinding] = Field(default_factory=dict)
     upload: CSVUpload | None = None
     policy_id: str | None = None
     poll: bool = False
@@ -133,6 +136,9 @@ class Step(StrictModel):
         data = handler(self)
         if self.negative_value is None:
             data.pop("negative_value", None)
+        if not self.headers:
+            # Keep historical plan fingerprints stable for every header-free step.
+            data.pop("headers", None)
         return data
 
 
@@ -181,7 +187,8 @@ def validate_plan(
         if set(controlled) & set(step.body) or controlled and step.upload:
             raise ValidationFailure(Layer.DSL, "DSL_CONTROLLED_INPUT_IS_EXECUTOR_OWNED")
         controlled_payload(operation, controlled, environ)
-        bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values()]
+        bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values(),
+                    *step.headers.values()]
         for binding in bindings:
             if binding.from_step and binding.from_step not in seen:
                 raise ValidationFailure(
@@ -196,7 +203,7 @@ def validate_plan(
                         "Authentication responses are not bindable")
         is_login = role and step.operation_id == role.login_operation
         if is_login:
-            if step.body or step.upload or step.query or step.path_parameters:
+            if step.body or step.upload or step.query or step.path_parameters or step.headers:
                 raise ValidationFailure(
                     Layer.DSL, "DSL_AUTH_ARGUMENTS",
                     "Authentication request is executor-owned")
@@ -249,12 +256,16 @@ def validate_plan(
                     Layer.DSL, "DSL_BODY_MEDIA_TYPE_IS_NOT_DECLARED_IN_CONTRACT",
                     "Body media type is not declared in contract")
         for param in operation.parameters:
-            if param.get("required"):
-                location = {"path": step.path_parameters, "query": step.query}.get(param["in"], {})
-                if param["name"] not in location:
-                    raise ValidationFailure(
-                        Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",
-                        "Missing required operation parameter")
+            if not param.get("required"):
+                continue
+            header = param["in"] == "header"
+            values = (step.headers if header else
+                      {"path": step.path_parameters, "query": step.query}.get(param["in"], {}))
+            name = param["name"].lower() if header else param["name"]
+            if name not in ({key.lower() for key in values} if header else values):
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",
+                    "Missing required operation parameter")
         if operation.request_body and operation.request_body.get("required"):
             if not step.body and not step.upload and not is_login and not controlled:
                 raise ValidationFailure(
@@ -266,7 +277,17 @@ def validate_plan(
         media = ("multipart/form-data" if step.upload else "application/json"
                  if step.body or is_login or controlled else None)
         schemas, body_schema = request_schemas(operation, media)
-        for location, values in (("path", step.path_parameters), ("query", step.query)):
+        canonical = {}
+        for name, binding in step.headers.items():
+            canon = next((declared for declared in schemas["header"]
+                          if declared.lower() == name.lower()), None)
+            if canon is None:
+                raise ValidationFailure(
+                    Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
+                    "Unknown operation parameter")
+            canonical[canon] = binding
+        for location, values in (("path", step.path_parameters), ("query", step.query),
+                                 ("header", canonical)):
             if set(values) - set(schemas[location]):
                 raise ValidationFailure(
                     Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",

@@ -60,7 +60,8 @@ def input_fields(op, version):
             versioned_schema(schema, version)
             required = next(p.get("required", False) for p in op.parameters
                             if p["in"] == location and p["name"] == name)
-            result.append(FieldSpec("path_parameters" if location == "path" else "query",
+            result.append(FieldSpec({"path": "path_parameters", "header": "headers"}.get(
+                    location, "query"),
                 name, schema, required, f"{op.method} {op.path} 参数 {name}", "OpenAPI required"))
     if body is not None and not upload:
         versioned_schema(body, version)

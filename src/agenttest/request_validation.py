@@ -167,14 +167,60 @@ def validate_string_format(value: str, format_name: str | None) -> None:
         raise ValidationFailure(Layer.OPENAPI, "OPENAPI_VALUE_FORMAT", "Invalid request format")
 
 
+RESERVED_HEADERS = frozenset({"authorization", "proxy-authorization", "cookie",
+                              "set-cookie", "host", "content-length"})
+SENSITIVE_HEADER_NAMES = frozenset({"x-api-key", "api-key", "x-auth-token", "x-access-token",
+                                    "x-secret", "x-token", "token", "secret"})
+HEADER_NAME = re.compile(r"[!#$%&'*+.^_`|~0-9A-Za-z-]{1,80}")
+
+
+def header_name(name: str) -> str:
+    """Reject a header name the executor can never own; return the canonical spelling."""
+    if not isinstance(name, str) or not HEADER_NAME.fullmatch(name):
+        raise ValidationFailure(Layer.OPENAPI, "OPENAPI_INVALID_HEADER_NAME",
+                                "Invalid header parameter name")
+    if name.lower() in RESERVED_HEADERS:
+        raise ValidationFailure(Layer.OPENAPI, "OPENAPI_RESERVED_HEADER_PARAMETER",
+                                "Credentials and framing headers stay executor-owned")
+    return name
+
+
+def sensitive_headers(operation: Operation) -> set[str]:
+    """Header parameters whose value never reaches persisted evidence."""
+    names = set()
+    for param in operation.parameters:
+        if param["in"] != "header":
+            continue
+        schema = param.get("schema") or {}
+        if (param.get("x-sensitive") is True or schema.get("x-sensitive") is True
+                or str(schema.get("format", "")).lower() in {"password", "token", "apikey"}
+                or param["name"].lower() in SENSITIVE_HEADER_NAMES):
+            names.add(param["name"].lower())
+    return names
+
+
+def public_headers(operation: Operation, headers: dict) -> dict[str, str]:
+    """Report header names with sensitive values masked; never log raw credentials."""
+    hidden = sensitive_headers(operation)
+    return {name: ("[REDACTED]" if name.lower() in hidden else str(value))
+            for name, value in headers.items()}
+
+
 def request_schemas(operation: Operation, media: str | None) -> tuple[dict, dict | None]:
-    parameters = {"path": {}, "query": {}}
+    parameters = {"path": {}, "query": {}, "header": {}}
+    seen_headers: set[str] = set()
     for param in operation.parameters:
         location = param["in"]
         if location not in parameters:
             if param.get("required"):
                 raise NeedsReview("UNSUPPORTED_REQUIRED_PARAMETER")
             continue
+        if location == "header":
+            header_name(param["name"])
+            if param["name"].lower() in seen_headers:
+                raise ValidationFailure(Layer.OPENAPI, "OPENAPI_DUPLICATE_HEADER_PARAMETER",
+                                        "Duplicate header parameter")
+            seen_headers.add(param["name"].lower())
         if (param.get("style", "form" if location == "query" else "simple")
                 != ("form" if location == "query" else "simple")
                 or "content" in param):
@@ -198,10 +244,24 @@ def request_schemas(operation: Operation, media: str | None) -> tuple[dict, dict
     return parameters, body
 
 
+def canonical_headers(declared: dict, values: dict) -> dict[str, str]:
+    """Match request headers case-insensitively and keep the declared spelling."""
+    names = {name.lower(): name for name in declared}
+    result = {}
+    for name, value in values.items():
+        canonical = names.get(str(name).lower())
+        if canonical is None:
+            raise ValidationFailure(Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
+                                    "Unknown operation parameter")
+        result[canonical] = value
+    return result
+
+
 def validate_request(operation: Operation, path: dict, query: dict, payload: dict,
-                     media: str | None) -> None:
+                     media: str | None, headers: dict | None = None) -> None:
     parameters, body = request_schemas(operation, media)
-    for location, values in (("path", path), ("query", query)):
+    headers = canonical_headers(parameters["header"], headers or {})
+    for location, values in (("path", path), ("query", query), ("header", headers)):
         if set(values) - set(parameters[location]):
             raise ValidationFailure(
                 Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
@@ -209,7 +269,7 @@ def validate_request(operation: Operation, path: dict, query: dict, payload: dic
         for name, value in values.items():
             validate_value(value, parameters[location][name])
     for param in operation.parameters:
-        values = {"path": path, "query": query}.get(param["in"], {})
+        values = {"path": path, "query": query, "header": headers}.get(param["in"], {})
         if param.get("required") and param["name"] not in values:
             raise ValidationFailure(
                 Layer.OPENAPI, "OPENAPI_PARAMETER_REQUIRED",

@@ -59,7 +59,7 @@ class PublicTask(StrictModel):
 
 
 class ExpectedArgument(StrictModel):
-    location: Literal["body", "query", "path_parameters"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str = Field(min_length=1, max_length=80)
     value: Any = None
     source: str | None = None  # A rubric step key, never a generated step ID.

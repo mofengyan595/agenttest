@@ -127,7 +127,7 @@ class ModelSettings(StrictModel):
 
 
 class DraftArgument(StrictModel):
-    location: Literal["body", "path_parameters", "query"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str = Field(min_length=1, max_length=80)
     value: str | int | bool | None
     from_step: str | None

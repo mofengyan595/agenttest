@@ -36,7 +36,7 @@ def dependency_roles_match(source: str | None, consumer: str | None, relation: s
 
 
 class BindingRule(StrictModel):
-    location: Literal["body", "path_parameters", "query"]
+    location: Literal["body", "path_parameters", "query", "headers"]
     name: str
     literal_schema: dict | None = None
     source_policy_id: str | None = None
@@ -148,13 +148,21 @@ class PolicyRegistry:
         if policy.negative and (step.upload or step.poll or step.read_retries):
             raise NeedsReview("NEGATIVE_EXECUTION_OPTIONS_NOT_APPROVED")
         if policy.closed_arguments:
-            for location in ("body", "path_parameters", "query"):
+            for location in ("body", "path_parameters", "query", "headers"):
                 names = {r.name for r in policy.binding_rules if r.location == location}
                 if (set(getattr(step, location)) != names
                         or (step.upload is not None and policy.csv_fixture is None)):
                     raise NeedsReview("POLICY_ARGUMENT_MISMATCH")
+        # A header is never injected implicitly: every one needs its own approved rule.
+        approved_headers = {rule.name.lower() for rule in policy.binding_rules
+                            if rule.location == "headers"}
+        if {name.lower() for name in step.headers} - approved_headers:
+            raise NeedsReview("POLICY_ARGUMENT_MISMATCH")
         for rule in policy.binding_rules:
             binding = getattr(step, rule.location).get(rule.name)
+            if binding is None and rule.location == "headers":
+                binding = next((value for name, value in step.headers.items()
+                                if name.lower() == rule.name.lower()), None)
             if binding is None:
                 raise NeedsReview("POLICY_BINDING_REQUIRED")
             if rule.literal_schema is not None:

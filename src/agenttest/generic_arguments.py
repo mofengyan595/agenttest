@@ -16,7 +16,8 @@ def argument_slots(context: dict) -> dict[str, tuple[tuple[str, str], ...]]:
         slots = set()
         if not operation["authentication_executor_managed"]:
             for parameter in operation["parameters"]:
-                location = {"path": "path_parameters", "query": "query"}.get(parameter["in"])
+                location = {"path": "path_parameters", "query": "query",
+                            "header": "headers"}.get(parameter["in"])
                 if location is not None:
                     slots.add((location, parameter["name"]))
             for schema in (operation["request_body"] or {}).get("content", {}).values():
@@ -32,7 +33,8 @@ def slot_types(context: dict) -> dict[str, dict[tuple[str, str], str | None]]:
     for operation in context["operations"]:
         candidates: dict[tuple[str, str], set[str | None]] = {}
         for parameter in operation["parameters"]:
-            location = {"path": "path_parameters", "query": "query"}.get(parameter["in"])
+            location = {"path": "path_parameters", "query": "query",
+                            "header": "headers"}.get(parameter["in"])
             if location:
                 kind = parameter.get("schema", {}).get("type")
                 candidates[(location, parameter["name"])] = {
@@ -89,7 +91,7 @@ def constrain_generic_arguments(schema: dict, step_type: str, context: dict,
             arguments["maxItems"] = 0
         else:
             choices = []
-            for location in ("body", "path_parameters", "query"):
+            for location in ("body", "path_parameters", "query", "headers"):
                 by_type: dict[str | None, list[str]] = {}
                 for loc, name, kind in slots:
                     if loc == location:

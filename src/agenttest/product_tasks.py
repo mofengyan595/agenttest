@@ -295,6 +295,24 @@ class ProductTasks:
                                 summary['permission_requirements'] = holds
                             response_blocked = unresolved_response_operations(response_requirements,
                                 selection, project, executable_checks)
+                            # A held assertion keeps its action running, so the pending
+                            # check must stay visible even when no model question exists.
+                            known_questions = {(question.operation_id, question.source_quote)
+                                               for question in selection.expectation_questions}
+                            for entry in response_requirements:
+                                for operation_id in entry.get('held_operations') or []:
+                                    if (operation_id, entry['source_quote']) in known_questions:
+                                        continue
+                                    known_questions.add((operation_id, entry['source_quote']))
+                                    selector = entry.get('selector') or '响应内容'
+                                    summary["questions"].append(dict(
+                                        id="held_" + fingerprint([operation_id,
+                                            entry['source_quote']])[:20],
+                                        operation_id=operation_id,
+                                        question=(f"原文要求核对 {selector}，但缺少已确认的规则；"
+                                            "这条核对待确认，相关读取仍会照常执行。"),
+                                        requested_behavior="确认响应内容规则",
+                                        kind="clarification", role=None, status_choices=[]))
                             status_blocked = unresolved_http_status_operations(
                                 status_requirements, selection, project)
                             data_blocked = unresolved_data_operations(data_references,

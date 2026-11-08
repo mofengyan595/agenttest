@@ -38,7 +38,7 @@ from agenttest.report import (
     aggregate,
     fingerprint,
 )
-from agenttest.request_validation import validate_request
+from agenttest.request_validation import RESERVED_HEADERS, public_headers, validate_request
 from agenttest.safety import TargetConfig
 from agenttest.selectors import select
 from agenttest.verifier import verify
@@ -338,6 +338,19 @@ class Executor:
                 result.reason = "CLEANUP_UNCONFIRMED_NO_REPLAY"
             self.store.save(report)
 
+    def _headers(self, operation: Operation, step: Step) -> dict[str, ArgumentBinding]:
+        """Match the plan's header names to the contract's declared spelling."""
+        declared = {parameter["name"].lower(): parameter["name"]
+                    for parameter in operation.parameters if parameter["in"] == "header"}
+        matched = {}
+        for name, binding in step.headers.items():
+            canonical = declared.get(name.lower())
+            if canonical is None:
+                raise ValidationFailure(Layer.OPENAPI, "OPENAPI_UNKNOWN_PARAMETER",
+                                        "Unknown operation parameter")
+            matched[canonical] = binding
+        return matched
+
     def _binding(self, binding: ArgumentBinding, step: Step, state: dict) -> Any:
         if binding.from_step:
             try:
@@ -365,9 +378,20 @@ class Executor:
         is_login = role and step.operation_id == role.login_operation
         if role and operation.security:
             headers = vault.header(step.role)
+        resolved_headers = {canonical: self._binding(binding, step, state)
+                            for canonical, binding in self._headers(operation, step).items()}
+        for value in resolved_headers.values():
+            if not isinstance(value, (str, int, float, bool)):
+                raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_HEADER_NOT_SCALAR")
+        request_headers = {canonical: str(value)
+                           for canonical, value in resolved_headers.items()}
+        if {name.lower() for name in request_headers} & RESERVED_HEADERS:
+            raise ValidationFailure(Layer.DSL, "DSL_RESERVED_REQUEST_HEADER")
+        headers.update(request_headers)
         query = {key: self._binding(value, step, state) for key, value in step.query.items()}
         payload = {key: self._binding(value, step, state) for key, value in step.body.items()}
-        ordinary_data = [path, query, payload, step.upload.model_dump() if step.upload else ""]
+        ordinary_data = [path, query, payload, request_headers,
+                         step.upload.model_dump() if step.upload else ""]
         if vault.contains_secret(ordinary_data):
             raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SECRET_VALUE")
         if is_login:
@@ -379,7 +403,8 @@ class Executor:
         media = ("multipart/form-data" if step.upload else "application/json"
                  if step.body or is_login or controlled else None)
         request_payload = {step.upload.field: step.upload.content} if step.upload else payload
-        validate_request(operation, path_values, query, request_payload, media)
+        validate_request(operation, path_values, query, request_payload, media,
+                         request_headers)
         result.input_validation = "NORMAL_VALIDATED"
         if policy.negative:
             from agenttest.negative import mutate_request, select_negative_approval
@@ -409,7 +434,8 @@ class Executor:
         if report.task_mode == "model_designed":
             public_request = vault.public_response(dict(path_parameters=path_values, query=query,
                 body={} if is_login or step.upload else {
-                    k: v for k, v in payload.items() if k not in controlled}))
+                    k: v for k, v in payload.items() if k not in controlled},
+                headers=public_headers(operation, request_headers)))
             if len(json.dumps(public_request, ensure_ascii=False).encode()) <= 4096:
                 result.request_evidence = dict(role=step.role, values=public_request,
                     credentials="由执行器管理，未记录", source=policy.assertions.source)
