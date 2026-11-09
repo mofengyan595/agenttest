@@ -3551,3 +3551,22 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   本轮 0 次真实模型调用、0 个真实写入，`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
 - 报告：[product-fix-partial-review-and-headers-20261108.md](product-fix-partial-review-and-headers-20261108.md)。
 - 下一步：等待操作员按第 6 节 6 条授权后启动隔离写验收；不重跑已冻结的真实模型位置。
+
+## 2026-11-09 首次隔离 API 读写生命周期验收（真实模型，三条首次位置）
+
+- 冻结点 HEAD `1af2a1f`（工作区干净），模型 `ecnu-max`，目标 `http://127.0.0.1:19097`，
+  六项批准已在 `authority.py` 声明并由操作员授权；三条用例各一次真实 focus 模型调用。
+- 判定：T1 FAIL（`FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE`，模型规划失败）、
+  T2 NEEDS_REVIEW（`FOCUS_INPUT_TEXT_CHANGED`，夹具仅允许一个批准输入取值，属夹具表达力）、
+  T3 FAIL（`FOCUS_REQUIREMENT_WITNESS_MISSING`，模型规划失败）。三条均在 focus 阶段被产品
+  自身校验拒绝，未进入 Executor：目标 HTTP 0 次、写请求 0 次、资源残留 0、UNKNOWN 0。
+- 用量：3 次模型调用，10292 + 9249 + 9242 tokens，允许上限 2 次/用例；`WRITE_AUTHORITY`
+  运行结束仍为 `NOT_GRANTED`，测试服务已停止，19097 无监听。三条位置已消费，不得重放。
+- 夹具改动（仅 `scripts/rw_lifecycle/`）：`Idempotency-Key` 必填头、`createItem.name`
+  批准生成输入、`getItem` 的 auditor(403)/匿名(401) 访问检查、`assisted=True` 走
+  `web_contract_v2` 模型设计路径；新增 `acceptance.py`（冻结→确定性预检→三条位置→评分与证据）。
+- 复算材料：`docs/evidence/rw-lifecycle-20261109/`（`evidence.json`、`freeze.json`、
+  `dry.json`、`summary.json`、`attempts/`）；报告：
+  [rw-lifecycle-acceptance-20261109.md](rw-lifecycle-acceptance-20261109.md)。
+- 下一步优先级：先提升 focus 阶段的见证/证据可靠性，再补“同键异体冲突变体”夹具能力，
+  然后使用**新的**首次位置验证，不复用本次三条。
