@@ -1,0 +1,672 @@
+{
+  "frozen_at": "2026-11-09T13:01:04+0800",
+  "rubric_check": {
+    "ok": true,
+    "problems": [],
+    "cases": {
+      "T1": {
+        "methods": [
+          "POST",
+          "GET",
+          "PATCH",
+          "PUT",
+          "DELETE",
+          "GET"
+        ],
+        "statuses": [
+          201,
+          200,
+          200,
+          200,
+          204,
+          404
+        ]
+      },
+      "T2": {
+        "methods": [
+          "POST",
+          "POST",
+          "POST",
+          "DELETE",
+          "GET"
+        ],
+        "statuses": [
+          201,
+          200,
+          409,
+          204,
+          404
+        ]
+      },
+      "T3": {
+        "methods": [
+          "POST",
+          "GET",
+          "GET",
+          "GET",
+          "PATCH",
+          "PATCH",
+          "DELETE",
+          "GET"
+        ],
+        "statuses": [
+          201,
+          200,
+          403,
+          401,
+          403,
+          401,
+          204,
+          404
+        ]
+      }
+    }
+  },
+  "source": {
+    "head": "3f9cdaeb4f26e1b6072c8af9627556bfe856683b",
+    "status": "",
+    "diff_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+    "src_sha256": "6b29cc305e50799352d8ffbc0e2f0e827db81092615a41c356ea78dc25d7aa5e"
+  },
+  "requirements": {
+    "cases": [
+      {
+        "key": "T1",
+        "title": "完整读写生命周期",
+        "text": "先用 author 身份创建名为 first 的条目；读取该条目确认返回 200；把名称改为 renamed；再用 replaced 整体替换名称；删除该条目；最后读取该条目，确认该批准策略返回 404。",
+        "expect_methods": [
+          "POST",
+          "GET",
+          "PATCH",
+          "PUT",
+          "DELETE",
+          "GET"
+        ],
+        "expect_statuses": [
+          201,
+          200,
+          200,
+          200,
+          204,
+          404
+        ],
+        "denied": 0,
+        "idempotent": false,
+        "conflict": null,
+        "cleanup": true,
+        "approved_denials": []
+      },
+      {
+        "key": "T2",
+        "title": "幂等键与冲突",
+        "text": "用已批准的幂等键创建名为 first 的条目；重复提交完全相同的创建请求；然后用同一幂等键、批准名称 second 再次创建，确认该批准策略返回 409；最后删除该条目并回读确认 404。",
+        "expect_methods": [
+          "POST",
+          "POST",
+          "POST",
+          "DELETE",
+          "GET"
+        ],
+        "expect_statuses": [
+          201,
+          200,
+          409,
+          204,
+          404
+        ],
+        "denied": 0,
+        "idempotent": true,
+        "conflict": 1,
+        "cleanup": true,
+        "approved_denials": []
+      },
+      {
+        "key": "T3",
+        "title": "身份隔离与受控写拒绝",
+        "text": "用 author 身份创建名为 first 的条目并读取；再用只读身份 auditor 读取该条目，确认返回 403；然后用匿名身份读取该条目，确认返回 401；再用 auditor 身份写入该条目，确认返回 403；用匿名身份写入该条目，确认返回 401；最后由 author 删除该条目并回读确认 404。",
+        "expect_methods": [
+          "POST",
+          "GET",
+          "GET",
+          "GET",
+          "PATCH",
+          "PATCH",
+          "DELETE",
+          "GET"
+        ],
+        "expect_statuses": [
+          201,
+          200,
+          403,
+          401,
+          403,
+          401,
+          204,
+          404
+        ],
+        "denied": 4,
+        "idempotent": false,
+        "conflict": null,
+        "cleanup": true,
+        "approved_denials": [
+          [
+            "getItem",
+            "auditor",
+            403
+          ],
+          [
+            "getItem",
+            null,
+            401
+          ],
+          [
+            "updateItem",
+            "auditor",
+            403
+          ],
+          [
+            "updateItem",
+            null,
+            401
+          ]
+        ]
+      }
+    ],
+    "digest": "f51cb65ffc24a3c17d37145906bfcf9accf11880f052c83d64e6b45735c300b8",
+    "plan_sha256": "bf41be8abc2293e152737ac56969ec860570f7ab7b403b6597c8d130e7b26ad4",
+    "rubric": {
+      "T1": {
+        "title": "完整读写生命周期",
+        "items": [
+          [
+            "create",
+            "POST /items 返回 201，动态生成资源 ID"
+          ],
+          [
+            "read",
+            "GET /items/{itemId} 返回 200 且名称与创建一致"
+          ],
+          [
+            "patch",
+            "PATCH /items/{itemId} 返回 200 且名称变为 renamed"
+          ],
+          [
+            "put",
+            "PUT /items/{itemId} 返回 200 且名称变为 replaced"
+          ],
+          [
+            "delete",
+            "DELETE /items/{itemId} 返回 204"
+          ],
+          [
+            "readback",
+            "删除后回读返回 404"
+          ],
+          [
+            "cleanup",
+            "终态 items=0 且 state_sha256 回到初始值"
+          ]
+        ],
+        "audit": [
+          "POST 201",
+          "GET 200",
+          "PATCH 200",
+          "PUT 200",
+          "DELETE 204",
+          "GET 404"
+        ]
+      },
+      "T2": {
+        "title": "幂等键与冲突",
+        "items": [
+          [
+            "create",
+            "带必填 Idempotency-Key 的创建返回 201"
+          ],
+          [
+            "replay",
+            "同键同体重放返回 200 且复用同一 ID，不二次创建"
+          ],
+          [
+            "conflict",
+            "同键异体返回 409，且不改变已有资源"
+          ],
+          [
+            "delete",
+            "删除返回 204"
+          ],
+          [
+            "readback",
+            "回读返回 404"
+          ],
+          [
+            "cleanup",
+            "终态 items=0"
+          ]
+        ],
+        "audit": [
+          "POST 201",
+          "POST 200",
+          "POST 409",
+          "DELETE 204",
+          "GET 404"
+        ]
+      },
+      "T3": {
+        "title": "身份隔离与受控写拒绝",
+        "items": [
+          [
+            "create",
+            "author 创建返回 201"
+          ],
+          [
+            "read",
+            "author 读取返回 200"
+          ],
+          [
+            "readonly_denial",
+            "auditor 读取返回 403"
+          ],
+          [
+            "anonymous_denial",
+            "匿名读取返回 401"
+          ],
+          [
+            "write_denial",
+            "auditor 写入返回 403，且资源状态不变"
+          ],
+          [
+            "anonymous_write",
+            "匿名写入返回 401，且资源状态不变"
+          ],
+          [
+            "delete",
+            "author 删除返回 204"
+          ],
+          [
+            "readback",
+            "回读返回 404"
+          ],
+          [
+            "cleanup",
+            "终态 items=0"
+          ]
+        ],
+        "audit": [
+          "POST 201",
+          "GET 200",
+          "GET 403",
+          "GET 401",
+          "PATCH 403",
+          "PATCH 401",
+          "DELETE 204",
+          "GET 404"
+        ]
+      }
+    },
+    "dev_cases": [
+      "DEV1",
+      "DEV2"
+    ],
+    "final_cases": [
+      "T1",
+      "T2",
+      "T3"
+    ]
+  },
+  "authority": {
+    "declaration": {
+      "environment": "isolated",
+      "base_url": "http://127.0.0.1:19097",
+      "allow_mutations": true,
+      "isolated_confirmed": true,
+      "operator_approval": "GRANTED",
+      "namespace_rule": "每次运行由 e2e 前缀 + 运行 ID 组成，重置夹具后创建；资源只在本命名空间可见，跨命名空间一律 404。",
+      "idempotency_rule": "createItem 必须携带必填 Idempotency-Key 头；同键同体返回 200 与原 id，同键异体返回 409，绝不二次创建；不同键创建新资源。",
+      "ownership_rule": "资源归创建者所有；非所有者读取/更新/删除一律 403，匿名 401。",
+      "cleanup_rule": "每个创建都必须配对一次 DELETE，并回读 404 作为清理证据；未清理的资源计入 leftovers 并阻止验收。",
+      "budgets": {
+        "max_requests": 12,
+        "max_seconds": 120,
+        "max_model_calls": 2
+      },
+      "operations": [
+        {
+          "operation_id": "createItem",
+          "method": "POST",
+          "path": "/items",
+          "role": "author",
+          "statuses": [
+            201
+          ],
+          "requires": [
+            "Idempotency-Key"
+          ],
+          "mutation": true
+        },
+        {
+          "operation_id": "getItem",
+          "method": "GET",
+          "path": "/items/{itemId}",
+          "role": "author",
+          "statuses": [
+            200
+          ],
+          "mutation": false
+        },
+        {
+          "operation_id": "updateItem",
+          "method": "PATCH",
+          "path": "/items/{itemId}",
+          "role": "author",
+          "statuses": [
+            200
+          ],
+          "mutation": true
+        },
+        {
+          "operation_id": "replaceItem",
+          "method": "PUT",
+          "path": "/items/{itemId}",
+          "role": "author",
+          "statuses": [
+            200
+          ],
+          "mutation": true
+        },
+        {
+          "operation_id": "deleteItem",
+          "method": "DELETE",
+          "path": "/items/{itemId}",
+          "role": "author",
+          "statuses": [
+            204
+          ],
+          "mutation": true
+        },
+        {
+          "operation_id": "listItems",
+          "method": "GET",
+          "path": "/items",
+          "role": "author",
+          "statuses": [
+            200
+          ],
+          "mutation": false
+        }
+      ],
+      "resource_creations": {
+        "createItem": {
+          "id_selector": "$.id",
+          "fresh_resource_basis": "每次运行新建一个命名的条目"
+        }
+      },
+      "resource_lifecycles": [
+        {
+          "create_operation": "createItem",
+          "delete_operation": "deleteItem",
+          "path_parameter": "itemId",
+          "id_selector": "$.id",
+          "fresh_resource_basis": "每次运行新建一个命名的条目"
+        }
+      ]
+    },
+    "digest": "5f47e89508e25c9ee82486ad9980dcc8df24903d69afd28f7541ff05406dc393",
+    "checklist": [
+      "批准本文件列出的 6 个操作（POST/GET/PATCH/PUT/DELETE/GET 列表）作为唯一可写范围",
+      "确认目标仅为 127.0.0.1 上的隔离夹具，且环境标记为 isolated",
+      "确认每次运行的命名空间前缀与重置方式（POST /__namespace + POST /__reset）",
+      "确认清理策略：每次创建必须配对 DELETE，并以回读 404 作为清理证据",
+      "确认故障注入仅用于补偿测试，且不重放未知结果的写请求",
+      "确认预算上限（12 次请求 / 120 秒 / 2 次模型调用）与停止条件"
+    ]
+  },
+  "contract": {
+    "document": {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "rw-lifecycle",
+        "version": "1"
+      },
+      "paths": {
+        "/items": {
+          "post": {
+            "operationId": "createItem",
+            "summary": "createItem",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "Idempotency-Key",
+                "in": "header",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "201": {
+                "description": "Isolated"
+              },
+              "409": {
+                "description": "Same idempotency key with a different body"
+              }
+            },
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "get": {
+            "operationId": "listItems",
+            "summary": "listItems",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [],
+            "responses": {
+              "200": {
+                "description": "Isolated"
+              }
+            }
+          }
+        },
+        "/items/{itemId}": {
+          "get": {
+            "operationId": "getItem",
+            "summary": "getItem",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "itemId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Isolated"
+              },
+              "401": {
+                "description": "Anonymous is rejected"
+              },
+              "404": {
+                "description": "Deleted item is gone"
+              }
+            }
+          },
+          "patch": {
+            "operationId": "updateItem",
+            "summary": "updateItem",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "itemId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Isolated"
+              },
+              "401": {
+                "description": "Anonymous is rejected"
+              },
+              "403": {
+                "description": "Non-owner is rejected"
+              }
+            },
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "put": {
+            "operationId": "replaceItem",
+            "summary": "replaceItem",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "itemId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Isolated"
+              }
+            },
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "delete": {
+            "operationId": "deleteItem",
+            "summary": "deleteItem",
+            "security": [
+              {
+                "fixtureBearer": []
+              }
+            ],
+            "parameters": [
+              {
+                "name": "itemId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            ],
+            "responses": {
+              "204": {
+                "description": "Isolated"
+              }
+            }
+          }
+        }
+      },
+      "components": {
+        "securitySchemes": {
+          "fixtureBearer": {
+            "type": "http",
+            "scheme": "bearer"
+          }
+        }
+      }
+    },
+    "document_sha256": "00960ecf41c5c2717c2478a701cbacf377693e122eb766a737813ea2beaba17d",
+    "setup_sha256": "3d49175b6c4cd739cdcdb565cf84046f5b93842548fe5caf2a8415360cd671ab"
+  },
+  "scorer": {
+    "sha256": "d7d7d2d7d061f2920e921a41f794f404ff2538a753d280dbfba5067c1d414f5e"
+  },
+  "model": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+    "max_output_tokens": 4096
+  },
+  "target": {
+    "base_url": "http://127.0.0.1:19097",
+    "initial": {
+      "state_sha256": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+      "namespace": "e2e-freeze-0001",
+      "items": 0,
+      "audit": 0,
+      "read_only": false,
+      "isolated": true,
+      "writable": true
+    },
+    "isolated": true,
+    "loopback_only": true
+  },
+  "budgets": {
+    "max_requests": 12,
+    "max_seconds": 120,
+    "max_model_calls": 2
+  }
+}

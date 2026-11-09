@@ -147,3 +147,9 @@ T3 FAIL（模型规划）。详见 `docs/rw-lifecycle-acceptance-20261109.md` �
 需求集见 scripts/rw_lifecycle/plan_v2.py（开发样本与最终样本分离）。本阶段未授予写入，
 WRITE_AUTHORITY 保持 NOT_GRANTED；重新执行首次验收前需按第 3 节再次批准。
 详见 docs/rw-lifecycle-focus-fixes-20261109.md。
+
+**2026-11-09 第二次首次验收（冻结 3f9cdae，一次运行）**：T1 FAIL（设计阶段
+OPENAPI_VALUE_ENUM，产品已离线修复并加反向测试）、T2 NEEDS_REVIEW（模型 30.03 s 超时，
+用量 UNKNOWN）、T3 未执行（被 UNKNOWN 用量闸门拦下）。目标 HTTP 0、资源残留 0；
+三条位置中 T1/T2 已消费，T3 未消费但需先对账。详见
+docs/rw-lifecycle-acceptance-v2-20261109.md 与 docs/evidence/rw-lifecycle-20261109-v2/。

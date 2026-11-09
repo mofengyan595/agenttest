@@ -329,6 +329,12 @@ def run_case(folder, svc, project_id, case, run_id, initial):
         findings.append(dict(reason="driver_task_unfinished", detail=current["status"]))
     blocking = {item["reason"] for item in findings}
     verdict = ("FAIL" if blocking else scored["verdict"])
+    if not rows and current["status"] == "NEEDS_REVIEW":
+        # A model-service failure before any target request is an infrastructure verdict, not
+        # a lifecycle failure; the empty audit must not be scored as one.
+        verdict = "NEEDS_REVIEW"
+        findings.append(dict(reason="driver_no_target_requests",
+                             detail=current.get("reason") or current["status"]))
     evidence.update(
         verdict=verdict, findings=findings, metrics=scored["metrics"],
         checks=extra["checks"], created_id=created,

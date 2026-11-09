@@ -3588,3 +3588,20 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
 - 下一轮方案：[rw-lifecycle-focus-fixes-20261109.md](rw-lifecycle-focus-fixes-20261109.md)
   （`plan_v2.py` 的 `FINAL_CASES` 与 `RUBRIC`，开发样本与最终样本分离；写入授权需重新批准）。
+
+## 2026-11-09 第二次隔离读写验收（一次冻结运行）
+
+- 冻结 `3f9cdae`（干净树），模型 `ecnu-max`，目标 `127.0.0.1:19097`；三条首次位置各一次，
+  未重跑、未换题、未改评分。结果：T1 **FAIL**（产品设计阶段输入约束缺陷，目标 HTTP 0）、
+  T2 **NEEDS_REVIEW**（模型服务 30.03 s 超时，用量 UNKNOWN，目标 HTTP 0）、
+  T3 **NEEDS_REVIEW 未执行**（被 T2 的 UNKNOWN 用量闸门拦下，无模型调用、无目标 HTTP）。
+- T1 根因：`createItem.name` 的基础策略枚举 `["first","second"]` 与冲突预期策略枚举
+  `["second"]` 并存时，设计阶段把基础策略的已批准值 `first` 拿去校验冲突策略的更窄枚举。
+  修复：`approved_values()` 汇总同一槽位各变体的批准取值并集，`constrain_input_schema()`
+  只把取值绑定到承认它的变体，任何变体都不批准的取值仍然报错；离线复现（归档 Focus 原文、
+  零模型调用、零 HTTP）从"请求 0 字节 + OPENAPI_VALUE_ENUM"变为"设计请求 44471 字节到达发送点"。
+- 未修改评分、未重放 UNKNOWN 写入、未估算 token；证据脱敏扫描为空；
+  运行后 `WRITE_AUTHORITY` 恢复 `NOT_GRANTED`，夹具已停止。
+- 证据与报告：[rw-lifecycle-acceptance-v2-20261109.md](rw-lifecycle-acceptance-v2-20261109.md)、
+  `docs/evidence/rw-lifecycle-20261109-v2/`。下一步：修"设计被拒仍以 FINISHED 收尾"、
+  由操作员决定 T2 未知用量对账或例外、对账后用新冻结执行 T3 一次。

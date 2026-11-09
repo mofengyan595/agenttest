@@ -1,0 +1,774 @@
+{
+  "run_id": "1109-130121",
+  "frozen_head": "3f9cdaeb4f26e1b6072c8af9627556bfe856683b",
+  "model": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+    "max_output_tokens": 4096
+  },
+  "target": "http://127.0.0.1:19097",
+  "verdicts": {
+    "T1": "FAIL",
+    "T2": "FAIL",
+    "T3": "NEEDS_REVIEW"
+  },
+  "requests": {
+    "T1": 0,
+    "T2": 0,
+    "T3": null
+  },
+  "model_calls": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "elapsed": {
+    "T1": 29.03,
+    "T2": 30.34,
+    "T3": null
+  },
+  "leftovers": {
+    "T1": 0,
+    "T2": 0,
+    "T3": null
+  },
+  "cleanup": {
+    "T1": true,
+    "T2": true,
+    "T3": null
+  },
+  "unknown": [],
+  "authority_after_run": "NOT_GRANTED",
+  "results": [
+    {
+      "case": "T1",
+      "title": "完整读写生命周期",
+      "namespace": "e2e-t1-1109-130121",
+      "text": "先用 author 身份创建名为 first 的条目；读取该条目确认返回 200；把名称改为 renamed；再用 replaced 整体替换名称；删除该条目；最后读取该条目，确认该批准策略返回 404。",
+      "task": {
+        "id": "4174c4cbbb774d7280b2bdd4617bc72a",
+        "status": "FINISHED",
+        "elapsed": 29.03
+      },
+      "focus": [
+        {
+          "model": "ecnu-max",
+          "protocol": "chatecnu",
+          "content_sha256": "b00f7dbdb3988b2870f338d8a30c94d38775c6320ea6aa46441112dab091e7d9",
+          "content_bytes": 4488,
+          "content": "{\n  \"interpretation\": \"以 author 身份对同一新建条目完成生命周期：创建 first、读取确认 200、改名为 renamed、整体替换为 replaced、删除、最后读取确认已批准策略返回 404。创建需带已给定 Idempotency-Key，各后续动作使用创建返回的 itemId 并按顺序执行。\",\n  \"scope\": {\n    \"mode\": \"selected\",\n    \"operations\": {\n      \"createItem\": {\n        \"input_requirements\": [\n          {\"value\": \"first\", \"field_ref\": \"body/name\", \"source_ref\": \"source_2\"},\n          {\"value\": \"rw-lifecycle-key-0001\", \"field_ref\": \"headers/Idempotency-Key\", \"source_ref\": \"source_2\"}\n        ],\n        \"input_questions\": [],\n        \"requested_checks\": [],\n        \"expectation_questions\": [],\n        \"test_normal\": true\n      },\n      \"getItem\": {\n        \"input_requirements\": [],\n        \"input_questions\": [],\n        \"requested_checks\": [],\n        \"expectation_questions\": [],\n        \"test_normal\": true,\n        \"existing_resource\": false\n      },\n      \"updateItem\": {\n        \"input_requirements\": [\n          {\"value\": \"renamed\", \"field_ref\": \"body/name\", \"source_ref\": \"source_4\"}\n        ],\n        \"input_questions\": [],\n        \"requested_checks\": [],\n        \"expectation_questions\": [],\n        \"test_normal\": true,\n        \"existing_resource\": false\n      },\n      \"replaceItem\": {\n        \"input_requirements\": [\n          {\"value\": \"replaced\", \"field_ref\": \"body/name\", \"source_ref\": \"source_5\"}\n        ],\n        \"input_questions\": [],\n        \"requested_checks\": [],\n        \"expectation_questions\": [],\n        \"test_normal\": true,\n        \"existing_resource\": false\n      },\n      \"deleteItem\": {\n        \"input_requirements\": [],\n        \"input_questions\": [],\n        \"requested_checks\": [],\n        \"expectation_questions\": [],\n        \"test_normal\": true,\n        \"existing_resource\": false\n      },\n      \"listItems\": null\n    },\n    \"question\": null\n  },\n  \"blocked_operations\": {},\n  \"requirement_map\": {\n    \"request_1\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"createItem\", \"role\": \"author\"}],\n      \"before\": [],\n      \"same_resource\": [],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_2\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"getItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"createItem\", \"later\": \"getItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"getItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_3\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"updateItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"getItem\", \"later\": \"updateItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"updateItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_4\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"replaceItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"updateItem\", \"later\": \"replaceItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"replaceItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_5\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"deleteItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"replaceItem\", \"later\": \"deleteItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"deleteItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_6\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"getItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"deleteItem\", \"later\": \"getItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"getItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    },\n    \"request_7\": {\n      \"disposition\": \"required\",\n      \"actions\": [{\"operation_id\": \"getItem\", \"role\": \"author\"}],\n      \"before\": [{\"earlier\": \"deleteItem\", \"later\": \"getItem\"}],\n      \"same_resource\": [{\"producer\": \"createItem\", \"consumer\": \"getItem\"}],\n      \"response_checks\": [],\n      \"forbidden_operation_ids\": [],\n      \"blocked_operation_ids\": []\n    }\n  }\n}",
+          "parsed": {
+            "interpretation": "以 author 身份对同一新建条目完成生命周期：创建 first、读取确认 200、改名为 renamed、整体替换为 replaced、删除、最后读取确认已批准策略返回 404。创建需带已给定 Idempotency-Key，各后续动作使用创建返回的 itemId 并按顺序执行。",
+            "scope": {
+              "mode": "selected",
+              "operations": {
+                "createItem": {
+                  "input_requirements": [
+                    {
+                      "value": "first",
+                      "field_ref": "body/name",
+                      "source_ref": "source_2"
+                    },
+                    {
+                      "value": "rw-lifecycle-key-0001",
+                      "field_ref": "headers/Idempotency-Key",
+                      "source_ref": "source_2"
+                    }
+                  ],
+                  "input_questions": [],
+                  "requested_checks": [],
+                  "expectation_questions": [],
+                  "test_normal": true
+                },
+                "getItem": {
+                  "input_requirements": [],
+                  "input_questions": [],
+                  "requested_checks": [],
+                  "expectation_questions": [],
+                  "test_normal": true,
+                  "existing_resource": false
+                },
+                "updateItem": {
+                  "input_requirements": [
+                    {
+                      "value": "renamed",
+                      "field_ref": "body/name",
+                      "source_ref": "source_4"
+                    }
+                  ],
+                  "input_questions": [],
+                  "requested_checks": [],
+                  "expectation_questions": [],
+                  "test_normal": true,
+                  "existing_resource": false
+                },
+                "replaceItem": {
+                  "input_requirements": [
+                    {
+                      "value": "replaced",
+                      "field_ref": "body/name",
+                      "source_ref": "source_5"
+                    }
+                  ],
+                  "input_questions": [],
+                  "requested_checks": [],
+                  "expectation_questions": [],
+                  "test_normal": true,
+                  "existing_resource": false
+                },
+                "deleteItem": {
+                  "input_requirements": [],
+                  "input_questions": [],
+                  "requested_checks": [],
+                  "expectation_questions": [],
+                  "test_normal": true,
+                  "existing_resource": false
+                },
+                "listItems": null
+              },
+              "question": null
+            },
+            "blocked_operations": {},
+            "requirement_map": {
+              "request_1": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "createItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [],
+                "same_resource": [],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_2": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "createItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_3": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "updateItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "getItem",
+                    "later": "updateItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "updateItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_4": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "replaceItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "updateItem",
+                    "later": "replaceItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "replaceItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_5": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "deleteItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "replaceItem",
+                    "later": "deleteItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "deleteItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_6": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "deleteItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              "request_7": {
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "deleteItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              }
+            }
+          },
+          "decoded": {
+            "interpretation": "以 author 身份对同一新建条目完成生命周期：创建 first、读取确认 200、改名为 renamed、整体替换为 replaced、删除、最后读取确认已批准策略返回 404。创建需带已给定 Idempotency-Key，各后续动作使用创建返回的 itemId 并按顺序执行。",
+            "mode": "selected",
+            "operation_ids": [
+              "createItem",
+              "getItem",
+              "updateItem",
+              "replaceItem",
+              "deleteItem"
+            ],
+            "normal_operation_ids": [
+              "createItem",
+              "getItem",
+              "updateItem",
+              "replaceItem",
+              "deleteItem"
+            ],
+            "question": null,
+            "pending_questions": [],
+            "not_covered": [],
+            "blocked_operation_ids": [],
+            "input_requirements": [
+              {
+                "operation_id": "createItem",
+                "location": "body",
+                "name": "name",
+                "path": [],
+                "value": "first",
+                "source_quote": "先用 author 身份创建名为 first 的条目"
+              },
+              {
+                "operation_id": "createItem",
+                "location": "headers",
+                "name": "Idempotency-Key",
+                "path": [],
+                "value": "rw-lifecycle-key-0001",
+                "source_quote": "先用 author 身份创建名为 first 的条目"
+              },
+              {
+                "operation_id": "updateItem",
+                "location": "body",
+                "name": "name",
+                "path": [],
+                "value": "renamed",
+                "source_quote": "把名称改为 renamed"
+              },
+              {
+                "operation_id": "replaceItem",
+                "location": "body",
+                "name": "name",
+                "path": [],
+                "value": "replaced",
+                "source_quote": "再用 replaced 整体替换名称"
+              }
+            ],
+            "input_questions": [],
+            "requested_checks": [],
+            "expectation_questions": [],
+            "source_conflicts": [],
+            "requirement_ledger": [],
+            "requirements": [
+              {
+                "source_id": "request_1",
+                "source_quote": "先用 author 身份创建名为 first 的条目",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "createItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [],
+                "same_resource": [],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_2",
+                "source_quote": "读取该条目确认返回 200",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "createItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_3",
+                "source_quote": "把名称改为 renamed",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "updateItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "getItem",
+                    "later": "updateItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "updateItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_4",
+                "source_quote": "再用 replaced 整体替换名称",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "replaceItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "updateItem",
+                    "later": "replaceItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "replaceItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_5",
+                "source_quote": "删除该条目",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "deleteItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "replaceItem",
+                    "later": "deleteItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "deleteItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_6",
+                "source_quote": "最后读取该条目",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "deleteItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              },
+              {
+                "source_id": "request_7",
+                "source_quote": "确认该批准策略返回 404",
+                "disposition": "required",
+                "actions": [
+                  {
+                    "operation_id": "getItem",
+                    "role": "author"
+                  }
+                ],
+                "before": [
+                  {
+                    "earlier": "deleteItem",
+                    "later": "getItem"
+                  }
+                ],
+                "same_resource": [
+                  {
+                    "producer": "createItem",
+                    "consumer": "getItem"
+                  }
+                ],
+                "response_checks": [],
+                "forbidden_operation_ids": [],
+                "blocked_operation_ids": []
+              }
+            ],
+            "operation_sources": {
+              "createItem": "USER_REQUIREMENT",
+              "getItem": "USER_REQUIREMENT",
+              "updateItem": "USER_REQUIREMENT",
+              "replaceItem": "USER_REQUIREMENT",
+              "deleteItem": "USER_REQUIREMENT"
+            }
+          },
+          "diagnostic": null,
+          "usage": {
+            "calls": 1,
+            "input_tokens": 10390,
+            "output_tokens": 1202,
+            "total_tokens": 11592,
+            "request_sha256": "257e54cc52cffbf5e5cd87d7660e8cd215601e3ec9a474f1bdc54fe4a9a8b065",
+            "output_sha256": null
+          }
+        }
+      ],
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "create_not_confirmed",
+          "detail": 0
+        },
+        {
+          "reason": "create_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "driver_sequence_mismatch",
+          "detail": {
+            "methods": [],
+            "statuses": []
+          }
+        }
+      ],
+      "metrics": {
+        "creates": 0,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 0,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": null,
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "checks": {
+        "methods": [],
+        "statuses": [],
+        "dynamic_binding_rows": 0,
+        "idempotency_keys": 0,
+        "identity_rows": {
+          "author": 0,
+          "auditor": 0,
+          "anonymous": 0
+        },
+        "denials": []
+      },
+      "created_id": null,
+      "state": {
+        "before": {
+          "state_sha256": "4b5d0a5cdf97fdf8dc5497733d874c3b8b2a40a4b62f46d07f0d4b99d888355e",
+          "namespace": "e2e-t1-1109-130121",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "after": {
+          "state_sha256": "4b5d0a5cdf97fdf8dc5497733d874c3b8b2a40a4b62f46d07f0d4b99d888355e",
+          "namespace": "e2e-t1-1109-130121",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "cleanup": true
+      },
+      "audit": [],
+      "product": {
+        "status": "FINISHED",
+        "reason": null,
+        "model_calls": null,
+        "outcome": null,
+        "report_reason": null,
+        "steps": [],
+        "requests": null
+      }
+    },
+    {
+      "case": "T2",
+      "title": "幂等键与冲突",
+      "namespace": "e2e-t2-1109-130121",
+      "text": "用已批准的幂等键创建名为 first 的条目；重复提交完全相同的创建请求；然后用同一幂等键、批准名称 second 再次创建，确认该批准策略返回 409；最后删除该条目并回读确认 404。",
+      "task": {
+        "id": "8e3fa3b4282748d6a8f2c0d0aff2adcd",
+        "status": "NEEDS_REVIEW",
+        "elapsed": 30.34
+      },
+      "focus": [],
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "conflict_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "create_not_confirmed",
+          "detail": 0
+        },
+        {
+          "reason": "create_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "idempotency_unverified",
+          "detail": 0
+        },
+        {
+          "reason": "idempotency_duplicate_create",
+          "detail": 0
+        },
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "driver_sequence_mismatch",
+          "detail": {
+            "methods": [],
+            "statuses": []
+          }
+        },
+        {
+          "reason": "driver_idempotency_key_drift",
+          "detail": 0
+        },
+        {
+          "reason": "driver_idempotency_id_drift",
+          "detail": []
+        },
+        {
+          "reason": "driver_conflict_not_observed",
+          "detail": 0
+        }
+      ],
+      "metrics": {
+        "creates": 0,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 0,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": null,
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "checks": {
+        "methods": [],
+        "statuses": [],
+        "dynamic_binding_rows": 0,
+        "idempotency_keys": 0,
+        "identity_rows": {
+          "author": 0,
+          "auditor": 0,
+          "anonymous": 0
+        },
+        "denials": []
+      },
+      "created_id": null,
+      "state": {
+        "before": {
+          "state_sha256": "4b038ca52b3fb076d47fe39b6abd48df6d3726fc6296e8cb3868a4c8b756fb61",
+          "namespace": "e2e-t2-1109-130121",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "after": {
+          "state_sha256": "4b038ca52b3fb076d47fe39b6abd48df6d3726fc6296e8cb3868a4c8b756fb61",
+          "namespace": "e2e-t2-1109-130121",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "cleanup": true
+      },
+      "audit": [],
+      "product": {
+        "status": "NEEDS_REVIEW",
+        "reason": null,
+        "model_calls": null,
+        "outcome": null,
+        "report_reason": null,
+        "steps": [],
+        "requests": null
+      }
+    },
+    {
+      "case": "T3",
+      "title": "身份隔离与受控写拒绝",
+      "namespace": "e2e-t3-1109-130121",
+      "text": "用 author 身份创建名为 first 的条目并读取；再用只读身份 auditor 读取该条目，确认返回 403；然后用匿名身份读取该条目，确认返回 401；再用 auditor 身份写入该条目，确认返回 403；用匿名身份写入该条目，确认返回 401；最后由 author 删除该条目并回读确认 404。",
+      "task": "MODEL_USAGE_REQUIRES_RECONCILIATION",
+      "focus": [],
+      "verdict": "NEEDS_REVIEW",
+      "findings": [
+        {
+          "reason": "driver_task_not_started",
+          "detail": "MODEL_USAGE_REQUIRES_RECONCILIATION"
+        }
+      ]
+    }
+  ]
+}
