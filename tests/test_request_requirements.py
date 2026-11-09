@@ -10,12 +10,40 @@ from agenttest.product_design import TestDesign as Design
 from agenttest.product_focus import FocusSelection
 from agenttest.request_requirements import (
     RequestRequirement,
+    bounded_span,
     decode_requirements,
     request_atoms,
     requirement_schema,
     validate_plan_requirements,
     validate_requirement_links,
 )
+
+
+def long_request_text():
+    return ("创建条目后读取 " + "很长的说明" * 60
+            + ' 校验字段 $.data.items[0].long_field_name_with_more_chars 的值是 "a,b;c"'
+            + " 且 [first, second, third] 顺序不变，最后删除。")
+
+
+def test_bounded_span_finishes_a_quoted_value_instead_of_cutting_it():
+    text = 'a "' + "b" * 40 + '" 结尾'
+    assert bounded_span(text, 0, 20) == text.index('"', 3) + 1
+    plain = "一段没有任何引号或括号的中文说明" * 20
+    assert bounded_span(plain, 0, 300) == 300
+
+
+def test_long_request_text_keeps_paths_values_and_order_intact():
+    text = long_request_text()
+    atoms = request_atoms(text)
+    joined = "".join(atom["text"] for atom in atoms)
+    assert "$.data.items[0].long_field_name_with_more_chars" in joined
+    assert '"a,b;c"' in joined
+    assert "[first, second, third]" in joined
+    assert joined.count('"') % 2 == 0
+    assert all(atom["end"] > atom["start"] for atom in atoms)
+    assert [atom["start"] for atom in atoms] == sorted(a["start"] for a in atoms)
+    # Bounded, but the small lookahead may extend one span to close a quote or bracket.
+    assert max(len(atom["text"]) for atom in atoms) <= 340
 
 
 def ctx(text):

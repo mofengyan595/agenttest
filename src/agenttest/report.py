@@ -213,6 +213,7 @@ class RunReport(BaseModel):
     resource_lifecycle: list[dict] = Field(default_factory=list)
     created_resources: list[dict] = Field(default_factory=list)
     lifecycle_cleanup: list[StepResult] = Field(default_factory=list)
+    cleanup_error: str | None = None
     probe_decisions: list[dict] = Field(default_factory=list)
     failure_explanation: dict | None = None
 

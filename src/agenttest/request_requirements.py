@@ -196,6 +196,46 @@ def future_clause(text):
                 re.search(r'留给|供以后(?:再)?重试|供下次(?:再)?重试', text))
 
 
+def bounded_span(text, start, limit=300):
+    """End of a bounded span that never splits a quoted value, a bracket or a JSONPath."""
+    end = min(start + limit, len(text))
+    if end >= len(text):
+        return end
+    quote = None
+    brackets = []
+    index = start
+    while index < end:
+        char = text[index]
+        if quote:
+            if char == quote and text[index - 1] != '\\':
+                quote = None
+        elif char in '"\'':
+            quote = char
+        elif char in '[{':
+            brackets.append(']' if char == '[' else '}')
+        elif brackets and char == brackets[-1]:
+            brackets.pop()
+        index += 1
+    if not quote and not brackets:
+        return end
+    # Finish the open quote/bracket, but only within a small lookahead.
+    while index < min(len(text), end + 40):
+        char = text[index]
+        if quote:
+            if char == quote and text[index - 1] != '\\':
+                quote = None
+        elif char in '"\'':
+            quote = char
+        elif char in '[{':
+            brackets.append(']' if char == '[' else '}')
+        elif brackets and char == brackets[-1]:
+            brackets.pop()
+        index += 1
+        if not quote and not brackets:
+            return index
+    return end
+
+
 def request_atoms(text):
     """Partition original text without asking a model which clauses deserve accounting.
 
@@ -231,11 +271,14 @@ def request_atoms(text):
     for start, end in spans:
         source = text[start:end].strip()
         start += len(text[start:end]) - len(text[start:end].lstrip())
-        # Preserve long text as bounded source spans rather than silently truncating it.
-        for offset in range(0, len(source), 300):
-            part = source[offset:offset + 300]
+        # Preserve long text as bounded source spans rather than silently truncating it, and
+        # never cut a quoted value, a JSONPath or a bracketed list in half.
+        offset = 0
+        while offset < len(source):
+            end = bounded_span(source, offset)
+            part = source[offset:end]
             result.append(dict(source_id=f'request_{len(result) + 1}', text=part,
-                start=start + offset, end=start + offset + len(part),
+                start=start + offset, end=start + end,
                 future=bool(re.search(r'(?:留给|保留.*?(?:给|供))?(?:以后|下次|将来|未来)', part)),
                 future_only=future_clause(part),
                 same_resource=bool(re.search(r'同一|同一个|同一条|同一份', part)),
@@ -243,6 +286,7 @@ def request_atoms(text):
                     r'(?:不要(?!漏|遗漏|跳过|省略)|不得(?!漏|遗漏|跳过|省略)|无需|不必)', part)),
                 ordered=bool(re.search(
                     r'之后|以后再|完成后|删除后|更新后|创建后|然后|最后', part))))
+            offset = max(end, offset + 1)
     return result
 
 

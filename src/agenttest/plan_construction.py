@@ -1,9 +1,34 @@
 """Construct one ordered plan from unordered proposals before all execution validation."""
 
+import json
+
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
 
 ENCODING = 'UNORDERED_APPROVED_NODES_V1'
+
+
+def instance_groups(nodes, operation_id):
+    """Distinct request instances of one operation, grouped by their concrete arguments.
+
+    Two steps that would send the same request (same literals and same sources) are one replay
+    group; a changed body starts the next group. Only the proposal order breaks ties between
+    groups, and no group ever depends on itself.
+    """
+    groups, index = [], {}
+    for node in nodes.values():
+        if node['operation_id'] != operation_id:
+            continue
+        signature = json.dumps(sorted(
+            (argument.get('location'), argument.get('name'), argument.get('value'),
+             argument.get('from_step'), argument.get('select'))
+            for argument in node['arguments']), ensure_ascii=False, default=str)
+        signature = (signature, node.get('role'), node.get('policy_id'))
+        if signature not in index:
+            index[signature] = len(groups)
+            groups.append([])
+        groups[index[signature]].append(node['id'])
+    return groups
 
 
 def construct_plan(plan, context):
@@ -92,15 +117,20 @@ def construct_plan(plan, context):
                     continue
                 raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
             if order['earlier'] == order['later']:
-                # Repeating one operation needs a node-level chain; mapping every node to every
-                # other node of the same operation would create a self-dependency cycle.
-                if not any(reasons.get((target, source)) == 'MODEL_REFERENCE'
-                           for target in later for source in earlier if target != source):
-                    error = ValidationFailure(
-                        Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
-                    error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}'
-                                               for key in later]
-                    raise error
+                # Repeating one operation needs instance identity: identical requests (same
+                # key, same body) form one replay group, a different body forms the next. Groups
+                # are chained in proposal order, so no step ever depends on itself.
+                chain = instance_groups(nodes, order['later'])
+                if len(chain) == 1:
+                    # Identical requests in one group: an explicit order still serialises them,
+                    # and a single instance cannot be ordered against itself.
+                    for previous, current in zip(chain[0], chain[0][1:]):
+                        depend(current, previous, 'TEXT_ORDER')
+                    continue
+                for previous_group, group in zip(chain, chain[1:]):
+                    for target in group:
+                        for source in previous_group:
+                            depend(target, source, 'TEXT_ORDER')
                 continue
             for target in later:
                 for source in earlier:

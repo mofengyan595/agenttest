@@ -12,9 +12,40 @@ if str(ROOT / "scripts/rw_lifecycle") not in sys.path:
 SCRIPT = str(ROOT / "scripts/rw_lifecycle/acceptance.py")
 
 
-def drive(folder, *extra):
+def drive(folder, *extra, env=None):
+    import os
+
+    merged = dict(os.environ, **(env or {}))
     return subprocess.run([sys.executable, SCRIPT, "dry", str(folder), *extra],
-                          cwd=ROOT, capture_output=True, text=True)
+                          cwd=ROOT, capture_output=True, text=True, env=merged)
+
+
+def test_offline_dry_run_needs_no_credential_file(tmp_path):
+    """CI has no ``.env``: configuration validation must not read real credentials."""
+    folder = tmp_path / "offline"
+    missing = str(tmp_path / "absent.env")
+    finished = drive(folder, env={"AGENTTEST_MODEL_ENV": missing})
+    assert finished.returncode == 0, finished.stderr
+    payload = json.loads((folder / "dry.json").read_text(encoding="utf-8"))
+    assert payload["ready"] is True
+    assert payload["model_timeout"] == 45
+
+
+def test_run_refuses_offline_without_a_model_identity(tmp_path):
+    """A real run may never fall back to the offline placeholder identity."""
+    folder = tmp_path / "offline-run"
+    folder.mkdir()
+    (folder / "freeze.json").write_text(json.dumps(dict(
+        source=dict(status="", head="0" * 40), model=dict(model="ecnu-max"),
+        target=dict(base_url="http://127.0.0.1:19097"))), encoding="utf-8")
+    import os
+
+    finished = subprocess.run(
+        [sys.executable, SCRIPT, "run", str(folder)],
+        cwd=ROOT, capture_output=True, text=True,
+        env=dict(os.environ, AGENTTEST_MODEL_ENV=str(tmp_path / "absent.env")))
+    assert finished.returncode != 0
+    assert "MODEL_CREDENTIALS_MISSING" in finished.stderr + finished.stdout
 
 
 def test_consumed_positions_can_never_be_selected_again(tmp_path):

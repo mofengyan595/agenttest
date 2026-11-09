@@ -222,3 +222,53 @@ async def test_incomplete_cleanup_keeps_evidence_and_is_not_replayed(tmp_path, m
     with pytest.raises(ValueError, match="RUN_NOT_RESUMABLE"):
         await executor(tmp_path, target).run(plan(), report=report)
     assert calls == before and "清理未完成" in report.cleanup
+
+
+async def bounded_executor(tmp_path, handler, *, cleanup_timeout=None, **overrides):
+    proj, _ = lifecycle_project()
+    config = proj.target.model_copy(update=overrides)
+    executor_ = Executor(config, proj.contract, ReportStore(tmp_path),
+                         httpx.MockTransport(handler), {}, proj.registry)
+    if cleanup_timeout is not None:
+        executor_.cleanup_timeout = cleanup_timeout
+    return executor_
+
+
+@pytest.mark.asyncio
+async def test_execution_budget_timeout_still_runs_the_approved_cleanup(tmp_path):
+    """A slow assertion must not consume the budget the operator approved for cleanup."""
+    calls = []
+
+    async def target(request):
+        calls.append(request.method)
+        if request.method == "POST":
+            return httpx.Response(201, json=dict(id="fresh"))
+        if request.method == "DELETE":
+            return httpx.Response(204)
+        await asyncio.sleep(2)
+        return httpx.Response(200, json=dict(state="ready"))
+
+    executor_ = await bounded_executor(tmp_path, target, run_timeout=0.4, cleanup_timeout=5.0)
+    report = await executor_.run(plan())
+    assert report.outcome == Outcome.TEST_INFRA_ERROR and report.reason == "RUN_TIMEOUT"
+    assert calls == ["POST", "GET", "DELETE"]
+    assert report.cleanup_error is None
+    assert report.resource_lifecycle[0]["status"] == "CLEANED"
+
+
+@pytest.mark.asyncio
+async def test_cleanup_has_its_own_timeout_and_never_rewrites_the_failure(tmp_path):
+    async def target(request):
+        if request.method == "POST":
+            return httpx.Response(201, json=dict(id="fresh"))
+        if request.method == "DELETE":
+            await asyncio.sleep(2)
+            return httpx.Response(204)
+        return httpx.Response(200, json=dict(state="broken"))
+
+    executor_ = await bounded_executor(tmp_path, target, cleanup_timeout=0.3)
+    report = await executor_.run(plan())
+    assert report.outcome == Outcome.ASSERTION_FAILED
+    assert report.steps[-1].checks[-1].passed is False
+    assert report.cleanup_error == "CLEANUP_TIMEOUT"
+    assert report.resource_lifecycle[0]["status"] != "CLEANED"

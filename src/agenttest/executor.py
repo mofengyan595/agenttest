@@ -70,6 +70,9 @@ class Executor:
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
     ) -> None:
         self.config = config.model_copy(deep=True)
+        # Owned cleanup gets its own bounded budget; it is never part of the execution identity
+        # (TargetConfig is fingerprinted), so a project re-registration is not required.
+        self.cleanup_timeout = max(5.0, min(30.0, self.config.run_timeout / 2))
         self.contract = contract.model_copy(deep=True)
         self.store = store or ReportStore(Path("runs"))
         self.transport = transport
@@ -251,9 +254,11 @@ class Executor:
                         await investigate(self, client, scenario, report, state, vault,
                                           authenticated,
                                           last_request=budget["last_request"])
+                # The execution budget ends here; approved cleanup receives its own bounded
+                # budget so a slow assertion can never strand an approved deletion.
                 if lifecycle:
-                    await self._cleanup_owned(client, scenario, report, state, budget,
-                                              policies, vault, lifecycle)
+                    await self._bounded_cleanup(client, scenario, report, state, budget,
+                                                policies, vault, lifecycle)
         except asyncio.CancelledError:
             if report.investigations or report.feedback is not None:
                 report.investigation_error = "RUN_CANCELLED"
@@ -280,11 +285,17 @@ class Executor:
                     report.steps[-1].outcome = Outcome.TEST_INFRA_ERROR
                     report.steps[-1].reason = "RUN_TIMEOUT"
                 report.outcome, report.reason = Outcome.TEST_INFRA_ERROR, "RUN_TIMEOUT"
+            if lifecycle:
+                await self._cleanup_after_failure(scenario, report, state, budget, policies,
+                                                  vault, lifecycle)
         except Exception:
             if report.investigations or report.feedback is not None:
                 report.investigation_error = "INVESTIGATION_REPORT_ERROR"
             else:
                 report.outcome, report.reason = Outcome.TOOL_ERROR, "TRANSPORT_SETUP_ERROR"
+            if lifecycle:
+                await self._cleanup_after_failure(scenario, report, state, budget, policies,
+                                                  vault, lifecycle)
         finally:
             if lifecycle:
                 lifecycle.finish()
@@ -304,6 +315,36 @@ class Executor:
                 raise
             report.investigation_error = "INVESTIGATION_REPORT_ERROR"
         return report
+
+    async def _bounded_cleanup(self, client, scenario, report, state, budget, policies, vault,
+                               lifecycle):
+        """Approved cleanup gets a separate budget; the original outcome is never rewritten."""
+        try:
+            async with asyncio.timeout(self.cleanup_timeout):
+                await self._cleanup_owned(client, scenario, report, state, budget, policies,
+                                          vault, lifecycle)
+        except asyncio.CancelledError:
+            raise
+        except TimeoutError:
+            report.cleanup_error = "CLEANUP_TIMEOUT"
+        except Exception:
+            report.cleanup_error = "CLEANUP_ERROR"
+        finally:
+            self.store.save(report)
+
+    async def _cleanup_after_failure(self, scenario, report, state, budget, policies, vault,
+                                     lifecycle):
+        """Best effort after a timeout/error: same gates, no replay, no resumed execution."""
+        timeout = httpx.Timeout(
+            self.config.read_timeout, connect=self.config.connect_timeout,
+            write=self.config.read_timeout, pool=self.config.connect_timeout,
+        )
+        async with httpx.AsyncClient(
+            transport=self.transport, timeout=timeout, trust_env=False,
+            follow_redirects=False, limits=httpx.Limits(max_connections=1),
+        ) as client:
+            await self._bounded_cleanup(client, scenario, report, state, budget, policies,
+                                        vault, lifecycle)
 
     async def _cleanup_owned(self, client, scenario, report, state, budget, policies, vault,
                              lifecycle):
@@ -334,8 +375,10 @@ class Executor:
                 lifecycle.after(step, result, body, vault)
             except asyncio.CancelledError:
                 raise
-            except Exception:
+            except Exception as exc:
+                # The class name is safe to journal; the message may contain target data.
                 result.reason = "CLEANUP_UNCONFIRMED_NO_REPLAY"
+                report.cleanup_error = f"CLEANUP_FAILED:{type(exc).__name__}"
             self.store.save(report)
 
     def _headers(self, operation: Operation, step: Step) -> dict[str, ArgumentBinding]:

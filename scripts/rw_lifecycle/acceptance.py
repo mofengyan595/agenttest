@@ -71,24 +71,42 @@ def git(*args):
                           check=True).stdout.strip()
 
 
-def model_settings():
-    """The approved per-call ceiling wins over the model file; the default stays 30 s."""
+def model_env_path():
+    import os
+
+    return Path(os.environ.get("AGENTTEST_MODEL_ENV") or (ROOT / ".env"))
+
+
+def model_settings(require_credentials=False):
+    """The approved per-call ceiling wins over the model file; the default stays 30 s.
+
+    Offline ``freeze``/``dry`` runs must not depend on a real credential file: configuration is
+    validated against an explicit offline placeholder, while ``run`` refuses to start without a
+    real model identity.
+    """
     import os
 
     from agenttest.llm_planner import ModelSettings
 
     os.environ["AGENTTEST_MODEL_TIMEOUT"] = str(APPROVED["model_timeout"])
-    settings = ModelSettings.from_env_file(ROOT / ".env")
-    if settings.timeout != APPROVED["model_timeout"]:
-        raise SystemExit("MODEL_TIMEOUT_NOT_APPLIED")
-    return settings
+    path = model_env_path()
+    if path.is_file():
+        settings = ModelSettings.from_env_file(path)
+        if settings.timeout != APPROVED["model_timeout"]:
+            raise SystemExit("MODEL_TIMEOUT_NOT_APPLIED")
+        return settings
+    if require_credentials:
+        raise SystemExit("MODEL_CREDENTIALS_MISSING")
+    return ModelSettings(model="offline-dry-run", base_url="https://offline.invalid",
+                         api_key="offline", timeout=APPROVED["model_timeout"])
 
 
-def model_identity():
-    settings = model_settings()
+def model_identity(require_credentials=False):
+    settings = model_settings(require_credentials=require_credentials)
     return dict(model=settings.model, protocol=settings.protocol,
                 base_url=settings.base_url, max_output_tokens=settings.max_output_tokens,
-                timeout=settings.timeout, max_input_tokens=settings.max_input_tokens)
+                timeout=settings.timeout, max_input_tokens=settings.max_input_tokens,
+                credentials="PRESENT" if model_env_path().is_file() else "ABSENT_OFFLINE")
 
 
 def cases():
@@ -152,7 +170,9 @@ def service(workspace, tokens):
                        for alias, token in tokens.items()})
     focus_capture.install()
     model_settings()  # applies the approved per-call ceiling before the service is built
-    svc = configured_task_service(workspace, projects={}, model_env=ROOT / ".env",
+    svc = configured_task_service(workspace, projects={},
+                                  model_env=(model_env_path() if model_env_path().is_file()
+                                             else None),
                                   generic_intake=True)
     svc.environ.update(os.environ)
     saved = svc.intake.save(IntakeInput(
@@ -401,6 +421,9 @@ def run_case(folder, svc, project_id, case, run_id, initial):
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
+    # A real run must prove the same model identity the freeze recorded.
+    if model_identity(require_credentials=True)["model"] != frozen["model"]["model"]:
+        raise SystemExit("MODEL_IDENTITY_DRIFT")
     previous = folder / "result.json"
     if previous.exists():
         done = json.loads(previous.read_text(encoding="utf-8"))

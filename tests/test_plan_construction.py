@@ -175,16 +175,57 @@ def test_cycle_reports_the_concrete_path_and_the_rule_behind_each_edge():
     assert {edge["reason"] for edge in detail["edges"]} == {"MODEL_REFERENCE"}
 
 
-def test_repeated_operation_order_needs_a_node_level_chain_not_a_self_edge():
+def test_repeated_operation_order_pairs_instances_instead_of_chaining_every_node():
     ctx = context()
     ctx["request_requirements"] = [dict(disposition="required",
                                         before=[dict(earlier="read", later="read")])]
-    ambiguous = dict(name="repeat", steps=[node("r1", "read", source="c"),
-                                           node("c", "create"), node("r2", "read", source="c")])
-    with pytest.raises(ValidationFailure) as error:
-        construct_plan(ambiguous, ctx)
-    assert error.value.diagnostic.code == "CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS"
-    chained = dict(name="repeat", steps=[node("r2", "read", source="r1"),
-                                         node("r1", "read", source="c"), node("c", "create")])
-    plan, _ = construct_plan(chained, ctx)
+    repeated = dict(name="repeat", steps=[node("r1", "read", source="c"),
+                                          node("c", "create"), node("r2", "read", source="c")])
+    plan, stats = construct_plan(repeated, ctx)
     assert [step["id"] for step in plan["steps"]] == ["c", "r1", "r2"]
+    assert stats["dependency_edges"] >= 2
+    # A node-level chain in the opposite direction is still a real cycle.
+    contradictory = dict(name="repeat", steps=[node("r2", "read", source="r1"),
+                                               node("r1", "read", source="c"),
+                                               node("c", "create")])
+    with pytest.raises(ValidationFailure) as error:
+        construct_plan(contradictory, ctx)
+    assert error.value.diagnostic.code == "CONSTRUCTION_DEPENDENCY_CYCLE"
+
+
+def body(name):
+    return [dict(location="body", name="name", value=name, from_step=None, select=None)]
+
+
+def test_repeated_create_instances_chain_in_proposal_order_without_a_self_edge():
+    """A replay and a conflicting replay share one operation; each send is its own instance."""
+    ctx = context()
+    ctx["request_requirements"] = [dict(disposition="required",
+                                        before=[dict(earlier="create", later="create")])]
+    raw = dict(name="replay", steps=[
+        dict(id="c1", operation_id="create", role="owner", policy_id="create",
+             arguments=body("first")),
+        dict(id="c2", operation_id="create", role="owner", policy_id="create",
+             arguments=body("first")),
+        dict(id="c3", operation_id="create", role="owner", policy_id="create",
+             arguments=body("second"))])
+    plan, stats = construct_plan(raw, ctx)
+    order = [step["id"] for step in plan["steps"]]
+    assert order.index("c1") < order.index("c2") < order.index("c3")
+    assert stats["dependency_edges"] >= 2
+
+
+def test_same_operation_by_two_identities_stays_two_distinct_instances():
+    ctx = context()
+    ctx["request_requirements"] = [dict(disposition="required",
+                                        before=[dict(earlier="read", later="read")])]
+    shared = [dict(location="path_parameters", name="id", value=None, from_step="c",
+                   select="$.id")]
+    raw = dict(name="identities", steps=[
+        dict(id="c", operation_id="create", role="owner", policy_id="create",
+             arguments=body("first")),
+        dict(id="r1", operation_id="read", role="owner", policy_id="read", arguments=shared),
+        dict(id="r2", operation_id="read", role=None, policy_id="read", arguments=shared)])
+    plan, _ = construct_plan(raw, ctx)
+    order = [step["id"] for step in plan["steps"]]
+    assert order.index("c") < order.index("r1") < order.index("r2")
