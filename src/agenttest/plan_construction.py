@@ -273,7 +273,11 @@ def construct_plan(plan, context):
     return dict(name=draft.name, steps=ordered), dict(encoding=ENCODING,
         proposed_nodes=len(draft.steps), constructed_nodes=len(ordered),
         managed_authentication_nodes=len(inserted), dependency_edges=sum(map(len, edges.values())),
-        node_dependencies={key: sorted(value) for key, value in edges.items()})
+        node_dependencies={key: sorted(value) for key, value in edges.items()},
+        # Per-edge provenance: a data reference and a written order are different evidence for
+        # the same pair, so a caller can prove which one produced an edge.
+        edge_reasons={f"{target}<={source}": reason
+                      for (target, source), reason in reasons.items()})
 
 
 def join_read_prerequisite(cases, context):
@@ -322,6 +326,7 @@ def construct_design(wire, context, *, construction_chains=()):
             'design_operations': design_operations,
             'composed_negative_chain': chains.get(proposed_index, [])})
         edges = {key: set(value) for key, value in record.pop('node_dependencies').items()}
+        record.pop('edge_reasons', None)
         nodes = {node['id']: node for node in plan['steps']}
         authentication = {node['id'] for node in plan['steps'] if any(
             node['operation_id'] == auth['login_operation_id'] and node['role'] == auth['role']

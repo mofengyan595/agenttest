@@ -79,7 +79,11 @@ def order_of(plan):
 
 
 def test_minimal_crud_reads_once_before_and_once_after_delete():
-    """POST -> GET(200) -> DELETE -> GET(404): the two GETs are different instances."""
+    """POST -> GET(200) -> DELETE(204) -> GET(404): the two GETs are different instances.
+
+    The readback must take its id from the creation, because the deletion answers 204 with no
+    body; its position after the deletion is a written-order edge, not a data reference.
+    """
     requirements = [
         clause("request_1", "create"),
         clause("request_2", "read", before=[order("create", "read", "request_1", "request_2")]),
@@ -89,11 +93,29 @@ def test_minimal_crud_reads_once_before_and_once_after_delete():
     steps = [step("c", "create", clause_id="request_1"),
              step("read_before", "read", clause_id="request_2", source="c"),
              step("d", "delete", clause_id="request_3", source="c"),
-             step("read_after", "read", clause_id="request_4", source="d")]
+             step("read_after", "read", clause_id="request_4", source="c")]
     plan, stats = build(requirements, steps, "create", "read", "delete")
     assert order_of(plan) == ["c", "read_before", "d", "read_after"]
-    assert edges(plan, stats)["read_after"] == ["d"]
+    assert set(edges(plan, stats)["read_after"]) == {"c", "d"}
+    assert stats["edge_reasons"]["read_after<=c"] == "MODEL_REFERENCE"
+    assert stats["edge_reasons"]["read_after<=d"] == "TEXT_ORDER"
     assert "read_before" in edges(plan, stats)["d"]
+
+
+def test_the_readback_order_edge_comes_from_the_requirement_not_from_the_binding():
+    """Dropping only the written order removes only the TEXT_ORDER edge from the deletion."""
+    requirements = [
+        clause("request_1", "create"),
+        clause("request_2", "read", before=[order("create", "read", "request_1", "request_2")]),
+        clause("request_3", "delete", before=[order("read", "delete", "request_2", "request_3")]),
+    ]
+    steps = [step("c", "create", clause_id="request_1"),
+             step("read_before", "read", clause_id="request_2", source="c"),
+             step("d", "delete", clause_id="request_3", source="c"),
+             step("read_after", "read", source="c")]
+    plan, stats = build(requirements, steps, "create", "read", "delete")
+    assert set(edges(plan, stats)["read_after"]) == {"c"}
+    assert stats["edge_reasons"]["read_after<=c"] == "MODEL_REFERENCE"
 
 
 def test_full_crud_keeps_every_step_and_the_final_readback():

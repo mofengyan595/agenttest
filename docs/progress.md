@@ -3731,3 +3731,35 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 远端 CI（提交 `9f5fec8`）：`Keyless Python checks` #140 success（windows/ubuntu × base/agent
   四个 job 全 success），`Web Console checks` #119 success；本地离线全量 2541/2526 与之一致。
 - 未执行：M2/F1（需新的显式付费授权）；无真实模型调用、无真实写入。
+
+## 2026-11-09 M2/F1 确定性端到端验收（实例构造 → 真实执行器）
+
+- 修复已发现缺陷：最小 CRUD 反例的删除后回读原先 `read_after.from_step="d"`，而 DELETE 按计划
+  返回 204 且无响应体——数据依赖错挂到删除上，"删除后再读取"的顺序被伪装成数据事实。
+  现改为从 CREATE 取资源 ID，顺序只由 `request_4` 的实例级 `before` 产生；
+  `construct_plan` 的统计新增 `edge_reasons`，测试同时断言
+  `read_after ← c = MODEL_REFERENCE` 与 `read_after ← d = TEXT_ORDER`；
+  并新增对照用例：只去掉顺序要求，`read_after ← d` 立即消失。全仓库 `from_step`/`source_operation`
+  扫描未发现第二处同类错绑（都指向 create/login/producer/read 这类有响应体的步骤）。
+- 新增 `tests/test_instance_delivery_e2e.py`（18 条）：真实 `build_generic_project` 生成 OpenAPI
+  契约、目标配置与策略注册表，再经实例绑定 → `validate_plan_requirements` → `construct_plan` →
+  `GenericPlannerDraft.scenario()` → `Executor.validate` → `Executor.run`（动态参数、MockTransport、
+  响应验证、生命周期日志、报告落盘）。M2 = POST 201 → GET 200 → DELETE 204 → GET 404；
+  F1 = POST 201 → GET 200 → PATCH 200 → PUT 200 → DELETE 204 → GET 404；
+  六次请求命中同一个 `item_1`，404 回读判为预期通过，资源最终为空，生命周期 `CLEANED / PASS`。
+- 乱序：M2/F1 各 4 种数组排列的构造结果（执行序、依赖边、边成因）完全一致；
+  另有一条乱序提案真实执行，HTTP 序列与正序相同；合法输入不再出现假环。
+- 失败注入：GET 超时与 PATCH 断言失败 → 已确认清理（`DELETE` 204 → `CLEANED`）且业务结论不被覆盖；
+  DELETE 500 → 清理失败（`CLEANUP_PENDING / ASSERTION_FAILED`）；DELETE 结果未知 →
+  清理结果未知（`CLEANUP_OUTCOME_UNKNOWN / OUTCOME_UNKNOWN`）；创建后取消 →
+  不发送清理（`OWNED / NOT_SENT`，资源保留待人工核实）。所有情形写请求只发一次、绝不重放。
+- 回归：`ruff check .` 通过；新增端到端 18、实例依赖 11、
+  `test_plan_construction`+`test_request_requirements`+`test_resource_lifecycle`+`test_executor` 90、
+  mixed planning 与 product design/tasks 四套 101、`examples/regressions` 10；
+  `python scripts/check_full.py --jobs 4` = 2560 collected / 2545 passed / 0 failed / 15 skipped
+  （1041 s，离线，源码未变）。
+- 报告：[delivery-acceptance-m2-f1-20261109.md](delivery-acceptance-m2-f1-20261109.md)；
+  证据（本地、gitignored）：`runs/20261109-delivery-matrix/matrix.json`。
+- 未执行：真实模型调用、生产写入、冻结的 v4 M2/F1 付费位置；`CONSUMED_POSITIONS=("M1",)` 不变，
+  `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
+
