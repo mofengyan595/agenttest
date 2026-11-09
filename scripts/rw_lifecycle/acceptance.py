@@ -14,6 +14,7 @@ Modes:
 import argparse
 import asyncio
 import hashlib
+import importlib
 import json
 import os
 import sys
@@ -30,6 +31,8 @@ import authority  # noqa: E402
 import focus_capture  # noqa: E402
 import lifecycle  # noqa: E402
 import plan_v2  # noqa: E402
+
+PLAN = plan_v2
 import preflight  # noqa: E402
 
 APPROVED = dict(authority.WRITE_AUTHORITY, operator_approval="GRANTED")
@@ -38,7 +41,7 @@ APPROVED = dict(authority.WRITE_AUTHORITY, operator_approval="GRANTED")
 def planned_cases():
     """Normalise the frozen next-round plan into the driver's case shape."""
     cases = []
-    for case in plan_v2.FINAL_CASES:
+    for case in PLAN.FINAL_CASES:
         expect = case["expect"]
         cases.append(dict(
             key=case["key"], title=case["title"], text=case["text"],
@@ -51,8 +54,8 @@ def planned_cases():
 
 
 CASES = planned_cases()
-# Positions already executed once in the 2026-11-09 second acceptance; never replayed.
-CONSUMED_POSITIONS = ("T1", "T2")
+# Positions already executed once in an earlier acceptance; never replayed.
+CONSUMED_POSITIONS = tuple(getattr(PLAN, "CONSUMED_POSITIONS", ("T1", "T2")))
 SELECTED = [case["key"] for case in CASES]
 
 
@@ -98,7 +101,7 @@ def freeze(folder, selected=None):
     global SELECTED
     if selected:
         SELECTED = [case["key"] for case in CASES if case["key"] in set(selected)]
-    rubric = plan_v2.consistency()
+    rubric = PLAN.consistency()
     with preflight.served():
         target = preflight.reset("e2e-freeze-0001")
     data = dict(
@@ -111,12 +114,12 @@ def freeze(folder, selected=None):
                         for path in (ROOT / "src/agenttest").rglob("*.py")))),
         requirements=dict(cases=cases(), digest=digest(cases()),
                           consumed_positions=list(CONSUMED_POSITIONS),
+                          plan=PLAN.__name__,
                           plan_sha256=hashlib.sha256(
-                              (ROOT / "scripts/rw_lifecycle/plan_v2.py").read_bytes()
-                          ).hexdigest(),
-                          rubric=plan_v2.RUBRIC,
-                          dev_cases=[case["key"] for case in plan_v2.DEV_CASES],
-                          final_cases=[case["key"] for case in plan_v2.FINAL_CASES]),
+                              Path(PLAN.__file__).read_bytes()).hexdigest(),
+                          rubric=PLAN.RUBRIC,
+                          dev_cases=[case["key"] for case in PLAN.DEV_CASES],
+                          final_cases=[case["key"] for case in PLAN.FINAL_CASES]),
         authority=dict(declaration=APPROVED, digest=digest(APPROVED),
                        checklist=list(authority.APPROVAL_CHECKLIST)),
         contract=dict(document=json.loads(authority.document()),
@@ -148,6 +151,7 @@ def service(workspace, tokens):
     os.environ.update({"AGENTTEST_TARGET_RW_" + alias.upper() + "_TOKEN": token
                        for alias, token in tokens.items()})
     focus_capture.install()
+    model_settings()  # applies the approved per-call ceiling before the service is built
     svc = configured_task_service(workspace, projects={}, model_env=ROOT / ".env",
                                   generic_intake=True)
     svc.environ.update(os.environ)
@@ -448,9 +452,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["freeze", "dry", "run"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
+    parser.add_argument("--plan", default="plan_v2", choices=["plan_v2", "plan_v3"])
     parser.add_argument("--cases", default="",
                         help="comma-separated keys; consumed positions are refused")
     args = parser.parse_args()
+    global PLAN, CASES, CONSUMED_POSITIONS
+    PLAN = importlib.import_module(args.plan)
+    CASES = planned_cases()
+    CONSUMED_POSITIONS = tuple(getattr(PLAN, "CONSUMED_POSITIONS", ("T1", "T2")))
     folder = (ROOT / args.folder).resolve()
     folder.mkdir(parents=True, exist_ok=True)
     authority.startable(APPROVED)

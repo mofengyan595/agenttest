@@ -39,3 +39,23 @@ def test_approved_dry_run_uses_the_new_budget_and_only_reports_unconsumed_cases(
     assert payload["consumed_positions"] == ["T1", "T2"]
     assert payload["cases"] == ["T1", "T2", "T3"]
     assert payload["target"]["max_requests"] == 12
+
+def test_third_round_plan_keeps_unconsumed_positions_and_matches_its_rubric():
+    import plan_v3
+
+    result = plan_v3.consistency()
+    assert result["ok"] is True, result["problems"]
+    assert [case["key"] for case in plan_v3.FINAL_CASES] == ["T1V3", "T2V3", "T3"]
+    assert plan_v3.CONSUMED_POSITIONS == ()
+    expect = {case["key"]: case["expect"] for case in plan_v3.FINAL_CASES}
+    assert expect["T1V3"]["statuses"] == [201, 200, 200, 200, 204, 404]
+    assert expect["T2V3"]["statuses"] == [201, 200, 409, 204, 404]
+    assert expect["T2V3"]["conflict"] == 1
+    assert expect["T3"]["statuses"] == [201, 200, 403, 401, 403, 401, 204, 404]
+    assert [tuple(item) for item in expect["T3"]["approved_denials"]] == [
+        ("getItem", "auditor", 403), ("getItem", None, 401),
+        ("updateItem", "auditor", 403), ("updateItem", None, 401)]
+    # Fresh wording, but the approved values stay inside the operator-approved set.
+    text = " ".join(case["text"] for case in plan_v3.FINAL_CASES[:2])
+    assert "draft-" not in text
+    assert set(plan_v3.REQUIRED_POLICIES) == set(__import__("plan_v2").REQUIRED_POLICIES)
