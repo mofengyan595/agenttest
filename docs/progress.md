@@ -3760,6 +3760,8 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   （1041 s，离线，源码未变）。
 - 报告：[delivery-acceptance-m2-f1-20261109.md](delivery-acceptance-m2-f1-20261109.md)；
   证据（本地、gitignored）：`runs/20261109-delivery-matrix/matrix.json`。
+- 远端 CI（`38c6633`）：`Keyless Python checks` #142 success（四个 job 全部 success），
+  `Web Console checks` #121 success。
 - 未执行：真实模型调用、生产写入、冻结的 v4 M2/F1 付费位置；`CONSUMED_POSITIONS=("M1",)` 不变，
   `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
 

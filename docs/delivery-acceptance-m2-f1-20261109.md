@@ -121,7 +121,8 @@ resource_id / cleanup_result`；`created_resources` 另记创建凭据与清理�
   mixed planning 与 product design/tasks 四套：101 passed。
 - `python scripts/check_full.py --jobs 4`：**2560 collected / 2545 passed / 0 failed / 15 skipped**
   （1041 s，离线，`source_unchanged=true`、`exact_test_id_coverage=true`）。
-- 远端 CI：PUSH_CI_PLACEHOLDER
+- 远端 CI（`38c6633`）：`Keyless Python checks` #142 **success**（windows/ubuntu × base/agent
+  四个 job 全部 success），`Web Console checks` #121 **success**。
 
 ## 6. 是否具备进入真实模型验收的条件
 
