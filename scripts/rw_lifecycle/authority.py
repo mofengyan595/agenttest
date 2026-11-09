@@ -19,16 +19,15 @@ WRITE_AUTHORITY = dict(
     operator_approval="NOT_GRANTED",
     namespace_rule="每次运行由 e2e 前缀 + 运行 ID 组成，重置夹具后创建；"
                    "资源只在本命名空间可见，跨命名空间一律 404。",
-    idempotency_rule="createItem 必须携带幂等键；同键同体返回 200 与原 id，同键异体返回 409，"
-                     "绝不二次创建。首选 Idempotency-Key 头，但当前 intake 不支持必填头参数，"
-                     "因此同一个键也接受 body 的 idempotencyKey 字段（见 preparation finding）。",
+    idempotency_rule="createItem 必须携带必填 Idempotency-Key 头；同键同体返回 200 与原 id，"
+                     "同键异体返回 409，绝不二次创建；不同键创建新资源。",
     ownership_rule="资源归创建者所有；非所有者读取/更新/删除一律 403，匿名 401。",
     cleanup_rule="每个创建都必须配对一次 DELETE，并回读 404 作为清理证据；"
                  "未清理的资源计入 leftovers 并阻止验收。",
     budgets=dict(max_requests=12, max_seconds=120, max_model_calls=2),
     operations=[
         dict(operation_id="createItem", method="POST", path="/items", role="author",
-             statuses=[201], requires=["idempotencyKey"], mutation=True),
+             statuses=[201], requires=["Idempotency-Key"], mutation=True),
         dict(operation_id="getItem", method="GET", path="/items/{itemId}", role="author",
              statuses=[200], mutation=False),
         dict(operation_id="updateItem", method="PATCH", path="/items/{itemId}", role="author",
@@ -79,19 +78,19 @@ def document():
                            schema=dict(type="string"))
                       for name in ("itemId",) if "{" + name + "}" in operation["path"]]
         if operation["operation_id"] == "createItem":
-            parameters.append(dict(name="Idempotency-Key", **{"in": "header"}, required=False,
+            parameters.append(dict(name="Idempotency-Key", **{"in": "header"}, required=True,
                                    schema=dict(type="string")))
+        responses = {str(operation["statuses"][0]): {"description": "Isolated"}}
+        if operation["operation_id"] == "getItem":
+            responses["401"] = {"description": "Anonymous is rejected"}
         body = None
         if operation["method"] in {"POST", "PATCH", "PUT"}:
             properties = dict(name=dict(type="string"))
-            if operation["operation_id"] == "createItem":
-                properties["idempotencyKey"] = dict(type="string")
             body = dict(required=True, content={"application/json": dict(
                 schema=dict(type="object", properties=properties))})
         entry = dict(operationId=operation["operation_id"], summary=operation["operation_id"],
                      security=[{"fixtureBearer": []}] if operation["role"] else [],
-                     parameters=parameters,
-                     responses={str(operation["statuses"][0]): {"description": "Isolated"}})
+                     parameters=parameters, responses=responses)
         if body:
             entry["requestBody"] = body
         paths.setdefault(operation["path"], {})[operation["method"].lower()] = entry
@@ -105,8 +104,11 @@ def document():
 def setup():
     """GenericSetup-shaped projection of the same declaration, for the existing intake."""
     arguments = {
-        "createItem": [dict(location="body", name="name", value="lifecycle-probe"),
-                       dict(location="body", name="idempotencyKey", value="probe-key-0001")],
+        # The name is an approved generated input (no enum), so the same approved key can be
+        # replayed with identical content and also conflict with a different body.
+        "createItem": [dict(location="body", name="name", value="first", generated=True),
+                       dict(location="headers", name="Idempotency-Key",
+                            value="rw-lifecycle-key-0001")],
         "getItem": [dict(location="path_parameters", name="itemId",
                          source_operation="createItem", selector="$.id")],
         "updateItem": [dict(location="path_parameters", name="itemId",
@@ -133,6 +135,11 @@ def setup():
                  role=operation["role"], statuses=operation["statuses"], enabled=True,
                  arguments=arguments[operation["operation_id"]],
                  checks=[], check_source="Operator-approved isolated lifecycle fixture.",
+                 **({"access_checks": [
+                     dict(role="auditor", statuses=[403],
+                          rule="只读身份读取所有者条目应返回 403"),
+                     dict(role=None, statuses=[401], rule="匿名读取条目应返回 401")]}
+                    if operation["operation_id"] == "getItem" else {}),
                  **({"creation": WRITE_AUTHORITY["resource_creations"][
                      operation["operation_id"]]}
                     if operation["operation_id"] in WRITE_AUTHORITY["resource_creations"]
