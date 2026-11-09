@@ -728,6 +728,25 @@ class ProductTasks:
                             if report.outcome == Outcome.PASS and report.completed:
                                 self.retain(row, text, scenario, project, report, case_row)
                             checkpoint()
+                rejected = [entry for entry in summary["design_records"]
+                            if entry.get("status") == "REJECTED"]
+                if rejected and not summary["cases"] and not ledger.requests:
+                    # A design proposal that never passed validation is an unresolved round,
+                    # never a finished one: keep the diagnostic and publish a failure report.
+                    diagnostic = rejected[0].get("diagnostic") or {}
+                    code = rejected[0].get("reason") or diagnostic.get("code") or \
+                        "DESIGN_REJECTED"
+                    report = self.failure_report(project, text, code, diagnostic)
+                    summary.update(
+                        complete=False, checks_passed=False, report_id=report.run_id,
+                        reason="方案未通过校验，本轮没有发送任何业务请求。请查看诊断后重新安排测试。",
+                        diagnostic=dict(code=code, layer=diagnostic.get("layer"),
+                                        fields=diagnostic.get("fields") or []))
+                    self.coverage(summary)
+                    checkpoint()
+                    svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW", summary=summary)
+                    svc.db.event(task_id, "REPORT", run_id=report.run_id, requests=ledger.requests)
+                    return
                 status_states = {item['status'] for key in (
                     'http_status_requirements', 'response_requirements')
                     for item in summary.get(key, [])}
@@ -761,6 +780,25 @@ class ProductTasks:
         finally:
             if transport is not None:
                 await transport.aclose()
+
+    def failure_report(self, project, text, code, diagnostic):
+        """Publish a no-step failure report so a rejected round still has auditable evidence."""
+        from agenttest.diagnostics import Diagnostic
+        from agenttest.report import RunReport, fingerprint
+
+        payload = Diagnostic.model_validate(diagnostic) if diagnostic else None
+        report = RunReport(
+            scenario_sha256=fingerprint({"task": text, "design": "REJECTED"}),
+            contract_sha256=fingerprint(project.document),
+            environment=project.target.environment,
+            target_origin=project.target.base_url,
+            target_config_sha256=fingerprint(project.target.model_dump(mode="json")),
+            policy_registry_sha256=project.registry.digest(),
+            outcome=Outcome.NEEDS_REVIEW, reason=code, diagnostic=payload,
+            task_mode="model_designed", plan_valid=False, dsl_valid=False,
+            policy_authorized=False)
+        self.service.reports.save(report)
+        return report
 
     def retain(self, row, text, scenario, project, report, case_row):
         """Persist export-safe plans; the user still explicitly chooses to save a test."""
