@@ -1,0 +1,87 @@
+{
+  "run_id": "1109-115537",
+  "frozen_head": "373f22097454f47052d144cd9bd4acc6ee1db5d6",
+  "model": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+    "max_output_tokens": 4096
+  },
+  "target": "http://127.0.0.1:19097",
+  "verdicts": {
+    "T1": "NEEDS_REVIEW",
+    "T2": "NEEDS_REVIEW",
+    "T3": "NEEDS_REVIEW"
+  },
+  "requests": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "model_calls": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "elapsed": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "leftovers": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "cleanup": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "unknown": [],
+  "authority_after_run": "NOT_GRANTED",
+  "results": [
+    {
+      "case": "T1",
+      "title": "完整生命周期",
+      "namespace": "e2e-t1-1109-115537",
+      "text": "创建名为 first 的条目；读取刚创建的该条目；把它的名称改为 renamed；再用 replaced 整体替换名称；删除该条目；最后再次读取，确认返回 404。",
+      "task": "SUBMISSION_CONFLICT",
+      "verdict": "NEEDS_REVIEW",
+      "findings": [
+        {
+          "reason": "driver_task_not_started",
+          "detail": "SUBMISSION_CONFLICT"
+        }
+      ]
+    },
+    {
+      "case": "T2",
+      "title": "幂等性",
+      "namespace": "e2e-t2-1109-115537",
+      "text": "用已批准的幂等键创建名为 first 的条目；再提交一次完全相同的创建请求；然后用同一个幂等键创建名为 second 的条目；最后删除该条目并回读确认 404。",
+      "task": "SUBMISSION_CONFLICT",
+      "verdict": "NEEDS_REVIEW",
+      "findings": [
+        {
+          "reason": "driver_task_not_started",
+          "detail": "SUBMISSION_CONFLICT"
+        }
+      ]
+    },
+    {
+      "case": "T3",
+      "title": "权限隔离",
+      "namespace": "e2e-t3-1109-115537",
+      "text": "用 author 身份创建名为 first 的条目并读取；再用只读身份 auditor 读取同一条目；然后用匿名身份读取该条目；最后由 author 删除条目并回读确认 404。",
+      "task": "SUBMISSION_CONFLICT",
+      "verdict": "NEEDS_REVIEW",
+      "findings": [
+        {
+          "reason": "driver_task_not_started",
+          "detail": "SUBMISSION_CONFLICT"
+        }
+      ]
+    }
+  ]
+}

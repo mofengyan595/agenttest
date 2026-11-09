@@ -1,0 +1,456 @@
+{
+  "run": "rw-acceptance-20261109",
+  "frozen_head": "1af2a1fa42a23f9a5b83af3f79da7809361dc74c",
+  "model": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+    "max_output_tokens": 4096
+  },
+  "target": "http://127.0.0.1:19097",
+  "verdicts": {
+    "T1": "FAIL",
+    "T2": "NEEDS_REVIEW",
+    "T3": "FAIL"
+  },
+  "attribution": {
+    "T1": "model_planning",
+    "T2": "fixture_expressiveness",
+    "T3": "model_planning"
+  },
+  "target_http_requests": {
+    "T1": 0,
+    "T2": 0,
+    "T3": 0
+  },
+  "focus_model_calls": {
+    "T1": 1,
+    "T2": 1,
+    "T3": 1
+  },
+  "known_tokens": {
+    "T1": 10292,
+    "T2": 9249,
+    "T3": 9242
+  },
+  "elapsed_seconds": {
+    "T1": 4.38,
+    "T2": 14.78,
+    "T3": 3.45
+  },
+  "leftover_items": {
+    "T1": 0,
+    "T2": 0,
+    "T3": 0
+  },
+  "unknown_usage": [],
+  "write_sent_any": false,
+  "authority_after_run": "NOT_GRANTED",
+  "reported_reasons": {
+    "T1": null,
+    "T2": null,
+    "T3": null
+  },
+  "results": [
+    {
+      "case": "T1",
+      "title": "完整生命周期",
+      "namespace": "e2e-t1-1109-115848",
+      "text": "创建名为 first 的条目；读取刚创建的该条目；把它的名称改为 renamed；再用 replaced 整体替换名称；删除该条目；最后再次读取，确认返回 404。",
+      "task": {
+        "id": "e9aa2667d7db44119de5601d1d411dc6",
+        "status": "NEEDS_REVIEW",
+        "elapsed": 4.38
+      },
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "create_not_confirmed",
+          "detail": 0
+        },
+        {
+          "reason": "create_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "driver_sequence_mismatch",
+          "detail": {
+            "methods": [],
+            "statuses": []
+          }
+        }
+      ],
+      "metrics": {
+        "creates": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 0,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": null,
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "checks": {
+        "methods": [],
+        "statuses": [],
+        "dynamic_binding_rows": 0,
+        "idempotency_keys": 0,
+        "identity_rows": {
+          "author": 0,
+          "auditor": 0,
+          "anonymous": 0
+        }
+      },
+      "created_id": null,
+      "state": {
+        "before": {
+          "state_sha256": "906868b549018c6ab35bb730f8e41c55ce7e9de00b630aed1bcf31682e404d2a",
+          "namespace": "e2e-t1-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "after": {
+          "state_sha256": "906868b549018c6ab35bb730f8e41c55ce7e9de00b630aed1bcf31682e404d2a",
+          "namespace": "e2e-t1-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "cleanup": true
+      },
+      "audit": [],
+      "product": {
+        "status": "NEEDS_REVIEW",
+        "reason": null,
+        "model_calls": null,
+        "outcome": null,
+        "report_reason": null,
+        "steps": [],
+        "requests": null
+      },
+      "diagnostics": {
+        "layer": "model",
+        "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+        "fields": [],
+        "usage": {
+          "calls": 1,
+          "usage_state": "KNOWN",
+          "known_tokens": 10292,
+          "input_tokens": 9409,
+          "output_tokens": 883,
+          "model": "ecnu-max",
+          "elapsed_ms": 3922.0,
+          "request_sha256": "3af75592e4db87136a290d7c401af69357415b14d253a535d12fbd71514e2c36",
+          "output_sha256": "103cea25d3ccf8a46ddd1b0bdd51e035cdd67d978962a57688f25eda376a4487"
+        }
+      },
+      "target_requests": 0,
+      "target_leftovers": 0,
+      "write_sent": false,
+      "attribution": {
+        "cause": "model_planning",
+        "note": "真实模型在 focus 阶段给出的方案未通过产品校验，产品拒绝执行，未发送任何业务请求；属模型规划失败，不是产品缺陷。",
+        "focus_model_calls": 1,
+        "tokens": 10292
+      }
+    },
+    {
+      "case": "T2",
+      "title": "幂等性",
+      "namespace": "e2e-t2-1109-115848",
+      "text": "用已批准的幂等键创建名为 first 的条目；再提交一次完全相同的创建请求；然后用同一个幂等键创建名为 second 的条目；最后删除该条目并回读确认 404。",
+      "task": {
+        "id": "b4c489e95fcc4660ba939be6b9abd0a6",
+        "status": "NEEDS_REVIEW",
+        "elapsed": 14.78
+      },
+      "verdict": "NEEDS_REVIEW",
+      "findings": [
+        {
+          "reason": "create_not_confirmed",
+          "detail": 0
+        },
+        {
+          "reason": "create_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "idempotency_unverified",
+          "detail": 0
+        },
+        {
+          "reason": "idempotency_duplicate_create",
+          "detail": 0
+        },
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "driver_sequence_mismatch",
+          "detail": {
+            "methods": [],
+            "statuses": []
+          }
+        },
+        {
+          "reason": "driver_idempotency_key_drift",
+          "detail": 0
+        },
+        {
+          "reason": "driver_idempotency_id_drift",
+          "detail": []
+        },
+        {
+          "reason": "driver_conflict_not_observed",
+          "detail": 0
+        }
+      ],
+      "metrics": {
+        "creates": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 0,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": null,
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "checks": {
+        "methods": [],
+        "statuses": [],
+        "dynamic_binding_rows": 0,
+        "idempotency_keys": 0,
+        "identity_rows": {
+          "author": 0,
+          "auditor": 0,
+          "anonymous": 0
+        }
+      },
+      "created_id": null,
+      "state": {
+        "before": {
+          "state_sha256": "234ec25fb0ad2805f7f428a3f7fc4f5adc0e60084a736d5e54a10b7c6484a5bc",
+          "namespace": "e2e-t2-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "after": {
+          "state_sha256": "234ec25fb0ad2805f7f428a3f7fc4f5adc0e60084a736d5e54a10b7c6484a5bc",
+          "namespace": "e2e-t2-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "cleanup": true
+      },
+      "audit": [],
+      "product": {
+        "status": "NEEDS_REVIEW",
+        "reason": null,
+        "model_calls": null,
+        "outcome": null,
+        "report_reason": null,
+        "steps": [],
+        "requests": null
+      },
+      "diagnostics": {
+        "layer": "model",
+        "code": "FOCUS_INPUT_TEXT_CHANGED",
+        "fields": [
+          "input_requirements.2.value",
+          "approved_input_fields.0"
+        ],
+        "usage": {
+          "calls": 1,
+          "usage_state": "KNOWN",
+          "known_tokens": 9249,
+          "input_tokens": 8306,
+          "output_tokens": 943,
+          "model": "ecnu-max",
+          "elapsed_ms": 14422.0,
+          "request_sha256": "29d76e05543fc0f2ad6acfef048056123e76c4fc33e37f728d8bbfd1beb744c7",
+          "output_sha256": "d764342c9ae8135ce5414255fe7da21e8f3acce55db2073e2c24a3becfff65d1"
+        }
+      },
+      "target_requests": 0,
+      "target_leftovers": 0,
+      "write_sent": false,
+      "attribution": {
+        "cause": "fixture_expressiveness",
+        "note": "批准的生成输入只允许一个已批准取值，模型为构造“同键异体”改动了批准输入而被拒绝；夹具体验不足，非产品缺陷，且未发送任何业务请求。",
+        "focus_model_calls": 1,
+        "tokens": 9249
+      }
+    },
+    {
+      "case": "T3",
+      "title": "权限隔离",
+      "namespace": "e2e-t3-1109-115848",
+      "text": "用 author 身份创建名为 first 的条目并读取；再用只读身份 auditor 读取同一条目；然后用匿名身份读取该条目；最后由 author 删除条目并回读确认 404。",
+      "task": {
+        "id": "457bde2e4eb64576817851376ee370e1",
+        "status": "NEEDS_REVIEW",
+        "elapsed": 3.45
+      },
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "missing_expected_denial",
+          "detail": 0
+        },
+        {
+          "reason": "create_not_confirmed",
+          "detail": 0
+        },
+        {
+          "reason": "create_count_mismatch",
+          "detail": 0
+        },
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "driver_sequence_mismatch",
+          "detail": {
+            "methods": [],
+            "statuses": []
+          }
+        },
+        {
+          "reason": "driver_auditor_denial_missing",
+          "detail": 0
+        },
+        {
+          "reason": "driver_anonymous_denial_missing",
+          "detail": 0
+        }
+      ],
+      "metrics": {
+        "creates": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 0,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": null,
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "checks": {
+        "methods": [],
+        "statuses": [],
+        "dynamic_binding_rows": 0,
+        "idempotency_keys": 0,
+        "identity_rows": {
+          "author": 0,
+          "auditor": 0,
+          "anonymous": 0
+        }
+      },
+      "created_id": null,
+      "state": {
+        "before": {
+          "state_sha256": "2820bb4cc642d9e447f64db315c9d81fb2b2f4d22de844ab36ee22b269f2e70f",
+          "namespace": "e2e-t3-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "after": {
+          "state_sha256": "2820bb4cc642d9e447f64db315c9d81fb2b2f4d22de844ab36ee22b269f2e70f",
+          "namespace": "e2e-t3-1109-115848",
+          "items": 0,
+          "audit": 0,
+          "read_only": false,
+          "isolated": true,
+          "writable": true
+        },
+        "cleanup": true
+      },
+      "audit": [],
+      "product": {
+        "status": "NEEDS_REVIEW",
+        "reason": null,
+        "model_calls": null,
+        "outcome": null,
+        "report_reason": null,
+        "steps": [],
+        "requests": null
+      },
+      "diagnostics": {
+        "layer": "model",
+        "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+        "fields": [
+          "requirement_map.request_3.before"
+        ],
+        "usage": {
+          "calls": 1,
+          "usage_state": "KNOWN",
+          "known_tokens": 9242,
+          "input_tokens": 8603,
+          "output_tokens": 639,
+          "model": "ecnu-max",
+          "elapsed_ms": 3078.0,
+          "request_sha256": "716fba56a99ee68ea294005826a13321f5aa0ad431a364a8d911ffc78eb711f4",
+          "output_sha256": "8819ec4254915a60d96a221bc4cb4b5dde46060c1610ba0387d12a117520283d"
+        }
+      },
+      "target_requests": 0,
+      "target_leftovers": 0,
+      "write_sent": false,
+      "attribution": {
+        "cause": "model_planning",
+        "note": "真实模型在 focus 阶段给出的方案未通过产品校验，产品拒绝执行，未发送任何业务请求；属模型规划失败，不是产品缺陷。",
+        "focus_model_calls": 1,
+        "tokens": 9242
+      }
+    }
+  ]
+}

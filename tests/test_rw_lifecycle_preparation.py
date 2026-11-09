@@ -18,6 +18,9 @@ from agenttest.generic_intake import GenericSetup, build_generic_project  # noqa
 from agenttest.lifecycle import lifecycle_plan, validate_lifecycle_authority  # noqa: E402
 from agenttest.safety import TargetConfig  # noqa: E402
 
+TOKENS = {f"AGENTTEST_TARGET_RW_{alias.upper()}_TOKEN": f"preparation-{alias}"
+          for alias in ("author", "editor", "auditor", "outsider")}
+
 
 def project():
     document = authority.document()
@@ -26,12 +29,15 @@ def project():
         document,
         load_openapi(document),
         GenericSetup.model_validate(authority.setup()),
-        environ={},
+        environ=TOKENS,
     )
 
 
 def policies(item):
-    return {policy.operation_id: policy.id for policy in item.registry.definitions()}
+    found = {}
+    for policy in item.registry.definitions():
+        found.setdefault(policy.operation_id, policy.id)
+    return found
 
 
 def steps(item, overrides=None):

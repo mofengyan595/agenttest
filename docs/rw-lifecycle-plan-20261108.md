@@ -135,3 +135,9 @@
 必填头参数支持已补齐，幂等键可以直接走真实服务常用的 `Idempotency-Key` 头。
 正式启动仍需要第 3 节 6 条批准。在批准之前，`startable()` 会一直拒绝，不会发送任何写请求。
 真实写入产生的资源、清理与补偿结果，以及任何 UNKNOWN，必须逐条保留，不得重放。
+
+**2026-11-09 首次验收已执行**（六项批准已获操作员授权）：三条首次位置全部进入真实
+`ecnu-max` 的 `web_contract_v2` 模型设计路径，但都在 focus 阶段被产品校验拒绝，目标 HTTP
+请求为 0、资源残留 0、UNKNOWN 0；判定 T1 FAIL（模型规划）、T2 NEEDS_REVIEW（夹具表达力）、
+T3 FAIL（模型规划）。详见 `docs/rw-lifecycle-acceptance-20261109.md` 与
+`docs/evidence/rw-lifecycle-20261109/`。三条位置已消费，不得重放；后续改进需使用新的位置。
