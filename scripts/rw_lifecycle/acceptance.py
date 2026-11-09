@@ -69,7 +69,8 @@ def model_identity():
     from agenttest.llm_planner import ModelSettings
     settings = ModelSettings.from_env_file(ROOT / ".env")
     return dict(model=settings.model, protocol=settings.protocol,
-                base_url=settings.base_url, max_output_tokens=settings.max_output_tokens)
+                base_url=settings.base_url, max_output_tokens=settings.max_output_tokens,
+                timeout=settings.timeout, max_input_tokens=settings.max_input_tokens)
 
 
 def freeze(folder):
@@ -325,6 +326,9 @@ def run_case(folder, svc, project_id, case, run_id, initial):
     calls = model_calls(report)
     if calls is not None and calls > 2:
         findings.append(dict(reason="driver_model_call_budget", detail=calls))
+    elapsed = evidence["task"].get("elapsed") if isinstance(evidence["task"], dict) else None
+    if elapsed is not None and elapsed > APPROVED["budgets"]["max_seconds"]:
+        findings.append(dict(reason="driver_case_budget_exceeded", detail=elapsed))
     if current["status"] not in {"FINISHED", "NEEDS_REVIEW"}:
         findings.append(dict(reason="driver_task_unfinished", detail=current["status"]))
     blocking = {item["reason"] for item in findings}

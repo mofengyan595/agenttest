@@ -52,6 +52,19 @@ async def provider_error_diagnostic(response, stats):
     return None
 
 
+def model_timeout(raw: str | None, default: float = 30.0) -> float:
+    """Operator-set per-call ceiling, still bounded by the validated settings field."""
+    if raw is None or raw == "":
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        raise ValueError("AGENTTEST_MODEL_TIMEOUT must be a number of seconds") from None
+    if not 0 < value <= 120:
+        raise ValueError("AGENTTEST_MODEL_TIMEOUT must be between 0 and 120 seconds")
+    return value
+
+
 class ModelSettings(StrictModel):
     model: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$", repr=False)
     base_url: str = Field(repr=False)
@@ -88,6 +101,7 @@ class ModelSettings(StrictModel):
         return cls(model=env.get("AGENTTEST_MODEL", ""), base_url=base,
                    protocol="chatecnu" if urlsplit(base).hostname == "chat.ecnu.edu.cn"
                    else "openai_compatible",
+                   timeout=model_timeout(env.get("AGENTTEST_MODEL_TIMEOUT")),
                    api_key=env.get("OPENAI_API_KEY", ""))
 
     @classmethod
@@ -97,7 +111,8 @@ class ModelSettings(StrictModel):
             raw = source.read(65_537)
         if len(raw) > 65_536:
             raise ValueError("Model environment file too large")
-        allowed = {"OPENAI_API_KEY", "OPENAI_BASE_URL", "AGENTTEST_MODEL"}
+        allowed = {"OPENAI_API_KEY", "OPENAI_BASE_URL", "AGENTTEST_MODEL",
+                   "AGENTTEST_MODEL_TIMEOUT"}
         values = {}
         for line in raw.decode("utf-8-sig").splitlines():
             line = line.strip()

@@ -220,3 +220,31 @@ def test_approved_values_union_covers_every_declared_variant():
     ]
     assert approved_values(policies) == {("createItem", "body", "name", ()):
                                          ["first", "second"]}
+
+def test_execution_still_rejects_a_value_used_with_the_wrong_variant():
+    """The design-time union must not weaken the per-policy execution gate."""
+    from agenttest.diagnostics import ValidationFailure as Failure
+    from agenttest.dsl import ArgumentBinding, Step
+
+    built = project()
+    definitions = list(built.registry.definitions())
+
+    def policy(statuses):
+        return next(item for item in definitions
+                    if item.operation_id == "createItem"
+                    and list(item.assertions.status.codes) == statuses)
+
+    def step(item, name):
+        return Step(id="s1", operation_id="createItem", role="author", policy_id=item.id,
+                    body={"name": ArgumentBinding(value=name)},
+                    headers={"Idempotency-Key": ArgumentBinding(
+                        value="rw-lifecycle-key-0001")})
+
+    base, conflict = policy([201]), policy([409])
+    built.registry.resolve(step(base, "first"), built.target.business_scenario)
+    built.registry.resolve(step(base, "second"), built.target.business_scenario)
+    built.registry.resolve(step(conflict, "second"), built.target.business_scenario)
+    for abused in ("first", "third"):
+        with pytest.raises(Failure) as error:
+            built.registry.resolve(step(conflict, abused), built.target.business_scenario)
+        assert error.value.diagnostic.code == "OPENAPI_VALUE_ENUM"
