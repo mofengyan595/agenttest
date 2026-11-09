@@ -526,6 +526,22 @@ def decode_requirements(wire, context):
     return result
 
 
+def textual_order_edge(atom, item, preceding_operations):
+    """Derive the adjacency witness the user's own clause order already states.
+
+    An ordered clause (然后/再/最后) that maps to actions needs a ``before`` edge, but the
+    ordering evidence is the clause position itself. Only the immediately preceding
+    requested action is used, repeated reads keep their explicit count, and an unordered
+    clause is never given an invented edge.
+    """
+    if not atom.get('ordered') or not item.actions or item.before or not preceding_operations:
+        return None
+    earlier = preceding_operations[-1]
+    if earlier == item.actions[0].operation_id:
+        return None
+    return RequiredOrder(earlier=earlier, later=item.actions[0].operation_id)
+
+
 def validate_requirement_links(requirements, context, selection):
     """Validate source ownership and concrete obligation links, not semantic self-assessment."""
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
@@ -567,6 +583,7 @@ def validate_requirement_links(requirements, context, selection):
     by_source = {item.source_id: item for item in requirements}
     requested = [check.model_dump() for check in selection.requested_checks]
     previous = None
+    last_action_operations = []
     for atom in atoms.values():
         item = by_source[atom['source_id']]
         if (item.source_quote != atom['text'] or item.disposition not in {
@@ -593,6 +610,11 @@ def validate_requirement_links(requirements, context, selection):
                     or item.disposition in {'required', 'needs_review'} and status_continuation):
                 item.actions = previous.actions
         bind_response_continuation(item, atom, previous, catalog, read_operations)
+        derived = textual_order_edge(atom, item, last_action_operations)
+        if derived is not None:
+            item.before = [derived]
+        if item.actions and item.disposition in {'required', 'needs_review'}:
+            last_action_operations = [a.operation_id for a in item.actions]
         previous = item
         if item.disposition == 'required':
             pending_inquiry = not item.actions and any(

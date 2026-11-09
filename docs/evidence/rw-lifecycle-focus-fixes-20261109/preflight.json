@@ -1,0 +1,518 @@
+{
+  "model_calls": 0,
+  "target": "http://127.0.0.1:19097",
+  "isolated": true,
+  "loopback_only": true,
+  "authority": {
+    "blocked_reason": "WRITE_AUTHORITY_NOT_GRANTED",
+    "approval_checklist": [
+      "批准本文件列出的 6 个操作（POST/GET/PATCH/PUT/DELETE/GET 列表）作为唯一可写范围",
+      "确认目标仅为 127.0.0.1 上的隔离夹具，且环境标记为 isolated",
+      "确认每次运行的命名空间前缀与重置方式（POST /__namespace + POST /__reset）",
+      "确认清理策略：每次创建必须配对 DELETE，并以回读 404 作为清理证据",
+      "确认故障注入仅用于补偿测试，且不重放未知结果的写请求",
+      "确认预算上限（12 次请求 / 120 秒 / 2 次模型调用）与停止条件"
+    ]
+  },
+  "controls": [
+    {
+      "case": "positive_full_lifecycle",
+      "namespace": "e2e-positive-0001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 2,
+        "deletes": 1,
+        "reads": 2,
+        "requests": 6,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        200,
+        200,
+        200,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "b34576631fb106a4d4690d0a4c5aa56697f7272e7d1427ffa2958bf5c038ed53",
+        "namespace": "e2e-positive-0001",
+        "items": 0,
+        "audit": 6,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 6
+    },
+    {
+      "case": "idempotent_replay",
+      "namespace": "e2e-replay-00001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 1,
+        "updates": 0,
+        "deletes": 1,
+        "reads": 1,
+        "requests": 4,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        200,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "102c21ede7b5ad6eb28394af1639b62690d4f8e153bee79a34b10b191fb60c6a",
+        "namespace": "e2e-replay-00001",
+        "items": 0,
+        "audit": 4,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 4
+    },
+    {
+      "case": "wrong_identity_and_resource_scope",
+      "namespace": "e2e-identity-0001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 1,
+        "reads": 2,
+        "requests": 5,
+        "identity_violations": 1,
+        "denials": 2,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        403,
+        403,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "59655d01bc3d0b802c993a4e8407bdf32b5c2873cd96f7451f093d469ba12234",
+        "namespace": "e2e-identity-0001",
+        "items": 0,
+        "audit": 5,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 5
+    },
+    {
+      "case": "duplicate_submission_without_reused_key",
+      "namespace": "e2e-duplicate-001",
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "create_count_mismatch",
+          "detail": 2
+        }
+      ],
+      "metrics": {
+        "creates": 2,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 2,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": null,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        201
+      ],
+      "state": {
+        "state_sha256": "6de31025d15ba211e09492ee29a445f1aa1d6ad0e814a6b7e92c511706eb3bee",
+        "namespace": "e2e-duplicate-001",
+        "items": 2,
+        "audit": 2,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 2
+    },
+    {
+      "case": "missing_cleanup_leaves_resource",
+      "namespace": "e2e-leftover-0001",
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        }
+      ],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 1,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201
+      ],
+      "state": {
+        "state_sha256": "c2cd54151bdf4e715be540e593fb7a119068988ab16ff7a04996e6f6dd98e67f",
+        "namespace": "e2e-leftover-0001",
+        "items": 1,
+        "audit": 1,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 1
+    },
+    {
+      "case": "post_commit_fault_without_compensation",
+      "namespace": "e2e-fault-000001",
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "reason": "cleanup_unverified",
+          "detail": {
+            "deleted": false,
+            "read_back": false
+          }
+        },
+        {
+          "reason": "compensation_missing",
+          "detail": 1
+        }
+      ],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 2,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": false,
+        "leftovers": 0,
+        "faults": 1,
+        "compensation_verified": false
+      },
+      "statuses": [
+        500
+      ],
+      "state": {
+        "state_sha256": "eb40f8942951c80a35df9c2e74b9bf670b52c189a65dd2c935227e990340f3c3",
+        "namespace": "e2e-fault-000001",
+        "items": 1,
+        "audit": 2,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 2
+    },
+    {
+      "case": "post_commit_fault_with_compensation",
+      "namespace": "e2e-fault-000002",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 1,
+        "reads": 1,
+        "requests": 4,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 1,
+        "compensation_verified": true
+      },
+      "statuses": [
+        500,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "66a505126063d56f9f1ee373be3df1a6974d107abb9a4e9732ed1ffa9e96450b",
+        "namespace": "e2e-fault-000002",
+        "items": 0,
+        "audit": 4,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 4
+    },
+    {
+      "case": "namespace_a_creates_one_item",
+      "namespace": "e2e-namespace-aa",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 0,
+        "reads": 0,
+        "requests": 1,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": null,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [],
+      "state": {
+        "state_sha256": "ff9216150bec5ad5486e18194ca364eb9ecf6a9bbef36e848558e66dc2eaf35e",
+        "namespace": "e2e-namespace-aa",
+        "items": 1,
+        "audit": 1,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 1
+    },
+    {
+      "case": "namespace_isolation",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "cross_namespace_status": 404
+      },
+      "statuses": [
+        404
+      ],
+      "requests": 1,
+      "namespace": "e2e-namespace-bb",
+      "state": {
+        "state_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "items": 0
+      }
+    },
+    {
+      "case": "reset_restores_empty_state",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "before": 1,
+        "after": 0,
+        "audit_after": 0
+      },
+      "statuses": [],
+      "requests": 0,
+      "namespace": "e2e-reset-000001",
+      "state": {
+        "state_sha256": "20118303a89e82a6586cc48bae5bafdc49d6e5be4122de5e97072752ee1faaf0",
+        "namespace": "unset",
+        "items": 0,
+        "audit": 0,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      }
+    }
+  ],
+  "variants": [
+    {
+      "case": "v2_approved_alternatives_and_conflict",
+      "namespace": "e2e-variant-0001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 1,
+        "replays": 1,
+        "updates": 0,
+        "deletes": 1,
+        "reads": 2,
+        "requests": 6,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        200,
+        409,
+        200,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "12572e843ed1f27c8d002a8acc7a5f48d2056d4cfb1e17cc5faa98375a652429",
+        "namespace": "e2e-variant-0001",
+        "items": 0,
+        "audit": 6,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 6
+    },
+    {
+      "case": "v2_identity_denials_without_state_change",
+      "namespace": "e2e-identity-0001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 0,
+        "deletes": 1,
+        "reads": 4,
+        "requests": 8,
+        "identity_violations": 0,
+        "denials": 4,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        200,
+        403,
+        401,
+        403,
+        401,
+        204,
+        404
+      ],
+      "state": {
+        "state_sha256": "59655d01bc3d0b802c993a4e8407bdf32b5c2873cd96f7451f093d469ba12234",
+        "namespace": "e2e-identity-0001",
+        "items": 0,
+        "audit": 8,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 8
+    },
+    {
+      "case": "v2_owner_replacement_still_allowed",
+      "namespace": "e2e-unapproved-001",
+      "verdict": "PASS",
+      "findings": [],
+      "metrics": {
+        "creates": 1,
+        "conflicts": 0,
+        "replays": 0,
+        "updates": 1,
+        "deletes": 1,
+        "reads": 1,
+        "requests": 4,
+        "identity_violations": 0,
+        "denials": 0,
+        "unapproved_operations": 0,
+        "namespace_violations": 0,
+        "created_id": "itm-0001",
+        "cleanup_verified": true,
+        "leftovers": 0,
+        "faults": 0,
+        "compensation_verified": null
+      },
+      "statuses": [
+        201,
+        200
+      ],
+      "state": {
+        "state_sha256": "a12c0c094d246eb03e00d467f52d699b71bd1fe31dc66013ba536fc568835533",
+        "namespace": "e2e-unapproved-001",
+        "items": 0,
+        "audit": 4,
+        "read_only": false,
+        "isolated": true,
+        "writable": true
+      },
+      "requests": 4
+    }
+  ],
+  "passed": true,
+  "passed_controls": 7,
+  "failed_controls": 3
+}

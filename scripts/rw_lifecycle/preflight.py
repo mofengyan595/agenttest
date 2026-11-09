@@ -1,4 +1,4 @@
-﻿"""Deterministic lifecycle controls over real loopback HTTP; no model and no real service.
+"""Deterministic lifecycle controls over real loopback HTTP; no model and no real service.
 
 The preparation gate runs first: before explicit human approval the authority refuses to
 start, so this script can prove the fixture, the approval model and the scorer agree
@@ -109,6 +109,72 @@ def run_case(name, namespace, actions, case, *, expect=None):
             assert statuses == expect["statuses"], (name, statuses)
     assert result["metrics"]["namespace_violations"] == 0, name
     return dict(case=name, namespace=namespace, **details)
+
+
+def variant_controls():
+    """The next round's rubric, proven deterministically against the fixture itself."""
+    allowed = [op["operation_id"] for op in authority.WRITE_AUTHORITY["operations"]]
+    results = []
+
+    def alternatives(client):
+        first = call(client, "POST", "/items", "author", "key-variant-0001", {"name": "first"})
+        item = first.json()["id"]
+        replay = call(client, "POST", "/items", "author", "key-variant-0001", {"name": "first"})
+        conflict = call(client, "POST", "/items", "author", "key-variant-0001",
+                        {"name": "second"})
+        read = call(client, "GET", f"/items/{item}", "author")
+        delete = call(client, "DELETE", f"/items/{item}", "author")
+        gone = call(client, "GET", f"/items/{item}", "author")
+        assert replay.json()["id"] == item, "replay must reuse the created resource"
+        assert read.json()["name"] == "first", "a rejected conflict must not change the resource"
+        assert first.status_code == 201 and replay.status_code == 200
+        assert conflict.status_code == 409 and delete.status_code == 204
+        return [first.status_code, replay.status_code, conflict.status_code, read.status_code,
+                delete.status_code, gone.status_code]
+
+    results.append(run_case(
+        "v2_approved_alternatives_and_conflict", "e2e-variant-0001", alternatives,
+        dict(created=1, allowed_operations=allowed, identity="author", cleanup=True,
+             denied=0, idempotent=True, conflict=1, compensation=False),
+        expect=dict(verdict="PASS", statuses=[201, 200, 409, 200, 204, 404])))
+
+    denials = [("getItem", "auditor", 403), ("getItem", None, 401),
+               ("updateItem", "auditor", 403), ("updateItem", None, 401)]
+
+    def identity(client):
+        created = call(client, "POST", "/items", "author", "key-identity-001", {"name": "first"})
+        item = created.json()["id"]
+        statuses = [created.status_code,
+                    call(client, "GET", f"/items/{item}", "author").status_code,
+                    call(client, "GET", f"/items/{item}", "auditor").status_code,
+                    call(client, "GET", f"/items/{item}").status_code,
+                    call(client, "PATCH", f"/items/{item}", "auditor",
+                         body={"name": "renamed"}).status_code,
+                    call(client, "PATCH", f"/items/{item}", body={"name": "renamed"}).status_code,
+                    call(client, "DELETE", f"/items/{item}", "author").status_code,
+                    call(client, "GET", f"/items/{item}", "author").status_code]
+        return statuses
+
+    results.append(run_case(
+        "v2_identity_denials_without_state_change", "e2e-identity-0001", identity,
+        dict(created=1, allowed_operations=allowed, identity="author", cleanup=True,
+             denied=4, idempotent=False, compensation=False, approved_denials=denials),
+        expect=dict(verdict="PASS", statuses=[201, 200, 403, 401, 403, 401, 204, 404])))
+
+    def unapproved(client):
+        created = call(client, "POST", "/items", "author", "key-unapproved-01", {"name": "first"})
+        item = created.json()["id"]
+        replaced = call(client, "PUT", f"/items/{item}", "author", body={"name": "replaced"})
+        call(client, "DELETE", f"/items/{item}", "author")
+        call(client, "GET", f"/items/{item}", "author")
+        return [created.status_code, replaced.status_code]
+
+    results.append(run_case(
+        "v2_owner_replacement_still_allowed", "e2e-unapproved-001", unapproved,
+        dict(created=1, allowed_operations=allowed, identity="author", cleanup=True,
+             denied=0, idempotent=False, compensation=False),
+        expect=dict(verdict="PASS", statuses=[201, 200])))
+    return results
 
 
 def lifecycle_controls():
@@ -418,6 +484,9 @@ def main(target):
     print("lifecycle controls over real loopback HTTP")
     with served():
         report["controls"] = lifecycle_controls()
+    print("next-round rubric controls over the same loopback fixture")
+    with served():
+        report["variants"] = variant_controls()
     verdicts = {row["case"]: row["verdict"] for row in report["controls"]}
     passed = sum(value == "PASS" for value in verdicts.values())
     failed = sum(value == "FAIL" for value in verdicts.values())

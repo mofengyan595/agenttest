@@ -279,6 +279,9 @@ def constrain_focus_inputs(schema, groups):
 def _check_quote(value, schema, quote):
     # Enum, boolean and written-number translations remain model interpretations;
     # free text and explicit decimal tokens retain their exact source values.
+    if type(value) is str and "enum" in schema and value not in schema["enum"]:
+        # An approved alternative set is closed: the model may pick a variant, never invent one.
+        raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_VALUE_UNAPPROVED")
     if type(value) is str and "enum" not in schema and value not in quote:
         raise ValidationFailure(Layer.MODEL, "FOCUS_INPUT_TEXT_CHANGED")
     if type(value) in {int, float}:

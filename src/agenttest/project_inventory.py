@@ -180,7 +180,8 @@ def operation_reason(op, item, setup, environ=None, version="3.0.3"):
                 "嵌套敏感输入暂未支持；不要填写明文凭据。")
     for argument in ([] if is_login else item.arguments):
         if argument.location == "body" and argument.name in item.credential_inputs:
-            if (argument.value is not None or argument.source_operation or argument.generated
+            if (argument.value is not None or argument.values is not None
+                    or argument.source_operation or argument.generated
                     or argument.negative_enabled):
                 return "NEEDS_INPUT", "受控输入不能包含普通值。", "清除普通输入，仅保留凭据变量。"
             continue
@@ -206,7 +207,9 @@ def operation_reason(op, item, setup, environ=None, version="3.0.3"):
                     return ("NEEDS_INPUT", f"参数 {argument.name} 不在当前文档中。",
                             "重新读取文档并核对输入。")
                 if not argument.source_operation:
-                    validate_value(argument.value, specs[slot].schema)
+                    for candidate in (argument.values if argument.values is not None
+                                      else [argument.value]):
+                        validate_value(candidate, specs[slot].schema)
         except ValueError:
             return "NEEDS_INPUT", "输入值不符合当前文档约束。", "按字段类型、枚举或边界修正输入。"
     return "READY", "已具备文档检查依据和执行授权。", "可以开始测试。"

@@ -141,3 +141,9 @@
 请求为 0、资源残留 0、UNKNOWN 0；判定 T1 FAIL（模型规划）、T2 NEEDS_REVIEW（夹具表达力）、
 T3 FAIL（模型规划）。详见 `docs/rw-lifecycle-acceptance-20261109.md` 与
 `docs/evidence/rw-lifecycle-20261109/`。三条位置已消费，不得重放；后续改进需使用新的位置。
+
+**2026-11-09 离线修复与下一轮准备**：三条诊断的根因已修复（批准的预期结果策略、受控多批准
+取值、原文顺序见证派生、受控写操作负向权限声明），评分器增加冲突与批准拒绝白名单；下一轮
+需求集见 scripts/rw_lifecycle/plan_v2.py（开发样本与最终样本分离）。本阶段未授予写入，
+WRITE_AUTHORITY 保持 NOT_GRANTED；重新执行首次验收前需按第 3 节再次批准。
+详见 docs/rw-lifecycle-focus-fixes-20261109.md。

@@ -1,0 +1,274 @@
+{
+  "captured_at": "2026-11-09T12:49:03+0800",
+  "head": "5b85dc46bfa67a8e63320547a3fd0aa7c5f1a1d7",
+  "working_tree": [
+    "M docs/progress.md",
+    " M docs/rw-lifecycle-plan-20261108.md",
+    " M scripts/rw_lifecycle/acceptance.py",
+    " M scripts/rw_lifecycle/authority.py",
+    " M scripts/rw_lifecycle/lifecycle.py",
+    " M scripts/rw_lifecycle/preflight.py",
+    " M src/agenttest/generic_intake.py",
+    " M src/agenttest/product_focus.py",
+    " M src/agenttest/product_inputs.py",
+    " M src/agenttest/product_tasks.py",
+    " M src/agenttest/project_inventory.py",
+    " M src/agenttest/request_requirements.py",
+    "?? docs/rw-lifecycle-focus-fixes-20261109.md",
+    "?? scripts/rw_lifecycle/plan_v2.py",
+    "?? tests/test_focus_approved_expectations.py"
+  ],
+  "model_calls": 0,
+  "target_requests": 0,
+  "write_authority": "NOT_GRANTED",
+  "real_writes": 0,
+  "source": {
+    "generic_intake": "b56d2454afb107ca7991661f55e1a89a9d48ecd2f40f9c582796f30f7155c0b0",
+    "project_inventory": "a5e8c9cebfb5b78c3fe96b345e21806e380ec777f362720424196f95330194a2",
+    "request_requirements": "8b9fee635f60794f44bf0a0dbce848330112ea65ec63bc103ab90d6fc23f2371",
+    "product_focus": "10c54971685fd1ac67e75b82f6c34a050eec6bb501f414d5c9937d20ee600d81",
+    "product_inputs": "f57f189695abf887877f78e272b9d571743548370a714f6854437a853b252cea",
+    "product_tasks": "90fbd82c3416cb188f686cb9ccbb994be5bc5340b6ff072d847770f1e74847e5",
+    "authority": "6dd5cb7753836d4fd613d8b4a6f2c00a1fa494f839650d44ea206b0b1dff55c0",
+    "lifecycle_scorer": "d7d7d2d7d061f2920e921a41f794f404ff2538a753d280dbfba5067c1d414f5e",
+    "plan_v2": "027db53919b7a8785d2a1d1bdbaf6ec8176a83ff2651aae15b5730fd0d231df3",
+    "fixture": "d2cad6218de7060b47b5fc0a9b9ecb7785052651c05e2b274f27b154233e16c0"
+  },
+  "preflight": {
+    "passed": true,
+    "passed_controls": 7,
+    "failed_controls": 3,
+    "verdicts": {
+      "positive_full_lifecycle": "PASS",
+      "idempotent_replay": "PASS",
+      "wrong_identity_and_resource_scope": "PASS",
+      "duplicate_submission_without_reused_key": "FAIL",
+      "missing_cleanup_leaves_resource": "FAIL",
+      "post_commit_fault_without_compensation": "FAIL",
+      "post_commit_fault_with_compensation": "PASS",
+      "namespace_a_creates_one_item": "PASS",
+      "namespace_isolation": "PASS",
+      "reset_restores_empty_state": "PASS"
+    },
+    "variants": {
+      "v2_approved_alternatives_and_conflict": {
+        "verdict": "PASS",
+        "statuses": [
+          201,
+          200,
+          409,
+          200,
+          204,
+          404
+        ],
+        "requests": 6
+      },
+      "v2_identity_denials_without_state_change": {
+        "verdict": "PASS",
+        "statuses": [
+          201,
+          200,
+          403,
+          401,
+          403,
+          401,
+          204,
+          404
+        ],
+        "requests": 8
+      },
+      "v2_owner_replacement_still_allowed": {
+        "verdict": "PASS",
+        "statuses": [
+          201,
+          200
+        ],
+        "requests": 4
+      }
+    }
+  },
+  "declaration": {
+    "ready": true,
+    "checks": {
+      "createItem-author": true,
+      "createItem-conflict-409": true,
+      "getItem-owner": true,
+      "getItem-auditor-403": true,
+      "getItem-anonymous-401": true,
+      "getItem-absent-404": true,
+      "update-author": true,
+      "updateItem-auditor-403": true,
+      "updateItem-anonymous-401": true,
+      "replace-author": true,
+      "delete-author": true
+    },
+    "approved_values": [
+      "first",
+      "second"
+    ],
+    "conflict_values": [
+      "second"
+    ],
+    "dynamic_rules": 9,
+    "target": {
+      "environment": "isolated",
+      "scenario": "web_contract_v2",
+      "allow_mutations": true,
+      "max_requests": 12,
+      "base_url": "http://127.0.0.1:19097"
+    },
+    "policies": [
+      {
+        "operation": "createItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          201
+        ],
+        "enums": {
+          "name": [
+            "first",
+            "second"
+          ],
+          "Idempotency-Key": [
+            "rw-lifecycle-key-0001"
+          ]
+        }
+      },
+      {
+        "operation": "createItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          409
+        ],
+        "enums": {
+          "name": [
+            "second"
+          ],
+          "Idempotency-Key": [
+            "rw-lifecycle-key-0001"
+          ]
+        }
+      },
+      {
+        "operation": "getItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          200
+        ],
+        "enums": {}
+      },
+      {
+        "operation": "getItem",
+        "roles": [
+          "auditor"
+        ],
+        "statuses": [
+          403
+        ],
+        "enums": {}
+      },
+      {
+        "operation": "getItem",
+        "roles": [
+          null
+        ],
+        "statuses": [
+          401
+        ],
+        "enums": {}
+      },
+      {
+        "operation": "getItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          404
+        ],
+        "enums": {}
+      },
+      {
+        "operation": "updateItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          200
+        ],
+        "enums": {
+          "name": [
+            "renamed"
+          ]
+        }
+      },
+      {
+        "operation": "updateItem",
+        "roles": [
+          "auditor"
+        ],
+        "statuses": [
+          403
+        ],
+        "enums": {
+          "name": [
+            "renamed"
+          ]
+        }
+      },
+      {
+        "operation": "updateItem",
+        "roles": [
+          null
+        ],
+        "statuses": [
+          401
+        ],
+        "enums": {
+          "name": [
+            "renamed"
+          ]
+        }
+      },
+      {
+        "operation": "replaceItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          200
+        ],
+        "enums": {
+          "name": [
+            "replaced"
+          ]
+        }
+      },
+      {
+        "operation": "deleteItem",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          204
+        ],
+        "enums": {}
+      },
+      {
+        "operation": "listItems",
+        "roles": [
+          "author"
+        ],
+        "statuses": [
+          200
+        ],
+        "enums": {}
+      }
+    ]
+  }
+}

@@ -3570,3 +3570,21 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   [rw-lifecycle-acceptance-20261109.md](rw-lifecycle-acceptance-20261109.md)。
 - 下一步优先级：先提升 focus 阶段的见证/证据可靠性，再补“同键异体冲突变体”夹具能力，
   然后使用**新的**首次位置验证，不复用本次三条。
+
+## 2026-11-09 Focus 规划与测试声明修复（离线，未授予写入）
+
+- 三条首次验收诊断的代码根因与修复：T1 增加“批准的预期结果策略”（`IntakeExpectation`，
+  非 2xx 预期必须在契约中声明）；T2 生成输入支持受控的多个批准取值（闭合枚举，越界值新增
+  `FOCUS_INPUT_VALUE_UNAPPROVED`）并用冲突预期表达 409；T3 有序子句由原文顺序确定性补
+  `before` 边（`textual_order_edge`，重复读/已有边/无前置动作不补）。
+- 新增受控写操作负向权限声明：`access_checks` 可用于写操作，但仅限
+  `approve_negative_tests` 开启、状态 ⊆ {401,403}、角色不同于基础身份；普通写权限未扩大。
+- 声明构建 12 条策略；`preflight.py` 新增 3 条下一轮 rubric 控制全 PASS
+  （`201,200,409,200,204,404` 与 `201,200,403,401,403,401,204,404`），原 10 条控制保持
+  7 PASS / 3 设计性 FAIL；`plan_v2.py::readiness()` 11 条策略全满足。
+- 新增 `tests/test_focus_approved_expectations.py`（10 项反向与安全测试）；相关批次 215 项通过；
+  完整离线回归 2490 收集 / 2475 通过 / 0 失败 / 0 错误 / 15 跳过，墙钟 920.06 秒，测试 ID 覆盖一致
+  （`runs/full-checks-focus-fixes`）；`ruff check .` 全绿；真实模型调用 0 次、真实写入 0 次，
+  `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
+- 下一轮方案：[rw-lifecycle-focus-fixes-20261109.md](rw-lifecycle-focus-fixes-20261109.md)
+  （`plan_v2.py` 的 `FINAL_CASES` 与 `RUBRIC`，开发样本与最终样本分离；写入授权需重新批准）。

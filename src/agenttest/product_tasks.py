@@ -396,6 +396,8 @@ class ProductTasks:
                                         "本次没有发送业务请求。请核对需求后安排新的独立测试。",
                                     "FOCUS_INPUT_NUMBER_CHANGED": "模型提取的数字与原文不一致，"
                                         "本次没有发送业务请求。请核对需求后安排新的独立测试。",
+                                    "FOCUS_INPUT_VALUE_UNAPPROVED": "模型选择的输入值不在已批准"
+                                        "取值范围内，本次没有发送业务请求；允许的取值由操作员批准。",
                                     "FOCUS_INPUT_FIELD_CHANGED": "模型把明确输入关联到了其他字段，"
                                         "未发送业务请求；原文保留供核对。",
                                     "FOCUS_INPUT_QUESTION_CONFLICT":

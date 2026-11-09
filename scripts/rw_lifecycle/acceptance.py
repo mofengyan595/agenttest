@@ -152,23 +152,34 @@ def dry(folder):
                  for row in rows}
         required = {
             "createItem-author": ("createItem", ("author",), (201,)) in names,
+            "createItem-conflict-409": ("createItem", ("author",), (409,)) in names,
             "getItem-owner": ("getItem", ("author",), (200,)) in names,
             "getItem-auditor-403": ("getItem", ("auditor",), (403,)) in names,
             "getItem-anonymous-401": ("getItem", (None,), (401,)) in names,
+            "getItem-absent-404": ("getItem", ("author",), (404,)) in names,
             "update-author": ("updateItem", ("author",), (200,)) in names,
+            "updateItem-auditor-403": ("updateItem", ("auditor",), (403,)) in names,
+            "updateItem-anonymous-401": ("updateItem", (None,), (401,)) in names,
             "replace-author": ("replaceItem", ("author",), (200,)) in names,
             "delete-author": ("deleteItem", ("author",), (204,)) in names,
         }
         create = next(row for row in rows if row["operation"] == "createItem"
-                      and row["roles"] == ["author"] and not row["negative"])
+                      and row["roles"] == ["author"] and tuple(row["statuses"]) == (201,))
+        conflict = next(row for row in rows if row["operation"] == "createItem"
+                        and row["roles"] == ["author"] and tuple(row["statuses"]) == (409,))
         header = [rule for rule in create["rules"] if rule["location"] == "headers"]
         name_rule = next(rule for rule in create["rules"] if rule["name"] == "name")
+        conflict_name = next(rule for rule in conflict["rules"] if rule["name"] == "name")
         dynamic = [rule for row in rows for rule in row["rules"] if rule["source"]]
+        approved_values = name_rule["enum"]
         result = dict(
-            ready=all(required.values()) and bool(header) and name_rule["enum"] is None,
+            ready=(all(required.values()) and bool(header)
+                   and approved_values == ["first", "second"]
+                   and conflict_name["enum"] == ["second"]),
             checks=required,
             header_rule=header,
-            name_is_generated=name_rule["enum"] is None,
+            approved_values=approved_values,
+            conflict_values=conflict_name["enum"],
             dynamic_rules=len(dynamic),
             target=dict(environment=project.target.environment,
                         scenario=project.target.business_scenario,

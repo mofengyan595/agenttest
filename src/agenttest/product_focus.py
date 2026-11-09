@@ -263,7 +263,11 @@ action, exception, permission, cleanup and content check. Additional advice neve
 
 request_atoms is the server's complete original-text partition. requirement_map needs EVERY
 source_id. required names actions with identity aliases, before edges and approved producer/consumer
-same_resource links; null identity means public/anonymous.
+same_resource links; null identity means public/anonymous. An ordered clause (然后/再/之后/最后)
+keeps its before edge to the preceding requested action. A clause whose expected status is already
+carried by an approved policy (that policy lists the exact status, e.g. an approved read-back 404
+or an approved idempotency conflict 409) is required with that policy's operation and identity:
+do not turn it into a business_rule question, and do not invent a different expected value.
 For boundary_links with explicit=true, the server supplies the exact check and action for the
 listed source_id and any status_source_id. Mark these clauses required with actions=[] and select
 the listed operation. Do not repeat these requested_checks. Keep any independently requested order

@@ -6,6 +6,7 @@ from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary
 from agenttest.dsl import AssertionPolicy, CSVUpload, ExpectedStatus, FieldAssertion, PollPolicy
+from agenttest.json_values import json_equal
 from agenttest.planner_input import validate_user_task
 from agenttest.policies import ApprovedCSVFixture, BindingRule, PolicyRegistry, RegisteredPolicy
 from agenttest.project_goals import (
@@ -38,11 +39,16 @@ from agenttest.safety import (
 )
 from agenttest.selectors import validate_selector
 
+# Operator-approved non-success outcomes an expectation policy may declare.
+NON_SUCCESS_EXPECTATIONS = frozenset({400, 401, 403, 404, 409, 410, 422})
+
 
 class IntakeArgument(StrictModel):
     location: Literal["body", "path_parameters", "query", "headers"]
     name: str = Field(min_length=1, max_length=80)
     value: Any = None
+    # Approved alternatives for a generated input: the model may only pick one of them.
+    values: list[Any] | None = Field(default=None, min_length=2, max_length=8)
     source_operation: str | None = None
     selector: str = "$"
     generated: bool = False
@@ -52,6 +58,8 @@ class IntakeArgument(StrictModel):
     @model_serializer(mode="wrap")
     def legacy_defaults(self, handler):
         data = handler(self)
+        if self.values is None:
+            data.pop("values", None)
         for key in ("generated", "needs_input", "negative_enabled"):
             if not getattr(self, key):
                 data.pop(key, None)
@@ -73,6 +81,7 @@ class IntakeOperation(StrictModel):
     checks: list[FieldAssertion] = Field(default_factory=list, max_length=30)
     check_source: str | None = Field(default=None, min_length=1, max_length=500)
     access_checks: list["IntakeAccess"] = Field(default_factory=list, max_length=8)
+    expectations: list["IntakeExpectation"] = Field(default_factory=list, max_length=6)
     credential_inputs: dict[str, str] = Field(default_factory=dict)
     upload: CSVUpload | None = None
     poll: PollPolicy | None = None
@@ -94,6 +103,8 @@ class IntakeOperation(StrictModel):
         data = handler(self)
         if not self.access_checks:
             data.pop("access_checks", None)
+        if not self.expectations:
+            data.pop("expectations", None)
         if not self.credential_inputs:
             data.pop("credential_inputs", None)
         for key in ("upload", "poll", "check_source", "creation"):
@@ -103,6 +114,21 @@ class IntakeOperation(StrictModel):
             data.pop("public_evidence", None)
         if not self.after_operations:
             data.pop("after_operations", None)
+        return data
+
+
+class IntakeExpectation(StrictModel):
+    """An operator-approved non-2xx expectation for the same operation and identity."""
+
+    statuses: list[int] = Field(min_length=1, max_length=4)
+    rule: str = Field(min_length=1, max_length=160)
+    arguments: list[IntakeArgument] = Field(default_factory=list, max_length=6)
+
+    @model_serializer(mode="wrap")
+    def legacy_defaults(self, handler):
+        data = handler(self)
+        if not self.arguments:
+            data.pop("arguments", None)
         return data
 
 
@@ -400,6 +426,20 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
                     source_policy_id=policy_ids[producer.operation_id],
                     source_selector=argument.selector, role_relation=relation))
             else:
+                if argument.values is not None:
+                    # Approved alternatives keep a generated input inside an operator-owned set.
+                    if (not argument.generated or argument.value is not None
+                            or argument.negative_enabled):
+                        raise ValueError("APPROVED_VALUES_REQUIRE_GENERATED_INPUT")
+                    for candidate in argument.values:
+                        validate_value(candidate, specs[slot].schema)
+                    if len({fingerprint(value) for value in argument.values}) != len(
+                            argument.values):
+                        raise ValueError("APPROVED_VALUES_NOT_DISTINCT")
+                    rules.append(BindingRule(location=argument.location, name=argument.name,
+                        literal_schema={**specs[slot].schema,
+                                        "enum": list(argument.values)}))
+                    continue
                 validate_value(argument.value, specs[slot].schema)
                 # Explicit values stay fixed; generated inputs remain inside the approved schema.
                 rules.append(BindingRule(location=argument.location, name=argument.name,
@@ -443,8 +483,14 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
             if setup.assisted and access.role not in roles and any(
                     r.alias == access.role for r in setup.roles):
                 continue  # Pending credentials are visible in the complete inventory.
-            if (op.method not in {"GET", "HEAD", "OPTIONS"}
-                    or access.role is not None and access.role not in roles):
+            readonly = op.method in {"GET", "HEAD", "OPTIONS"}
+            if not readonly and not (
+                    # A mutation may only carry a pre-approved identity denial (401/403);
+                    # ordinary write permission is never widened here.
+                    setup.approve_negative_tests and set(access.statuses) <= {401, 403}
+                    and access.role != item.role):
+                raise ValueError("ACCESS_CHECK_REQUIRES_APPROVED_READONLY_ROLE")
+            if access.role is not None and access.role not in roles:
                 raise ValueError("ACCESS_CHECK_REQUIRES_APPROVED_READONLY_ROLE")
             if access.role is None and (access.statuses != [401] or "401" not in op.responses
                     or not op.security or {} in op.security):
@@ -473,6 +519,36 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
                 "assertions": AssertionPolicy(reviewed=True,
                     source=source + ":OPERATOR_ACCESS_RULE",
                     status=ExpectedStatus(codes=access.statuses))}))
+        for number, expectation in enumerate(item.expectations):
+            # Expected denial/conflict outcomes are operator-authored, documented and bounded;
+            # they never extend the approved success statuses of the base operation.
+            if not (setup.assisted and setup.approve_negative_tests):
+                raise ValueError("EXPECTATION_REQUIRES_APPROVED_NEGATIVE_TESTS")
+            if not set(expectation.statuses) <= NON_SUCCESS_EXPECTATIONS:
+                raise ValueError("EXPECTATION_STATUS_NOT_APPROVABLE")
+            if any(str(code) not in op.responses for code in expectation.statuses):
+                raise ValueError("EXPECTATION_STATUS_NOT_DOCUMENTED")
+            expectation_rules = [rule.model_copy(deep=True) for rule in rules]
+            approved_slots = {(rule.location, rule.name): rule for rule in expectation_rules}
+            for argument in expectation.arguments:
+                slot = argument.location, argument.name
+                base_rule = approved_slots.get(slot)
+                if (base_rule is None or argument.source_operation or argument.generated
+                        or argument.values is not None or argument.negative_enabled):
+                    raise ValueError("EXPECTATION_ARGUMENT_NOT_APPROVED")
+                approved = (base_rule.literal_schema or {}).get("enum") or []
+                if not any(json_equal(argument.value, value) for value in approved):
+                    raise ValueError("EXPECTATION_VALUE_NOT_APPROVED")
+                base_rule.literal_schema = {**(base_rule.literal_schema or {"type": "string"}),
+                                            "enum": [argument.value]}
+            validate_user_task(expectation.rule)
+            policies.append(base_policy.model_copy(update={
+                "id": base_policy.id + f"_expectation_{number + 1}", "poll": None,
+                "csv_fixture": None, "binding_rules": expectation_rules,
+                "planning_purpose": expectation.rule,
+                "assertions": AssertionPolicy(reviewed=True,
+                    source=source + ":OPERATOR_EXPECTATION_RULE",
+                    status=ExpectedStatus(codes=expectation.statuses))}))
         goals.append(GoalTemplate(id=f"action_{index + 1}", aliases=[item.alias],
             policy_id=policy_ids[item.operation_id], role=item.role))
     # Reject cycles before a task can spend model or HTTP budget.

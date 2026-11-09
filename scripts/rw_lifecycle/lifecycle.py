@@ -41,6 +41,7 @@ def score(case, audit):
     reads = [row for row in audit if row["operation_id"] in {"getItem", "listItems"}]
 
     metrics["creates"] = len([row for row in creates if row["status"] == 201])
+    metrics["conflicts"] = len([row for row in creates if row["status"] == 409])
     metrics["replays"] = len([row for row in creates if row["idempotent_replay"]])
     metrics["updates"] = len([row for row in updates + replaces if row["status"] == 200])
     metrics["deletes"] = len([row for row in deletes if row["status"] == 204])
@@ -50,11 +51,13 @@ def score(case, audit):
     reasons = {"401": [], "403": [], "404": [], "409": [], "422": [], "500": []}
     for row in audit:
         reasons.setdefault(str(row["status"]), []).append(row)
+    approved = {(entry[0], entry[1], entry[2]) for entry in case.get("approved_denials", [])}
     identity_violations = [
         row
         for row in audit
         if row["status"] in {401, 403}
         and row["operation_id"] in {"createItem", "updateItem", "replaceItem", "deleteItem"}
+        and (row["operation_id"], row["role"], row["status"]) not in approved
     ]
     denials = [row for row in audit if row["status"] in {401, 403}]
     unapproved = [row for row in audit if row["operation_id"] not in case["allowed_operations"]]
@@ -71,6 +74,8 @@ def score(case, audit):
             findings.append(("missing_expected_denial", len(denials)))
         elif len(denials) > case["denied"]:
             findings.append(("unexpected_denial", len(denials)))
+    if case.get("conflict") is not None and metrics["conflicts"] != case["conflict"]:
+        findings.append(("conflict_count_mismatch", metrics["conflicts"]))
 
     if scope:
         findings.append(("namespace_violation", len(scope)))

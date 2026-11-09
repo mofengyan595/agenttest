@@ -81,8 +81,14 @@ def document():
             parameters.append(dict(name="Idempotency-Key", **{"in": "header"}, required=True,
                                    schema=dict(type="string")))
         responses = {str(operation["statuses"][0]): {"description": "Isolated"}}
+        if operation["operation_id"] == "createItem":
+            responses["409"] = {"description": "Same idempotency key with a different body"}
         if operation["operation_id"] == "getItem":
             responses["401"] = {"description": "Anonymous is rejected"}
+            responses["404"] = {"description": "Deleted item is gone"}
+        if operation["operation_id"] == "updateItem":
+            responses["401"] = {"description": "Anonymous is rejected"}
+            responses["403"] = {"description": "Non-owner is rejected"}
         body = None
         if operation["method"] in {"POST", "PATCH", "PUT"}:
             properties = dict(name=dict(type="string"))
@@ -104,9 +110,10 @@ def document():
 def setup():
     """GenericSetup-shaped projection of the same declaration, for the existing intake."""
     arguments = {
-        # The name is an approved generated input (no enum), so the same approved key can be
-        # replayed with identical content and also conflict with a different body.
-        "createItem": [dict(location="body", name="name", value="first", generated=True),
+        # The name is an approved set of generated alternatives, so the model may pick the
+        # variant named in the requirement but can never invent a new one.
+        "createItem": [dict(location="body", name="name", values=["first", "second"],
+                            generated=True),
                        dict(location="headers", name="Idempotency-Key",
                             value="rw-lifecycle-key-0001")],
         "getItem": [dict(location="path_parameters", name="itemId",
@@ -126,6 +133,7 @@ def setup():
         isolated_confirmed=True,
         allow_mutations=True,
         assisted=True,
+        approve_negative_tests=True,
         max_requests=WRITE_AUTHORITY["budgets"]["max_requests"],
         run_timeout=WRITE_AUTHORITY["budgets"]["max_seconds"],
         read_timeout=5,
@@ -141,6 +149,20 @@ def setup():
                           rule="只读身份读取所有者条目应返回 403"),
                      dict(role=None, statuses=[401], rule="匿名读取条目应返回 401")]}
                     if operation["operation_id"] == "getItem" else {}),
+                 **({"access_checks": [
+                     # A mutation may only carry a pre-approved identity denial; the
+                     # fixture refuses non-owner and anonymous writes.
+                     dict(role="auditor", statuses=[403],
+                          rule="非所有者身份写入他人条目应返回 403"),
+                     dict(role=None, statuses=[401], rule="匿名写入条目应返回 401")]}
+                    if operation["operation_id"] == "updateItem" else {}),
+                 **({"expectations": [
+                     dict(statuses=[404], rule="删除后回读该条目应返回 404")]}
+                    if operation["operation_id"] == "getItem" else {}),
+                 **({"expectations": [
+                     dict(statuses=[409], rule="同一幂等键、不同名称的创建应返回 409 冲突",
+                          arguments=[dict(location="body", name="name", value="second")])]}
+                    if operation["operation_id"] == "createItem" else {}),
                  **({"creation": WRITE_AUTHORITY["resource_creations"][
                      operation["operation_id"]]}
                     if operation["operation_id"] in WRITE_AUTHORITY["resource_creations"]
