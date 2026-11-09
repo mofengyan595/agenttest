@@ -455,7 +455,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["freeze", "dry", "run"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
-    parser.add_argument("--plan", default="plan_v2", choices=["plan_v2", "plan_v3"])
+    parser.add_argument("--plan", default="plan_v2",
+                        choices=["plan_v2", "plan_v3", "plan_v4"])
     parser.add_argument("--cases", default="",
                         help="comma-separated keys; consumed positions are refused")
     args = parser.parse_args()
