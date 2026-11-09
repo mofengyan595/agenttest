@@ -171,6 +171,7 @@ def dry(folder):
             name_is_generated=name_rule["enum"] is None,
             dynamic_rules=len(dynamic),
             target=dict(environment=project.target.environment,
+                        scenario=project.target.business_scenario,
                         allow_mutations=project.target.allow_mutations,
                         max_requests=project.target.max_requests,
                         base_url=project.target.base_url),
@@ -190,7 +191,7 @@ async def task(svc, project_id, text):
     from agenttest.task_service import TaskConflict
 
     try:
-        row = svc.submit("operator", project_id, text, "rw-acceptance")
+        row = await svc.submit("operator", project_id, text, "rw-acceptance")
     except TaskConflict as error:
         return None, str(error)
     started = time.monotonic()
@@ -325,6 +326,8 @@ def run_case(folder, svc, project_id, case, run_id, initial):
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
+    if (folder / "result.json").exists():
+        raise SystemExit("POSITION_ALREADY_CONSUMED_NO_REPLAY")
     run_id = time.strftime("%m%d-%H%M%S")
     results = []
     with preflight.served():
@@ -353,7 +356,9 @@ def run(folder):
         requests={row["case"]: row.get("metrics", {}).get("requests") for row in results},
         model_calls={row["case"]: row.get("product", {}).get("model_calls")
                      for row in results},
-        elapsed={row["case"]: (row.get("task") or {}).get("elapsed") for row in results},
+        elapsed={row["case"]: (row["task"].get("elapsed")
+                               if isinstance(row.get("task"), dict) else None)
+                 for row in results},
         leftovers={row["case"]: row.get("metrics", {}).get("leftovers") for row in results},
         cleanup={row["case"]: row.get("state", {}).get("cleanup") for row in results},
         unknown=[row["case"] for row in results

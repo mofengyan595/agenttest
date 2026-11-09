@@ -125,6 +125,7 @@ def setup():
         base_url=WRITE_AUTHORITY["base_url"],
         isolated_confirmed=True,
         allow_mutations=True,
+        assisted=True,
         max_requests=WRITE_AUTHORITY["budgets"]["max_requests"],
         run_timeout=WRITE_AUTHORITY["budgets"]["max_seconds"],
         read_timeout=5,
