@@ -3605,3 +3605,22 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 证据与报告：[rw-lifecycle-acceptance-v2-20261109.md](rw-lifecycle-acceptance-v2-20261109.md)、
   `docs/evidence/rw-lifecycle-20261109-v2/`。下一步：修"设计被拒仍以 FINISHED 收尾"、
   由操作员决定 T2 未知用量对账或例外、对账后用新冻结执行 T3 一次。
+
+## 2026-11-09 恢复与离线修复（无真实写入）
+
+- 修 `product_tasks`：设计分组全部被拒且零请求时不再无条件 `FINISHED`，改为
+  `NEEDS_REVIEW` 并保留 `reason`/`diagnostic`/`report_id`，新增 `failure_report()` 发布零步骤
+  失败报告与 `REPORT` 事件；正常空轮与既有 `FINISHED` 路径不变。回归
+  `tests/test_product_rejection.py`（2 项，无网络无模型）。
+- 复核 `c61c704` 输入枚举变体修复：设计阶段只对承认该取值的变体放宽，执行阶段仍按各策略
+  闭合参数校验；跨变体滥用（冲突策略 + `first`）与未批准值（`third`）仍报
+  `OPENAPI_VALUE_ENUM`，新增执行级回归。
+- T2 `UNKNOWN` 用量（call `51ca0125…`、task `8e3fa3b4…`、request SHA `346ced4f…`）保持
+  `UNKNOWN` 与阻断：无响应体、无供应商回执，未登记例外、未估算 token、未重放；需操作员
+  决定"提供可核验回执"或"明确授权用量例外"。
+- 超时与预算：`AGENTTEST_MODEL_TIMEOUT` 可配置并受 `(0,120]` 约束（默认仍 30 s，`.env` 未改），
+  冻结记录 `model.timeout`，驱动新增 `driver_case_budget_exceeded`；建议 45 s/150 s/2 次调用，
+  待批准后写入授权副本。
+- 测试：定向 127 passed；全量离线 `runs/full-checks-recovery` 2507 项 / 2492 passed /
+  0 failed / 15 skipped；`ruff` 通过。`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`，未启动夹具，
+  未运行 T1/T2/T3。详见 [rw-lifecycle-recovery-20261109.md](rw-lifecycle-recovery-20261109.md)。

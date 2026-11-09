@@ -153,3 +153,7 @@ OPENAPI_VALUE_ENUM，产品已离线修复并加反向测试）、T2 NEEDS_REVIE
 用量 UNKNOWN）、T3 未执行（被 UNKNOWN 用量闸门拦下）。目标 HTTP 0、资源残留 0；
 三条位置中 T1/T2 已消费，T3 未消费但需先对账。详见
 docs/rw-lifecycle-acceptance-v2-20261109.md 与 docs/evidence/rw-lifecycle-20261109-v2/。
+
+**2026-11-09 恢复阶段**：设计被拒改为 NEEDS_REVIEW + 失败报告；变体准入执行级回归补齐；
+T2 用量保持 UNKNOWN 待操作员决定；单次模型超时改为可配置且上限 120 s（默认 30 s），
+建议 45 s / 用例 150 s / 调用 2 次待批准。详见 docs/rw-lifecycle-recovery-20261109.md。
