@@ -142,7 +142,10 @@ def test_a_code_upgrade_is_auditable_only_when_the_executing_commit_is_named(tmp
     assert payload["executing_head"] == head
     assert payload["accept_code_change"] == head[:7]
     assert payload["source"]["changed"] is True
-    assert isinstance(payload["source"].get("changed_files", []), list)
+    assert payload["source"]["changed_files"]
+    # A synthetic frozen head cannot be diffed; the summary must still account for every line.
+    assert sum(payload["source"]["change_summary"].values()) == len(
+        payload["source"]["changed_files"])
     assert payload["acceptance_conditions"]["positions"] == ["M2", "F1"]
     digests = payload["artifact_digests"]
     assert digests["authority"]["executing"] != digests["cases"]["executing"]

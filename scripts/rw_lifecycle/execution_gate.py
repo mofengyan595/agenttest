@@ -237,9 +237,19 @@ def compare(frozen, current):
                 ))
 
 
-def manifest_payload(report, frozen, *, accept_code_change=None, initial=None):
+def manifest_payload(report, frozen, *, accept_code_change=None, initial=None, root=None):
     """The exclusive record of one intended execution."""
-    source = report.get("code") or {}
+    source = dict(report.get("code") or {})
+    if root and source.get("frozen_head") and source.get("executing_head"):
+        source["changed_files"] = changed_files(root, source["frozen_head"],
+                                                source["executing_head"])
+        counts = {"added": 0, "modified": 0, "deleted": 0, "renamed": 0, "other": 0}
+        for line in source["changed_files"]:
+            code = line.split("\t", 1)[0][:1]
+            key = {"A": "added", "M": "modified", "D": "deleted", "R": "renamed"}.get(
+                code, "other")
+            counts[key] += 1
+        source["change_summary"] = counts
     return dict(
         created_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         allowed=report["allowed"],

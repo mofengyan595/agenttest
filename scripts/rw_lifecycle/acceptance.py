@@ -495,7 +495,7 @@ def guard(folder, *, identity, initial=None, accept_code_change=None, write=True
     manifest = None
     if write:
         manifest = execution_gate.write_manifest(folder, execution_gate.manifest_payload(
-            report, frozen, accept_code_change=accept_code_change, initial=initial))
+            report, frozen, accept_code_change=accept_code_change, initial=initial, root=ROOT))
     return report, manifest
 
 

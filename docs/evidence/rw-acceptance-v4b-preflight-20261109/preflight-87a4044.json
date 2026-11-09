@@ -1,0 +1,286 @@
+{
+  "created_at": "2026-11-09T22:45:29+0800",
+  "manifest": "execution-manifest-87a4044.json",
+  "report": {
+    "allowed": true,
+    "blocking": [],
+    "warnings": [
+      {
+        "reason": "SOURCE_CHANGED",
+        "detail": "87a4044b4241d7b46fd67bc60aa2256dd1ee4e0a"
+      }
+    ],
+    "code": {
+      "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+      "executing_head": "87a4044b4241d7b46fd67bc60aa2256dd1ee4e0a",
+      "frozen_src_sha256": "11cc34951dedff2654f3cc7bd22eeb541ea5ab61ee0db6afe2a8e99ef6a47e34",
+      "executing_src_sha256": "8428eb49ebfd6234cfcb197400dd66babe15f1ffe866b94607eecd07d72a0c63",
+      "frozen_status": "",
+      "executing_status": "",
+      "changed": true
+    },
+    "identity": {
+      "frozen": {
+        "model": "ecnu-max",
+        "protocol": "chatecnu",
+        "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+        "timeout": 45.0,
+        "max_output_tokens": 4096.0,
+        "max_input_tokens": 20000.0
+      },
+      "current": {
+        "model": "ecnu-max",
+        "protocol": "chatecnu",
+        "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+        "timeout": 45.0,
+        "max_output_tokens": 4096.0,
+        "max_input_tokens": 20000.0
+      },
+      "drift": []
+    },
+    "target": {
+      "frozen_base_url": "http://127.0.0.1:19097",
+      "current_base_url": "http://127.0.0.1:19097",
+      "frozen_isolated": true,
+      "current_isolated": true,
+      "frozen_initial": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+      "current_initial": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+    }
+  },
+  "checklist": {
+    "verdict": "READY",
+    "cases": {
+      "M2": {
+        "verdict": "READY",
+        "items": [
+          {
+            "item": "position_unconsumed",
+            "verdict": "READY",
+            "evidence": {
+              "consumed": [
+                "M1"
+              ],
+              "key": "M2"
+            }
+          },
+          {
+            "item": "code_diff_auditable",
+            "verdict": "READY",
+            "evidence": {
+              "manifest": "execution-manifest-87a4044.json",
+              "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+              "executing_head": "87a4044b4241d7b46fd67bc60aa2256dd1ee4e0a",
+              "changed": true
+            }
+          },
+          {
+            "item": "model_identity_matches",
+            "verdict": "READY",
+            "evidence": {
+              "drift": [],
+              "offline": false,
+              "model": "ecnu-max"
+            }
+          },
+          {
+            "item": "target_is_approved_isolated",
+            "verdict": "READY",
+            "evidence": {
+              "base_url": "http://127.0.0.1:19097",
+              "loopback": true,
+              "isolated": true
+            }
+          },
+          {
+            "item": "writes_within_scope",
+            "verdict": "READY",
+            "evidence": {
+              "operations": [
+                "createItem",
+                "getItem",
+                "updateItem",
+                "replaceItem",
+                "deleteItem",
+                "listItems"
+              ],
+              "allow_mutations": true
+            }
+          },
+          {
+            "item": "budgets_match_freeze",
+            "verdict": "READY",
+            "evidence": {
+              "budgets": {
+                "max_requests": 12,
+                "max_seconds": 150,
+                "max_model_calls": 2
+              },
+              "model_timeout": 45
+            }
+          },
+          {
+            "item": "initial_state_matches",
+            "verdict": "READY",
+            "evidence": {
+              "frozen": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+              "current": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+            }
+          },
+          {
+            "item": "no_replay_of_unknown_writes",
+            "verdict": "READY",
+            "evidence": {
+              "previous_requests": null,
+              "guard": "acceptance.run refuses when result.json already has requests"
+            }
+          },
+          {
+            "item": "evidence_completeness",
+            "verdict": "READY",
+            "evidence": {
+              "fields": [
+                "authority",
+                "budgets",
+                "contract",
+                "frozen_at",
+                "model",
+                "requirements",
+                "rubric_check",
+                "scorer",
+                "source",
+                "target"
+              ],
+              "records": [
+                "focus",
+                "findings",
+                "audit",
+                "state",
+                "product"
+              ]
+            }
+          }
+        ]
+      },
+      "F1": {
+        "verdict": "READY",
+        "items": [
+          {
+            "item": "position_unconsumed",
+            "verdict": "READY",
+            "evidence": {
+              "consumed": [
+                "M1"
+              ],
+              "key": "F1"
+            }
+          },
+          {
+            "item": "code_diff_auditable",
+            "verdict": "READY",
+            "evidence": {
+              "manifest": "execution-manifest-87a4044.json",
+              "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+              "executing_head": "87a4044b4241d7b46fd67bc60aa2256dd1ee4e0a",
+              "changed": true
+            }
+          },
+          {
+            "item": "model_identity_matches",
+            "verdict": "READY",
+            "evidence": {
+              "drift": [],
+              "offline": false,
+              "model": "ecnu-max"
+            }
+          },
+          {
+            "item": "target_is_approved_isolated",
+            "verdict": "READY",
+            "evidence": {
+              "base_url": "http://127.0.0.1:19097",
+              "loopback": true,
+              "isolated": true
+            }
+          },
+          {
+            "item": "writes_within_scope",
+            "verdict": "READY",
+            "evidence": {
+              "operations": [
+                "createItem",
+                "getItem",
+                "updateItem",
+                "replaceItem",
+                "deleteItem",
+                "listItems"
+              ],
+              "allow_mutations": true
+            }
+          },
+          {
+            "item": "budgets_match_freeze",
+            "verdict": "READY",
+            "evidence": {
+              "budgets": {
+                "max_requests": 12,
+                "max_seconds": 150,
+                "max_model_calls": 2
+              },
+              "model_timeout": 45
+            }
+          },
+          {
+            "item": "initial_state_matches",
+            "verdict": "READY",
+            "evidence": {
+              "frozen": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+              "current": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+            }
+          },
+          {
+            "item": "no_replay_of_unknown_writes",
+            "verdict": "READY",
+            "evidence": {
+              "previous_requests": null,
+              "guard": "acceptance.run refuses when result.json already has requests"
+            }
+          },
+          {
+            "item": "evidence_completeness",
+            "verdict": "READY",
+            "evidence": {
+              "fields": [
+                "authority",
+                "budgets",
+                "contract",
+                "frozen_at",
+                "model",
+                "requirements",
+                "rubric_check",
+                "scorer",
+                "source",
+                "target"
+              ],
+              "records": [
+                "focus",
+                "findings",
+                "audit",
+                "state",
+                "product"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "model": {
+    "model": "ecnu-max",
+    "protocol": "chatecnu",
+    "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+    "timeout": 45.0,
+    "max_output_tokens": 4096.0,
+    "max_input_tokens": 20000.0
+  },
+  "initial": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+}
