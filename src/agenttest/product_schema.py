@@ -280,9 +280,13 @@ def constrain_product_steps(schema, context):
             # Compact nullable slots; the trusted local check refuses unknown clauses. Sending a
             # closed enum repeats the clause vocabulary in every per-policy step branch and
             # pushes the frozen design request over its input budget.
-            props["requirement_source_id"] = {"type": ["string", "null"]}
-            props["requirement_action_index"] = {"type": ["integer", "null"],
-                                                 "minimum": 0, "maximum": 19}
+            props["requirement_source_id"] = {
+                "type": ["string", "null"],
+                "description": "该步骤实现的需求子句 source_id；同一操作重复出现时必填，"
+                               "不同子句必须绑定不同实例。"}
+            props["requirement_action_index"] = {
+                "type": ["integer", "null"], "minimum": 0, "maximum": 19,
+                "description": "该子句内从 0 开始的第几次调用，通常为 0。"}
         arguments = []
         for rule in rules:
             literal = rule.get("literal_schema")

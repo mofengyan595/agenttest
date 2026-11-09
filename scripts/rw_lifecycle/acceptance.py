@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts/rw_lifecycle"))
 
 import authority  # noqa: E402
+import execution_gate  # noqa: E402
 import focus_capture  # noqa: E402
 import lifecycle  # noqa: E402
 import plan_v2  # noqa: E402
@@ -57,6 +58,8 @@ CASES = planned_cases()
 # Positions already executed once in an earlier acceptance; never replayed.
 CONSUMED_POSITIONS = tuple(getattr(PLAN, "CONSUMED_POSITIONS", ("T1", "T2")))
 SELECTED = [case["key"] for case in CASES]
+# A code upgrade is admissible only when the executing commit is named at run time.
+ACCEPT_CODE_CHANGE = None
 
 
 def digest(value):
@@ -67,8 +70,9 @@ def digest(value):
 
 def git(*args):
     import subprocess
+    # Source text is UTF-8 even on a GBK console default; never let decoding hide a diff.
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
-                          check=True).stdout.strip()
+                          encoding="utf-8", errors="replace", check=True).stdout.strip()
 
 
 def model_env_path():
@@ -149,6 +153,10 @@ def cases():
 def freeze(folder, selected=None):
     """Pin every artifact a later verdict depends on, before any request is sent."""
     global SELECTED
+    if (folder / "freeze.json").exists():
+        # A frozen record is the only reference for a later verdict: overwriting it would erase
+        # the difference between the approved round and a quiet repair of it.
+        raise SystemExit("FREEZE_RECORD_EXISTS_NO_OVERWRITE")
     if selected:
         SELECTED = [case["key"] for case in CASES if case["key"] in set(selected)]
     rubric = PLAN.consistency()
@@ -450,24 +458,103 @@ def run_case(folder, svc, project_id, case, run_id, initial):
     return evidence
 
 
+def current_view(identity, initial=None):
+    """The freeze-shaped view of this code, plan and approved scope; no request is sent."""
+    return execution_gate.snapshot(
+        ROOT, plan=PLAN, cases=cases(), consumed=CONSUMED_POSITIONS, approved=APPROVED,
+        checklist=authority.APPROVAL_CHECKLIST, document=authority.document(),
+        setup=authority.setup(), identity=identity, initial=initial,
+        base_url=APPROVED["base_url"])
+
+
+def guard(folder, *, identity, initial=None, accept_code_change=None, write=True,
+          enforce_code_change=True):
+    """Refuse an unrecorded drift before any request; always leave an exclusive manifest."""
+    frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
+    # The service identity is the most specific reason: report it before any artifact check, so a
+    # moved address is never buried behind an unrelated missing declaration.
+    drift = execution_gate.identity_drift(frozen.get("model"), identity)
+    if drift:
+        raise SystemExit(f"MODEL_IDENTITY_DRIFT:{','.join(drift)}")
+    report = execution_gate.compare(frozen, current_view(identity, initial))
+    if report["blocking"]:
+        drift = [item["detail"] for item in report["blocking"]
+                 if item["reason"] == "MODEL_IDENTITY_DRIFT"]
+        if drift:
+            raise SystemExit(f"MODEL_IDENTITY_DRIFT:{','.join(drift[0])}")
+        reasons = ",".join(item["reason"] for item in report["blocking"])
+        raise SystemExit(f"FROZEN_ARTIFACT_DRIFT:{reasons}")
+    head = report["code"].get("executing_head") or ""
+    if enforce_code_change and report["code"].get("executing_status"):
+        # A run must be attributable to a commit: the manifest names a head, and a dirty tree
+        # would mean the executed bytes differ from it.
+        raise SystemExit("EXECUTION_REQUIRES_CLEAN_TREE")
+    if enforce_code_change and report["code"].get("changed") and accept_code_change not in {
+            head, head[:7]}:
+        raise SystemExit(f"CODE_DRIFT_UNRECORDED:{head[:7]}")
+    manifest = None
+    if write:
+        manifest = execution_gate.write_manifest(folder, execution_gate.manifest_payload(
+            report, frozen, accept_code_change=accept_code_change, initial=initial))
+    return report, manifest
+
+
+def preflight_report(folder):
+    """Offline readiness report for the frozen positions; starts only the loopback fixture."""
+    frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
+    previous = folder / "result.json"
+    result = json.loads(previous.read_text(encoding="utf-8")) if previous.exists() else None
+    with preflight.served():
+        initial = preflight.reset("e2e-freeze-0001")
+        identity = model_identity(require_credentials=False)
+        report, manifest = guard(folder, identity=identity, initial=initial, write=True,
+                                 enforce_code_change=False)
+    offline = identity.get("credentials") != "PRESENT"
+    checklist = execution_gate.case_checklist(
+        frozen, report, cases=cases(), consumed=CONSUMED_POSITIONS, result=result,
+        manifest=manifest, identity_offline=offline)
+    payload = dict(created_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"), manifest=manifest.name,
+                   report=dict(allowed=report["allowed"], blocking=report["blocking"],
+                               warnings=report["warnings"], code=report["code"],
+                               identity=report["identity"], target=report["target"]),
+                   checklist=checklist, model=report["identity"]["current"],
+                   initial=report["target"]["current_initial"])
+    path = folder / f"preflight-{(report['code'].get('executing_head') or 'unknown')[:7]}.json"
+    try:
+        with path.open("x", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    except FileExistsError:
+        raise SystemExit("PREFLIGHT_RECORD_EXISTS_NO_OVERWRITE") from None
+    for key, case in checklist["cases"].items():
+        items = [f"{row['item']}={row['verdict']}" for row in case["items"]]
+        print(f"{key} {case['verdict']:<12} items={items}")
+    print(json.dumps(dict(verdict=checklist["verdict"], manifest=manifest.name,
+                          blocking=report["blocking"], warnings=report["warnings"]),
+                     ensure_ascii=False))
+    if checklist["verdict"] == "BLOCKED":
+        raise SystemExit(3)
+    return payload
+
+
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
     # A real run must prove the same service identity the freeze recorded: a matching model name
     # is not enough when the address, protocol or approved budget changed.
     current_identity = model_identity(require_credentials=True)
-    drift = identity_drift(frozen.get("model"), current_identity)
-    if drift:
-        raise SystemExit(f"MODEL_IDENTITY_DRIFT:{','.join(drift)}")
     previous = folder / "result.json"
     if previous.exists():
         done = json.loads(previous.read_text(encoding="utf-8"))
         if any(row.get("requests") for row in done.get("results", [])):
             raise SystemExit("POSITION_ALREADY_CONSUMED_NO_REPLAY")
-    run_id = time.strftime("%m%d-%H%M%S")
     results = []
     with preflight.served():
         initial = preflight.reset("e2e-freeze-0001")
+        # The consistency gate runs before the first business request and after the fixture is
+        # in its frozen initial state, so the manifest names the exact code and target state.
+        guard(folder, identity=current_identity, initial=initial,
+              accept_code_change=ACCEPT_CODE_CHANGE)
+        run_id = time.strftime("%m%d-%H%M%S")
         svc, saved = service(folder / "workspace", preflight.TOKENS)
         for case in cases():
             evidence = run_case(folder, svc, saved["id"], case, run_id, initial)
@@ -511,18 +598,21 @@ def run(folder):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["freeze", "dry", "run"])
+    parser.add_argument("mode", choices=["freeze", "dry", "preflight", "run"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
     parser.add_argument("--plan", default="plan_v2",
                         choices=["plan_v2", "plan_v3", "plan_v4"])
     parser.add_argument("--cases", default="",
                         help="comma-separated keys; consumed positions are refused")
+    parser.add_argument("--accept-code-change", default=None,
+                        help="executing head (full or 7 chars) whose source difference is audited")
     args = parser.parse_args()
-    global PLAN, CASES, CONSUMED_POSITIONS, SELECTED
+    global PLAN, CASES, CONSUMED_POSITIONS, SELECTED, ACCEPT_CODE_CHANGE
     PLAN = importlib.import_module(args.plan)
     CASES = planned_cases()
     CONSUMED_POSITIONS = tuple(getattr(PLAN, "CONSUMED_POSITIONS", ("T1", "T2")))
     SELECTED = [case["key"] for case in CASES]
+    ACCEPT_CODE_CHANGE = args.accept_code_change
     folder = (ROOT / args.folder).resolve()
     folder.mkdir(parents=True, exist_ok=True)
     authority.startable(APPROVED)
@@ -540,6 +630,8 @@ def main():
         freeze(folder, selected)
     elif args.mode == "dry":
         dry(folder)
+    elif args.mode == "preflight":
+        preflight_report(folder)
     else:
         run(folder)
     assert authority.WRITE_AUTHORITY["operator_approval"] == "NOT_GRANTED"

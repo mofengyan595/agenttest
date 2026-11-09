@@ -60,6 +60,34 @@ def retry_after_seconds(header: str) -> int | None:
         return None
 
 
+def _refuse_bodyless_sources(scenario: Scenario, policies: dict[str, RegisteredPolicy]) -> None:
+    """A binding may only read a field from a step whose response can carry one.
+
+    The frozen read-back lifecycle ends with a DELETE (204, no body) and a GET of the same id.
+    A plan that binds the GET's path parameter to the DELETE would send a request the contract
+    cannot satisfy: the id never existed in that response. Refuse it before any HTTP instead of
+    discovering an empty selector after the write already happened.
+    """
+    bodyless = {204, 304}
+    for step in scenario.steps:
+        bindings = [*step.path_parameters.items(), *step.query.items(), *step.body.items(),
+                    *step.headers.items()]
+        for name, binding in bindings:
+            if binding.from_step is None or binding.select is None:
+                continue
+            source = policies.get(binding.from_step)
+            status = getattr(getattr(source, "assertions", None), "status", None)
+            codes = set(getattr(status, "codes", []) or [])
+            if codes and codes <= bodyless:
+                error = ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_SOURCE_HAS_NO_BODY")
+                error.diagnostic.fields = [f"steps.{step.id}.{name}",
+                                          f"steps.{binding.from_step}.policy_id"]
+                error.construction = dict(step=step.id, argument=name,
+                                          source_step=binding.from_step,
+                                          source_statuses=sorted(codes))
+                raise error
+
+
 class Executor:
     def __init__(
         self, config: TargetConfig, contract: ContractSummary,
@@ -114,6 +142,7 @@ class Executor:
                     override=step.negative_value is not None)
                 validate_approval(approval, operations[step.operation_id])
             previous[step.id] = step
+        _refuse_bodyless_sources(scenario, policies)
         if report is not None:
             report.policy_authorized = True
         return operations, policies

@@ -264,7 +264,13 @@ action, exception, permission, cleanup and content check. Additional advice neve
 request_atoms is the server's complete original-text partition. requirement_map needs EVERY
 source_id. required names actions with identity aliases, before edges and approved producer/consumer
 same_resource links; null identity means public/anonymous. An ordered clause (然后/再/之后/最后)
-keeps its before edge to the preceding requested action. A clause whose expected status is already
+keeps its before edge to the preceding requested action. When the same operation appears in more
+than one clause (for example one read before a delete and another read after it), each appearance
+is a different instance: a before edge that spans clauses must name the exact instances with
+earlier_source_id/earlier_index and later_source_id/later_index, and instances that are not
+ordered by the request must not be ordered against each other, because such a set edge becomes a
+false dependency cycle. Array position never decides instance identity; the data reference does.
+A clause whose expected status is already
 carried by an approved policy (that policy lists the exact status, e.g. an approved read-back 404
 or an approved idempotency conflict 409) is required with that policy's operation and identity:
 do not turn it into a business_rule question, and do not invent a different expected value.

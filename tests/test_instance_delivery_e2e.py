@@ -15,7 +15,7 @@ import pytest
 
 from agenttest.contracts import load_openapi
 from agenttest.diagnostics import ValidationFailure
-from agenttest.dsl import FieldAssertion
+from agenttest.dsl import ArgumentBinding, FieldAssertion
 from agenttest.executor import Executor
 from agenttest.generic_intake import (
     GenericSetup,
@@ -502,6 +502,25 @@ async def test_cancellation_after_creation_keeps_the_resource_and_sends_no_clean
     assert row["status"] == "OWNED" and row["cleanup_result"] == "NOT_SENT"
     assert "清理未完成" in report.cleanup and "不自动重放" in report.cleanup
     assert list(target.resources) == ["item_1"]
+
+
+@pytest.mark.asyncio
+async def test_a_readback_may_not_take_its_id_from_the_delete(tmp_path):
+    """The 204 deletion returns no body: binding the readback to it is refused before any HTTP."""
+    requirements_, steps = m2()
+    built, stats, scenario = construct(requirements_, steps)
+    readback = next(step for step in scenario.steps if step.id == "read_after")
+    readback.path_parameters["itemId"] = ArgumentBinding(from_step="d", select="$.id")
+    proj = project()
+    target = CrudTarget()
+    executor = Executor(proj.target, proj.contract, ReportStore(tmp_path),
+                        httpx.MockTransport(target), {}, proj.registry)
+    with pytest.raises(ValidationFailure) as error:
+        await executor.validate(scenario)
+    # The write-free deletion policy exposes no selectable field, so the DSL layer refuses the
+    # reference; the executor's own body guard is the second, operation-agnostic backstop.
+    assert error.value.diagnostic.code == "POLICY_DEPENDENCY_MISMATCH"
+    assert target.calls == []
 
 
 def test_illegal_plans_stop_before_any_http_request():

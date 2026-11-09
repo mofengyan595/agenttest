@@ -515,12 +515,18 @@ def requirement_schema(context):
         # Instance addressing: which clause and which action occurrence inside it.
         'earlier_source_id': dict(type=['string', 'null'],
                                   enum=[*[a['source_id'] for a in context.get('request_atoms', [])],
-                                         None]),
+                                         None],
+                                  description='该 before 边前一个实例所在的子句 source_id；'
+                                              '同一操作跨子句重复时必须填，不能靠数组位置。'),
         'later_source_id': dict(type=['string', 'null'],
                                 enum=[*[a['source_id'] for a in context.get('request_atoms', [])],
-                                       None]),
-        'earlier_index': dict(type=['integer', 'null'], minimum=0, maximum=19),
-        'later_index': dict(type=['integer', 'null'], minimum=0, maximum=19)},
+                                       None],
+                                description='该 before 边后一个实例所在的子句 source_id；'
+                                            '同一操作跨子句重复时必须填。'),
+        'earlier_index': dict(type=['integer', 'null'], minimum=0, maximum=19,
+                              description='该子句内第几次同名调用，从 0 开始；通常为 0。'),
+        'later_index': dict(type=['integer', 'null'], minimum=0, maximum=19,
+                            description='该子句内第几次同名调用，从 0 开始；通常为 0。')},
         required=['earlier', 'later'])
     resource_choices = [dict(type='object', additionalProperties=False,
         properties=dict(producer=dict(type='string', enum=[producer]),
@@ -736,6 +742,61 @@ def order_instances(order, requirements, atoms):
     # A side with no clause occurrence (for example a trusted login) stays unresolved and is
     # bound at plan time only when its operation occurs exactly once.
     return earlier or [(None, None)], later or [(None, None)]
+
+
+def order_ambiguity(requirements, atoms):
+    """Name the clause whose unaddressed order makes a repeated operation contradict itself.
+
+    A cross-operation pair without instance ids denotes every occurrence of its operation. Once
+    one operation is spread over several clauses on both sides of a delete, those set edges can
+    contradict each other; the resulting cycle is a symptom, not the cause. Returning the clause
+    lets the caller stop with ``FOCUS_REQUIREMENT_ORDER_INSTANCE_MISSING`` instead of reporting a
+    dependency cycle that the user cannot act on.
+    """
+    pairs = []
+    for requirement in requirements:
+        item = _requirement_dict(requirement)
+        if item.get('disposition') != 'required':
+            continue
+        for order in item.get('before') or []:
+            order = order if isinstance(order, dict) else order.model_dump()
+            try:
+                earlier, later = order_instances(order, requirements, atoms)
+            except ValidationFailure:
+                return None
+            earlier = [instance for instance in earlier if instance[0] is not None]
+            later = [instance for instance in later if instance[0] is not None]
+            if not earlier or not later:
+                continue
+            pairs.append((item['source_id'], order, earlier, later))
+    remaining = {}
+    for requirement in requirements:
+        item = _requirement_dict(requirement)
+        if item.get('disposition') != 'required':
+            continue
+        for index, action in enumerate(item.get('actions') or []):
+            remaining.setdefault((item['source_id'], index), set())
+    for _, _, earlier, later in pairs:
+        for source in earlier:
+            for target in later:
+                if source != target:
+                    remaining.setdefault(target, set()).add(source)
+    while remaining:
+        ready = [node for node, sources in remaining.items() if not sources]
+        if not ready:
+            break
+        for node in ready:
+            del remaining[node]
+        for sources in remaining.values():
+            sources.difference_update(ready)
+    if not remaining:
+        return None
+    for clause, order, earlier, later in pairs:
+        addressed = (order.get('earlier_source_id') is not None
+                     and order.get('later_source_id') is not None)
+        if not addressed and (len(earlier) > 1 or len(later) > 1):
+            return dict(clause=clause, order=order, earlier=earlier, later=later)
+    return None
 
 
 def textual_order_edge(atom, item, preceding_operations):
@@ -1027,6 +1088,14 @@ def validate_requirement_links(requirements, context, selection):
         if item.disposition == 'needs_review' and not has_gap:
             # An unresolved clause is not silently accepted as a completed requirement.
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE')
+    ambiguity = order_ambiguity(requirements, atoms)
+    if ambiguity:
+        error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INSTANCE_MISSING')
+        error.diagnostic.fields = [f"requirement_map.{ambiguity['clause']}.before"]
+        error.construction = dict(order=ambiguity['order'],
+                                  earlier=[list(instance) for instance in ambiguity['earlier']],
+                                  later=[list(instance) for instance in ambiguity['later']])
+        raise error
 
 
 def pending_numeric_boundaries(selection, checks):

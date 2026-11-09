@@ -144,3 +144,10 @@ resource_id / cleanup_result`；`created_resources` 另记创建凭据与清理�
    或 `CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS`），模型必须学会绑定才能通过。
 4. 跨用例顺序仍受用例序列约束，报告读者需理解"用例内顺序由构造决定"。
 5. 真实目标（非模拟器）的 DELETE 语义、404 契约声明与凭据隔离尚未验收。
+
+## 8. 第 4 轮：真实模型验收预检（2026-11-09）
+
+在不改动冻结题目、rubric 与预算的前提下，新增冻结一致性闸门、不可覆盖执行清单与 M2/F1 九项预检；
+M2/F1 均 READY，阻塞缺陷 0。离线复核发现并修复“跨子句集合顺序 → 虚假依赖环”的规划侧缺陷。
+详见 [rw-acceptance-m2-f1-preflight-20261109.md](rw-acceptance-m2-f1-preflight-20261109.md)。
+本轮未调用付费模型、未执行冻结的 M2/F1 位置、未发送业务请求。

@@ -271,14 +271,41 @@ def _needs_instance_bindings(context) -> bool:
     return any(count > 1 for count in counts.values())
 
 
+# Added only when one operation occurs more than once: the historical contract stays unchanged
+# for every request that can be planned from operation ids alone.
+INSTANCE_BINDING_PROMPT = """
+Some operation occurs more than once in request_requirements. Each required clause with its own
+action is one request instance: plan exactly one step per instance and fill requirement_source_id
+with that clause's source_id and requirement_action_index with the 0-based occurrence inside it
+(usually 0). Two steps standing for two different clauses must name different instances, even when
+they call the same operation. This instance identity, not array position, decides the order.
+A data reference points at the step whose response really contains the field. A DELETE returns 204
+with no body, so it can never supply an id: a read-back after deletion still binds the id from the
+step that created the resource. Written order (this request happens before that one) and data
+reference (this value comes from that response) are different dependencies; do not express the
+first as the second, and do not bind a field that its source step cannot return.
+"""
+
+
+def design_prompt(context) -> str:
+    """The system prompt for this request; the instance paragraph is gated by repetition."""
+    return (DESIGN_PROMPT if not _needs_instance_bindings(context)
+            else DESIGN_PROMPT + INSTANCE_BINDING_PROMPT)
+
+
+def strip_instance_bindings(schema) -> None:
+    """Remove the instance slots for a request that cannot need them."""
+    properties = schema["$defs"]["GenericDraftStep"]["properties"]
+    properties.pop("requirement_source_id", None)
+    properties.pop("requirement_action_index", None)
+
+
 class TestDesignModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
         schema = TestDesign.model_json_schema()
         bindings = _needs_instance_bindings(context)
         if not bindings:
-            step_properties = schema["$defs"]["GenericDraftStep"]["properties"]
-            step_properties.pop("requirement_source_id", None)
-            step_properties.pop("requirement_action_index", None)
+            strip_instance_bindings(schema)
         plan_type = schema["$defs"]["DesignCase"]["properties"]["plan"]["$ref"].rsplit("/", 1)[1]
         schema["$defs"][plan_type]["properties"]["steps"]["minItems"] = 1
         if context.get('plan_construction'):
@@ -355,7 +382,7 @@ class TestDesignModel(OpenAICompatiblePlanner):
 
         public = compact_sources(context)
         public["omission_sources"] = sources
-        return self._encode_request(schema, public, DESIGN_PROMPT,
+        return self._encode_request(schema, public, design_prompt(context),
                                     "agenttest_test_design", require_bindings=bindings)
 
     def _decode_output(self, content, context):

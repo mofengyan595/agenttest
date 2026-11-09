@@ -3765,3 +3765,50 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 未执行：真实模型调用、生产写入、冻结的 v4 M2/F1 付费位置；`CONSUMED_POSITIONS=("M1",)` 不变，
   `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
 
+## 2026-11-09 M2/F1 真实模型验收预检与冻结一致性（第 4 轮）
+
+- 边界：本轮只做**预检**。未调用付费模型、未执行冻结的 M2/F1 位置、未发送业务请求、
+  未重新冻结、未修改冻结题目/rubric/预算；只读归档证据并新增审计文件。
+- 冻结一致性闸门：`scripts/rw_lifecycle/execution_gate.py` 对冻结记录与“即将运行的代码视图”
+  逐项比较，输出封闭原因码（题目/计划文件/rubric/授权声明/契约/评分器/预算/模型身份/目标/
+  初始态/位置列表）；字段缺失也算漂移，删检查不能绕过。`acceptance.freeze()` 现在拒绝覆盖
+  已有 `freeze.json`（`FREEZE_RECORD_EXISTS_NO_OVERWRITE`）。
+- 执行清单：每次预检/运行生成独占、不覆盖的 `execution-manifest-<head7>[-n].json`，记录冻结
+  HEAD、执行 HEAD、两侧源码摘要、逐文件差异、六项产物摘要、模型身份、目标与初始态、
+  验收条件。运行模式额外要求工作区干净（`EXECUTION_REQUIRES_CLEAN_TREE`）且代码升级被显式
+  命名（`CODE_DRIFT_UNRECORDED`）；只有源代码可升级，其他冻结产物漂移一律
+  `FROZEN_ARTIFACT_DRIFT` 停止。
+- 新 `preflight` 模式：只启动本地夹具并重置一次，生成 `preflight-<head7>.json`（独占），
+  按 9 项清单给出 M2/F1 的 READY/BLOCKED/NEEDS_REVIEW；本次 M2/F1 均 9/9 READY，
+  阻塞缺陷 0。冻结对照全部一致：cases `f2ba78ab…`、plan `4c1d775c…`、rubric `670d8ee4…`、
+  authority `3eb8ebc3…`、contract `00960ecf…`/`1a3cacfd…`、scorer `d7d7d2d7…`、
+  初始态 `10718ffa…`、预算 12/150/2、consumed 仍为 `["M1"]`。
+- Focus/Design 离线复核（归档真实回复 + 现有冻结题目）：发现历史失败的真实形态是
+  “同一操作跨子句被当成一个集合”——v3 T1V3 归档重放为 9 子句 / 18 条顺序边 / 7 节点环，
+  T2V3 为 10 子句 / 5 边 / 3 节点环，且两次都未填实例索引。旧代码要到构造期才以依赖环或歧义
+  拒绝，可能在消耗 Design 调用之后。
+- 最小修复：Focus prompt 增加“跨子句实例排序、未排序实例不得互相排序、数组位置不决定身份”
+  段落；`RequestOrder` 四个实例槽补描述；新增 `order_ambiguity()`，在 Focus 校验阶段把
+  “集合顺序自相矛盾”诊断为 `FOCUS_REQUIREMENT_ORDER_INSTANCE_MISSING`（带子句与两侧实例），
+  真实且已指明实例的矛盾仍在构造期报 `CONSTRUCTION_DEPENDENCY_CYCLE`。Design 侧沿用
+  `INSTANCE_BINDING_PROMPT`（仅重复操作时追加）、`strip_instance_bindings`（历史 wire 不变）、
+  以及 `_refuse_bodyless_sources`（204/304 不作参数来源）。
+- 测试：`tests/test_rw_acceptance_preflight.py`（10，含禁覆盖、代码升级清单、脏树拒绝、
+  清单不覆盖、清单项判定）、`tests/test_focus_order_ambiguity.py`（3，含归档 T1V3 重放）、
+  `tests/test_product_instance_prompt.py`（4）、`tests/test_executor_bodyless_source.py`（2）、
+  `tests/test_instance_delivery_e2e.py`（19）；直接受影响套件合计 105 passed；
+  `test_rw_lifecycle_*` 22 passed、`test_mixed_planning_round3` 21 passed；`ruff check .` 通过。
+- 机制自身误报的修复：`order_ambiguity` 首版拓扑集合只含“有出边的节点”，导致 3 个合法混合
+  规划场景被误判为环（全量第一次运行 3 failed）；改为包含全部 `(clause, index)` 实例后
+  `test_mixed_planning_round3` 21/21，历史 T1V3 仍正确判为缺实例。
+- 全量离线：`python scripts/check_full.py --jobs 4` = **2580 collected / 2565 passed / 0 failed /
+  15 skipped**（906 s，`source_unchanged=true`、`exact_test_id_coverage=true`）。
+- 交付：[rw-acceptance-m2-f1-preflight-20261109.md](rw-acceptance-m2-f1-preflight-20261109.md)；
+  重放证据 [replay.json](evidence/rw-instance-replay-20261109/replay.json)。
+- 预算上限（未使用）：每 case ≤2 次模型调用 / ≤12 请求 / ≤150 秒；合计 ≤4 / ≤24 / ≤300 秒；
+  单次输入 20000、输出 4096 tokens（历史单次实测 11750–13570）。
+- 下一步（需新的显式付费授权）：干净 HEAD 上复跑 preflight → 单 case `run --cases M2` →
+  人工确认证据 → 再决定 F1；失败即停，不重放、不 re-freeze、不改 prompt 重试。
+- 未执行：真实模型调用、M2/F1 位置执行、业务写请求、re-freeze、生产访问。
+
+

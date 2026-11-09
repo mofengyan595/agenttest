@@ -257,8 +257,11 @@ def test_schema_offers_nullable_instance_slots_and_a_bounded_action_index():
     branch = design["$defs"]["GenericDraftStep"]["anyOf"][0]
     # The wire carries a compact nullable slot: repeating the clause vocabulary in every
     # per-policy branch pushed the frozen design request over its input budget. Unknown
-    # clause ids are refused by the trusted local check instead.
-    assert branch["properties"]["requirement_source_id"] == {"type": ["string", "null"]}
+    # clause ids are refused by the trusted local check instead. The short description is the
+    # only addition: the model needs to know what the slot addresses.
+    slot = branch["properties"]["requirement_source_id"]
+    assert slot["type"] == ["string", "null"]
+    assert slot["description"]
     assert branch["properties"]["requirement_action_index"]["maximum"] == 19
 
 

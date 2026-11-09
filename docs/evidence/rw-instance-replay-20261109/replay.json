@@ -1,0 +1,202 @@
+{
+  "evidence": "result.json",
+  "cases": [
+    {
+      "case": "T1V3",
+      "verdict": "NEEDS_REVIEW",
+      "requests": null,
+      "focus": true,
+      "clauses": 9,
+      "explicit_indices": false,
+      "operations": {
+        "request_1": [
+          "createItem"
+        ],
+        "request_2": [
+          "createItem"
+        ],
+        "request_3": [
+          "getItem"
+        ],
+        "request_4": [
+          "getItem"
+        ],
+        "request_5": [
+          "updateItem"
+        ],
+        "request_6": [
+          "replaceItem"
+        ],
+        "request_7": [
+          "deleteItem"
+        ],
+        "request_8": [
+          "getItem"
+        ],
+        "request_9": [
+          "getItem"
+        ]
+      },
+      "graph": {
+        "nodes": [
+          [
+            "request_1",
+            0
+          ],
+          [
+            "request_2",
+            0
+          ],
+          [
+            "request_3",
+            0
+          ],
+          [
+            "request_4",
+            0
+          ],
+          [
+            "request_5",
+            0
+          ],
+          [
+            "request_6",
+            0
+          ],
+          [
+            "request_7",
+            0
+          ],
+          [
+            "request_8",
+            0
+          ],
+          [
+            "request_9",
+            0
+          ]
+        ],
+        "edges": 7,
+        "order_edges": 18,
+        "cycle_nodes": [
+          [
+            "request_3",
+            0
+          ],
+          [
+            "request_4",
+            0
+          ],
+          [
+            "request_5",
+            0
+          ],
+          [
+            "request_6",
+            0
+          ],
+          [
+            "request_7",
+            0
+          ],
+          [
+            "request_8",
+            0
+          ],
+          [
+            "request_9",
+            0
+          ]
+        ],
+        "refused": []
+      },
+      "ambiguity": {
+        "clause": "request_2",
+        "earlier": 2,
+        "later": 4
+      }
+    },
+    {
+      "case": "T2V3",
+      "verdict": "NEEDS_REVIEW",
+      "requests": null,
+      "focus": true,
+      "clauses": 10,
+      "explicit_indices": false,
+      "operations": {
+        "request_1": [
+          "createItem"
+        ],
+        "request_2": [],
+        "request_3": [],
+        "request_4": [
+          "createItem"
+        ],
+        "request_5": [],
+        "request_6": [],
+        "request_7": [
+          "createItem"
+        ],
+        "request_8": [],
+        "request_9": [
+          "deleteItem"
+        ],
+        "request_10": [
+          "getItem"
+        ]
+      },
+      "graph": {
+        "nodes": [
+          [
+            "request_1",
+            0
+          ],
+          [
+            "request_4",
+            0
+          ],
+          [
+            "request_7",
+            0
+          ],
+          [
+            "request_9",
+            0
+          ],
+          [
+            "request_10",
+            0
+          ]
+        ],
+        "edges": 3,
+        "order_edges": 5,
+        "cycle_nodes": [
+          [
+            "request_10",
+            0
+          ],
+          [
+            "request_7",
+            0
+          ],
+          [
+            "request_9",
+            0
+          ]
+        ],
+        "refused": []
+      },
+      "ambiguity": {
+        "clause": "request_9",
+        "earlier": 3,
+        "later": 1
+      }
+    },
+    {
+      "case": "T3",
+      "verdict": "NEEDS_REVIEW",
+      "requests": 0,
+      "focus": false
+    }
+  ]
+}
