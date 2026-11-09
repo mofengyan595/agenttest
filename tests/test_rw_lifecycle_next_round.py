@@ -59,3 +59,20 @@ def test_third_round_plan_keeps_unconsumed_positions_and_matches_its_rubric():
     text = " ".join(case["text"] for case in plan_v3.FINAL_CASES[:2])
     assert "draft-" not in text
     assert set(plan_v3.REQUIRED_POLICIES) == set(__import__("plan_v2").REQUIRED_POLICIES)
+
+
+def test_fourth_round_wording_only_uses_the_approved_literals():
+    import plan_v4
+
+    result = plan_v4.consistency()
+    assert result["ok"], result["problems"]
+    assert plan_v4.CONSUMED_POSITIONS == ("M1",)
+    assert {case["key"] for case in plan_v4.FINAL_CASES} == {"M2", "F1"}
+    for case in plan_v4.FINAL_CASES:
+        assert plan_v4.literals(case["text"]) <= plan_v4.APPROVED_VALUES
+    # The guard that would have caught the consumed 4a wording rejects an invented value.
+    invented = [dict(plan_v4.FINAL_CASES[0],
+                     text="创建名称是 alpha 的条目，读取后删除。")]
+    problems = plan_v4.consistency(invented)["problems"]
+    assert any(problem.get("reason") == "unapproved_literal"
+               and problem.get("detail") == ["alpha"] for problem in problems)

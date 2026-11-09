@@ -3,12 +3,25 @@
 The two requirements use fresh wording, new position keys and the same approved scope as the
 previous rounds. ``readiness`` and ``consistency`` are deterministic: no model call, no
 target request and no write authority is involved in freezing them.
+
+Round 4a consumed position ``M1`` with values that the fixture never approved (``alpha`` and
+friends). That record is kept as evidence of an authoring defect, the position is marked
+consumed, and the corrected positions ``M2``/``F1`` only use the four approved literals.
 """
+
+import re
 
 import plan_v2
 
+# Mirrors the frozen isolated fixture: createItem admits first/second, updateItem writes
+# renamed and replaceItem writes replaced. A wording change must not invent a fifth value.
+APPROVED_VALUES = frozenset({"first", "second", "renamed", "replaced"})
+VALUE_PATTERN = re.compile(r"名称(?:是|为|改为|改成)\s*([A-Za-z][A-Za-z0-9_-]*)"
+                           r"|用\s*([A-Za-z][A-Za-z0-9_-]*)\s*整体替换"
+                           r"|批准值\s*([A-Za-z][A-Za-z0-9_-]*)")
+
 RUBRIC = {
-    "M1": {
+    "M2": {
         "title": "最小读写闭环",
         "items": [
             ["create", "POST /items 返回 201，动态生成资源 ID"],
@@ -24,9 +37,9 @@ RUBRIC = {
 
 FINAL_CASES = [
     dict(
-        key="M1",
+        key="M2",
         title="第四轮最小读写闭环",
-        text="先由 author 身份创建名称是 alpha 的条目，并从返回值里拿到 id；"
+        text="先由 author 身份创建名称是 first 的条目，并从返回值里拿到 id；"
              "接着按这个 id 读取该条目，确认返回 200；"
              "随后删除该条目，确认返回 204；"
              "最后用同一个 id 回读，确认返回 404。",
@@ -36,10 +49,10 @@ FINAL_CASES = [
     dict(
         key="F1",
         title="第四轮完整读写生命周期",
-        text="先用 author 身份创建名称是 beta 的条目，并记下返回值里的 id；"
+        text="先用 author 身份创建名称是 first 的条目，并记下返回值里的 id；"
              "然后用这个 id 读取该条目，确认返回 200；"
-             "再把名称改为 gamma，确认返回 200；"
-             "之后用 delta 整体替换该条目，确认返回 200；"
+             "再把名称改为 renamed，确认返回 200；"
+             "之后用 replaced 整体替换该条目，确认返回 200；"
              "接着删除该条目，确认返回 204；"
              "最后按同一个 id 回读，确认返回 404。",
         expect=dict(methods=["POST", "GET", "PATCH", "PUT", "DELETE", "GET"],
@@ -51,7 +64,8 @@ FINAL_CASES = [
 DEV_CASES = []
 REQUIRED_POLICIES = plan_v2.REQUIRED_POLICIES
 VERBS, FORBIDDEN = plan_v2.VERBS, plan_v2.FORBIDDEN
-CONSUMED_POSITIONS = ()
+# M1 was executed once with unapproved literal values; it is never reused.
+CONSUMED_POSITIONS = ("M1",)
 
 
 def readiness(rows):
@@ -62,11 +76,15 @@ def case_by_key(key):
     return next(case for case in FINAL_CASES if case["key"] == key)
 
 
+def literals(text):
+    return {match for group in VALUE_PATTERN.findall(text) for match in group if match}
+
+
 def consistency(cases=FINAL_CASES):
-    """Same contract as plan_v2 plus one extra check: the rubric audit is the text's order."""
+    """plan_v2's contract plus the rubric order and the approved-literal check."""
     result = plan_v2.consistency(cases)
     keys = [case["key"] for case in cases]
-    if set(keys) != {"M1", "F1"}:
+    if set(keys) != {"M2", "F1"}:
         result["ok"] = False
         result["problems"].append(dict(reason="unexpected_positions", detail=keys))
     if set(RUBRIC) != set(keys):
@@ -81,4 +99,9 @@ def consistency(cases=FINAL_CASES):
                 entry.replace(" ", "") for entry in observed]:
             result["ok"] = False
             result["problems"].append(dict(case=case["key"], reason="rubric_audit_mismatch"))
+        unapproved = sorted(literals(case["text"]) - APPROVED_VALUES)
+        if unapproved:
+            result["ok"] = False
+            result["problems"].append(dict(case=case["key"], reason="unapproved_literal",
+                                           detail=unapproved))
     return result
