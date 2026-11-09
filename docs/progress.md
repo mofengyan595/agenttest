@@ -3803,6 +3803,10 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   `test_mixed_planning_round3` 21/21，历史 T1V3 仍正确判为缺实例。
 - 全量离线：`python scripts/check_full.py --jobs 4` = **2580 collected / 2565 passed / 0 failed /
   15 skipped**（906 s，`source_unchanged=true`、`exact_test_id_coverage=true`）。
+- 证据：[execution-manifest-8a924e4.json](evidence/rw-acceptance-v4b-preflight-20261109/execution-manifest-8a924e4.json)
+  （frozen `d8eeae1` → 代码提交 `8a924e4`，33 个文件：15 新增 / 18 修改，工作区干净）、
+  [preflight-8a924e4.json](evidence/rw-acceptance-v4b-preflight-20261109/preflight-8a924e4.json)
+  （M2/F1 均 9/9 READY，`blocking=[]`，仅 `SOURCE_CHANGED` 告警）。
 - 交付：[rw-acceptance-m2-f1-preflight-20261109.md](rw-acceptance-m2-f1-preflight-20261109.md)；
   重放证据 [replay.json](evidence/rw-instance-replay-20261109/replay.json)。
 - 预算上限（未使用）：每 case ≤2 次模型调用 / ≤12 请求 / ≤150 秒；合计 ≤4 / ≤24 / ≤300 秒；

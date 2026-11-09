@@ -8,8 +8,8 @@
 
 | 检查项 | 结果 | 证据 |
 | --- | --- | --- |
-| 冻结记录一致性（题目/顺序/状态码/rubric/授权范围/预算） | **通过** | `runs/rw-acceptance-v4b-20261109/execution-manifest-*.json`，`artifact_digests` 六项 frozen=executing |
-| 代码版本差异是否可审计 | **是**（frozen `d8eeae1` → 本轮提交；改动逐文件记录） | manifest `source.changed_files`、`frozen_head`/`executing_head` |
+| 冻结记录一致性（题目/顺序/状态码/rubric/授权范围/预算） | **通过** | [execution-manifest-8a924e4.json](evidence/rw-acceptance-v4b-preflight-20261109/execution-manifest-8a924e4.json)，`artifact_digests` 六项 frozen=executing |
+| 代码版本差异是否可审计 | **是**（frozen `d8eeae1` → 代码提交 `8a924e4`；33 个文件：15 新增 / 18 修改） | manifest `source.changed_files`、`change_summary`、`frozen_head`/`executing_head` |
 | M2/F1 位置是否未消耗 | **是**（仅 `M1` 已消耗） | `freeze.json.requirements.consumed_positions=["M1"]`、无 `result.json` |
 | Focus/Design 实例绑定离线复核 | **1 类真实缺陷已修**（跨子句集合顺序 → 虚假依赖环），最小 prompt/schema + 早期诊断 | 第 3 节；`docs/evidence/rw-instance-replay-20261109/replay.json` |
 | M2/F1 无成本预检 | **M2 READY / F1 READY**（9/9 项） | `preflight-<head>.json` checklist |
@@ -87,15 +87,22 @@
 执行清单（每个预检/运行各一份，独占）：
 
 ```
-runs/rw-acceptance-v4b-20261109/execution-manifest-<head7>.json
+docs/evidence/rw-acceptance-v4b-preflight-20261109/execution-manifest-8a924e4.json
+runs/rw-acceptance-v4b-20261109/execution-manifest-<head7>.json   （运行时新写）
 ```
 
+本文件的 `executing_head` 是**代码提交** `8a924e4`；此后仅新增文档/证据的提交不改变
+`src/agenttest` 的 `src_sha256`，也不改变本清单记录的任何冻结产物摘要。真正执行时，
+`run` 会在当时的 HEAD 上另写一份清单，并由 `--accept-code-change=<head7>` 明确命名。
+
 字段：`frozen_head`、`executing_head`、`accept_code_change`、`allowed`、`blocking`、
-`warnings`、`source`（两侧 `src_sha256`/`status`/`changed_files`）、`artifact_digests`（六项
-frozen/executing）、`model`（drift 明细）、`target`（地址/隔离/初始态）、
+`warnings`、`source`（两侧 `src_sha256`/`status`、`changed_files`、`change_summary`）、
+`artifact_digests`（六项 frozen/executing）、`model`（drift 明细）、`target`（地址/隔离/初始态）、
 `acceptance_conditions`（rubric 检查、预算、位置、consumed、清理/命名空间/幂等规则、初始态）。
 
-本轮相对冻结提交 `d8eeae1` 的代码差异（全部在本轮验证，均不改变冻结题目/rubric/预算）：
+本轮相对冻结提交 `d8eeae1` 的代码差异：33 个文件（15 新增 / 18 修改），逐条记录在清单的
+`changed_files` 中，摘要计数在 `change_summary`；工作区干净（`executing_status=""`）。
+下列变更均不改变冻结题目/rubric/预算：
 
 | 文件 | 变更 | 对验收的影响 |
 | --- | --- | --- |
@@ -190,8 +197,9 @@ frozen/executing）、`model`（drift 明细）、`target`（地址/隔离/初�
 | 无未知写重放 | READY | READY | 无历史请求；`run()` 见请求即拒绝 |
 | 证据完整 | READY | READY | focus/findings/audit/state/product 均落盘 |
 
-预检报告：`runs/rw-acceptance-v4b-20261109/preflight-<head7>.json`（独占创建）；
-报告只启动本地夹具并做一次重置，**不发送业务请求、不调用模型**。
+预检报告：[preflight-8a924e4.json](evidence/rw-acceptance-v4b-preflight-20261109/preflight-8a924e4.json)
+（独占创建；同时保留 `runs/` 下的原始副本）。报告只启动本地夹具并做一次重置，
+**不发送业务请求、不调用模型**。
 
 ## 5. 阻塞缺陷
 

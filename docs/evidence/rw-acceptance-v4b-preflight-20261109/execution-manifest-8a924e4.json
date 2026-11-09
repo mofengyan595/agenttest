@@ -1,0 +1,174 @@
+{
+  "created_at": "2026-11-09T22:47:47+0800",
+  "allowed": true,
+  "blocking": [],
+  "warnings": [
+    {
+      "reason": "SOURCE_CHANGED",
+      "detail": "8a924e494ec877a5bf26133192f98d45610b383c"
+    }
+  ],
+  "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+  "executing_head": "8a924e494ec877a5bf26133192f98d45610b383c",
+  "accept_code_change": null,
+  "source": {
+    "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+    "executing_head": "8a924e494ec877a5bf26133192f98d45610b383c",
+    "frozen_src_sha256": "11cc34951dedff2654f3cc7bd22eeb541ea5ab61ee0db6afe2a8e99ef6a47e34",
+    "executing_src_sha256": "8428eb49ebfd6234cfcb197400dd66babe15f1ffe866b94607eecd07d72a0c63",
+    "frozen_status": "",
+    "executing_status": "",
+    "changed": true,
+    "changed_files": [
+      "A\tdocs/delivery-acceptance-m2-f1-20261109.md",
+      "A\tdocs/evidence/rw-instance-replay-20261109/replay.json",
+      "A\tdocs/evidence/rw-lifecycle-20261109-v4a-consumed/evidence.json",
+      "A\tdocs/instance-identity-dependency-20261109.md",
+      "M\tdocs/progress.md",
+      "A\tdocs/rw-acceptance-m2-f1-preflight-20261109.md",
+      "A\tdocs/rw-lifecycle-planning-reliability-20261109.md",
+      "A\tdocs/systemic-reliability-repair-20261109.md",
+      "M\tscripts/rw_lifecycle/acceptance.py",
+      "A\tscripts/rw_lifecycle/execution_gate.py",
+      "A\tscripts/rw_lifecycle/instance_replay.py",
+      "M\tsrc/agenttest/executor.py",
+      "M\tsrc/agenttest/llm_planner.py",
+      "M\tsrc/agenttest/plan_construction.py",
+      "M\tsrc/agenttest/product_design.py",
+      "M\tsrc/agenttest/product_focus.py",
+      "M\tsrc/agenttest/product_schema.py",
+      "M\tsrc/agenttest/report.py",
+      "M\tsrc/agenttest/request_requirements.py",
+      "A\ttests/test_executor_bodyless_source.py",
+      "M\ttests/test_focus_approved_expectations.py",
+      "A\ttests/test_focus_order_ambiguity.py",
+      "A\ttests/test_instance_delivery_e2e.py",
+      "M\ttests/test_mixed_planning_p0.py",
+      "M\ttests/test_mixed_planning_round3.py",
+      "M\ttests/test_plan_construction.py",
+      "A\ttests/test_plan_instance_dependencies.py",
+      "M\ttests/test_planning_witness_recovery.py",
+      "A\ttests/test_product_instance_prompt.py",
+      "M\ttests/test_request_requirements.py",
+      "M\ttests/test_resource_lifecycle.py",
+      "A\ttests/test_rw_acceptance_preflight.py",
+      "M\ttests/test_rw_lifecycle_next_round.py"
+    ],
+    "change_summary": {
+      "added": 15,
+      "modified": 18,
+      "deleted": 0,
+      "renamed": 0,
+      "other": 0
+    }
+  },
+  "artifact_digests": {
+    "cases": {
+      "frozen": "f2ba78ab754ca6b36eabac18e03b2ee33bb10c0f8c317e5b86f58c97e9534d34",
+      "executing": "f2ba78ab754ca6b36eabac18e03b2ee33bb10c0f8c317e5b86f58c97e9534d34"
+    },
+    "plan": {
+      "frozen": "4c1d775c75632abf30551f1af252bd7e8b712e757113529b77f395f6e8383a36",
+      "executing": "4c1d775c75632abf30551f1af252bd7e8b712e757113529b77f395f6e8383a36"
+    },
+    "rubric": {
+      "frozen": "670d8ee465a0c7e9f9bd25d21c9a60c774f22ce8ea51272ddaa050b67a7ecba1",
+      "executing": "670d8ee465a0c7e9f9bd25d21c9a60c774f22ce8ea51272ddaa050b67a7ecba1"
+    },
+    "authority": {
+      "frozen": "3eb8ebc31685cabec9e8fe9a50b43896671045c55402631ba2647dae98351061",
+      "executing": "3eb8ebc31685cabec9e8fe9a50b43896671045c55402631ba2647dae98351061"
+    },
+    "contract": {
+      "frozen": "00960ecf41c5c2717c2478a701cbacf377693e122eb766a737813ea2beaba17d",
+      "executing": "00960ecf41c5c2717c2478a701cbacf377693e122eb766a737813ea2beaba17d"
+    },
+    "scorer": {
+      "frozen": "d7d7d2d7d061f2920e921a41f794f404ff2538a753d280dbfba5067c1d414f5e",
+      "executing": "d7d7d2d7d061f2920e921a41f794f404ff2538a753d280dbfba5067c1d414f5e"
+    }
+  },
+  "model": {
+    "frozen": {
+      "model": "ecnu-max",
+      "protocol": "chatecnu",
+      "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+      "timeout": 45.0,
+      "max_output_tokens": 4096.0,
+      "max_input_tokens": 20000.0
+    },
+    "current": {
+      "model": "ecnu-max",
+      "protocol": "chatecnu",
+      "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+      "timeout": 45.0,
+      "max_output_tokens": 4096.0,
+      "max_input_tokens": 20000.0
+    },
+    "drift": []
+  },
+  "target": {
+    "frozen_base_url": "http://127.0.0.1:19097",
+    "current_base_url": "http://127.0.0.1:19097",
+    "frozen_isolated": true,
+    "current_isolated": true,
+    "frozen_initial": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+    "current_initial": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+  },
+  "acceptance_conditions": {
+    "rubric_check": {
+      "ok": true,
+      "problems": [],
+      "cases": {
+        "M2": {
+          "methods": [
+            "POST",
+            "GET",
+            "DELETE",
+            "GET"
+          ],
+          "statuses": [
+            201,
+            200,
+            204,
+            404
+          ]
+        },
+        "F1": {
+          "methods": [
+            "POST",
+            "GET",
+            "PATCH",
+            "PUT",
+            "DELETE",
+            "GET"
+          ],
+          "statuses": [
+            201,
+            200,
+            200,
+            200,
+            204,
+            404
+          ]
+        }
+      }
+    },
+    "budgets": {
+      "max_requests": 12,
+      "max_seconds": 150,
+      "max_model_calls": 2
+    },
+    "positions": [
+      "M2",
+      "F1"
+    ],
+    "consumed_positions": [
+      "M1"
+    ],
+    "cleanup_rule": "每个创建都必须配对一次 DELETE，并回读 404 作为清理证据；未清理的资源计入 leftovers 并阻止验收。",
+    "namespace_rule": "每次运行由 e2e 前缀 + 运行 ID 组成，重置夹具后创建；资源只在本命名空间可见，跨命名空间一律 404。",
+    "idempotency_rule": "createItem 必须携带必填 Idempotency-Key 头；同键同体返回 200 与原 id，同键异体返回 409，绝不二次创建；不同键创建新资源。",
+    "initial_state": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2"
+  }
+}
