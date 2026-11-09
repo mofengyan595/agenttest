@@ -204,6 +204,10 @@ def assert_finished(done):
                   if record.get('group_id') == 'focus'), {})
     detail = dict(status=done['status'], reason=done['summary'].get('reason'),
                   focus=(focus.get('status'), focus.get('reason'), focus.get('diagnostic')),
+                  records=[(record.get('status'), record.get('reason'),
+                            (record.get('diagnostic') or {}).get('code'),
+                            (record.get('diagnostic') or {}).get('fields'))
+                           for record in done['summary'].get('design_records', [])],
                   groups=[(group.get('id'), group.get('status'), group.get('reason'),
                            (group.get('record') or {}).get('reason'))
                           for group in done['summary'].get('groups', [])],

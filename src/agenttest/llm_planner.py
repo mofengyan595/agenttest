@@ -11,7 +11,14 @@ from typing import Any, Literal
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
+from pydantic import (
+    Field,
+    SecretStr,
+    ValidationError,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from pydantic_core import PydanticCustomError
 
 from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
@@ -161,6 +168,56 @@ class DraftArgument(StrictModel):
         return self.value
 
 
+def _drop_requirement_bindings(schema):
+    """Remove the design-only instance binding slots from a planner wire schema.
+
+    Legacy plan drafts (frozen fixtures, batch and composed profiles) never carried them, so
+    their schema stays byte-identical and an archived reply still validates.
+    """
+    keys = ("requirement_source_id", "requirement_action_index")
+
+    def walk(node):
+        if isinstance(node, dict):
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                for key in keys:
+                    properties.pop(key, None)
+                if "required" in node:
+                    node["required"] = [key for key in node["required"] if key not in keys]
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(schema)
+
+
+def _require_requirement_bindings(schema):
+    """Make the wire contract explicit: every step states which clause instance it realizes.
+
+    The Python model keeps the fields optional so historical designs still load, while the strict
+    wire schema requires them (null when unbound) to hold the ``required == properties`` shape
+    constrained decoding depends on. Existing enums are preserved.
+    """
+    keys = ("requirement_source_id", "requirement_action_index")
+
+    def walk(node):
+        if isinstance(node, dict):
+            properties = node.get("properties")
+            if isinstance(properties, dict) and keys[0] in properties and keys[1] in properties:
+                for key in keys:
+                    properties[key].pop("default", None)
+                node["required"] = list(dict.fromkeys([*node.get("required", []), *keys]))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(schema)
+
+
 class DraftStep(StrictModel):
     id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,60}$")
     operation_id: str
@@ -253,6 +310,21 @@ class GenericDraftArgument(DraftArgument):
 
 class GenericDraftStep(DraftStep):
     arguments: list[GenericDraftArgument] = Field(max_length=30)
+    # Which requirement clause and action occurrence this concrete step realizes. It is the
+    # only trusted link between an operation-level clause and one execution instance, so
+    # repeated or non-adjacent calls of one API stay distinct. Absent means the step is
+    # unambiguous only while its operation occurs once in the draft.
+    requirement_source_id: str | None = None
+    requirement_action_index: int | None = Field(default=None, ge=0, le=19)
+
+    @model_serializer(mode="wrap")
+    def omit_unbound_step(self, handler):
+        data = handler(self)
+        if self.requirement_source_id is None:
+            data.pop("requirement_source_id", None)
+        if self.requirement_action_index is None:
+            data.pop("requirement_action_index", None)
+        return data
 
 
 class GenericPlannerDraft(PlannerDraft):
@@ -464,9 +536,13 @@ class OpenAICompatiblePlanner:
         return self._encode_request(schema, public, prompt)
 
     def _encode_request(self, schema: dict, public: dict, prompt: str,
-                        name: str = "agenttest_plan") -> bytes:
+                        name: str = "agenttest_plan", *, require_bindings: bool = False) -> bytes:
         """Share the bounded transport envelope with read-only decision adapters."""
         settings = self._settings
+        if require_bindings:
+            _require_requirement_bindings(schema)
+        else:
+            _drop_requirement_bindings(schema)
         separators = (",", ":") if self._profile == "generic" else None
         payload = {
             "model": settings.model, "store": False,

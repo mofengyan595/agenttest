@@ -32,6 +32,30 @@ def test_bounded_span_finishes_a_quoted_value_instead_of_cutting_it():
     assert bounded_span(plain, 0, 300) == 300
 
 
+def test_a_structure_longer_than_the_lookahead_stays_in_one_span():
+    """A >340-char quoted value or JSONPath is not cut at the 40-char lookahead boundary."""
+    quoted = '创建条目，名称是 "' + 'x' * 400 + '"，然后读取。'
+    atoms = request_atoms(quoted)
+    literal = '"' + "x" * 400 + '"'
+    assert all(quoted[atom["start"]:atom["end"]] == atom["text"] for atom in atoms)
+    assert sum(literal in atom["text"] for atom in atoms) == 1
+    assert all(atom["text"].count('"') % 2 == 0 for atom in atoms if '"' in atom["text"])
+    path = '读取 ' + '$.data[' + 'a' * 400 + ']' + ' 的值，然后删除。'
+    atoms = request_atoms(path)
+    literal = '$.data[' + "a" * 400 + ']'
+    assert all(path[atom["start"]:atom["end"]] == atom["text"] for atom in atoms)
+    assert sum(literal in atom["text"] for atom in atoms) == 1
+    nested = '参数 ' + '{"k": ["' + "b" * 400 + '"]}' + ' 保持原样，最后删除。'
+    atoms = request_atoms(nested)
+    assert all(nested[atom["start"]:atom["end"]] == atom["text"] for atom in atoms)
+    assert max(len(atom["text"]) for atom in atoms) > 400
+    # A structure that never closes keeps the remaining text together instead of splitting it.
+    unclosed = '创建条目，说明 "' + "y" * 400
+    spans = request_atoms(unclosed)
+    assert all(unclosed[atom["start"]:atom["end"]] == atom["text"] for atom in spans)
+    assert max(len(atom["text"]) for atom in spans) > 340
+
+
 def test_long_request_text_keeps_paths_values_and_order_intact():
     text = long_request_text()
     atoms = request_atoms(text)
@@ -146,7 +170,10 @@ def test_explicit_repeated_read_uses_distinct_identical_steps_instead_of_a_self_
     repeated = link(context['request_atoms'][0], before=[dict(earlier='read', later='read')])
     chosen = selection([repeated])
     validate_requirement_links(chosen.requirements, context, chosen)
-    assert repeated.before == []
+    # The claim is kept as an instance-level repetition; it never becomes a self edge.
+    (claim,) = repeated.before
+    assert claim.earlier == claim.later == 'read'
+    assert claim.earlier_instance != claim.later_instance or claim.earlier_source_id is None
     validate_requirement_links(chosen.requirements, context, chosen)
     first = step('first', 'read')
     second = step('second', 'read')
@@ -209,12 +236,19 @@ def test_repeated_read_keeps_real_order_and_all_occurrences_witness_it():
              before=[dict(earlier='read', later='state')])]
     validate_requirement_links(facts, context, selection(facts))
     first, second, state = step('r1', 'read'), step('r2', 'read'), step('s', 'state')
-    validate_plan_requirements(design([first, second, state]), facts, ['read', 'state'],
-                               read_operations={'read', 'state'})
-    for broken in (design([first, state, second]), design([first, state], [second])):
-        with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_ORDER_MISSING'):
-            validate_plan_requirements(broken, facts, ['read', 'state'],
-                                       read_operations={'read', 'state'})
+    # Array order is not evidence: every arrangement names the same two reads and the state.
+    for cases in ([first, second, state], [first, state, second], [state, first, second]):
+        validate_plan_requirements(design(cases), facts, ['read', 'state'],
+                                   read_operations={'read', 'state'})
+    # Two different reads without instance bindings do not identify which occurrence the
+    # claim names, so the design gate stops instead of picking one from its array position.
+    ambiguous = ctx('读取预约；再次读取预约。')
+    left, right = ambiguous['request_atoms']
+    claim = link(left, before=[dict(earlier='read', later='read')])
+    again = link(right)
+    with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_ORDER_INSTANCE_MISSING'):
+        validate_plan_requirements(design([step('r1', 'read'), step('r2', 'read', role='other')]),
+                                   [claim, again], ['read'])
 
 
 def test_approved_explicit_predicate_cannot_be_replaced_by_an_unproven_gap():
@@ -380,11 +414,34 @@ def test_required_identity_and_action_have_actual_plan_witnesses():
 def test_delete_before_read_is_not_satisfied_by_a_pre_delete_read():
     requirement = link(ctx('删除后读取')['request_atoms'][0],
         before=[dict(earlier='delete', later='read')])
-    with pytest.raises(ValidationFailure, match='DESIGN_REQUIRED_ORDER_MISSING'):
-        validate_plan_requirements(design([step('r', 'read'), step('d', 'delete')]),
-                                   [requirement], ['read', 'delete'])
-    validate_plan_requirements(design([step('d', 'delete'), step('r', 'read')]),
-                               [requirement], ['read', 'delete'])
+    # Both operations are distinct instances, so either array arrangement is acceptable to the
+    # design gate; the executable order comes from the requirement, not from the array.
+    for steps in ([step('r', 'read'), step('d', 'delete')],
+                  [step('d', 'delete'), step('r', 'read')]):
+        validate_plan_requirements(design(list(steps)), [requirement], ['read', 'delete'])
+    # Two *different* reads cannot identify the post-delete read, so every one of them is
+    # scheduled after the delete: the requirement is over-satisfied, never satisfied by a
+    # pre-delete read that the array happened to place first.
+    context = ctx('删除后读取；再用 other 读取同一资源。')
+    first, second = context['request_atoms']
+    claim = link(first, actions=[dict(operation_id='delete', role='owner')],
+                 before=[dict(earlier='delete', later='read')])
+    other = link(second, actions=[dict(operation_id='read', role='other')])
+    ambiguous = design([step('r1', 'read'), step('r2', 'read', role='other'),
+                        step('d', 'delete')])
+    validate_plan_requirements(ambiguous, [claim, other], ['read', 'delete'])
+    from agenttest.plan_construction import construct_plan
+
+    built, stats = construct_plan(ambiguous.cases[0].plan.model_dump(),
+                                  dict(policies=[dict(id=op, operation_id=op,
+                                                      roles=[None, 'owner', 'other'])
+                                                 for op in ('read', 'delete')],
+                                       request_requirements=[claim.model_dump(),
+                                                             other.model_dump()],
+                                       request_atoms=[atom for atom in context['request_atoms']]))
+    edges = {key: sorted(value) for key, value in stats['node_dependencies'].items()}
+    assert edges == {'r1': ['d'], 'r2': ['d'], 'd': []}
+    assert [step['id'] for step in built['steps']][0] == 'd'
 
 
 def test_same_resource_means_one_producer_in_one_context_for_all_consumers():

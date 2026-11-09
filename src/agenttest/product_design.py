@@ -256,9 +256,29 @@ The executor still owns the approved invalid mutation; supply its complete VALID
 """
 
 
+def _needs_instance_bindings(context) -> bool:
+    """Whether this request can only be planned by naming clause instances.
+
+    One clause that calls the same operation twice, or two clauses sharing an operation, cannot
+    be mapped from operation ids alone. Requests without such a repetition keep the historical
+    design contract byte for byte, so frozen replies and their budgets stay valid.
+    """
+    counts = {}
+    for requirement in context.get("request_requirements") or ():
+        for action in requirement.get("actions") or ():
+            operation = action.get("operation_id")
+            counts[operation] = counts.get(operation, 0) + 1
+    return any(count > 1 for count in counts.values())
+
+
 class TestDesignModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
         schema = TestDesign.model_json_schema()
+        bindings = _needs_instance_bindings(context)
+        if not bindings:
+            step_properties = schema["$defs"]["GenericDraftStep"]["properties"]
+            step_properties.pop("requirement_source_id", None)
+            step_properties.pop("requirement_action_index", None)
         plan_type = schema["$defs"]["DesignCase"]["properties"]["plan"]["$ref"].rsplit("/", 1)[1]
         schema["$defs"][plan_type]["properties"]["steps"]["minItems"] = 1
         if context.get('plan_construction'):
@@ -336,7 +356,7 @@ class TestDesignModel(OpenAICompatiblePlanner):
         public = compact_sources(context)
         public["omission_sources"] = sources
         return self._encode_request(schema, public, DESIGN_PROMPT,
-                                    "agenttest_test_design")
+                                    "agenttest_test_design", require_bindings=bindings)
 
     def _decode_output(self, content, context):
         wire = bounded_json(content, self._settings.max_response_bytes)

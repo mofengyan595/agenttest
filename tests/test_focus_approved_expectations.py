@@ -160,20 +160,28 @@ def requirement(**overrides):
 
 def test_ordered_clause_derives_its_adjacency_witness_from_clause_order():
     item = requirement()
-    edge = textual_order_edge({"ordered": True}, item, ["getItem", "createItem"])
-    assert edge == RequiredOrder(earlier="createItem", later="getItem")
+    previous = dict(operation_id="createItem", source_id="request_2", index=0)
+    edge = textual_order_edge({"ordered": True}, item, [previous])
+    assert edge == RequiredOrder(earlier="createItem", later="getItem",
+                                 earlier_source_id="request_2", earlier_index=0,
+                                 later_source_id="request_3", later_index=0)
 
 
 def test_derivation_never_invents_or_overrides_a_witness():
     ordered = {"ordered": True}
-    assert textual_order_edge({"ordered": False}, requirement(), ["createItem"]) is None
+    create = dict(operation_id="createItem", source_id="request_2", index=0)
+    assert textual_order_edge({"ordered": False}, requirement(), [create]) is None
     assert textual_order_edge(ordered, requirement(), []) is None
     kept = requirement(before=[RequiredOrder(earlier="updateItem", later="getItem")])
-    assert textual_order_edge(ordered, kept, ["createItem"]) is None
+    assert textual_order_edge(ordered, kept, [create]) is None
+    # The same operation in another clause is another instance: the user's clause order still
+    # yields a real edge, and the two sides stay distinguishable.
     repeated = requirement()
-    assert textual_order_edge(ordered, repeated, ["getItem"]) is None
+    same_operation = dict(operation_id="getItem", source_id="request_2", index=0)
+    edge = textual_order_edge(ordered, repeated, [same_operation])
+    assert edge is not None and edge.earlier_instance != edge.later_instance
     no_actions = requirement(actions=[])
-    assert textual_order_edge(ordered, no_actions, ["createItem"]) is None
+    assert textual_order_edge(ordered, no_actions, [create]) is None
 
 def test_variant_values_are_admitted_by_their_own_approved_set_only():
     """A base value must not be re-validated against a conflicting policy's narrow set."""

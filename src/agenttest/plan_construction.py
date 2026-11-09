@@ -8,27 +8,14 @@ from agenttest.llm_planner import GenericPlannerDraft
 ENCODING = 'UNORDERED_APPROVED_NODES_V1'
 
 
-def instance_groups(nodes, operation_id):
-    """Distinct request instances of one operation, grouped by their concrete arguments.
-
-    Two steps that would send the same request (same literals and same sources) are one replay
-    group; a changed body starts the next group. Only the proposal order breaks ties between
-    groups, and no group ever depends on itself.
-    """
-    groups, index = [], {}
-    for node in nodes.values():
-        if node['operation_id'] != operation_id:
-            continue
-        signature = json.dumps(sorted(
-            (argument.get('location'), argument.get('name'), argument.get('value'),
-             argument.get('from_step'), argument.get('select'))
-            for argument in node['arguments']), ensure_ascii=False, default=str)
-        signature = (signature, node.get('role'), node.get('policy_id'))
-        if signature not in index:
-            index[signature] = len(groups)
-            groups.append([])
-        groups[index[signature]].append(node['id'])
-    return groups
+def _same_request(left, right):
+    """Two proposals that would send exactly the same request (a replay group member)."""
+    fields = ('operation_id', 'role', 'policy_id')
+    return (all(left.get(field) == right.get(field) for field in fields)
+            and json.dumps(left.get('arguments') or [], sort_keys=True, ensure_ascii=False,
+                           default=str)
+            == json.dumps(right.get('arguments') or [], sort_keys=True, ensure_ascii=False,
+                          default=str))
 
 
 def construct_plan(plan, context):
@@ -102,39 +89,117 @@ def construct_plan(plan, context):
             for producer in producers:
                 depend(node['id'], producer, 'POLICY_PREREQUISITE')
     ordered_positions = {key: position for position, key in enumerate(nodes)}
+
+    def bound_instances():
+        """Map each (clause, action occurrence) onto the nodes that realize it.
+
+        One instance owns one node. Byte-identical nodes on one instance are a replay group:
+        their internal order carries no user intent and is serialised on its own.
+        """
+        found = {}
+        for key, node in nodes.items():
+            source = node.get('requirement_source_id')
+            if source is None:
+                continue
+            instance = (source, node.get('requirement_action_index') or 0)
+            group = found.setdefault(instance, [])
+            if group and any(not _same_request(nodes[key], nodes[other]) for other in group):
+                error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_ORDER_INSTANCE_CONFLICT')
+                error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}.'
+                                           f'requirement_source_id']
+                raise error
+            group.append(key)
+        return found
+
+    bound = bound_instances()
+
+    def node_for(instances, operation, order, *, identity_required=False):
+        """The concrete nodes for one order side; never guesses from proposal order."""
+        resolved = [instance for instance in instances if instance[0] is not None]
+        if resolved:
+            group, unbound = [], []
+            for instance in resolved:
+                found = bound.get(instance)
+                if not found:
+                    unbound.append(instance)
+                    continue
+                if any(nodes[key]['operation_id'] != operation for key in found):
+                    error = ValidationFailure(Layer.MODEL,
+                                              'CONSTRUCTION_ORDER_INSTANCE_INVALID')
+                    error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}.operation_id'
+                                               for key in found]
+                    raise error
+                group.extend(found)
+            if not unbound:
+                return group
+            pool = [key for key, node in nodes.items() if node['operation_id'] == operation]
+            replay = (len(resolved) == 1 and len(pool) > 1
+                      and all(_same_request(nodes[pool[0]], nodes[key]) for key in pool[1:]))
+            if identity_required and not replay:
+                error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_ORDER_INSTANCE_UNBOUND')
+                error.diagnostic.fields = [f'requirement_map.{instance[0]}.'
+                                           f'requirement_action_index' for instance in unbound]
+                raise error
+            # Different operations need no identity: every earlier call precedes every later
+            # one, so the whole operation realizes the side without picking a slot.
+            if pool:
+                return pool
+            error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+            error.construction = dict(order=order, candidates=[], edge_reason='TEXT_ORDER')
+            raise error
+        candidates = [key for key, node in nodes.items() if node['operation_id'] == operation]
+        if len(candidates) == 1 or candidates and all(
+                _same_request(nodes[candidates[0]], nodes[key]) for key in candidates[1:]):
+            return candidates
+        error = ValidationFailure(Layer.MODEL,
+                                  'CONSTRUCTION_ORDER_INSTANCE_AMBIGUOUS' if candidates
+                                  else 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+        error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}' for key in candidates]
+        error.construction = dict(order=order, candidates=candidates,
+                                  edge_reason='TEXT_ORDER')
+        raise error
+
+    from agenttest.request_requirements import order_instances
+
     for requirement in context.get('request_requirements', []):
         if requirement['disposition'] != 'required':
             continue
         for order in requirement['before']:
-            later = [n['id'] for n in nodes.values() if n['operation_id'] == order['later']]
-            if not later:
-                continue
-            earlier = [n['id'] for n in nodes.values() if n['operation_id'] == order['earlier']]
-            if not earlier:
-                if order['earlier'] in context.get('design_operations', ()):
-                    # The required order spans execution contexts; the design-level
-                    # witness checks the concatenated case order before any HTTP.
+            earlier_instances, later_instances = order_instances(
+                order, context.get('request_requirements', []),
+                {atom['source_id']: atom for atom in context.get('request_atoms', [])})
+            if not any(node['operation_id'] == order['later'] for node in nodes.values()):
+                if order['later'] in context.get('design_operations', ()):
+                    # The required order spans execution contexts; the design-level witness
+                    # checks the bound instances before any HTTP.
                     continue
                 raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
-            if order['earlier'] == order['later']:
-                # Repeating one operation needs instance identity: identical requests (same
-                # key, same body) form one replay group, a different body forms the next. Groups
-                # are chained in proposal order, so no step ever depends on itself.
-                chain = instance_groups(nodes, order['later'])
-                if len(chain) == 1:
-                    # Identical requests in one group: an explicit order still serialises them,
-                    # and a single instance cannot be ordered against itself.
-                    for previous, current in zip(chain[0], chain[0][1:]):
-                        depend(current, previous, 'TEXT_ORDER')
+            if not any(node['operation_id'] == order['earlier'] for node in nodes.values()):
+                if order['earlier'] in context.get('design_operations', ()):
+                    # The first half of the pair executes in an earlier case.
                     continue
-                for previous_group, group in zip(chain, chain[1:]):
-                    for target in group:
-                        for source in previous_group:
-                            depend(target, source, 'TEXT_ORDER')
+                raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+            earlier = node_for(earlier_instances, order['earlier'], order,
+                               identity_required=order['earlier'] == order['later'])
+            target = node_for(later_instances, order['later'], order,
+                              identity_required=order['earlier'] == order['later'])
+            if set(earlier) & set(target):
+                # One node cannot follow itself. A replay group may serve both sides; its
+                # members are then serialised as a replay, never as user intent.
+                if earlier_instances != later_instances or len(earlier) < 2:
+                    error = ValidationFailure(Layer.MODEL,
+                                              'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+                    error.diagnostic.fields = [f'requirement_map.{requirement["source_id"]}'
+                                               f'.before']
+                    error.construction = dict(order=order, candidates=sorted(set(earlier)),
+                                              edge_reason='TEXT_ORDER')
+                    raise error
+                for previous, current in zip(earlier, earlier[1:]):
+                    depend(current, previous, 'REPLAY_GROUP')
                 continue
-            for target in later:
-                for source in earlier:
-                    depend(target, source, 'TEXT_ORDER')
+            for current in target:
+                for previous in earlier:
+                    depend(current, previous, 'TEXT_ORDER')
     for earlier, later in zip(context.get('composed_negative_chain', []),
                               context.get('composed_negative_chain', [])[1:]):
         if earlier not in nodes or later not in nodes:

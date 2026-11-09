@@ -276,6 +276,13 @@ def constrain_product_steps(schema, context):
         props["operation_id"] = {"type": "string", "enum": [policy["operation_id"]]}
         props["policy_id"] = {"type": "string", "enum": group["ids"]}
         props["role"] = {"type": ["string", "null"], "enum": policy["roles"]}
+        if "requirement_source_id" in props:
+            # Compact nullable slots; the trusted local check refuses unknown clauses. Sending a
+            # closed enum repeats the clause vocabulary in every per-policy step branch and
+            # pushes the frozen design request over its input budget.
+            props["requirement_source_id"] = {"type": ["string", "null"]}
+            props["requirement_action_index"] = {"type": ["integer", "null"],
+                                                 "minimum": 0, "maximum": 19}
         arguments = []
         for rule in rules:
             literal = rule.get("literal_schema")

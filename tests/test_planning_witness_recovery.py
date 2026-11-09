@@ -17,8 +17,8 @@ from agenttest.product_focus import FocusSelection  # noqa: E402
 from agenttest.request_requirements import (  # noqa: E402
     RequestRequirement,
     RequiredAction,
+    RequiredOrder,
     evidence_fragment,
-    repeated_read_order,
     request_atoms,
     textual_order_edge,
     validate_requirement_links,
@@ -60,13 +60,17 @@ def validate(text, actions_by_clause):
     return {item.source_id: item for item in chosen}
 
 
-def test_third_round_repeated_ordered_read_needs_no_self_edge():
-    """T3 ``request_4`` failed because a repeated read can never carry a ``before`` edge."""
-    atom = atom_map(plan_v2.FINAL_CASES[2]["text"])["request_4"]
+def test_third_round_repeated_ordered_read_keeps_two_distinct_instances():
+    """T3 ``request_4`` reads again after a delete: same operation, different instance."""
+    atoms = atom_map(plan_v2.FINAL_CASES[2]["text"])
+    atom = atoms["request_4"]
     item = requirement(atom, [RequiredAction(operation_id=READ, role=None)])
     assert atom["ordered"] and "读取" in atom["text"]
-    assert textual_order_edge(atom, item, [CREATE, READ]) is None
-    assert repeated_read_order(atom, item, [CREATE, READ])
+    previous = dict(operation_id=READ, source_id="request_3", index=0)
+    edge = textual_order_edge(atom, item, [previous])
+    assert edge is not None
+    assert edge.earlier_source_id == "request_3" and edge.later_source_id == "request_4"
+    assert edge.earlier_instance != edge.later_instance
 
 
 def test_third_round_verbless_ordering_fragment_is_evidence_not_an_action():
@@ -87,7 +91,12 @@ def test_repeated_read_and_evidence_fragments_need_no_model_witness():
                       "request_4": [(READ, None)],
                       "request_5": [(READ, None)]})
     assert items["request_2"].actions == []
-    assert items["request_5"].before == []
+    # Two reads of one item are two instances: the second follows the first, and no side
+    # ever names itself.
+    (edge,) = items["request_5"].before
+    assert edge == RequiredOrder(earlier=READ, later=READ, earlier_source_id="request_4",
+                                 earlier_index=0, later_source_id="request_5", later_index=0)
+    assert edge.earlier_instance != edge.later_instance
 
 
 def test_verb_bearing_clause_still_needs_its_action_witness():

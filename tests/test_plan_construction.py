@@ -21,6 +21,32 @@ def context():
                              before_operation_ids=['create', 'read', 'delete'])])
 
 
+def clause(source_id, *operations, before=()):
+    """One source clause; repeated operations inside it keep their own occurrence index."""
+    return dict(source_id=source_id, source_quote=source_id, disposition='required',
+                actions=[dict(operation_id=operation, role='owner') for operation in operations],
+                before=list(before), same_resource=[], response_checks=[],
+                forbidden_operation_ids=[], blocked_operation_ids=[])
+
+
+def pair(earlier, later, earlier_source, later_source, earlier_index=0, later_index=0):
+    """An order pair naming two concrete clause instances, not two operation types."""
+    return dict(earlier=earlier, later=later,
+                earlier_source_id=f'request_{earlier_source}',
+                earlier_index=earlier_index,
+                later_source_id=f'request_{later_source}', later_index=later_index)
+
+
+def bound(key, operation, source, index=0, role='owner', source_step=None, arguments=()):
+    """A proposed step bound to the clause occurrence it realizes."""
+    arguments = list(arguments) or ([] if source_step is None else [
+        dict(location='path_parameters', name='id', value=None,
+             from_step=source_step, select='$.id')])
+    return dict(id=key, operation_id=operation, role=role, policy_id=operation,
+                arguments=arguments, requirement_source_id=source,
+                requirement_action_index=index)
+
+
 def test_constructs_data_and_managed_identity_order_without_changing_business_values():
     raw = dict(name='flow', steps=[node('r', 'read', 'owner', source='c'),
                                    node('c', 'create', 'owner')])
@@ -74,10 +100,13 @@ def test_single_approved_read_prerequisite_can_join_two_proposed_cases(method):
 def test_all_identities_finish_reading_before_cleanup_without_picking_one_predecessor():
     ctx = context()
     ctx['policies'][2]['roles'].append('other')
-    ctx['request_requirements'] = [dict(disposition='required',
-        before=[dict(earlier='read', later='delete')])]
-    plan, _ = construct_plan(dict(name='both reads', steps=[node('d', 'delete'),
-        node('one', 'read', 'owner'), node('two', 'read', 'other')]), ctx)
+    ctx['request_requirements'] = [
+        clause('request_1', 'read'), clause('request_2', 'read'),
+        clause('request_3', 'delete', before=[pair('read', 'delete', 1, 3),
+                                              pair('read', 'delete', 2, 3)])]
+    steps = [bound('d', 'delete', 'request_3'), bound('one', 'read', 'request_1'),
+             bound('two', 'read', 'request_2', role='other')]
+    plan, _ = construct_plan(dict(name='both reads', steps=steps), ctx)
     operations = [step['operation_id'] for step in plan['steps']]
     assert operations.count('read') == 2 and operations[-1] == 'delete'
 
@@ -175,57 +204,79 @@ def test_cycle_reports_the_concrete_path_and_the_rule_behind_each_edge():
     assert {edge["reason"] for edge in detail["edges"]} == {"MODEL_REFERENCE"}
 
 
-def test_repeated_operation_order_pairs_instances_instead_of_chaining_every_node():
+def test_repeated_operation_order_keeps_two_instances_instead_of_chaining_every_node():
     ctx = context()
-    ctx["request_requirements"] = [dict(disposition="required",
-                                        before=[dict(earlier="read", later="read")])]
-    repeated = dict(name="repeat", steps=[node("r1", "read", source="c"),
-                                          node("c", "create"), node("r2", "read", source="c")])
-    plan, stats = construct_plan(repeated, ctx)
-    assert [step["id"] for step in plan["steps"]] == ["c", "r1", "r2"]
-    assert stats["dependency_edges"] >= 2
-    # A node-level chain in the opposite direction is still a real cycle.
-    contradictory = dict(name="repeat", steps=[node("r2", "read", source="r1"),
-                                               node("r1", "read", source="c"),
-                                               node("c", "create")])
+    ctx["request_requirements"] = [
+        clause("request_1", "create"),
+        clause("request_2", "read", before=[pair("create", "read", 1, 2)]),
+        clause("request_3", "read", before=[pair("read", "read", 2, 3)]),
+    ]
+    raw = dict(name="repeat", steps=[bound("c", "create", "request_1"),
+                                     bound("r1", "read", "request_2", source_step="c"),
+                                     bound("r2", "read", "request_3", source_step="c")])
+    plan, stats = construct_plan(raw, ctx)
+    order = [step["id"] for step in plan["steps"] if not step["id"].startswith("managed_")]
+    assert order == ["c", "r1", "r2"]
+    step_dependencies = {key: [source for source in value if not source.startswith("managed_")]
+                         for key, value in stats["node_dependencies"].items()
+                         if not key.startswith("managed_")}
+    assert step_dependencies == {"c": [], "r1": ["c"], "r2": ["c", "r1"]}
+    # A genuine contradiction between a written order and a data reference is still a cycle:
+    # the plan claims r1 runs first, but r1 consumes the id that c produces.
+    contradictory = dict(name="contradiction",
+                         steps=[bound("r1", "read", "request_2", source_step="c"),
+                                bound("c", "create", "request_1")])
+    contradiction_ctx = context()
+    contradiction_ctx["request_requirements"] = [
+        clause("request_2", "read", before=[pair("read", "create", 2, 1)]),
+        clause("request_1", "create")]
     with pytest.raises(ValidationFailure) as error:
-        construct_plan(contradictory, ctx)
+        construct_plan(contradictory, contradiction_ctx)
     assert error.value.diagnostic.code == "CONSTRUCTION_DEPENDENCY_CYCLE"
+    assert {field for field in error.value.diagnostic.fields
+            if not field.startswith("plan.steps.2")} == {"plan.steps.0", "plan.steps.1"}
 
 
 def body(name):
     return [dict(location="body", name="name", value=name, from_step=None, select=None)]
 
 
-def test_repeated_create_instances_chain_in_proposal_order_without_a_self_edge():
-    """A replay and a conflicting replay share one operation; each send is its own instance."""
-    ctx = context()
-    ctx["request_requirements"] = [dict(disposition="required",
-                                        before=[dict(earlier="create", later="create")])]
-    raw = dict(name="replay", steps=[
-        dict(id="c1", operation_id="create", role="owner", policy_id="create",
-             arguments=body("first")),
-        dict(id="c2", operation_id="create", role="owner", policy_id="create",
-             arguments=body("first")),
-        dict(id="c3", operation_id="create", role="owner", policy_id="create",
-             arguments=body("second"))])
-    plan, stats = construct_plan(raw, ctx)
-    order = [step["id"] for step in plan["steps"]]
-    assert order.index("c1") < order.index("c2") < order.index("c3")
-    assert stats["dependency_edges"] >= 2
+def business(plan):
+    """Business step ids in constructed order; managed login preparation is checked separately."""
+    return [step["id"] for step in plan["steps"] if not step["id"].startswith("managed_")]
 
+
+def test_repeated_create_occurrences_follow_the_written_order_not_the_array():
+    """POST(A) -> POST(B) -> POST(A): each send is its own instance, array order is irrelevant."""
+    ctx = context()
+    ctx["request_requirements"] = [clause(
+        "request_1", "create", "create", "create",
+        before=[pair("create", "create", 1, 1, 0, 1), pair("create", "create", 1, 1, 1, 2)])]
+    steps = [bound("a1", "create", "request_1", 0, arguments=body("A")),
+             bound("b2", "create", "request_1", 1, arguments=body("B")),
+             bound("a3", "create", "request_1", 2, arguments=body("A"))]
+    plan, _ = construct_plan(dict(name="replay", steps=steps), ctx)
+    assert business(plan) == ["a1", "b2", "a3"]
+    shuffled = [steps[2], steps[0], steps[1]]
+    plan, _ = construct_plan(dict(name="replay", steps=shuffled), ctx)
+    assert business(plan) == ["a1", "b2", "a3"]
 
 def test_same_operation_by_two_identities_stays_two_distinct_instances():
     ctx = context()
-    ctx["request_requirements"] = [dict(disposition="required",
-                                        before=[dict(earlier="read", later="read")])]
     shared = [dict(location="path_parameters", name="id", value=None, from_step="c",
                    select="$.id")]
+    ctx["request_requirements"] = [
+        clause("request_1", "create"),
+        clause("request_2", "read", before=[pair("create", "read", 1, 2)]),
+        clause("request_3", "read", before=[pair("read", "read", 2, 3)]),
+    ]
     raw = dict(name="identities", steps=[
+        dict(id="r2", operation_id="read", role=None, policy_id="read", arguments=shared,
+             requirement_source_id="request_3"),
         dict(id="c", operation_id="create", role="owner", policy_id="create",
-             arguments=body("first")),
-        dict(id="r1", operation_id="read", role="owner", policy_id="read", arguments=shared),
-        dict(id="r2", operation_id="read", role=None, policy_id="read", arguments=shared)])
+             arguments=body("first"), requirement_source_id="request_1"),
+        dict(id="r1", operation_id="read", role="owner", policy_id="read", arguments=shared,
+             requirement_source_id="request_2")])
     plan, _ = construct_plan(raw, ctx)
     order = [step["id"] for step in plan["steps"]]
     assert order.index("c") < order.index("r1") < order.index("r2")

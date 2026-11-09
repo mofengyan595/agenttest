@@ -379,6 +379,20 @@ def test_permission_hold_preserves_independent_repetition_and_order(fault):
     if fault == 'none':
         validate_plan_requirements(design(steps), requirements, ['status', 'detail'],
                                    read_operations={'status', 'detail'})
+    elif fault == 'wrong_order':
+        # Array position is not evidence any more: the design gate accepts any arrangement and
+        # construction restores the written order (both status reads before the detail read).
+        from agenttest.plan_construction import construct_plan
+
+        validate_plan_requirements(design(steps), requirements, ['status', 'detail'],
+                                   read_operations={'status', 'detail'})
+        built, stats = construct_plan(dict(name='wrong order', steps=steps),
+                                      dict(policies=[dict(id=op, operation_id=op, roles=[None])
+                                                     for op in ('status', 'detail')],
+                                           request_requirements=[r.model_dump()
+                                                                 for r in requirements]))
+        assert [item['id'] for item in built['steps']] == ['s1', 's2', 'd']
+        assert stats['node_dependencies']['d'] == ['s1', 's2']
     else:
         with pytest.raises(ValidationFailure):
             validate_plan_requirements(design(steps), requirements, ['status', 'detail'],

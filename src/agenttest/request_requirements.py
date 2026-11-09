@@ -2,7 +2,7 @@
 
 import re
 
-from pydantic import Field, model_serializer
+from pydantic import Field, model_serializer, model_validator
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.json_values import json_equal
@@ -16,8 +16,48 @@ class RequiredAction(StrictModel):
 
 
 class RequiredOrder(StrictModel):
+    """Which concrete clause instance must run before which other concrete instance.
+
+    ``earlier``/``later`` stay operation ids, but an operation id is not an execution instance:
+    the same GET may sit on both sides of a DELETE. ``*_source_id`` names the source clause and
+    ``*_index`` the action occurrence inside that clause, so two calls of one operation remain
+    distinguishable. Both sides are optional only for unique operations, which an unambiguous
+    resolver may then bind directly.
+    """
+
     earlier: str
     later: str
+    earlier_source_id: str | None = None
+    earlier_index: int | None = Field(default=None, ge=0, le=19)
+    later_source_id: str | None = None
+    later_index: int | None = Field(default=None, ge=0, le=19)
+
+    @property
+    def earlier_instance(self):
+        return (self.earlier_source_id, self.earlier_index)
+
+    @property
+    def later_instance(self):
+        return (self.later_source_id, self.later_index)
+
+    @model_validator(mode="after")
+    def both_sides_use_one_addressing_scheme(self):
+        if (self.earlier_source_id is None) != (self.earlier_index is None):
+            raise ValueError("ORDER_INSTANCE_INCOMPLETE")
+        if (self.later_source_id is None) != (self.later_index is None):
+            raise ValueError("ORDER_INSTANCE_INCOMPLETE")
+        if (self.earlier_source_id is None) != (self.later_source_id is None):
+            raise ValueError("ORDER_INSTANCE_INCOMPLETE")
+        return self
+
+    @model_serializer(mode="wrap")
+    def omit_unbound_order(self, handler):
+        data = handler(self)
+        if self.earlier_source_id is None:
+            for key in ("earlier_source_id", "earlier_index",
+                        "later_source_id", "later_index"):
+                data.pop(key, None)
+        return data
 
 
 class RequiredResource(StrictModel):
@@ -170,12 +210,14 @@ _REPEAT_READ = re.compile(r'^(?:请\s*)?(?:连续|重复)\s*(?:读取|查询|请
 
 def explicit_read_repetitions(item, read_operations):
     """Recognize an explicit count for one already mapped, read-only action."""
-    if (item.disposition != 'required' or len(item.actions) != 1
-            or item.actions[0].operation_id not in read_operations):
+    item, actions = _requirement_dict(item), None
+    actions = item.get('actions') or []
+    if (item.get('disposition') != 'required' or len(actions) != 1
+            or actions[0]['operation_id'] not in read_operations):
         return None
-    match = _REPEAT_READ.match(item.source_quote)
-    if match is None or re.match(r'\s*(?:或|以上|以下|到|至|[~～])',
-                                 item.source_quote[match.end():]):
+    quote = item.get('source_quote') or ''
+    match = _REPEAT_READ.match(quote)
+    if match is None or re.match(r'\s*(?:或|以上|以下|到|至|[~～])', quote[match.end():]):
         return None
     number = match[1]
     if number.isascii():
@@ -196,8 +238,13 @@ def future_clause(text):
                 re.search(r'留给|供以后(?:再)?重试|供下次(?:再)?重试', text))
 
 
-def bounded_span(text, start, limit=300):
-    """End of a bounded span that never splits a quoted value, a bracket or a JSONPath."""
+def bounded_span(text, start, limit=300, *, cap=4000):
+    """End of a bounded span that never splits a quoted value, a bracket or a JSONPath.
+
+    A closed structure may extend the span past ``limit`` (up to ``cap``) so the original text
+    stays in one piece; when even the cap cannot close it, the span runs to the end of the text
+    instead of cutting through it. Text is never truncated, rewritten or dropped.
+    """
     end = min(start + limit, len(text))
     if end >= len(text):
         return end
@@ -209,8 +256,8 @@ def bounded_span(text, start, limit=300):
         if quote:
             if char == quote and text[index - 1] != '\\':
                 quote = None
-        elif char in '"\'':
-            quote = char
+        elif char in '"\'`“':
+            quote = '”' if char == '“' else char
         elif char in '[{':
             brackets.append(']' if char == '[' else '}')
         elif brackets and char == brackets[-1]:
@@ -218,14 +265,14 @@ def bounded_span(text, start, limit=300):
         index += 1
     if not quote and not brackets:
         return end
-    # Finish the open quote/bracket, but only within a small lookahead.
-    while index < min(len(text), end + 40):
+    # Finish the open structure wherever it closes; a long quoted value or JSONPath is one span.
+    while index < min(len(text), start + cap):
         char = text[index]
         if quote:
             if char == quote and text[index - 1] != '\\':
                 quote = None
-        elif char in '"\'':
-            quote = char
+        elif char in '"\'`“':
+            quote = '”' if char == '“' else char
         elif char in '[{':
             brackets.append(']' if char == '[' else '}')
         elif brackets and char == brackets[-1]:
@@ -233,7 +280,8 @@ def bounded_span(text, start, limit=300):
         index += 1
         if not quote and not brackets:
             return index
-    return end
+    # Still open: keep the rest of the original text together rather than cutting through it.
+    return len(text)
 
 
 def request_atoms(text):
@@ -463,7 +511,16 @@ def requirement_schema(context):
         operation_id=dict(type='string', enum=operations),
         role=dict(type=['string', 'null'], enum=roles)), required=['operation_id', 'role'])
     order = dict(type='object', additionalProperties=False, properties={
-        key: dict(type='string', enum=operations) for key in ('earlier', 'later')},
+        **{key: dict(type='string', enum=operations) for key in ('earlier', 'later')},
+        # Instance addressing: which clause and which action occurrence inside it.
+        'earlier_source_id': dict(type=['string', 'null'],
+                                  enum=[*[a['source_id'] for a in context.get('request_atoms', [])],
+                                         None]),
+        'later_source_id': dict(type=['string', 'null'],
+                                enum=[*[a['source_id'] for a in context.get('request_atoms', [])],
+                                       None]),
+        'earlier_index': dict(type=['integer', 'null'], minimum=0, maximum=19),
+        'later_index': dict(type=['integer', 'null'], minimum=0, maximum=19)},
         required=['earlier', 'later'])
     resource_choices = [dict(type='object', additionalProperties=False,
         properties=dict(producer=dict(type='string', enum=[producer]),
@@ -570,20 +627,136 @@ def decode_requirements(wire, context):
     return result
 
 
+def _requirement_dict(item):
+    return item.model_dump() if isinstance(item, RequestRequirement) else item
+
+
+def _clause_actions(item):
+    return [dict(operation_id=action['operation_id'], role=action['role'])
+            for action in _requirement_dict(item).get('actions') or []]
+
+
+def _clause_candidates(operation, requirements):
+    """Every concrete (clause, action index) that could realize this operation."""
+    found = []
+    for item in requirements:
+        item = _requirement_dict(item)
+        if item.get('disposition') not in {'required', 'needs_review'}:
+            continue
+        for index, action in enumerate(item.get('actions') or []):
+            if action['operation_id'] == operation:
+                found.append((item['source_id'], index))
+    return found
+
+
+def _invalid_order(message_code='FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID', fields=None):
+    error = ValidationFailure(Layer.MODEL, message_code)
+    if fields:
+        error.diagnostic.fields = fields
+    return error
+
+
+def order_instances(order, requirements, atoms):
+    """Resolve one order pair to the clause instances of each side, never to an array slot.
+
+    Explicit ``*_source_id``/``*_index`` names one instance. Otherwise a side denotes every
+    occurrence its operation has in the request map: an order between two *different*
+    operations is a set constraint ("each earlier call precedes each later call"), which needs
+    no guess. The same operation on both sides is only meaningful when the text declares a
+    repetition of one clause, or when explicit ids separate the two occurrences; otherwise the
+    pair is ambiguous and a human must resolve it. Text adjacency may separate two declared
+    occurrences, but never picks a clause for a different operation.
+    """
+    order = order if isinstance(order, dict) else order.model_dump()
+    requirements = [_requirement_dict(item) for item in requirements]
+
+    def explicit(side):
+        source, index = order.get(f'{side}_source_id'), order.get(f'{side}_index')
+        if source is None:
+            return None
+        item = next((r for r in requirements if r['source_id'] == source), None)
+        actions = _clause_actions(item) if item is not None else []
+        if (item is None or item.get('disposition') not in {'required', 'needs_review'}
+                or index is None or not 0 <= index < len(actions)
+                or actions[index]['operation_id'] != order[side]):
+            raise _invalid_order(fields=[f'requirement_map.{source}.{side}'])
+        return [(source, index)]
+
+    def candidates(side):
+        return _clause_candidates(order[side], requirements)
+
+    def nearest(operation, anchor_start, before):
+        starts = {r['source_id']: atoms.get(r['source_id'], {}).get('start') for r in requirements}
+        options = [(abs(None if starts[source] is None else starts[source] - anchor_start), source,
+                    index) for source, index in _clause_candidates(operation, requirements)
+                   if starts[source] is not None and (starts[source] < anchor_start if before
+                                                      else starts[source] > anchor_start)]
+        if not options:
+            return None
+        options.sort()
+        if len(options) > 1 and options[0][0] == options[1][0]:
+            return None
+        return [(options[0][1], options[0][2])]
+
+    earlier_explicit, later_explicit = explicit('earlier'), explicit('later')
+    earlier = earlier_explicit if earlier_explicit is not None else candidates('earlier')
+    later = later_explicit if later_explicit is not None else candidates('later')
+    if order['earlier'] == order['later'] and earlier and later:
+        if earlier_explicit is not None and later_explicit is not None:
+            # Two explicitly indexed occurrences of one clause: exact, so nothing to derive.
+            return earlier, later
+        if earlier_explicit is not None or later_explicit is not None:
+            # One side is pinned; the text must leave exactly one other occurrence.
+            known = (earlier_explicit or later_explicit)[0]
+            rest = [candidate for candidate in candidates('earlier') if candidate != known]
+            if len(rest) != 1:
+                raise _invalid_order(fields=[f'requirement_map.{known[0]}.before'])
+            return (earlier_explicit, rest) if earlier_explicit is not None else (rest,
+                                                                                later_explicit)
+        if len(earlier) == 1 and later == earlier:
+            # A repetition of one clause: both sides denote the same single instance.
+            item = next((r for r in requirements if r['source_id'] == earlier[0][0]), None)
+            operations = {action['operation_id'] for action in _clause_actions(item or {})}
+            count = explicit_read_repetitions(item, operations) if item is not None else None
+            if count is None or count < 2:
+                raise _invalid_order(fields=[f'requirement_map.{later[0][0]}.before'])
+            return earlier, later
+        # Two distinct occurrences of one operation: which is which comes from the written
+        # clause order (source text rank, never a proposal or array position).
+        rank = {requirement['source_id']: position
+                for position, requirement in enumerate(requirements)}
+        starts = {candidate: atoms.get(candidate[0], {}).get('start') for candidate in earlier}
+        if atoms and all(start is not None for start in starts.values()):
+            ordered = sorted(earlier, key=lambda candidate: starts[candidate])
+        else:
+            ordered = sorted(earlier, key=lambda candidate: rank.get(candidate[0], 0))
+        if len(ordered) > 1:
+            return [ordered[0]], [ordered[-1]]
+        raise _invalid_order(fields=[f'requirement_map.{later[0][0]}.before'])
+    # A side with no clause occurrence (for example a trusted login) stays unresolved and is
+    # bound at plan time only when its operation occurs exactly once.
+    return earlier or [(None, None)], later or [(None, None)]
+
+
 def textual_order_edge(atom, item, preceding_operations):
     """Derive the adjacency witness the user's own clause order already states.
 
     An ordered clause (然后/再/最后) that maps to actions needs a ``before`` edge, but the
-    ordering evidence is the clause position itself. Only the immediately preceding
-    requested action is used, repeated reads keep their explicit count, and an unordered
-    clause is never given an invented edge.
+    ordering evidence is the clause position itself. The edge names both concrete instances:
+    the last action of the preceding clause and this clause's action, so two reads of the same
+    operation on both sides of a DELETE never collapse into one instance.
     """
     if not atom.get('ordered') or not item.actions or item.before or not preceding_operations:
         return None
-    earlier = preceding_operations[-1]
-    if earlier == item.actions[0].operation_id:
+    previous = preceding_operations[-1]
+    later_index = 0
+    if (previous['source_id'], previous['index']) == (item.source_id, later_index):
         return None
-    return RequiredOrder(earlier=earlier, later=item.actions[0].operation_id)
+    return RequiredOrder(earlier=previous['operation_id'],
+                         later=item.actions[later_index].operation_id,
+                         earlier_source_id=previous['source_id'],
+                         earlier_index=previous['index'],
+                         later_source_id=item.source_id, later_index=later_index)
 
 
 ACTION_VERB = re.compile(r'创建|新建|提交|上传|更新|修改|替换|读取|回读|查询|检查|验证|测试|'
@@ -606,19 +779,6 @@ def evidence_fragment(atom):
             # A fragment that asserts on a response is not evidence-neutral: it still needs the
             # reviewed continuation rule and the matching read identity.
             and not re.search(r'核对|校验|断言|条数|字段|等于|一致|不变|相同', text))
-
-
-def repeated_read_order(atom, item, preceding_operations):
-    """Order between two reads of the same operation is already implied; no edge is needed.
-
-    A repeated read has no state effect, so its position relative to the earlier identical
-    read never decides an outcome. Mutating repeats are deliberately excluded: their order
-    can decide which request creates and which conflicts.
-    """
-    return bool(atom.get('ordered') and item.actions and not item.before
-                and preceding_operations
-                and preceding_operations[-1] == item.actions[0].operation_id
-                and bool(READ_OPERATIONS.search(atom['text'])))
 
 
 def validate_requirement_links(requirements, context, selection):
@@ -693,9 +853,10 @@ def validate_requirement_links(requirements, context, selection):
         if derived is not None:
             item.before = [derived]
         evidence = evidence_fragment(atom)
-        repeated_read = repeated_read_order(atom, item, last_action_operations)
         if item.actions and item.disposition in {'required', 'needs_review'}:
-            last_action_operations = [a.operation_id for a in item.actions]
+            last_action_operations = [
+                dict(operation_id=action.operation_id, index=index, source_id=item.source_id)
+                for index, action in enumerate(item.actions)]
         previous = item
         if item.disposition == 'required':
             pending_inquiry = not item.actions and any(
@@ -707,8 +868,7 @@ def validate_requirement_links(requirements, context, selection):
                 ('actions', not item.actions and not pending_inquiry and not evidence),
                 ('same_resource', atom['same_resource'] and not evidence and not (
                     item.same_resource or item.existing_resources or interface_reference)),
-                ('before', atom['ordered'] and not item.before and not evidence
-                    and not repeated_read),
+                ('before', atom['ordered'] and not item.before and not evidence),
             ) if missing]
             if missing_witnesses:
                 error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')
@@ -785,15 +945,32 @@ def validate_requirement_links(requirements, context, selection):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ACTION_INVALID')
         repeated = explicit_read_repetitions(item, read_operations)
         if any(r.earlier not in context['approved_ids'] or r.later not in selected
-               or r.earlier == r.later and (repeated is None
-                   or r.later != item.actions[0].operation_id
-                   or atom['ordered'] and not any(
-                       edge.earlier != edge.later and r.later in (edge.earlier, edge.later)
-                       for edge in item.before)) for r in item.before):
+               or (r.earlier_source_id is not None
+                   and (r.earlier, r.earlier_instance) == (r.later, r.later_instance))
+               for r in item.before):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INVALID')
+        for order in item.before:
+            if (order.earlier != order.later or order.earlier_source_id is not None):
+                continue
+            # A self order without instance ids is only a repetition claim: the operation must
+            # be a read, the text must host two occurrences, and no mutating replay is assumed.
+            candidates = _clause_candidates(order.earlier, requirements)
+            if (order.earlier not in read_operations
+                    or (repeated is None and len(candidates) < 2)
+                    or (repeated is not None and repeated < 2)):
+                raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INVALID')
+        # Every remaining pair must denote at least one concrete instance per side; an
+        # ambiguity stops here rather than being resolved later from proposal or array order.
+        for order in item.before:
+            order_instances(order, requirements, atoms)
+        item.before = [order for order in item.before
+                       if order.earlier_source_id is None
+                       or order.earlier_instance != order.later_instance]
         if repeated is not None:
-            # The literal count is verified before execution. A self-edge cannot represent it.
-            item.before = [order for order in item.before if order.earlier != order.later]
+            # The literal count is verified before execution; it never creates a self edge.
+            item.before = [order for order in item.before
+                           if order.earlier_source_id is None
+                           or order.earlier_instance != order.later_instance]
         for index, relation in enumerate(item.same_resource):
             if (relation.producer, relation.consumer) not in resources:
                 error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESOURCE_INVALID')
@@ -868,12 +1045,108 @@ def pending_numeric_boundaries(selection, checks):
     return result
 
 
+def _identical_request(step, other):
+    return (step.operation_id == other.operation_id and step.role == other.role
+            and step.policy_id == other.policy_id
+            and step.model_dump(exclude={'id', 'requirement_source_id',
+                                         'requirement_action_index'})
+            == other.model_dump(exclude={'id', 'requirement_source_id',
+                                         'requirement_action_index'}))
+
+
+def _order_steps(drafts, instances, operation, *, identity_required=False):
+    """Every design step that realizes one side of an order pair, or a precise review stop.
+
+    A clause instance normally owns exactly one step. Several steps may share one instance
+    only when they send the identical request: that is a replay group, whose internal order
+    carries no user intent, so it is serialised separately and never used as evidence.
+
+    When the two sides are different operations, the pair is a set constraint, so every
+    realization of the operation satisfies it without any identity guess. When both sides are
+    the same operation, only real bindings can tell the occurrences apart.
+    """
+    resolved = [instance for instance in instances if instance[0] is not None]
+    pool = [step for step in drafts if step.operation_id == operation]
+    if resolved:
+        matches, missing = [], []
+        for source, index in resolved:
+            found = [step for step in drafts if step.requirement_source_id == source
+                     and (step.requirement_action_index or 0) == index]
+            if not found:
+                missing.append(source)
+                continue
+            if len(found) > 1 and not all(_identical_request(found[0], other)
+                                          for other in found[1:]):
+                error = ValidationFailure(Layer.MODEL,
+                                          'DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT')
+                error.diagnostic.fields = [f'plan.steps.{drafts.index(step)}.requirement_source_id'
+                                           for step in found]
+                raise error
+            if any(step.operation_id != operation for step in found):
+                error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_INVALID')
+                error.diagnostic.fields = [f'plan.steps.{drafts.index(step)}.operation_id'
+                                           for step in found]
+                raise error
+            matches.extend(found)
+        if missing:
+            replay = (len(resolved) == 1 and len(pool) > 1
+                      and all(_identical_request(pool[0], other) for other in pool[1:]))
+            if identity_required and not replay:
+                error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_MISSING')
+                error.diagnostic.fields = [f'requirement_map.{source}' for source in missing]
+                raise error
+            # An over-approximation is safe for two different operations: every call of the
+            # earlier operation precedes every call of the later one, so no slot is guessed.
+            if pool:
+                return pool
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_ACTION_MISSING')
+            error.diagnostic.fields = [operation]
+            raise error
+        return matches
+    if identity_required:
+        error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_MISSING')
+        error.diagnostic.fields = [operation]
+        raise error
+    if len(pool) == 1 or pool and all(_identical_request(pool[0], other)
+                                      for other in pool[1:]):
+        return pool
+    if not pool:
+        error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_ACTION_MISSING')
+        error.diagnostic.fields = [operation]
+        raise error
+    return pool
+
+
 def validate_plan_requirements(design, requirements, primary, expectations=None, *,
                                read_operations=()):
     """Check actions, identities, same-resource bindings and order before business HTTP."""
     scenarios = [case.plan.scenario() for case in design.cases]
     steps = [step for scenario in scenarios for step in scenario.steps]
+    drafts = [draft for case in design.cases for draft in case.plan.steps]
+    case_of = {draft.id: position for position, case in enumerate(design.cases)
+               for draft in case.plan.steps}
     expectations = expectations or {}
+    by_source = {item.source_id: item for item in requirements}
+    bound = {}
+    for position, draft in enumerate(drafts):
+        source = draft.requirement_source_id
+        if source is None:
+            continue
+        item = by_source.get(source)
+        index = draft.requirement_action_index or 0
+        actions = [a.operation_id for a in item.actions] if item is not None else []
+        if (item is None or not 0 <= index < len(actions)
+                or actions[index] != draft.operation_id):
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_INVALID')
+            error.diagnostic.fields = [f'plan.steps.{position}.requirement_source_id',
+                                       f'plan.steps.{position}.requirement_action_index']
+            raise error
+        previous = bound.get((source, index))
+        if previous is not None and not _identical_request(previous, draft):
+            error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT')
+            error.diagnostic.fields = [f'plan.steps.{position}.requirement_source_id']
+            raise error
+        bound[(source, index)] = draft
     repeated = {}
     for item in requirements:
         count = explicit_read_repetitions(item, read_operations)
@@ -928,8 +1201,34 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
         for order in item.before:
             if order.later not in primary:
                 continue
-            # Cases execute in list order, so one required order may span them.
-            if not read_order_witness(steps, order, repeated):
+            # The design must name the concrete instances it realizes; a design may schedule
+            # them in any array order because construction derives the executable order.
+            earlier_instances, later_instances = order_instances(order, requirements, {})
+            same_operation = order.earlier == order.later
+            earlier_steps = _order_steps(drafts, earlier_instances, order.earlier,
+                                         identity_required=same_operation)
+            later_steps = _order_steps(drafts, later_instances, order.later,
+                                       identity_required=same_operation)
+            earlier_ids = {step.id for step in earlier_steps}
+            later_ids = {step.id for step in later_steps}
+            if earlier_ids & later_ids:
+                # One instance cannot be ordered against itself; a replay group legitimately
+                # serves both sides and only needs its own serialisation.
+                if earlier_instances != later_instances:
+                    error = ValidationFailure(Layer.MODEL,
+                                              'DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT')
+                    error.diagnostic.fields = [f'requirement_map.{item.source_id}.before']
+                    raise error
+                if len(earlier_steps) < 2:
+                    error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INVALID')
+                    error.diagnostic.fields = [f'requirement_map.{item.source_id}.before']
+                    raise error
+                continue
+            # Execution contexts run in the design's own case order. When the two instances
+            # live in different cases, that sequence must satisfy the written order; inside a
+            # case the executable order comes from construction, not from the array.
+            if (max(case_of[step.id] for step in earlier_steps)
+                    > min(case_of[step.id] for step in later_steps)):
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_MISSING')
         producers = {r.producer for r in item.same_resource if r.consumer in primary}
         for producer in producers:
@@ -942,19 +1241,3 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
                 if source.operation_id == producer)
             if not matched:
                 raise ValidationFailure(Layer.MODEL, 'DESIGN_SAME_RESOURCE_WITNESS_MISSING')
-
-
-def read_order_witness(steps, order, repeated):
-    positions = []
-    for operation in (order.earlier, order.later):
-        counts = repeated.get(operation, {})
-        matches = [(i, step.role) for i, step in enumerate(steps)
-                   if step.operation_id == operation and (not counts or step.role in counts)]
-        if not matches or any(sum(role == actual for _, actual in matches) != count
-                              for role, count in counts.items()):
-            return False
-        positions.append([i for i, _ in matches])
-    earlier, later = positions
-    left = max(earlier) if order.earlier in repeated else min(earlier)
-    right = min(later) if order.later in repeated else max(later)
-    return left < right

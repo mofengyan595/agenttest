@@ -48,6 +48,46 @@ def test_run_refuses_offline_without_a_model_identity(tmp_path):
     assert "MODEL_CREDENTIALS_MISSING" in finished.stderr + finished.stdout
 
 
+def test_same_model_name_at_a_different_address_is_identity_drift(tmp_path):
+    """A frozen model name alone may not authorize a different service address."""
+    import acceptance
+
+    frozen = dict(model="ecnu-max", protocol="openai_compatible",
+                  base_url="https://approved.example/v1", timeout=45,
+                  max_output_tokens=4096, max_input_tokens=65536,
+                  api_key="sk-frozen-never-logged")
+    moved = {**frozen, "base_url": "https://elsewhere.example/v1"}
+    assert acceptance.identity_drift(frozen, moved) == ["base_url"]
+    assert acceptance.identity_drift(frozen, {**frozen, "base_url":
+                                              "HTTPS://APPROVED.EXAMPLE/v1/"}) == []
+    assert acceptance.identity_drift(frozen, {**frozen, "model": "other-max"}) == ["model"]
+    assert acceptance.identity_drift(frozen, {**frozen, "timeout": 30}) == ["timeout"]
+    assert acceptance.identity_drift(frozen, {**frozen, "protocol": "chatecnu"}) == ["protocol"]
+    # Credential contents never participate in the identity comparison.
+    assert acceptance.identity_drift(frozen, {**frozen, "api_key": "another-key"}) == []
+    normal = acceptance.normalize_identity(frozen)
+    assert "api_key" not in normal and normal["base_url"] == "https://approved.example/v1"
+
+    env = tmp_path / "model.env"
+    env.write_text("OPENAI_API_KEY=offline-placeholder\n"
+                   "OPENAI_BASE_URL=https://elsewhere.example/v1\n"
+                   "AGENTTEST_MODEL=ecnu-max\n", encoding="utf-8")
+    folder = tmp_path / "drift"
+    folder.mkdir()
+    (folder / "freeze.json").write_text(json.dumps(dict(
+        source=dict(status="", head="0" * 40), model=frozen,
+        target=dict(base_url="http://127.0.0.1:19097"))), encoding="utf-8")
+    import os
+
+    finished = subprocess.run(
+        [sys.executable, SCRIPT, "run", str(folder)],
+        cwd=ROOT, capture_output=True, text=True,
+        env=dict(os.environ, AGENTTEST_MODEL_ENV=str(env)))
+    assert finished.returncode != 0
+    assert "MODEL_IDENTITY_DRIFT:base_url" in finished.stderr + finished.stdout
+    assert "sk-frozen-never-logged" not in finished.stderr + finished.stdout
+
+
 def test_consumed_positions_can_never_be_selected_again(tmp_path):
     refused = drive(tmp_path / "round", "--cases", "T1")
     assert refused.returncode != 0

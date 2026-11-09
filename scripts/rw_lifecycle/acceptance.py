@@ -109,6 +109,38 @@ def model_identity(require_credentials=False):
                 credentials="PRESENT" if model_env_path().is_file() else "ABSENT_OFFLINE")
 
 
+# Every field that decides which service answers and how it is metered. A credential value is
+# never part of the identity: only its presence is recorded, and it is never logged.
+IDENTITY_FIELDS = ("model", "protocol", "base_url", "timeout", "max_output_tokens",
+                   "max_input_tokens")
+
+
+def normalize_identity(identity):
+    """Comparable identity: service address and budget, never credential contents."""
+    from urllib.parse import urlsplit
+
+    normalized = {field: identity.get(field) for field in IDENTITY_FIELDS}
+    base_url = normalized.get("base_url") or ""
+    parts = urlsplit(base_url)
+    if parts.scheme and parts.netloc:
+        path = parts.path.rstrip("/")
+        normalized["base_url"] = f"{parts.scheme.lower()}://{parts.netloc.lower()}{path}"
+    else:
+        normalized["base_url"] = base_url.rstrip("/")
+    normalized["protocol"] = str(normalized.get("protocol") or "").lower()
+    for field in ("timeout", "max_output_tokens", "max_input_tokens"):
+        if normalized.get(field) is not None:
+            normalized[field] = float(normalized[field])
+    return normalized
+
+
+def identity_drift(frozen_identity, current_identity):
+    """The concrete fields that changed between the frozen and the current service identity."""
+    frozen = normalize_identity(frozen_identity or {})
+    current = normalize_identity(current_identity or {})
+    return [field for field in IDENTITY_FIELDS if frozen.get(field) != current.get(field)]
+
+
 def cases():
     """The cases this frozen run may execute, in plan order."""
     return [case for case in CASES if case["key"] in SELECTED]
@@ -421,9 +453,12 @@ def run_case(folder, svc, project_id, case, run_id, initial):
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
-    # A real run must prove the same model identity the freeze recorded.
-    if model_identity(require_credentials=True)["model"] != frozen["model"]["model"]:
-        raise SystemExit("MODEL_IDENTITY_DRIFT")
+    # A real run must prove the same service identity the freeze recorded: a matching model name
+    # is not enough when the address, protocol or approved budget changed.
+    current_identity = model_identity(require_credentials=True)
+    drift = identity_drift(frozen.get("model"), current_identity)
+    if drift:
+        raise SystemExit(f"MODEL_IDENTITY_DRIFT:{','.join(drift)}")
     previous = folder / "result.json"
     if previous.exists():
         done = json.loads(previous.read_text(encoding="utf-8"))

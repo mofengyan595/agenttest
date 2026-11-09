@@ -3697,3 +3697,35 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   收尾超时保留原失败、长文本完整性）。全量结果见报告第 2–3 节。
 - 报告：[systemic-reliability-repair-20261109.md](systemic-reliability-repair-20261109.md)。
 - 未执行：v4 位点 M2/F1（需显式批准付费调用）；本轮无真实模型调用、无真实写入。
+
+## 2026-11-09 实例级依赖建模（同一 API 的不同调用实例）
+
+- 起点 `b4b329a`（工作树干净，本地 == origin/master）。只在 master 提交/普通 push，无 force、
+  无分支；`WRITE_AUTHORITY` 保持 `NOT_GRANTED`，无付费模型调用，未执行 v4 的 M2/F1，
+  未改动任何冻结证据或 rubric。
+- 根因三条：`construct_plan` 以 operation_id 取"全部同 API 节点"（不同实例全连接，创建→读→删除→再读
+  变成假环）；`instance_groups` 只按请求签名分组（POST A→POST B→POST A 被并成两组）；
+  需求顺序没有实例身份，只能靠提案数组顺序兜底。
+- 修复：实例 = `(source_id, action 下标)`；`RequiredOrder` 增加 `earlier/later_source_id`
+  与 `_index`；Focus 文本顺序边直接带实例；`order_instances` 返回两侧实例集合，同一操作要求
+  显式 id 或已声明重复，无法解析即 `FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID`（REVIEW，零 HTTP）；
+  构造侧 `bound_instances`/`node_for` 按实例建边，同请求多节点串成 `REPLAY_GROUP`；
+  真矛盾仍报 `CONSTRUCTION_DEPENDENCY_CYCLE` 并保留环路径与逐边原因。
+- 线上兼容：绑定字段只加在 `GenericDraftStep`，且仅当请求里同一操作重复出现时才进入
+  Product Design 线上 schema（必填 nullable），其余请求字节与历史一致；`DraftStep` 未改，
+  `draft_schema_sha256` 等冻结指纹不变；历史 Design/报告仍可加载（字段可选）。
+- 反例（`runs/evidence_eight_scenarios.py`，旧模块用 `git show b4b329a` 载入同输入对比）：
+  最小 CRUD/完整 CRUD 由假环变为正确链；非相邻重复 `a1,a3,b2`→`a1,b2,a3`；
+  幂等重放/冲突 `conflict,first,replay`→`first,replay,conflict`；多身份与连续读取恢复原文顺序；
+  真矛盾仍成环（零 HTTP）；无法解析映射由"按数组执行"改为 `CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS`（零 HTTP）。
+- 范围外补强：`acceptance.py` 身份比对扩展到 base_url/protocol/超时与 token 预算（凭据只查存在性、
+  不输出），同名不同地址即 `MODEL_IDENTITY_DRIFT`；`bounded_span()` 不再受 40 字符前瞻限制，
+  >400 字符的引号值、JSONPath、嵌套 JSON 与未闭合结构均保持原文完整、偏移精确。
+- 回归：`ruff check .` 通过；新增实例反例 10 条、直接受影响四套 77 passed、
+  mixed planning 55 passed、composed 五套 70 passed、rw_lifecycle 7 passed、
+  `examples/regressions` 10 passed；`python scripts/check_full.py --jobs 4` =
+  2541 collected / 2526 passed / 0 failed / 15 skipped（746 s，离线）。
+  上一轮同脚本 51 条失败（绑定字段波及 `DraftStep` 与 Product Design 输入预算），
+  本轮通过"只加在 GenericDraftStep、按需进 schema、去掉 clause 枚举"修到 0。
+- 报告：[instance-identity-dependency-20261109.md](instance-identity-dependency-20261109.md)。
+- 未执行：M2/F1（需新的显式付费授权）；无真实模型调用、无真实写入。
