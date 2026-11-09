@@ -3657,3 +3657,23 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   下一步建议先离线重放已归档 Focus/Design 原文验证提示词改进，再用**新位置**做真实验收。
   证据与报告：[rw-lifecycle-acceptance-v3-20261109.md](rw-lifecycle-acceptance-v3-20261109.md)、
   `docs/evidence/rw-lifecycle-20261109-v3/`。
+
+## 2026-11-09 规划可靠性专项（见证派生、环诊断、第四轮冻结）
+
+- 根因：`textual_order_edge` 在"有序且动作重复"时返回 None，而见证检查仍要求 `before`
+  （T3 request_4 重复读取）；无动词切分片段被迫提供动作（T2-v3 request_2）；
+  `construct_plan` 只报笼统环，且同一操作重复时 all-to-all 顺序边会制造自环。
+- 修复：新增 `evidence_fragment`/`repeated_read_order`（`request_requirements.py`），
+  只对"无动词、无状态码、无断言词、非未来/约束"的片段豁免见证，重复只读不再要求顺序边；
+  `plan_construction.py` 记录每条边来源、环路径与"步骤级顺序链"，重复操作缺少节点级
+  引用链时明确拒绝，**不删除任何依赖边**。
+- 回归：定向 72 + 4 passed，batch 组合 85 passed；全量 2504 passed / 15 skipped /
+  1 failed（`test_batch_diagnostics` 的 `checks_verified`，该模块不引用被改代码，
+  单独运行通过，判为顺序/负载偶发）；`ruff` 通过。
+- 第四轮计划 `plan_v4`（新位置 M2 最小闭环、F1 完整闭环）已冻结于 `d8eeae1`，
+  `consistency()` 增加批准字面值白名单，`dry` 就绪；**未执行**。
+- 执行偏差披露：为验证拒绝路径误执行 `run --cases M1`，`startable()` 的临时授权使真实
+  模型被调用 1 次（11 750 tokens，0 目标请求，无残留、无 UNKNOWN），M1 由此消费并作废；
+  其文案使用未批准字面值 `alpha` 等，证据见
+  `docs/evidence/rw-lifecycle-20261109-v4a-consumed/`，`CONSUMED_POSITIONS=("M1",)`。
+- 报告：[rw-lifecycle-planning-reliability-20261109.md](rw-lifecycle-planning-reliability-20261109.md)。

@@ -1,0 +1,74 @@
+{
+  "captured_at": "2026-11-09T15:35:06+0800",
+  "frozen_head": "cf43a83295d7a78a733ed4d35f0d6f6b2f7c5c24",
+  "plan": "plan_v4",
+  "position": "M1",
+  "wording": "先由 author 身份创建名称是 alpha 的条目，并从返回值里拿到 id；接着按这个 id 读取该条目，确认返回 200；随后删除该条目，确认返回 204；最后用同一个 id 回读，确认返回 404。",
+  "verdict": "NEEDS_REVIEW",
+  "target_requests": 0,
+  "leftovers": 0,
+  "findings": [
+    {
+      "reason": "create_not_confirmed",
+      "detail": 0
+    },
+    {
+      "reason": "create_count_mismatch",
+      "detail": 0
+    },
+    {
+      "reason": "cleanup_unverified",
+      "detail": {
+        "deleted": false,
+        "read_back": false
+      }
+    },
+    {
+      "reason": "driver_sequence_mismatch",
+      "detail": {
+        "methods": [],
+        "statuses": []
+      }
+    },
+    {
+      "reason": "driver_no_target_requests",
+      "detail": "NEEDS_REVIEW"
+    }
+  ],
+  "model_calls": 1,
+  "tokens": 11750,
+  "usage": [
+    {
+      "call_id": "bd30ac18ccb445d99a822d6aebc7ab3d",
+      "task_id": "1cecfd0f73874daea5d93040e0433096",
+      "state": "KNOWN",
+      "calls": 1,
+      "http_status": 200,
+      "total_tokens": 11750,
+      "elapsed_ms": 4625.0,
+      "response_bytes": 3702,
+      "output_sha256": "a8590ea1ffcb31c7e7d536554dc38b5981a91a36d069afed5ac962c8fb006e4c",
+      "reason": "MODEL_INVALID_RESPONSE"
+    }
+  ],
+  "focus": {
+    "model": "ecnu-max",
+    "content_bytes": 2912,
+    "content_sha256": "4b7321a113149eaafa4e9026c21a9761d9720fb5671b34adc2390926c81c5670",
+    "diagnostic": {
+      "kind": "ValidationFailure",
+      "outcome": "",
+      "reason": "",
+      "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+      "detail": null
+    }
+  },
+  "model_observation": "the model itself flagged that the wording asks for name=alpha, which is outside the approved enum first/second",
+  "cause": "plan authoring defect: the first 4a wording invented literal values; the driver started a real run because it was invoked while the stage still forbade model calls",
+  "consequences": [
+    "position M1 consumed and void as a reliability datapoint",
+    "no target request, no leftover, no UNKNOWN, write authority restored",
+    "corrected positions M2/F1 freeze at d8eeae1 with approved literals only"
+  ],
+  "guard": "plan_v4.consistency now rejects any wording literal outside APPROVED_VALUES (test_rw_lifecycle_next_round covers it)"
+}
