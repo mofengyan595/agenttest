@@ -24,7 +24,8 @@ WRITE_AUTHORITY = dict(
     ownership_rule="资源归创建者所有；非所有者读取/更新/删除一律 403，匿名 401。",
     cleanup_rule="每个创建都必须配对一次 DELETE，并回读 404 作为清理证据；"
                  "未清理的资源计入 leftovers 并阻止验收。",
-    budgets=dict(max_requests=12, max_seconds=120, max_model_calls=2),
+    budgets=dict(max_requests=12, max_seconds=150, max_model_calls=2),
+    model_timeout=45,
     operations=[
         dict(operation_id="createItem", method="POST", path="/items", role="author",
              statuses=[201], requires=["Idempotency-Key"], mutation=True),
@@ -67,6 +68,11 @@ def startable(authority=None):
         raise PermissionError("WRITE_AUTHORIZATION_REQUIRED")
     if not authority["base_url"].startswith("http://127.0.0.1:"):
         raise PermissionError("LOOPBACK_ONLY")
+    budget, timeout = authority["budgets"], authority["model_timeout"]
+    if not 0 < timeout <= 120:
+        raise PermissionError("MODEL_TIMEOUT_OUT_OF_RANGE")
+    if budget["max_seconds"] < budget["max_model_calls"] * timeout:
+        raise PermissionError("CASE_BUDGET_BELOW_MODEL_TIMEOUTS")
     return True
 
 

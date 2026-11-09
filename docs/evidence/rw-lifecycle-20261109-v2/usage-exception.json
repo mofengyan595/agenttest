@@ -1,0 +1,60 @@
+{
+  "decision": "usage-exception",
+  "operator_decision": "2026-11-09 operator decision: authorize one-time usage exception for this single T2 unknown model call, preserving UNKNOWN and timeout evidence",
+  "authorization_sha256": "543f8c02c965869474038e3a69666fd0b514d97738474281692994285fb23eea",
+  "exception": {
+    "call_id": "51ca0125cd2b4e469f0de0db49943eed",
+    "task_id": "8e3fa3b4282748d6a8f2c0d0aff2adcd",
+    "request_sha256": "346ced4f4f9b9b41ab5d5b543a782075d103bddf9ecf1e4fb39fae25343d39ec",
+    "source": "EXPLICIT_OPERATOR_EXCEPTION",
+    "authorization_sha256": "543f8c02c965869474038e3a69666fd0b514d97738474281692994285fb23eea",
+    "scope": "THIS_CALL_ONLY_PRESERVE_UNKNOWN"
+  },
+  "archived_call": {
+    "call_id": "51ca0125cd2b4e469f0de0db49943eed",
+    "task_id": "8e3fa3b4282748d6a8f2c0d0aff2adcd",
+    "state_before": "UNKNOWN",
+    "state_after": "UNKNOWN",
+    "request_sha256": "346ced4f4f9b9b41ab5d5b543a782075d103bddf9ecf1e4fb39fae25343d39ec",
+    "stats": {
+      "diagnostic": null,
+      "calls": 1,
+      "model_name": "ecnu-max",
+      "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+      "http_status": null,
+      "elapsed_ms": 30031.0,
+      "request_bytes": 36699,
+      "request_sha256": "346ced4f4f9b9b41ab5d5b543a782075d103bddf9ecf1e4fb39fae25343d39ec",
+      "response_bytes": 0,
+      "input_token_upper_bound": 37211,
+      "input_tokens": null,
+      "output_tokens": null,
+      "total_tokens": null,
+      "output_sha256": null,
+      "reason": "MODEL_TIMEOUT"
+    },
+    "timeout_evidence": {
+      "reason": "MODEL_TIMEOUT",
+      "http_status": null,
+      "elapsed_ms": 30031.0,
+      "response_bytes": 0,
+      "total_tokens": null
+    },
+    "untouched_calls": {
+      "35de571fc10244afa48c1994a0eb9806": "KNOWN",
+      "13e52ac66e324c50bfd0d052b1856e2e": "NOT_SENT"
+    }
+  },
+  "gate": {
+    "model_usage_blocked_after": false,
+    "other_calls_still_blocked": true,
+    "verified_on_copy": true,
+    "verification": "a synthetic second UNKNOWN in a copy of the same store closes the gate again"
+  },
+  "limits": {
+    "tokens_recorded": false,
+    "receipt_recorded": false,
+    "historical_verdict_changed": false,
+    "gate_relaxed_outside_this_call": false
+  }
+}

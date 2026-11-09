@@ -51,6 +51,9 @@ def planned_cases():
 
 
 CASES = planned_cases()
+# Positions already executed once in the 2026-11-09 second acceptance; never replayed.
+CONSUMED_POSITIONS = ("T1", "T2")
+SELECTED = [case["key"] for case in CASES]
 
 
 def digest(value):
@@ -65,16 +68,36 @@ def git(*args):
                           check=True).stdout.strip()
 
 
-def model_identity():
+def model_settings():
+    """The approved per-call ceiling wins over the model file; the default stays 30 s."""
+    import os
+
     from agenttest.llm_planner import ModelSettings
+
+    os.environ["AGENTTEST_MODEL_TIMEOUT"] = str(APPROVED["model_timeout"])
     settings = ModelSettings.from_env_file(ROOT / ".env")
+    if settings.timeout != APPROVED["model_timeout"]:
+        raise SystemExit("MODEL_TIMEOUT_NOT_APPLIED")
+    return settings
+
+
+def model_identity():
+    settings = model_settings()
     return dict(model=settings.model, protocol=settings.protocol,
                 base_url=settings.base_url, max_output_tokens=settings.max_output_tokens,
                 timeout=settings.timeout, max_input_tokens=settings.max_input_tokens)
 
 
-def freeze(folder):
+def cases():
+    """The cases this frozen run may execute, in plan order."""
+    return [case for case in CASES if case["key"] in SELECTED]
+
+
+def freeze(folder, selected=None):
     """Pin every artifact a later verdict depends on, before any request is sent."""
+    global SELECTED
+    if selected:
+        SELECTED = [case["key"] for case in CASES if case["key"] in set(selected)]
     rubric = plan_v2.consistency()
     with preflight.served():
         target = preflight.reset("e2e-freeze-0001")
@@ -86,7 +109,8 @@ def freeze(folder):
                         (str(path.relative_to(ROOT)),
                          hashlib.sha256(path.read_bytes()).hexdigest())
                         for path in (ROOT / "src/agenttest").rglob("*.py")))),
-        requirements=dict(cases=CASES, digest=digest(CASES),
+        requirements=dict(cases=cases(), digest=digest(cases()),
+                          consumed_positions=list(CONSUMED_POSITIONS),
                           plan_sha256=hashlib.sha256(
                               (ROOT / "scripts/rw_lifecycle/plan_v2.py").read_bytes()
                           ).hexdigest(),
@@ -107,6 +131,8 @@ def freeze(folder):
     )
     (folder / "freeze.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                                         encoding="utf-8")
+    if not cases():
+        raise SystemExit("NO_CASE_SELECTED")
     if not rubric["ok"]:
         print(json.dumps(rubric["problems"], ensure_ascii=False))
         raise SystemExit("RUBRIC_CHECK_FAILED")
@@ -191,6 +217,10 @@ def dry(folder):
                         max_requests=project.target.max_requests,
                         base_url=project.target.base_url),
             policies=rows,
+            budgets=APPROVED["budgets"],
+            model_timeout=APPROVED["model_timeout"],
+            cases=[case["key"] for case in cases()],
+            consumed_positions=list(CONSUMED_POSITIONS),
         )
         (folder / "dry.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
                                          encoding="utf-8")
@@ -211,7 +241,7 @@ async def task(svc, project_id, text):
     except TaskConflict as error:
         return None, str(error)
     started = time.monotonic()
-    while time.monotonic() - started < 180:
+    while time.monotonic() - started < APPROVED["budgets"]["max_seconds"] + 5:
         current = svc.db.get(row["id"], "operator")
         if current["status"] in {"FINISHED", "NEEDS_REVIEW", "INTERRUPTED", "CANCELLED"}:
             return dict(current, elapsed=round(time.monotonic() - started, 2)), None
@@ -374,7 +404,7 @@ def run(folder):
     with preflight.served():
         initial = preflight.reset("e2e-freeze-0001")
         svc, saved = service(folder / "workspace", preflight.TOKENS)
-        for case in CASES:
+        for case in cases():
             evidence = run_case(folder, svc, saved["id"], case, run_id, initial)
             results.append(evidence)
             unauthorized = [finding for finding in evidence["findings"]
@@ -418,12 +448,23 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["freeze", "dry", "run"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
+    parser.add_argument("--cases", default="",
+                        help="comma-separated keys; consumed positions are refused")
     args = parser.parse_args()
     folder = (ROOT / args.folder).resolve()
     folder.mkdir(parents=True, exist_ok=True)
     authority.startable(APPROVED)
+    selected = [key.strip() for key in args.cases.split(",") if key.strip()]
+    if selected:
+        known = {case["key"] for case in planned_cases()}
+        unknown = sorted(set(selected) - known)
+        if unknown:
+            raise SystemExit(f"UNKNOWN_CASES:{','.join(unknown)}")
+        consumed = set(CONSUMED_POSITIONS) & set(selected)
+        if consumed:
+            raise SystemExit(f"CONSUMED_POSITION_REFUSED:{','.join(sorted(consumed))}")
     if args.mode == "freeze":
-        freeze(folder)
+        freeze(folder, selected)
     elif args.mode == "dry":
         dry(folder)
     else:

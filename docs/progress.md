@@ -3624,3 +3624,19 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 测试：定向 127 passed；全量离线 `runs/full-checks-recovery` 2507 项 / 2492 passed /
   0 failed / 15 skipped；`ruff` 通过。`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`，未启动夹具，
   未运行 T1/T2/T3。详见 [rw-lifecycle-recovery-20261109.md](rw-lifecycle-recovery-20261109.md)。
+
+## 2026-11-09 用量例外与下一轮准备（未执行）
+
+- T2 单次 `UNKNOWN` 调用按操作员授权登记一次性例外：精确匹配
+  `call_id 51ca0125…` / `task_id 8e3fa3b4…` / `request_sha256 346ced4f…`；原行仍为 `UNKNOWN`，
+  token 字段保持 `null`，超时证据（`MODEL_TIMEOUT`、30031 ms、`response_bytes=0`）与历史裁决不变；
+  授权对象无 token 字段，结构上禁止估计用量；未调用 `reconcile_model_usage`、未伪造回执。
+  在归档库副本上验证：例外后闸门对本调用放行，插入新 `UNKNOWN` 立即重新阻断，T1 的
+  `KNOWN`/`NOT_SENT` 行未受影响。审计见 `docs/evidence/rw-lifecycle-20261109-v2/usage-exception.json`。
+- 批准参数落地：单次模型超时 45 s（默认仍 30 s、`.env` 未改）、单用例预算 150 s、
+  ≤2 次模型调用、≤12 次目标 HTTP；`startable()` 新增"超时在 (0,120] 内"与
+  "预算 ≥ 调用数 × 超时"校验；驱动 `dry`/`freeze` 记录 `model_timeout`、`budgets`、
+  `consumed_positions`，并新增 `--cases` 选择器硬拒绝已消费的 T1/T2。
+- 下一轮：只准备，未启动。T3 为唯一可执行位置；写入仍需新的明确授权。
+  见 [rw-lifecycle-next-round-20261109.md](rw-lifecycle-next-round-20261109.md)、
+  [rw-lifecycle-usage-exception-20261109.md](rw-lifecycle-usage-exception-20261109.md)。
