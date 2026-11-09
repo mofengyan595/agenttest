@@ -310,9 +310,12 @@ def checks(case, rows, created_id):
         elif len({row["item_id"] for row in creates}) != 1:
             findings.append(dict(reason="driver_conflict_touched_other_resource",
                                  detail=[row["item_id"] for row in creates]))
-    if case["key"] == "T3":
+    if case["key"].startswith("T3"):
+        approved = [entry if isinstance(entry, dict) else
+                    dict(operation=entry[0], role=entry[1], status=entry[2])
+                    for entry in case["approved_denials"]]
         expected = {(entry["operation"], entry["role"], entry["status"])
-                    for entry in case["approved_denials"]}
+                    for entry in approved}
         observed = {(row["operation_id"], row["role"], row["status"])
                     for row in rows if row["status"] in {401, 403}}
         if not expected <= observed:
