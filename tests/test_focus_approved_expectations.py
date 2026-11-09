@@ -174,3 +174,49 @@ def test_derivation_never_invents_or_overrides_a_witness():
     assert textual_order_edge(ordered, repeated, ["getItem"]) is None
     no_actions = requirement(actions=[])
     assert textual_order_edge(ordered, no_actions, ["createItem"]) is None
+
+def test_variant_values_are_admitted_by_their_own_approved_set_only():
+    """A base value must not be re-validated against a conflicting policy's narrow set."""
+    from agenttest.product_inputs import InputRequirement, constrain_input_schema
+
+    def requirement(value):
+        return InputRequirement(operation_id="createItem", location="body", name="name",
+                                path=[], value=value, source_quote="创建名为 first 的条目")
+
+    rule = dict(location="body", name="name")
+    base = {"type": "string", "enum": ["first", "second"]}
+    conflict = {"type": "string", "enum": ["second"]}
+    alternatives = {("createItem", "body", "name", ()): ["first", "second"]}
+
+    confined = constrain_input_schema(conflict, "createItem", rule, [requirement("first")],
+                                      alternatives=alternatives)
+    assert confined["enum"] == ["second"]
+    admitted = constrain_input_schema(base, "createItem", rule, [requirement("first")],
+                                      alternatives=alternatives)
+    assert admitted["enum"] == ["first"]
+    # A value no approved variant admits is still refused.
+    with pytest.raises(ValidationFailure) as error:
+        constrain_input_schema(conflict, "createItem", rule, [requirement("third")],
+                               alternatives=alternatives)
+    assert error.value.diagnostic.code == "OPENAPI_VALUE_ENUM"
+    with pytest.raises(ValidationFailure):
+        constrain_input_schema(conflict, "createItem", rule, [requirement("third")])
+    # An open (non-closed) rule keeps receiving the requested value.
+    open_rule = constrain_input_schema({"type": "string"}, "createItem", rule,
+                                       [requirement("first")], alternatives=alternatives)
+    assert open_rule["enum"] == ["first"]
+
+
+def test_approved_values_union_covers_every_declared_variant():
+    from agenttest.product_inputs import approved_values
+
+    policies = [
+        dict(operation_id="createItem", binding_rules=[
+            dict(location="body", name="name", literal_schema={"type": "string",
+                                                              "enum": ["first", "second"]})]),
+        dict(operation_id="createItem", binding_rules=[
+            dict(location="body", name="name", literal_schema={"type": "string",
+                                                              "enum": ["second"]})]),
+    ]
+    assert approved_values(policies) == {("createItem", "body", "name", ()):
+                                         ["first", "second"]}

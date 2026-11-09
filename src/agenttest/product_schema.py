@@ -280,12 +280,19 @@ def constrain_product_steps(schema, context):
         for rule in rules:
             literal = rule.get("literal_schema")
             if literal is not None and context.get("input_requirements"):
-                from agenttest.product_inputs import InputRequirement, constrain_input_schema
+                from agenttest.product_inputs import (
+                    InputRequirement,
+                    approved_values,
+                    constrain_input_schema,
+                )
 
+                alternatives = context.get("approved_input_values") or approved_values(
+                    list(context["policies"]))
                 literal = constrain_input_schema(literal, policy["operation_id"], rule,
                     [InputRequirement.model_validate(r) for r in context["input_requirements"]],
                     roles=policy['roles'],
-                    source_requirements=context.get('request_requirements', []))
+                    source_requirements=context.get('request_requirements', []),
+                    alternatives=alternatives)
             properties = dict(location=dict(type="string", enum=[rule["location"]]),
                 name=dict(type="string", enum=[rule["name"]]),
                 value=literal_schema(literal) if literal is not None else {"type": "null"},

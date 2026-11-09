@@ -92,6 +92,35 @@ def unresolved_input_questions(previous, current, requirements, request, relevan
     return list(questions.values())
 
 
+def leaf_schemas(schema, path=()):
+    """Yield every non-object leaf schema with its property path."""
+    if schema.get("type") == "object":
+        for name, child in schema.get("properties", {}).items():
+            yield from leaf_schemas(child, (*path, name))
+    else:
+        yield path, schema
+
+
+def approved_values(policies):
+    """Union of every approved literal value per operation/slot leaf, across variants."""
+    values = {}
+    for policy in policies:
+        for rule in policy.get("binding_rules", []):
+            literal = rule.get("literal_schema")
+            if not literal:
+                continue
+            for path, leaf in leaf_schemas(literal):
+                approved = leaf.get("enum")
+                if not approved:
+                    continue
+                key = (policy["operation_id"], rule["location"], rule["name"], tuple(path))
+                bucket = values.setdefault(key, [])
+                for value in approved:
+                    if not any(json_equal(value, seen) for seen in bucket):
+                        bucket.append(value)
+    return values
+
+
 def input_fields(project):
     """Index approved fields without credentials or runtime resource values."""
     fields = []
@@ -334,7 +363,7 @@ def input_requirement_roles(requirement, source_requirements):
 
 
 def constrain_input_schema(schema, operation, rule, requirements, *, roles=None,
-                           source_requirements=()):
+                           source_requirements=(), alternatives=None):
     """Restrict literals before generation; do not rewrite returned arguments."""
     result = deepcopy(schema)
     by_path = {}
@@ -349,8 +378,24 @@ def constrain_input_schema(schema, operation, rule, requirements, *, roles=None,
         node = result
         for name in path:
             node = node["properties"][name]
+        admitted = node.get("enum")
         for value in values:
-            validate_value(value, node)
+            # A requirement value binds to the approved variant that admits it. An operation
+            # may carry several approved variants of one slot (a base policy plus, for example,
+            # a conflicts-on-different-value policy), so a value approved for one variant must
+            # not be re-validated against another variant's narrower closed set. A value no
+            # variant approves is still rejected here.
+            if admitted is not None and not any(json_equal(value, a) for a in admitted):
+                approved_elsewhere = (alternatives or {}).get(
+                    (operation, rule["location"], rule["name"], tuple(path)), [])
+                if any(json_equal(value, a) for a in approved_elsewhere):
+                    continue
+                validate_value(value, node)
+        if admitted is not None:
+            values = [value for value in values
+                      if any(json_equal(value, a) for a in admitted)]
+            if not values:
+                continue
         node["enum"] = values
         # Requiring a nested leaf also requires its ancestors in generated input.
         parent = result
