@@ -3640,3 +3640,20 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 下一轮：只准备，未启动。T3 为唯一可执行位置；写入仍需新的明确授权。
   见 [rw-lifecycle-next-round-20261109.md](rw-lifecycle-next-round-20261109.md)、
   [rw-lifecycle-usage-exception-20261109.md](rw-lifecycle-usage-exception-20261109.md)。
+
+## 2026-11-09 第三次读写验收（T1-v3 / T2-v3 / T3，各一次）
+
+- 冻结 `96f574b`（干净树），`plan_v3` 新增 T1-v3/T2-v3 两个全新原文位置，T3 沿用原位置；
+  45 s 单次超时、150 s 用例预算、≤2 次调用、≤12 次目标 HTTP。
+- 结果：T1-v3 **NEEDS_REVIEW**（Focus 通过 12 889 tokens → Design `CONSTRUCTION_DEPENDENCY_CYCLE`）、
+  T2-v3 **NEEDS_REVIEW**（Focus `FOCUS_REQUIREMENT_WITNESS_MISSING`，13 570 tokens）、
+  T3 **NEEDS_REVIEW**（Focus `FOCUS_REQUIREMENT_WITNESS_MISSING`，12 463 tokens）。
+- 三处均在**请求发出前**被产品校验拦截：目标 HTTP 0、资源残留 0、无 UNKNOWN、
+  4 次 KNOWN 调用共 50 278 tokens；任务状态与诊断正确，上一轮"设计被拒仍 FINISHED"的修复首次真实生效。
+- 本轮暴露两个**驱动**缺陷并已修复：T3 评分时假定 `approved_denials` 为字典（首个进程在
+  T3 任务结束后崩溃，产品证据完整保留）；`--plan` 切换后未重建 `SELECTED` 导致重复选中 T3
+  （产品以 `SUBMISSION_CONFLICT` 拒绝，无模型调用）。产品源码、评分器、rubric、契约未被改动。
+- 结论：瓶颈在 `ecnu-max` 规划输出稳定性（见证缺失、依赖环），产品链路未发现新缺陷。
+  下一步建议先离线重放已归档 Focus/Design 原文验证提示词改进，再用**新位置**做真实验收。
+  证据与报告：[rw-lifecycle-acceptance-v3-20261109.md](rw-lifecycle-acceptance-v3-20261109.md)、
+  `docs/evidence/rw-lifecycle-20261109-v3/`。

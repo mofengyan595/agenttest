@@ -1,0 +1,357 @@
+{
+  "ready": true,
+  "checks": {
+    "createItem-author": true,
+    "createItem-conflict-409": true,
+    "getItem-owner": true,
+    "getItem-auditor-403": true,
+    "getItem-anonymous-401": true,
+    "getItem-absent-404": true,
+    "update-author": true,
+    "updateItem-auditor-403": true,
+    "updateItem-anonymous-401": true,
+    "replace-author": true,
+    "delete-author": true
+  },
+  "header_rule": [
+    {
+      "location": "headers",
+      "name": "Idempotency-Key",
+      "selector": "$",
+      "enum": [
+        "rw-lifecycle-key-0001"
+      ],
+      "source": null
+    }
+  ],
+  "approved_values": [
+    "first",
+    "second"
+  ],
+  "conflict_values": [
+    "second"
+  ],
+  "dynamic_rules": 9,
+  "target": {
+    "environment": "isolated",
+    "scenario": "web_contract_v2",
+    "allow_mutations": true,
+    "max_requests": 12,
+    "base_url": "http://127.0.0.1:19097"
+  },
+  "policies": [
+    {
+      "id": "web_rule_1",
+      "operation": "createItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        201
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "first",
+            "second"
+          ],
+          "source": null
+        },
+        {
+          "location": "headers",
+          "name": "Idempotency-Key",
+          "selector": "$",
+          "enum": [
+            "rw-lifecycle-key-0001"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_1_expectation_1",
+      "operation": "createItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        409
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "second"
+          ],
+          "source": null
+        },
+        {
+          "location": "headers",
+          "name": "Idempotency-Key",
+          "selector": "$",
+          "enum": [
+            "rw-lifecycle-key-0001"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_2",
+      "operation": "getItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        200
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        }
+      ]
+    },
+    {
+      "id": "web_rule_2_access_1",
+      "operation": "getItem",
+      "roles": [
+        "auditor"
+      ],
+      "closed": true,
+      "statuses": [
+        403
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        }
+      ]
+    },
+    {
+      "id": "web_rule_2_access_2",
+      "operation": "getItem",
+      "roles": [
+        null
+      ],
+      "closed": true,
+      "statuses": [
+        401
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        }
+      ]
+    },
+    {
+      "id": "web_rule_2_expectation_1",
+      "operation": "getItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        404
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        }
+      ]
+    },
+    {
+      "id": "web_rule_3",
+      "operation": "updateItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        200
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        },
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "renamed"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_3_access_1",
+      "operation": "updateItem",
+      "roles": [
+        "auditor"
+      ],
+      "closed": true,
+      "statuses": [
+        403
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        },
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "renamed"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_3_access_2",
+      "operation": "updateItem",
+      "roles": [
+        null
+      ],
+      "closed": true,
+      "statuses": [
+        401
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        },
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "renamed"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_4",
+      "operation": "replaceItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        200
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        },
+        {
+          "location": "body",
+          "name": "name",
+          "selector": "$",
+          "enum": [
+            "replaced"
+          ],
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "web_rule_5",
+      "operation": "deleteItem",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        204
+      ],
+      "negative": false,
+      "rules": [
+        {
+          "location": "path_parameters",
+          "name": "itemId",
+          "selector": "$.id",
+          "enum": null,
+          "source": "web_rule_1"
+        }
+      ]
+    },
+    {
+      "id": "web_rule_6",
+      "operation": "listItems",
+      "roles": [
+        "author"
+      ],
+      "closed": true,
+      "statuses": [
+        200
+      ],
+      "negative": false,
+      "rules": []
+    }
+  ],
+  "budgets": {
+    "max_requests": 12,
+    "max_seconds": 150,
+    "max_model_calls": 2
+  },
+  "model_timeout": 45,
+  "cases": [
+    "T3"
+  ],
+  "consumed_positions": []
+}
