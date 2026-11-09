@@ -237,6 +237,9 @@ class RunReport(BaseModel):
             data.pop("probe_decisions", None)
         if self.failure_explanation is None:
             data.pop("failure_explanation", None)
+        if self.cleanup_error is None:
+            # Only present when cleanup was cut short or failed; normal reports stay unchanged.
+            data.pop("cleanup_error", None)
         return data
 
 

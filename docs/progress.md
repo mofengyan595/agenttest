@@ -3677,3 +3677,23 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   其文案使用未批准字面值 `alpha` 等，证据见
   `docs/evidence/rw-lifecycle-20261109-v4a-consumed/`，`CONSUMED_POSITIONS=("M1",)`。
 - 报告：[rw-lifecycle-planning-reliability-20261109.md](rw-lifecycle-planning-reliability-20261109.md)。
+
+## 2026-11-09 系统性可靠性修复（离线 CI、实例级顺序、收尾预算、长文本）
+
+- 修复离线 CI：`acceptance.py` 的 `model_settings()` 不再无条件读取 `.env`，新增
+  `model_env_path()` 与显式离线身份（`credentials=ABSENT_OFFLINE`），`run()` 在启动
+  fixture 前强制真实凭据（`MODEL_CREDENTIALS_MISSING`）并校验 `MODEL_IDENTITY_DRIFT`；
+  CI 无 `.env` 时 `dry` 可完成，真实运行不可能静默用占位身份。
+- 修复操作实例混淆：`plan_construction.instance_groups()` 以请求身份（参数 + role +
+  policy）分组，重放/冲突 POST 与多身份读取按提案顺序成链，不再 all-to-all 自依赖；
+  真实矛盾仍报 `CONSTRUCTION_DEPENDENCY_CYCLE`，且从不删除边。
+- 收尾预算独立：`TargetConfig.cleanup_timeout`（默认 15 s）、`executor._bounded_cleanup`
+  与 `_cleanup_after_failure`，执行超时/传输异常后仍尝试已批准删除；取消与未知写结果
+  照旧不清理、不重放；`RunReport.cleanup_error` 只记录类别或异常类名。
+- 长文本切分：`request_atoms` 用 `bounded_span()` 在 40 字符前瞻内补齐未闭合引号/括号，
+  JSONPath、带分隔符的值与列表不再被切断。
+- 回归：定向 100 passed、规划相关 71 passed、`ruff check .` 通过；新增 8 条反例
+  （离线 dry、离线 run 拒绝、重放链、多身份、反向矛盾仍成环、执行超时仍清理、
+  收尾超时保留原失败、长文本完整性）。全量结果见报告第 2–3 节。
+- 报告：[systemic-reliability-repair-20261109.md](systemic-reliability-repair-20261109.md)。
+- 未执行：v4 位点 M2/F1（需显式批准付费调用）；本轮无真实模型调用、无真实写入。
