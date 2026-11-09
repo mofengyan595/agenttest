@@ -3728,4 +3728,6 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   上一轮同脚本 51 条失败（绑定字段波及 `DraftStep` 与 Product Design 输入预算），
   本轮通过"只加在 GenericDraftStep、按需进 schema、去掉 clause 枚举"修到 0。
 - 报告：[instance-identity-dependency-20261109.md](instance-identity-dependency-20261109.md)。
+- 远端 CI（提交 `9f5fec8`）：`Keyless Python checks` #140 success（windows/ubuntu × base/agent
+  四个 job 全 success），`Web Console checks` #119 success；本地离线全量 2541/2526 与之一致。
 - 未执行：M2/F1（需新的显式付费授权）；无真实模型调用、无真实写入。

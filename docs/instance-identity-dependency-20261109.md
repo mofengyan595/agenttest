@@ -103,7 +103,9 @@ if n["operation_id"] == order["earlier"]]` 把同一 API 的所有节点都当�
 - `pytest tests/test_rw_lifecycle_next_round.py -q`：7 passed。
 - `python scripts/check_full.py --jobs 4`：**2541 collected / 2526 passed / 0 failed / 15 skipped**，
   746 s（本地离线，无网络、无模型）。上一轮同脚本曾失败 51 条，本轮逐一修到 0。
-- GitHub Actions：见第 10 节（push 后以远端结论为准；本地无法代替远端 CI）。
+- GitHub Actions（`9f5fec8`）：`Keyless Python checks` #140 **success**，
+  四个 job（windows/ubuntu × base/agent）全部 success；`Web Console checks` #119 **success**。
+  远端 257 次历史运行中，`b4b329a` 的 #139 也是 success，说明本轮起点干净。
 
 ## 7. 范围外两处补强
 
@@ -150,4 +152,12 @@ test_a_structure_longer_than_the_lookahead_stays_in_one_span`（>400 字符引�
   假环与数组序错误不再复现。
 - 本轮**未执行** M2/F1，也未新增任何真实模型调用；`runs/rw-acceptance-v4b-20261109/` 保持冻结，
   `CONSUMED_POSITIONS=("M1",)` 不变。执行它们仍需要一次新的显式付费授权。
-- 远端 CI 状态以 push 后的 GitHub Actions 为准，命令与结论记录在 `docs/progress.md` 同一节。
+- 远端 CI：`9f5fec8` 的 `Keyless Python checks` #140（windows/ubuntu × base/agent 四个 job）
+  与 `Web Console checks` #119 均 success；本地离线全量 2541/2526 与之一致。
+
+## 11. 交付清单
+
+- 提交：`9f5fec8`（16 个文件，+1302/−179），已普通 push 到 `origin/master`，无 force、无分支。
+- 证据（本地、gitignored）：`runs/20261109-instance-order/{pre_fix,current}.json`、
+  `eight-scenarios.json`；复现脚本 `runs/evidence_instance_order.py`、`runs/evidence_eight_scenarios.py`。
+- 报告：本文件；进度：`docs/progress.md` 同日小节。
