@@ -542,6 +542,41 @@ def textual_order_edge(atom, item, preceding_operations):
     return RequiredOrder(earlier=earlier, later=item.actions[0].operation_id)
 
 
+ACTION_VERB = re.compile(r'创建|新建|提交|上传|更新|修改|替换|读取|回读|查询|检查|验证|测试|'
+                         r'删除|写入|导出|执行|注册|登录|分析|重试|改为')
+READ_OPERATIONS = re.compile(r'读取|回读|查询|检查')
+
+
+def evidence_fragment(atom):
+    """A split fragment that can only qualify a neighbouring action, never request one.
+
+    Clause splitting is punctuation-based, so an ordering fragment such as
+    ``在同一请求成功之后`` carries no verb and no status. Demanding an action witness for it
+    asks the model to invent a request, so the fragment stays accounted without actions and
+    its ordering information is expressed by the neighbouring clause position instead.
+    """
+    text = atom['text']
+    return (not ACTION_VERB.search(text) and not atom.get('future_only')
+            and not atom.get('constraint')
+            and not re.search(r'(?<!\d)[1-5]\d{2}(?!\d)', text)
+            # A fragment that asserts on a response is not evidence-neutral: it still needs the
+            # reviewed continuation rule and the matching read identity.
+            and not re.search(r'核对|校验|断言|条数|字段|等于|一致|不变|相同', text))
+
+
+def repeated_read_order(atom, item, preceding_operations):
+    """Order between two reads of the same operation is already implied; no edge is needed.
+
+    A repeated read has no state effect, so its position relative to the earlier identical
+    read never decides an outcome. Mutating repeats are deliberately excluded: their order
+    can decide which request creates and which conflicts.
+    """
+    return bool(atom.get('ordered') and item.actions and not item.before
+                and preceding_operations
+                and preceding_operations[-1] == item.actions[0].operation_id
+                and bool(READ_OPERATIONS.search(atom['text'])))
+
+
 def validate_requirement_links(requirements, context, selection):
     """Validate source ownership and concrete obligation links, not semantic self-assessment."""
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
@@ -613,6 +648,8 @@ def validate_requirement_links(requirements, context, selection):
         derived = textual_order_edge(atom, item, last_action_operations)
         if derived is not None:
             item.before = [derived]
+        evidence = evidence_fragment(atom)
+        repeated_read = repeated_read_order(atom, item, last_action_operations)
         if item.actions and item.disposition in {'required', 'needs_review'}:
             last_action_operations = [a.operation_id for a in item.actions]
         previous = item
@@ -623,10 +660,11 @@ def validate_requirement_links(requirements, context, selection):
             interface_reference = same_interface_question_reference(item, atom, requirements,
                 selection.expectation_questions, context)
             missing_witnesses = [field for field, missing in (
-                ('actions', not item.actions and not pending_inquiry),
-                ('same_resource', atom['same_resource'] and not (
+                ('actions', not item.actions and not pending_inquiry and not evidence),
+                ('same_resource', atom['same_resource'] and not evidence and not (
                     item.same_resource or item.existing_resources or interface_reference)),
-                ('before', atom['ordered'] and not item.before),
+                ('before', atom['ordered'] and not item.before and not evidence
+                    and not repeated_read),
             ) if missing]
             if missing_witnesses:
                 error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')

@@ -161,3 +161,30 @@ async def test_independent_failed_assertion_does_not_suppress_another_actual_req
         assert done['summary']['complete'] and not done['summary']['checks_passed']
     finally:
         await svc.close()
+
+
+def test_cycle_reports_the_concrete_path_and_the_rule_behind_each_edge():
+    raw = dict(name="cycle", steps=[node("a", "read", source="b"),
+                                    node("b", "create", source="a")])
+    with pytest.raises(ValidationFailure) as error:
+        construct_plan(raw, context())
+    assert error.value.diagnostic.code == "CONSTRUCTION_DEPENDENCY_CYCLE"
+    assert set(error.value.diagnostic.fields) == {"plan.steps.0", "plan.steps.1"}
+    detail = error.value.construction
+    assert sorted(detail["cycle"]) == ["a", "b"]
+    assert {edge["reason"] for edge in detail["edges"]} == {"MODEL_REFERENCE"}
+
+
+def test_repeated_operation_order_needs_a_node_level_chain_not_a_self_edge():
+    ctx = context()
+    ctx["request_requirements"] = [dict(disposition="required",
+                                        before=[dict(earlier="read", later="read")])]
+    ambiguous = dict(name="repeat", steps=[node("r1", "read", source="c"),
+                                           node("c", "create"), node("r2", "read", source="c")])
+    with pytest.raises(ValidationFailure) as error:
+        construct_plan(ambiguous, ctx)
+    assert error.value.diagnostic.code == "CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS"
+    chained = dict(name="repeat", steps=[node("r2", "read", source="r1"),
+                                         node("r1", "read", source="c"), node("c", "create")])
+    plan, _ = construct_plan(chained, ctx)
+    assert [step["id"] for step in plan["steps"]] == ["c", "r1", "r2"]

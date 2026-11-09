@@ -25,6 +25,15 @@ def construct_plan(plan, context):
            for n in nodes.values()):
         raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_NODE_NOT_APPROVED')
     edges = {key: set() for key in nodes}
+    reasons = {}
+
+    def depend(target, source, reason):
+        """Every edge records the approved rule or the model reference that produced it."""
+        if source == target:
+            raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
+        edges[target].add(source)
+        reasons[(target, source)] = reason
+
     inserted = []
     for auth in context.get('authentication', []):
         protected = [n for n in list(nodes.values()) if n['role'] == auth['role']
@@ -51,21 +60,23 @@ def construct_plan(plan, context):
             raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_AUTHENTICATION_AMBIGUOUS')
         for node in protected:
             if node['id'] != existing[0]['id']:
-                edges[node['id']].add(existing[0]['id'])
+                depend(node['id'], existing[0]['id'], 'AUTHENTICATION')
     for index, node in enumerate(nodes.values()):
         for argument in node['arguments']:
             source = argument.get('from_step')
             if source is not None:
-                if source not in nodes or source == node['id']:
+                if source not in nodes:
                     raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
-                edges[node['id']].add(source)
+                depend(node['id'], source, 'MODEL_REFERENCE')
         for prerequisite in policies[node['policy_id']].get('prerequisite_policy_ids', []):
             producers = [n['id'] for n in nodes.values() if n['policy_id'] == prerequisite]
             if not producers:
                 error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_PREREQUISITE_AMBIGUOUS')
                 error.diagnostic.fields = [f'plan.steps.{index}.policy_id']
                 raise error
-            edges[node['id']].update(producers)
+            for producer in producers:
+                depend(node['id'], producer, 'POLICY_PREREQUISITE')
+    ordered_positions = {key: position for position, key in enumerate(nodes)}
     for requirement in context.get('request_requirements', []):
         if requirement['disposition'] != 'required':
             continue
@@ -80,13 +91,25 @@ def construct_plan(plan, context):
                     # witness checks the concatenated case order before any HTTP.
                     continue
                 raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+            if order['earlier'] == order['later']:
+                # Repeating one operation needs a node-level chain; mapping every node to every
+                # other node of the same operation would create a self-dependency cycle.
+                if not any(reasons.get((target, source)) == 'MODEL_REFERENCE'
+                           for target in later for source in earlier if target != source):
+                    error = ValidationFailure(
+                        Layer.MODEL, 'CONSTRUCTION_REQUIRED_ORDER_AMBIGUOUS')
+                    error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}'
+                                               for key in later]
+                    raise error
+                continue
             for target in later:
-                edges[target].update(earlier)
+                for source in earlier:
+                    depend(target, source, 'TEXT_ORDER')
     for earlier, later in zip(context.get('composed_negative_chain', []),
                               context.get('composed_negative_chain', [])[1:]):
         if earlier not in nodes or later not in nodes:
             raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_COMPOSED_CHAIN_INVALID')
-        edges[later].add(earlier)
+        depend(later, earlier, 'COMPOSED_CHAIN')
 
     def ancestors(key, seen=None):
         seen = set() if seen is None else seen
@@ -110,12 +133,45 @@ def construct_plan(plan, context):
                     if consumer['id'] != deletion['id'] and any(
                             a.get('from_step') == source for a in consumer['arguments']):
                         if deletion['id'] not in ancestors(consumer['id']):
-                            edges[deletion['id']].add(consumer['id'])
+                            depend(deletion['id'], consumer['id'], 'LIFECYCLE_CLEANUP')
+
+    def cycle_path(pending):
+        """One concrete cycle inside the remaining nodes, as an ordered node list."""
+        start = sorted(pending)[0]
+        trail = []
+
+        def walk(key, seen):
+            trail.append(key)
+            for predecessor in sorted(edges[key] & pending):
+                if predecessor in trail:
+                    return trail[trail.index(predecessor):]
+                if predecessor in seen:
+                    continue
+                seen.add(predecessor)
+                found = walk(predecessor, seen)
+                if found:
+                    return found
+            trail.pop()
+            return None
+
+        return walk(start, {start}) or [start]
+
     ordered, pending = [], set(nodes)
     while pending:
         available = sorted(key for key in pending if not edges[key] & pending)
         if not available:
-            raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_DEPENDENCY_CYCLE')
+            # A cycle between approved rules is a real conflict, never repaired by deleting an
+            # edge: report the concrete path and the rule behind every edge so a human can
+            # decide, and stop before any request.
+            path = cycle_path(pending)
+            error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_DEPENDENCY_CYCLE')
+            error.diagnostic.fields = [f'plan.steps.{ordered_positions[key]}'
+                                       for key in path if key in ordered_positions]
+            error.construction = dict(cycle=list(path), edges=[
+                dict(step=target, after=source, reason=reasons.get((target, source)))
+                for target in path for source in sorted(edges[target])
+                if source in path])
+            raise error
         for key in available:
             ordered.append(nodes[key])
             pending.remove(key)
