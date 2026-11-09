@@ -190,8 +190,9 @@ def dry(folder):
 async def task(svc, project_id, text):
     from agenttest.task_service import TaskConflict
 
+    label = "rw-acceptance-" + hashlib.sha256(text.encode()).hexdigest()[:12]
     try:
-        row = await svc.submit("operator", project_id, text, "rw-acceptance")
+        row = await svc.submit("operator", project_id, text, label)
     except TaskConflict as error:
         return None, str(error)
     started = time.monotonic()
@@ -326,8 +327,11 @@ def run_case(folder, svc, project_id, case, run_id, initial):
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
-    if (folder / "result.json").exists():
-        raise SystemExit("POSITION_ALREADY_CONSUMED_NO_REPLAY")
+    previous = folder / "result.json"
+    if previous.exists():
+        done = json.loads(previous.read_text(encoding="utf-8"))
+        if any(row.get("requests") for row in done.get("results", [])):
+            raise SystemExit("POSITION_ALREADY_CONSUMED_NO_REPLAY")
     run_id = time.strftime("%m%d-%H%M%S")
     results = []
     with preflight.served():
