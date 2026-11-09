@@ -27,39 +27,30 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts/rw_lifecycle"))
 
 import authority  # noqa: E402
+import focus_capture  # noqa: E402
 import lifecycle  # noqa: E402
+import plan_v2  # noqa: E402
 import preflight  # noqa: E402
 
 APPROVED = dict(authority.WRITE_AUTHORITY, operator_approval="GRANTED")
-CASES = [
-    dict(
-        key="T1",
-        title="完整生命周期",
-        text="创建名为 first 的条目；读取刚创建的该条目；把它的名称改为 renamed；"
-             "再用 replaced 整体替换名称；删除该条目；最后再次读取，确认返回 404。",
-        expect_methods=["POST", "GET", "PATCH", "PUT", "DELETE", "GET"],
-        expect_statuses=[201, 200, 200, 200, 204, 404],
-        denied=0, idempotent=False,
-    ),
-    dict(
-        key="T2",
-        title="幂等性",
-        text="用已批准的幂等键创建名为 first 的条目；再提交一次完全相同的创建请求；"
-             "然后用同一个幂等键创建名为 second 的条目；最后删除该条目并回读确认 404。",
-        expect_methods=["POST", "POST", "POST", "DELETE", "GET"],
-        expect_statuses=[201, 200, 409, 204, 404],
-        denied=0, idempotent=True,
-    ),
-    dict(
-        key="T3",
-        title="权限隔离",
-        text="用 author 身份创建名为 first 的条目并读取；再用只读身份 auditor 读取同一条目；"
-             "然后用匿名身份读取该条目；最后由 author 删除条目并回读确认 404。",
-        expect_methods=["POST", "GET", "GET", "GET", "DELETE", "GET"],
-        expect_statuses=[201, 200, 403, 401, 204, 404],
-        denied=2, idempotent=False,
-    ),
-]
+
+
+def planned_cases():
+    """Normalise the frozen next-round plan into the driver's case shape."""
+    cases = []
+    for case in plan_v2.FINAL_CASES:
+        expect = case["expect"]
+        cases.append(dict(
+            key=case["key"], title=case["title"], text=case["text"],
+            expect_methods=expect["methods"], expect_statuses=expect["statuses"],
+            denied=expect["denied"], idempotent=expect["methods"].count("POST") > 1,
+            conflict=expect["conflict"], cleanup=expect["cleanup"],
+            approved_denials=expect.get("approved_denials", []),
+        ))
+    return cases
+
+
+CASES = planned_cases()
 
 
 def digest(value):
@@ -83,16 +74,24 @@ def model_identity():
 
 def freeze(folder):
     """Pin every artifact a later verdict depends on, before any request is sent."""
+    rubric = plan_v2.consistency()
     with preflight.served():
         target = preflight.reset("e2e-freeze-0001")
     data = dict(
         frozen_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        rubric_check=rubric,
         source=dict(head=git("rev-parse", "HEAD"), status=git("status", "--porcelain"),
                     diff_sha256=digest(git("diff")), src_sha256=digest(sorted(
                         (str(path.relative_to(ROOT)),
                          hashlib.sha256(path.read_bytes()).hexdigest())
                         for path in (ROOT / "src/agenttest").rglob("*.py")))),
-        requirements=dict(cases=CASES, digest=digest(CASES)),
+        requirements=dict(cases=CASES, digest=digest(CASES),
+                          plan_sha256=hashlib.sha256(
+                              (ROOT / "scripts/rw_lifecycle/plan_v2.py").read_bytes()
+                          ).hexdigest(),
+                          rubric=plan_v2.RUBRIC,
+                          dev_cases=[case["key"] for case in plan_v2.DEV_CASES],
+                          final_cases=[case["key"] for case in plan_v2.FINAL_CASES]),
         authority=dict(declaration=APPROVED, digest=digest(APPROVED),
                        checklist=list(authority.APPROVAL_CHECKLIST)),
         contract=dict(document=json.loads(authority.document()),
@@ -107,6 +106,9 @@ def freeze(folder):
     )
     (folder / "freeze.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                                         encoding="utf-8")
+    if not rubric["ok"]:
+        print(json.dumps(rubric["problems"], ensure_ascii=False))
+        raise SystemExit("RUBRIC_CHECK_FAILED")
     print("frozen head", data["source"]["head"][:7], "clean" if not data["source"]["status"]
           else "DIRTY", "model", data["model"]["model"], "initial", target["state_sha256"][:12])
     return data
@@ -118,6 +120,7 @@ def service(workspace, tokens):
 
     os.environ.update({"AGENTTEST_TARGET_RW_" + alias.upper() + "_TOKEN": token
                        for alias, token in tokens.items()})
+    focus_capture.install()
     svc = configured_task_service(workspace, projects={}, model_env=ROOT / ".env",
                                   generic_intake=True)
     svc.environ.update(os.environ)
@@ -247,6 +250,8 @@ def checks(case, rows, created_id):
             author=len([row for row in rows if row["role"] == "author"]),
             auditor=len([row for row in rows if row["role"] == "auditor"]),
             anonymous=len([row for row in rows if row["role"] is None])),
+        denials=[dict(operation=row["operation_id"], role=row["role"], status=row["status"])
+                 for row in rows if row["status"] in {401, 403, 404, 409}],
     )
     findings = []
     if methods != case["expect_methods"] or statuses != case["expect_statuses"]:
@@ -264,15 +269,22 @@ def checks(case, rows, created_id):
         if len({row["item_id"] for row in creates if row["status"] in {200, 201}}) != 1:
             findings.append(dict(reason="driver_idempotency_id_drift",
                                  detail=[row["item_id"] for row in creates]))
-        if not [row for row in creates if row["status"] == 409]:
+        conflicted = [row for row in creates if row["status"] == 409]
+        if not conflicted:
             findings.append(dict(reason="driver_conflict_not_observed", detail=0))
+        elif len({row["item_id"] for row in creates}) != 1:
+            findings.append(dict(reason="driver_conflict_touched_other_resource",
+                                 detail=[row["item_id"] for row in creates]))
     if case["key"] == "T3":
-        denials = [row for row in rows if row["status"] in {401, 403}]
-        if not any(row["role"] == "auditor" and row["status"] == 403 for row in denials):
-            findings.append(dict(reason="driver_auditor_denial_missing", detail=0))
-        if not any(row["role"] is None and row["status"] == 401 for row in denials):
-            findings.append(dict(reason="driver_anonymous_denial_missing", detail=0))
-        changed = [row for row in denials if row["state_before"] != row["state_after"]]
+        expected = {(entry["operation"], entry["role"], entry["status"])
+                    for entry in case["approved_denials"]}
+        observed = {(row["operation_id"], row["role"], row["status"])
+                    for row in rows if row["status"] in {401, 403}}
+        if not expected <= observed:
+            findings.append(dict(reason="driver_approved_denial_missing",
+                                 detail=sorted(str(item) for item in expected - observed)))
+        changed = [row for row in rows if row["status"] in {401, 403}
+                   and row["state_before"] != row["state_after"]]
         if changed:
             findings.append(dict(reason="driver_denial_changed_state", detail=len(changed)))
     return dict(checks=result, findings=findings)
@@ -283,10 +295,13 @@ def run_case(folder, svc, project_id, case, run_id, initial):
     preflight.reset(namespace)
     with httpx.Client(timeout=10, trust_env=False) as client:
         before = client.get(preflight.BASE + "/__state").json()
+    focus_capture.take()
     current, error = asyncio.run(task(svc, project_id, case["text"]))
+    focus_rows = focus_capture.take()
     evidence = dict(case=case["key"], title=case["title"], namespace=namespace,
                     text=case["text"], task=error or dict(
-                        id=current["id"], status=current["status"], elapsed=current["elapsed"]))
+                        id=current["id"], status=current["status"], elapsed=current["elapsed"]),
+                    focus=focus_rows)
     if error:
         evidence["verdict"] = "NEEDS_REVIEW"
         evidence["findings"] = [dict(reason="driver_task_not_started", detail=error)]
@@ -301,7 +316,8 @@ def run_case(folder, svc, project_id, case, run_id, initial):
         namespace=namespace, allowed_operations=[op["operation_id"]
                                                  for op in APPROVED["operations"]],
         identity="author", created=1, cleanup=True, denied=case["denied"],
-        idempotent=case["idempotent"], compensation=False,
+        idempotent=case["idempotent"], conflict=case["conflict"], compensation=False,
+        approved_denials=case["approved_denials"],
         initial=initial["state_sha256"], terminal=before["state_sha256"]),
         rows)
     extra = checks(case, rows, created)

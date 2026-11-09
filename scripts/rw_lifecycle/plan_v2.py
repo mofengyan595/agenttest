@@ -140,3 +140,43 @@ def readiness(rows):
 def case_by_key(keys, cases=FINAL_CASES):
     wanted = {key.upper() for key in keys}
     return [case for case in cases if case["key"].upper() in wanted]
+
+
+VERBS = {
+    "创建": "POST", "读取": "GET", "回读": "GET", "改为": "PATCH", "替换": "PUT",
+    "删除": "DELETE", "写入": "PATCH",
+}
+FORBIDDEN = ("搜索", "列出全部", "上传", "导入", "支付", "下单", "复制", "发送邮件")
+
+
+def consistency(cases=FINAL_CASES):
+    """Prove the frozen requirement text asks for exactly the rubric's requests.
+
+    The wording must not smuggle in actions the rubric does not approve, and each
+    expected request method must be visible in the text the model reads.
+    """
+    problems = []
+    for case in cases:
+        text, expect = case["text"], case["expect"]
+        counts = {}
+        for verb, method in VERBS.items():
+            counts[method] = counts.get(method, 0) + text.count(verb)
+        wanted = {method: expect["methods"].count(method) for method in set(expect["methods"])}
+        observed = {method: count for method, count in counts.items() if count}
+        if observed != wanted:
+            problems.append(dict(case=case["key"], reason="verb_method_mismatch",
+                                 detail=dict(observed=observed, expected=wanted)))
+        if len(expect["methods"]) != len(expect["statuses"]):
+            problems.append(dict(case=case["key"], reason="status_count_mismatch"))
+        banned = [word for word in FORBIDDEN if word in text]
+        if banned:
+            problems.append(dict(case=case["key"], reason="unapproved_action", detail=banned))
+        unapproved_status = [status for status in expect["statuses"]
+                             if status not in {200, 201, 204, 401, 403, 404, 409}]
+        if unapproved_status:
+            problems.append(dict(case=case["key"], reason="unapproved_status",
+                                 detail=unapproved_status))
+    return dict(ok=not problems, problems=problems,
+                cases={case["key"]: dict(methods=case["expect"]["methods"],
+                                         statuses=case["expect"]["statuses"])
+                       for case in cases})

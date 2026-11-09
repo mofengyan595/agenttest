@@ -11,6 +11,7 @@ if str(ROOT / "scripts/rw_lifecycle") not in sys.path:
 
 import authority  # noqa: E402
 import lifecycle as scorer  # noqa: E402
+import plan_v2  # noqa: E402
 
 from agenttest.contracts import load_openapi  # noqa: E402
 from agenttest.dsl import Scenario  # noqa: E402
@@ -271,3 +272,68 @@ def test_lifecycle_scorer_reports_each_defect_class():
     compensated = uncompensated + [row(3, "deleteItem", 204), row(4, "getItem", 404)]
     result = scorer.score(dict(case, compensation=True), compensated)
     assert result["verdict"] == "PASS", result
+
+def test_next_round_plan_matches_the_rubric_and_keeps_samples_apart():
+    result = plan_v2.consistency()
+    assert result["ok"], result["problems"]
+    final = {case["key"] for case in plan_v2.FINAL_CASES}
+    dev = {case["key"] for case in plan_v2.DEV_CASES}
+    assert final == {"T1", "T2", "T3"} and not final & dev
+
+
+def test_conflict_and_approved_denials_are_scored_without_false_violations():
+    import lifecycle as scorer
+
+    allowed = ["createItem", "getItem", "updateItem", "replaceItem", "deleteItem", "listItems"]
+
+    def row(sequence, operation, status, role="author", **extra):
+        return dict(sequence=sequence, operation_id=operation, method="POST", path="/items",
+                    role=role, status=status, item_id="item-1", idempotency_key="k",
+                    idempotent_replay=extra.get("replay", False), fault=None,
+                    state_before="a", state_after="b", namespace="e2e-t2-0101")
+
+    case = dict(namespace="e2e-t2-0101", allowed_operations=allowed, identity="author",
+                created=1, cleanup=True, denied=0, idempotent=True, conflict=1,
+                compensation=False, approved_denials=[])
+    audit = [row(1, "createItem", 201), row(2, "createItem", 200, replay=True),
+             row(3, "createItem", 409), row(4, "deleteItem", 204), row(5, "getItem", 404)]
+    result = scorer.score(case, audit)
+    assert result["metrics"]["conflicts"] == 1
+    assert "conflict_count_mismatch" not in [item["reason"] for item in result["findings"]]
+    assert result["metrics"]["creates"] == 1
+
+    denied_case = dict(case, approved_denials=[("updateItem", "auditor", 403),
+                                               ("updateItem", None, 401)])
+    denied = [row(1, "createItem", 201),
+              dict(row(2, "updateItem", 403, role="auditor"), method="PATCH"),
+              dict(row(3, "updateItem", 401, role=None), method="PATCH"),
+              row(4, "deleteItem", 204), row(5, "getItem", 404)]
+    result = scorer.score(dict(denied_case, idempotent=False, conflict=None, denied=2), denied)
+    assert "wrong_identity_wrote" not in [item["reason"] for item in result["findings"]]
+    assert result["metrics"]["identity_violations"] == 0
+
+
+def test_focus_capture_keeps_structured_output_and_diagnostic():
+    import json
+
+    import focus_capture
+
+    class FakeStats:
+        calls, input_tokens, output_tokens, total_tokens = 1, 10, 20, 30
+        request_sha256 = output_sha256 = "x"
+
+    focus_capture.take()
+    focus_capture.record('{"steps": []}', FakeStats(), model="ecnu-max", protocol="generic")
+    focus_capture.note_decoded('[{"mode": "read"}]')
+    assert focus_capture.take()[0]["decoded"] == [{"mode": "read"}]
+
+    class Boom(Exception):
+        diagnostic = type("D", (), {
+            "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+            "detail": {"field": "requirement_map.request_3.before"}})()
+
+    focus_capture.record('{"bad": true}', FakeStats(), model="ecnu-max", protocol="generic")
+    focus_capture.note_failure(Boom())
+    entry = focus_capture.take()[0]
+    assert entry["diagnostic"]["code"] == "FOCUS_REQUIREMENT_WITNESS_MISSING"
+    assert "sk-" not in json.dumps(entry, ensure_ascii=False)
