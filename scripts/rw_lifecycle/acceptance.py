@@ -459,10 +459,11 @@ def main():
     parser.add_argument("--cases", default="",
                         help="comma-separated keys; consumed positions are refused")
     args = parser.parse_args()
-    global PLAN, CASES, CONSUMED_POSITIONS
+    global PLAN, CASES, CONSUMED_POSITIONS, SELECTED
     PLAN = importlib.import_module(args.plan)
     CASES = planned_cases()
     CONSUMED_POSITIONS = tuple(getattr(PLAN, "CONSUMED_POSITIONS", ("T1", "T2")))
+    SELECTED = [case["key"] for case in CASES]
     folder = (ROOT / args.folder).resolve()
     folder.mkdir(parents=True, exist_ok=True)
     authority.startable(APPROVED)
@@ -475,6 +476,7 @@ def main():
         consumed = set(CONSUMED_POSITIONS) & set(selected)
         if consumed:
             raise SystemExit(f"CONSUMED_POSITION_REFUSED:{','.join(sorted(consumed))}")
+        SELECTED = [case["key"] for case in CASES if case["key"] in set(selected)]
     if args.mode == "freeze":
         freeze(folder, selected)
     elif args.mode == "dry":
