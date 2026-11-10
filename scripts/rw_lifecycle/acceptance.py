@@ -13,6 +13,7 @@ Modes:
 
 import argparse
 import asyncio
+import contextlib
 import hashlib
 import importlib
 import json
@@ -33,6 +34,8 @@ import execution_gate  # noqa: E402
 import focus_capture  # noqa: E402
 import lifecycle  # noqa: E402
 import plan_v2  # noqa: E402
+import run_authorization  # noqa: E402
+import run_lock  # noqa: E402
 
 PLAN = plan_v2
 import preflight  # noqa: E402
@@ -505,7 +508,14 @@ def preflight_report(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     previous = folder / "result.json"
     result = json.loads(previous.read_text(encoding="utf-8")) if previous.exists() else None
-    with preflight.served():
+    with contextlib.ExitStack() as stack:
+        try:
+            # A preflight also starts the fixture, so it shares the run lock: it can never reset
+            # the target while a real attempt is running, and it never touches a position.
+            stack.enter_context(run_lock.execution_lock(folder, holder=dict(mode="preflight")))
+        except run_lock.RunLocked as error:
+            raise SystemExit(str(error)) from None
+        stack.enter_context(preflight.served())
         initial = preflight.reset("e2e-freeze-0001")
         identity = model_identity(require_credentials=False)
         report, manifest = guard(folder, identity=identity, initial=initial, write=True,
@@ -548,6 +558,36 @@ def only_position():
     return keys[0]
 
 
+def authorize(folder, args):
+    """Operator command: write one immutable permission for one case and commit."""
+    frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
+    key = only_position()
+    head = args.head or execution_gate.source_snapshot(ROOT)["head"]
+    if not isinstance(head, str) or len(head) != 40:
+        try:
+            head = execution_gate.git(ROOT, "rev-parse", head)
+        except Exception:
+            raise SystemExit(f"UNKNOWN_EXECUTING_HEAD:{head}") from None
+    try:
+        path = run_authorization.authorize(
+            folder, case=key, executing_head=head, frozen=frozen, operator=args.operator,
+            allow_model_calls=args.allow_model_calls,
+            allow_loopback_writes=args.allow_loopback_writes,
+            max_requests=args.max_requests, max_model_calls=args.max_model_calls,
+            max_seconds=args.max_seconds, model_timeout=args.model_timeout,
+            note=args.note)
+    except run_authorization.AuthorizationError as error:
+        raise SystemExit(str(error)) from None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    print(json.dumps(dict(authorization=path.name, case=payload["case"],
+                          executing_head=payload["executing_head"],
+                          frozen_sha256=payload["frozen_sha256"][:12],
+                          budgets=payload["budgets"],
+                          model_timeout=payload["model_timeout"],
+                          operator=payload["operator"]), ensure_ascii=False))
+    return path
+
+
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
@@ -566,9 +606,34 @@ def run(folder):
     before = consumption.status(folder, key, consumed_positions=CONSUMED_POSITIONS)
     if before["status"] != "UNCONSUMED":
         raise SystemExit(consumption.PositionConsumed(key, before["status"]))
+    # The frozen declaration is the maximal approved scope, not a permission to execute. A real
+    # run needs a separate operator record for this case, this commit and these budgets; the
+    # check happens before the fixture, the lock and the position claim.
+    frozen_path = folder / "freeze.json"
+    head = execution_gate.source_snapshot(ROOT)["head"]
+    try:
+        authorization = run_authorization.verify(
+            folder, case=key, executing_head=head,
+            frozen_sha256=run_authorization.digest(frozen_path.read_bytes()),
+            budgets=frozen["budgets"],
+            model_timeout=frozen["authority"]["declaration"]["model_timeout"])
+    except run_authorization.AuthorizationError as error:
+        raise SystemExit(str(error)) from None
+    # Only after the external record verified may the in-process view be GRANTED.
+    approved_view = dict(authority.WRITE_AUTHORITY, operator_approval="GRANTED")
+    authority.startable(approved_view)
     run_id = time.strftime("%m%d-%H%M%S")
     results = []
-    with preflight.served():
+    with contextlib.ExitStack() as stack:
+        try:
+            # The fixture, its reset, the model calls, the HTTP traffic, the evidence writes and
+            # the cleanup all happen under one cross-process lock; a second process is refused
+            # immediately and never creates a claim for its own case.
+            stack.enter_context(run_lock.execution_lock(folder, holder=dict(
+                case=key, head=head, authorization=authorization["authorization_id"])))
+        except run_lock.RunLocked as error:
+            raise SystemExit(str(error)) from None
+        stack.enter_context(preflight.served())
         initial = preflight.reset("e2e-freeze-0001")
         # The consistency gate runs before the first business request and after the fixture is
         # in its frozen initial state, so the manifest names the exact code and target state.
@@ -644,7 +709,8 @@ def status_report(folder):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["freeze", "dry", "preflight", "run", "status"])
+    parser.add_argument("mode", choices=["freeze", "dry", "preflight", "run", "status",
+                                         "authorize"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
     parser.add_argument("--plan", default="plan_v2",
                         choices=["plan_v2", "plan_v3", "plan_v4"])
@@ -652,6 +718,19 @@ def main():
                         help="comma-separated keys; consumed positions are refused")
     parser.add_argument("--accept-code-change", default=None,
                         help="executing head (full or 7 chars) whose source difference is audited")
+    parser.add_argument("--operator", default=None,
+                        help="authorize: name of the human issuing this permission")
+    parser.add_argument("--head", default=None,
+                        help="authorize: executing commit; defaults to the current HEAD")
+    parser.add_argument("--allow-model-calls", action="store_true",
+                        help="authorize: explicit consent to real model calls for this case")
+    parser.add_argument("--allow-loopback-writes", action="store_true",
+                        help="authorize: explicit consent to isolated loopback writes")
+    parser.add_argument("--max-requests", type=int, default=None)
+    parser.add_argument("--max-model-calls", type=int, default=None)
+    parser.add_argument("--max-seconds", type=int, default=None)
+    parser.add_argument("--model-timeout", type=int, default=None)
+    parser.add_argument("--note", default=None)
     args = parser.parse_args()
     global PLAN, CASES, CONSUMED_POSITIONS, SELECTED, ACCEPT_CODE_CHANGE
     PLAN = importlib.import_module(args.plan)
@@ -661,7 +740,6 @@ def main():
     ACCEPT_CODE_CHANGE = args.accept_code_change
     folder = (ROOT / args.folder).resolve()
     folder.mkdir(parents=True, exist_ok=True)
-    authority.startable(APPROVED)
     selected = [key.strip() for key in args.cases.split(",") if key.strip()]
     if selected:
         known = {case["key"] for case in planned_cases()}
@@ -676,6 +754,8 @@ def main():
         freeze(folder, selected)
     elif args.mode == "dry":
         dry(folder)
+    elif args.mode == "authorize":
+        authorize(folder, args)
     elif args.mode == "preflight":
         preflight_report(folder)
     elif args.mode == "status":

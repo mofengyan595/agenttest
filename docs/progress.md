@@ -3791,6 +3791,37 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   15 skipped**（990 s，源码未变、用例 ID 全覆盖）。
 - 报告：`docs/rw-acceptance-atomic-consumption-20261110.md`。
 
+## 2026-11-10 真实验收入口最终加固（第 6 轮）
+
+- 三个根因：① `main()` 用进程内复制的 `APPROVAL=GRANTED` 调 `authority.startable()`，
+  默认 `NOT_GRANTED` 从不独立阻止 `run`，也没有绑定 case/HEAD/冻结摘要的授权记录；
+  ② M2/F1 共用靶场却只有各自消费令牌，无跨进程互斥；③ `status()` 只要看到
+  `completed.json` 就返回 `COMPLETED`，不校验 JSON、字段、证据存在性与摘要。
+- 授权门禁：新增 `scripts/rw_lifecycle/run_authorization.py` 与
+  `acceptance.py authorize` 子命令；记录绑定 case、执行 HEAD、`freeze.json` 摘要、
+  12 请求/2 模型调用/150 秒/45 秒超时，以及真实模型调用与 loopback 写入两项显式同意；
+  记录独占写入、不可覆盖、不可跨 case 复用、不含凭据；`run()` 在锁/fixture/claim 之前
+  `verify()`，仅验证成功后才构造内部 GRANTED 视图并调用 `startable()`；删除 `main()` 中
+  对所有模式生效的 `startable(APPROVED)`。旧 120 秒预算在授权时即被拒绝。
+- 全局互斥：新增 `scripts/rw_lifecycle/run_lock.py`，在 `<run>/execution.lock` 上用
+  `msvcrt.locking`/`fcntl.flock` 非阻塞锁，fixture 启动前获取并覆盖整个生命周期；预检共用
+  同一把锁；第二个进程立即 `EXECUTION_LOCKED` 且不创建消费目录；进程崩溃由操作系统释放锁，
+  不删除锁文件“恢复”，已消费位置仍不可重放。
+- 证据一致性：`complete()` 以 `newline="\n"` 写出证据字节并记录 SHA-256（及字节数、
+  派生 requests/model_calls/unknown）；`status()` 校验 JSON/schema/case/verdict/证据引用、
+  证据存在与解析、摘要、字段一致性；损坏、缺失、截断、摘要不符或旧格式无摘要 → 
+  `INTERRUPTED_OR_UNKNOWN`，绝不 PASS，且位置仍不可重跑。
+- 测试：`tests/test_rw_acceptance_authorization.py` 15 passed（含真实子进程竞争锁、
+  持有锁时拒绝且零消费、崩溃不重放、环境变量不能授权、记录无凭据）； 
+  `tests/test_rw_acceptance_consumption.py` 30 passed（新增 7 项完整性）；
+  `test_rw_acceptance_preflight.py` 10 passed；`examples/regressions` 10 passed；
+  `ruff check .` 通过。
+- 全量离线：`check_full.py --jobs 4` = **2625 collected / 2610 passed / 0 failed /
+  15 skipped**（805 s，源码未变、用例 ID 全覆盖）。
+- 边界：未调用模型、未消费 M2/F1、未创建真实 `positions/`、`authorizations/` 或锁文件，
+  未改冻结/rubric/预算，`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
+- 报告：`docs/rw-acceptance-final-hardening-20261110.md`。
+
 ## 2026-11-09 M2/F1 真实模型验收预检与冻结一致性（第 4 轮）
 
 - 边界：本轮只做**预检**。未调用付费模型、未执行冻结的 M2/F1 位置、未发送业务请求、

@@ -53,7 +53,12 @@ class PositionWriteFailed(Exception):
 def _write_exclusive(path, payload):
     """Write one JSON document that can never replace an existing record."""
     text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-    with path.open("x", encoding="utf-8") as handle:
+    _write_text_exclusive(path, text)
+
+
+def _write_text_exclusive(path, text):
+    # newline="\n" keeps the bytes on Windows identical to the text whose digest we record.
+    with path.open("x", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
         handle.flush()
         os.fsync(handle.fileno())
@@ -129,6 +134,62 @@ def legacy_consumed(root, key):
     return key in (history.get("signals") or {})
 
 
+def _evidence_integrity(folder, key, completed):
+    """Every reason a completion marker cannot be trusted; empty means verified.
+
+    A marker is only ``COMPLETED`` when it names the same case and verdict as a readable
+    evidence file whose bytes match the recorded SHA-256. A marker without the digest (an
+    older format) is *not* silently trusted: it becomes ``INTERRUPTED_OR_UNKNOWN``.
+    """
+    problems = []
+    if not isinstance(completed, dict):
+        return ["completed-not-object"]
+    if completed.get("schema") != SCHEMA:
+        problems.append("completed-schema")
+    if completed.get("case") != key:
+        problems.append("completed-case")
+    verdict = completed.get("verdict")
+    if not isinstance(verdict, str) or not verdict:
+        problems.append("completed-verdict")
+    if completed.get("evidence") != "evidence.json":
+        problems.append("completed-evidence-ref")
+    recorded = completed.get("evidence_sha256")
+    if not isinstance(recorded, str) or len(recorded) != 64:
+        problems.append("evidence-digest-missing")
+    path = Path(folder) / "evidence.json"
+    if not path.is_file():
+        problems.append("evidence-missing")
+        return problems
+    raw = path.read_bytes()
+    if isinstance(recorded, str) and len(recorded) == 64:
+        import hashlib
+
+        if hashlib.sha256(raw).hexdigest() != recorded:
+            problems.append("evidence-digest-mismatch")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except ValueError:
+        problems.append("evidence-invalid-json")
+        return problems
+    if not isinstance(payload, dict):
+        problems.append("evidence-not-object")
+        return problems
+    if payload.get("case") != key:
+        problems.append("evidence-case")
+    if payload.get("verdict") != verdict:
+        problems.append("evidence-verdict")
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    if completed.get("requests") != metrics.get("requests"):
+        problems.append("evidence-requests")
+    product = payload.get("product") if isinstance(payload.get("product"), dict) else {}
+    if completed.get("model_calls") != product.get("model_calls"):
+        problems.append("evidence-model-calls")
+    unknown = "UNKNOWN" in json.dumps(product, ensure_ascii=False)
+    if bool(completed.get("unknown")) != unknown:
+        problems.append("evidence-unknown")
+    return problems
+
+
 def status(root, key, *, consumed_positions=()):
     """Derive the one-way state of a position from its files and the frozen plan."""
     if key in tuple(consumed_positions):
@@ -144,9 +205,14 @@ def status(root, key, *, consumed_positions=()):
     if legacy_consumed(root, key):
         signals.append("legacy-result")
     if files.get("completed.json"):
+        completed = _read(folder / "completed.json")
+        problems = _evidence_integrity(folder, key, completed)
+        if problems:
+            return dict(status="INTERRUPTED_OR_UNKNOWN", signals=signals + ["integrity"],
+                        claim=_read(folder / "claim.json"), completed=completed,
+                        integrity=problems)
         return dict(status="COMPLETED", signals=signals,
-                    claim=_read(folder / "claim.json"),
-                    completed=_read(folder / "completed.json"))
+                    claim=_read(folder / "claim.json"), completed=completed, integrity=[])
     if folder.is_dir() and (files.get("interrupted.json") or files.get("write_failure.json")):
         return dict(status="INTERRUPTED_OR_UNKNOWN", signals=signals,
                     claim=_read(folder / "claim.json"),
@@ -231,18 +297,32 @@ def interrupt(root, key, *, reason, detail=None):
     return payload
 
 
-def complete(root, key, *, verdict, evidence, requests, model_calls, unknown, elapsed=None):
+def complete(root, key, *, verdict, evidence, requests=None, model_calls=None, unknown=None,
+             elapsed=None):
     """Store the attempt's evidence, then its completion marker.
 
-    The evidence file is written first: a crash between the two writes leaves ``RUNNING`` with
+    The marker records the SHA-256 of the exact evidence bytes and the values derived from that
+    evidence, so a later tamper or a half-written file cannot be read as a completed PASS. The
+    evidence file is written first: a crash between the two writes leaves ``RUNNING`` with
     evidence on disk, which is still a consumed position. A failed write is reported and the
     position is marked ``INTERRUPTED_OR_UNKNOWN`` so it can never be retried.
     """
     folder = folder_for(root, key)
     if not folder.is_dir():
         raise PositionWriteFailed(key, "no-claim")
+    metrics = evidence.get("metrics") if isinstance(evidence.get("metrics"), dict) else {}
+    product = evidence.get("product") if isinstance(evidence.get("product"), dict) else {}
+    verified = dict(
+        requests=metrics.get("requests"),
+        model_calls=product.get("model_calls"),
+        unknown="UNKNOWN" in json.dumps(product, ensure_ascii=False),
+    )
+    text = json.dumps(evidence, ensure_ascii=False, indent=2) + "\n"
+    import hashlib
+
+    evidence_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
     try:
-        _write_exclusive(folder / "evidence.json", evidence)
+        _write_text_exclusive(folder / "evidence.json", text)
     except OSError as error:
         try:
             _write_exclusive(folder / "write_failure.json",
@@ -252,9 +332,10 @@ def complete(root, key, *, verdict, evidence, requests, model_calls, unknown, el
         except OSError:
             pass
         raise PositionWriteFailed(key, "evidence") from None
-    record = dict(schema=SCHEMA, case=key, verdict=verdict, requests=requests,
-                  model_calls=model_calls, unknown=bool(unknown), elapsed=elapsed,
-                  evidence="evidence.json",
+    record = dict(schema=SCHEMA, case=key, verdict=verdict, requests=verified["requests"],
+                  model_calls=verified["model_calls"], unknown=verified["unknown"],
+                  elapsed=elapsed, evidence="evidence.json",
+                  evidence_sha256=evidence_sha256, evidence_bytes=len(text.encode("utf-8")),
                   completed_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"), state="COMPLETED")
     try:
         _write_exclusive(folder / "completed.json", record)

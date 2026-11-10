@@ -21,6 +21,7 @@ import authority  # noqa: E402
 import consumption  # noqa: E402
 import execution_gate  # noqa: E402
 import plan_v4  # noqa: E402
+import run_authorization  # noqa: E402
 
 FROZEN_DIGEST = "f" * 64
 EXECUTING_HEAD = "a" * 40
@@ -38,8 +39,8 @@ def claim(folder, key="M2", **extra):
     return consumption.claim(folder, key, **payload)
 
 
-def evidence(verdict="PASS", requests=4, calls=2, unknown=False):
-    return dict(case="M2", verdict=verdict, metrics=dict(requests=requests),
+def evidence(verdict="PASS", requests=4, calls=2, unknown=False, case="M2"):
+    return dict(case=case, verdict=verdict, metrics=dict(requests=requests),
                 product=dict(model_calls=calls,
                              outcome="UNKNOWN" if unknown else "EXECUTED",
                              report_reason=None),
@@ -81,7 +82,8 @@ def test_completing_one_case_never_rewrites_the_other_case(tmp_path):
     before = {path.name: path.read_bytes() for path in (tmp_path / "positions/M2").iterdir()}
     claim(tmp_path, "F1")
     consumption.start(tmp_path, "F1")
-    consumption.complete(tmp_path, "F1", verdict="FAIL", evidence=evidence("FAIL", 1, 1),
+    consumption.complete(tmp_path, "F1", verdict="FAIL",
+                         evidence=evidence("FAIL", 1, 1, case="F1"),
                          requests=1, model_calls=1, unknown=False, elapsed=2.0)
     after = {path.name: path.read_bytes() for path in (tmp_path / "positions/M2").iterdir()}
     assert before == after
@@ -282,6 +284,103 @@ def test_m1_stays_historical_consumed(tmp_path):
     assert view["runnable"] == ["M2"]
 
 
+def test_a_corrupt_completion_marker_is_unknown_and_not_replayable(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    (tmp_path / "positions/M2/completed.json").write_text("{not json", encoding="utf-8")
+    row = consumption.status(tmp_path, "M2")
+    assert row["status"] == "INTERRUPTED_OR_UNKNOWN"
+    assert "completed-not-object" in row["integrity"]
+    with pytest.raises(consumption.PositionConsumed):
+        claim(tmp_path)
+
+
+def test_a_completion_without_its_evidence_is_unknown(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    (tmp_path / "positions/M2/evidence.json").unlink()
+    row = consumption.status(tmp_path, "M2")
+    assert row["status"] == "INTERRUPTED_OR_UNKNOWN"
+    assert "evidence-missing" in row["integrity"]
+    with pytest.raises(consumption.PositionConsumed):
+        claim(tmp_path)
+
+
+def test_tampered_evidence_is_unknown(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    path = tmp_path / "positions/M2/evidence.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["metrics"]["requests"] = 9
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+                    newline="\n")
+    row = consumption.status(tmp_path, "M2")
+    assert row["status"] == "INTERRUPTED_OR_UNKNOWN"
+    assert "evidence-digest-mismatch" in row["integrity"]
+    with pytest.raises(consumption.PositionConsumed):
+        claim(tmp_path)
+
+
+def test_a_legacy_completion_without_a_digest_is_not_trusted(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    payload = evidence()
+    (tmp_path / "positions/M2/evidence.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        newline="\n")
+    legacy = dict(schema=1, case="M2", verdict="PASS", requests=4, model_calls=2,
+                  unknown=False, evidence="evidence.json")
+    (tmp_path / "positions/M2/completed.json").write_text(
+        json.dumps(legacy, ensure_ascii=False) + "\n", encoding="utf-8")
+    row = consumption.status(tmp_path, "M2")
+    assert row["status"] == "INTERRUPTED_OR_UNKNOWN"
+    assert "evidence-digest-missing" in row["integrity"]
+    with pytest.raises(consumption.PositionConsumed):
+        claim(tmp_path)
+
+
+def test_evidence_without_a_completion_marker_stays_running(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    (tmp_path / "positions/M2/completed.json").unlink()
+    row = consumption.status(tmp_path, "M2")
+    # Partial evidence is never presented as a finished report.
+    assert row["status"] == "RUNNING"
+    assert row.get("completed") is None
+    with pytest.raises(consumption.PositionConsumed):
+        claim(tmp_path)
+
+
+def test_the_completed_summary_exposes_the_verified_integrity(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    view = consumption.summary(tmp_path, cases=["M2"])
+    row = view["positions"]["M2"]
+    assert row["status"] == "COMPLETED"
+    assert row["integrity"] == []
+    assert row["completed"]["evidence_sha256"]
+
+
+def test_a_completion_cannot_be_rewritten(tmp_path):
+    claim(tmp_path)
+    consumption.start(tmp_path, "M2")
+    consumption.complete(tmp_path, "M2", verdict="PASS", evidence=evidence(),
+                         requests=4, model_calls=2, unknown=False, elapsed=1.0)
+    with pytest.raises(consumption.PositionWriteFailed):
+        consumption.complete(tmp_path, "M2", verdict="FAIL", evidence=evidence("FAIL", 1, 1),
+                             requests=1, model_calls=1, unknown=False, elapsed=1.0)
+
+
 # --- run(): the claim happens after the gate and before the first task -----------------------
 
 IDENTITY = dict(model="ecnu-max", protocol="chatecnu",
@@ -297,8 +396,41 @@ def frozen_folder(tmp_path):
     (folder / "freeze.json").write_text(json.dumps(dict(
         source=dict(status="", head="b" * 40), model=model,
         target=dict(base_url="http://127.0.0.1:19097"),
+        authority=dict(declaration=dict(model_timeout=45, operator_approval="GRANTED"),
+                       digest="x"),
         budgets=BUDGETS)), encoding="utf-8")
     return folder
+
+
+def authorize_for(folder, key="M2", head=None, **overrides):
+    """A test-identity operator record bound to the current commit and the frozen budgets."""
+    frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
+    values = dict(operator="test-operator", allow_model_calls=True,
+                  allow_loopback_writes=True, max_requests=12, max_model_calls=2,
+                  max_seconds=150, model_timeout=45)
+    values.update(overrides)
+    return run_authorization.authorize(
+        folder, case=key, executing_head=head or execution_gate.source_snapshot(ROOT)["head"],
+        frozen=frozen, **values)
+
+
+def write_authorization(folder, key, *, head, frozen_digest, budgets, model_timeout=45,
+                        allow_model_calls=True, allow_loopback_writes=True):
+    """Craft a syntactically valid record for cases where the frozen artifact itself drifts."""
+    payload = dict(schema=run_authorization.SCHEMA,
+                   authorization_id="t" * 32, case=key, executing_head=head,
+                   frozen_sha256=frozen_digest, operator="test-operator",
+                   created_at="2026-11-10T00:00:00+0800",
+                   allow_model_calls=allow_model_calls,
+                   allow_loopback_writes=allow_loopback_writes,
+                   budgets=dict(budgets), model_timeout=model_timeout,
+                   statement="test record")
+    payload["integrity"] = run_authorization._record_integrity(payload)
+    target = run_authorization.folder_for(folder)
+    target.mkdir(parents=True, exist_ok=True)
+    path = target / f"authorize-{key}-{head[:7]}-{payload['authorization_id'][:6]}.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    return path
 
 
 @pytest.fixture
@@ -352,6 +484,7 @@ def run_offline(tmp_path, monkeypatch):
 
 def test_run_claims_before_the_task_and_persists_per_case_evidence(tmp_path, run_offline):
     folder = frozen_folder(tmp_path)
+    authorize_for(folder)
     summary = acceptance.run(folder)
     assert run_offline == ["guard", "task"]
     rows = (folder / "positions/M2").iterdir()
@@ -475,10 +608,17 @@ def test_the_frozen_gate_refuses_before_a_claim(tmp_path, monkeypatch, run_offli
 
     monkeypatch.setattr(execution_gate, "source_snapshot", clean)
 
-    # A matching record passes the gate; mutate one frozen budget to prove the refusal.
+    # A matching record passes the gate; mutate one frozen budget to prove the refusal. The
+    # authorization is re-crafted for the drifted artifact so the gate, not the permission
+    # check, is the thing under test here.
     drifted = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     drifted["budgets"]["max_requests"] = 13
     (folder / "freeze.json").write_text(json.dumps(drifted, ensure_ascii=False), encoding="utf-8")
+    head = execution_gate.source_snapshot(ROOT)["head"]
+    write_authorization(folder, "M2", head=head,
+                        frozen_digest=run_authorization.digest(
+                            (folder / "freeze.json").read_bytes()),
+                        budgets=drifted["budgets"])
     with pytest.raises(SystemExit) as refused:
         acceptance.run(folder)
     assert "FROZEN_ARTIFACT_DRIFT" in str(refused.value)
@@ -487,6 +627,10 @@ def test_the_frozen_gate_refuses_before_a_claim(tmp_path, monkeypatch, run_offli
 
     # A dirty executing tree is refused by the same gate, also before any claim.
     (folder / "freeze.json").write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+    write_authorization(folder, "M2", head=head,
+                        frozen_digest=run_authorization.digest(
+                            (folder / "freeze.json").read_bytes()),
+                        budgets=record["budgets"])
 
     def dirty(root):
         snapshot = original(root)
