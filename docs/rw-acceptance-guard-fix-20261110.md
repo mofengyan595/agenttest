@@ -97,7 +97,8 @@ def current_view(identity, initial=None):
 - `python -m pytest tests/test_rw_acceptance_authorization.py -q`：15 passed。
 - `python -m pytest tests/test_rw_acceptance_consumption.py -q`：30 passed。
 - `python -m pytest examples/regressions -q`：10 passed。
-- `python scripts/check_full.py --jobs 4`：**待填**。
+- `python scripts/check_full.py --jobs 4`：**2638 collected / 2623 passed / 0 failed /
+  15 skipped**（936 s，`source_unchanged=true`、`exact_test_id_coverage=true`）。
 
 全部测试离线、零模型调用、零真实位置消费、零真实授权写入。
 
@@ -109,7 +110,15 @@ def current_view(identity, initial=None):
 python scripts/rw_lifecycle/acceptance.py preflight runs/rw-acceptance-v4b-20261109 --plan plan_v4
 ```
 
-结果：**待填**（M2 READY / F1 READY / `blocking=[]`，完整冻结摘要 `f2ba78ab754c…`）。
+结果：**M2 READY / F1 READY**，`blocking=[]`，仅 `SOURCE_CHANGED`（预期：冻结基于
+`d8eeae1`，修复提交为 `f5cf0bb`）。预检清单中 M2 的 `position_unconsumed` 证据为
+`journal=UNCONSUMED, consumed=["M1"]`。完整冻结摘要读取确认为
+`f2ba78ab754c…`（存储值 = 重算值），case 集仍为 `["M2", "F1"]`。
+
+证据：
+[preflight-f5cf0bb.json](evidence/rw-acceptance-guard-fix-f5cf0bb/preflight-f5cf0bb.json)、
+[execution-manifest-f5cf0bb.json](evidence/rw-acceptance-guard-fix-f5cf0bb/execution-manifest-f5cf0bb.json)
+（frozen `d8eeae1` → `f5cf0bb`，33 新增 / 18 修改，工作区干净，预算 12/150/2）。
 
 ## 7. 最终消费状态
 

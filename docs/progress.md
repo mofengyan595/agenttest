@@ -3804,8 +3804,11 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 选择范围审查：`status`/`guard` 用完整集合，`run`/claim/证据用所选位置，消费仍按位置独立；
   `preflight` 清单与 `freeze` 语义保持不变。
 - 离线：ruff 通过；consumption 30、authorization 15、preflight 10、guard integration 13、
-  examples/regressions 10 passed；全量 `check_full` = **待填**。
-- 预检（提交后）：**待填**。
+  examples/regressions 10 passed；全量 `check_full` = **2638 collected / 2623 passed /
+  0 failed / 15 skipped**（936 s，源码未变、用例 ID 全覆盖）。
+- 预检（提交 `f5cf0bb`，无付费）：M2/F1 均 9/9 READY，`blocking=[]`，仅 `SOURCE_CHANGED`；
+  完整冻结摘要 `f2ba78ab754c…`（存储值 = 重算值），case 集 `["M2","F1"]`；证据见
+  `docs/evidence/rw-acceptance-guard-fix-f5cf0bb/`。
 - 状态：`M1=HISTORICAL_CONSUMED`、`M2=UNCONSUMED`、`F1=UNCONSUMED`；未执行真实模型，
   未创建真实授权/positions，旧授权原样保留，`WRITE_AUTHORITY=NOT_GRANTED`。
 - 报告：`docs/rw-acceptance-guard-fix-20261110.md`。
