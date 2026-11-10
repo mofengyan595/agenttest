@@ -9,7 +9,7 @@ import pytest
 from agenttest.diagnostics import ValidationFailure
 from agenttest.plan_construction import construct_plan
 from agenttest.planning_ir import build_planning_ir
-from agenttest.product_tasks import ProductTasks, aggregate_usage
+from agenttest.product_tasks import ProductTasks, aggregate_usage, task_max_seconds
 from agenttest.request_requirements import request_atoms
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,6 +210,51 @@ def test_unbound_identical_gets_remain_review():
     assert caught.value.diagnostic.fields == ["plan.steps.0"]
 
 
+def test_a_distinct_operation_set_in_one_clause_is_an_executable_request():
+    text = "帮我测一下条目增删改查"
+    requirements = [dict(source_id="request_1", source_quote=text, disposition="required",
+                         actions=[dict(operation_id=operation, role=None)
+                                  for operation in ("createItem", "getItem", "deleteItem")],
+                         before=[], same_resource=[])]
+    ir = build_planning_ir(
+        requirements, request_atoms(text), operations=M2_OPERATIONS,
+        policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                  policy("getItem", "getItem", [200], roles=(None,)),
+                  policy("deleteItem", "deleteItem", [204], roles=(None,))],
+        target_lifecycles=M2_LIFECYCLE, read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == [
+        "createItem", "getItem", "deleteItem"]
+    assert [item.role.value for item in ir.clauses] == ["REQUEST"]
+    assert ir.ambiguities == []
+    assert all(item.resource_id == ir.resources[0].resource_id for item in ir.instances)
+    assert len(ir.edges) == 3
+
+
+def test_a_meta_clause_does_not_repeat_an_already_requested_operation_set():
+    first = "帮我测一下条目增删改查"
+    second = "看看增删改查有没有问题"
+    requirements = [
+        dict(source_id="request_1", source_quote=first, disposition="required",
+             actions=[dict(operation_id=operation, role=None)
+                      for operation in ("createItem", "getItem", "deleteItem")],
+             before=[], same_resource=[]),
+        dict(source_id="request_2", source_quote=second, disposition="required",
+             actions=[dict(operation_id=operation, role=None)
+                      for operation in ("getItem", "deleteItem")],
+             before=[], same_resource=[]),
+    ]
+    ir = build_planning_ir(
+        requirements, request_atoms(first + "，" + second), operations=M2_OPERATIONS,
+        policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                  policy("getItem", "getItem", [200], roles=(None,)),
+                  policy("deleteItem", "deleteItem", [204], roles=(None,))],
+        target_lifecycles=M2_LIFECYCLE, read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == [
+        "createItem", "getItem", "deleteItem"]
+    assert [item.role.value for item in ir.clauses] == ["REQUEST", "CONSTRAINT"]
+    assert ir.ambiguities == []
+
+
 def test_status_only_clause_does_not_become_a_second_request():
     requirements = [
         dict(source_id="request_1", source_quote="读取该条目", disposition="required",
@@ -352,6 +397,11 @@ def test_usage_survives_a_later_design_failure():
     assert unknown_calls == 2
     assert unknown.total_tokens is None
     assert unknown.input_tokens is None
+
+
+def test_development_runner_can_lower_the_task_deadline_only_explicitly():
+    assert task_max_seconds(SimpleNamespace()) == 600.0
+    assert task_max_seconds(SimpleNamespace(dev_max_seconds=150)) == 150.0
 
 
 def test_failure_report_keeps_the_known_usage():

@@ -44,6 +44,14 @@ def test_the_instance_paragraph_is_added_only_for_a_repeating_operation():
     assert design_prompt({"request_requirements": mixed}) == DESIGN_PROMPT
 
 
+def test_the_focus_prompt_keeps_ordinary_test_design_with_the_agent():
+    from agenttest.product_focus import FOCUS_PROMPT
+
+    for phrase in ("exploratory request", "schema-valid data", "Do not ask the user to design",
+                   "ordinary valid field values", "input_requirements MUST be empty"):
+        assert phrase in FOCUS_PROMPT, phrase
+
+
 def test_the_focus_prompt_names_instance_addressed_ordering():
     """A repeated operation across clauses must be ordered by instance, not as one set."""
     from agenttest.product_focus import FOCUS_PROMPT

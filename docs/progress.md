@@ -3951,4 +3951,28 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 未执行：真实模型调用、M2/F1 位置执行、业务写请求、re-freeze、生产访问。下一步为独立的
   新位置真实模型验收（需显式授权），不以“凑 PASS”为目标。
 
+## 2026-11-10 L2 独立自然语言测试 Agent（真实开发运行）
+
+- 目标：不把“帮我测一下条目管理功能，看看增删改查有没有问题。”翻译成写死的四步，而是
+  由 Focus/Design 独立选范围、建实例、执行、断言和清理。真实运行 7 次（另有 1 次
+  0-call 预检），累计 **12 次模型调用 / 134,590 tokens / 12 个业务 HTTP**；没有自动
+  重放、没有生产/外部业务写入。
+- 最终 `l2-attempt-8`：`FINISHED`，实际引擎 `NORMALIZED_IR_COMPILER_V1`，6 个实例 /
+  0 歧义 / 7 条依赖边 / 6 个实例映射；2 个场景启动并完成，1 个 PASS，1 个
+  `ASSERTION_FAILED`（`GET /availability` 实际 503，policy 预期 200）；CRUD flow 5/5
+  PASS；删除清理 `PASS`，靶场 `record_count=0`。
+- 七个通用修复：不同操作同句产生独立实例；已请求范围复述不重复建实例；Design 唯一操作
+  反推隐藏索引；默认 0 索引按唯一操作纠正；Focus 不把普通测试设计推回用户；无具体值
+  时输入为空；开发入口只允许显式降低任务时钟。
+- 覆盖缺口（真实结果，不粉饰）：边界/批准负向 0 个；删除后 404/410 未执行；Agent 把
+  `/availability` 纳入 CRUD 范围，属于范围噪声；7 次中仅 1 次规范化 IR 成功，稳定性
+  不足；L1 未重新消耗真实位置，L3 未真实运行。
+- 验证：目标回归 **68 passed**；`ruff check .` 通过；全量离线
+  **2660 collected / 2645 passed / 0 failed / 0 errors / 15 skipped**（985.64s，
+  `source_unchanged=true`、`exact_test_id_coverage=true`、`successful=true`）。
+- 证据：[L2 开发记录](l2-independent-agent-20261110.md)；本地
+  `runs/dev-agent-20261110/l2-attempt-8/run.json`、`evidence/model-outputs.jsonl`
+  及逐案 report（`runs/` 不入库）。下一步需新的显式预算：L3 上线前场景、L1 对照、
+  delete→GET 负向 policy 和 operation relevance；不自动扩大本轮 12 次调用。
+
 

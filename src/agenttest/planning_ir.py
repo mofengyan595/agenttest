@@ -407,10 +407,12 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
 
             repeats = explicit_read_repetitions(requirement, read_ops) or 1
         if len(actions) > 1:
-            ambiguities.append(Ambiguity(
-                kind=AmbiguityKind.MISSING_INSTANCE_IDENTITY, source_id=atom["source_id"],
-                message="同一子句要求调用多个接口，程序无法确认它们的实例身份与顺序。",
-                fields=[f"requirement_map.{atom['source_id']}.actions"]))
+            operation_ids = [action["operation_id"] for action in actions]
+            if len(set(operation_ids)) != len(operation_ids):
+                ambiguities.append(Ambiguity(
+                    kind=AmbiguityKind.MISSING_INSTANCE_IDENTITY, source_id=atom["source_id"],
+                    message="同一子句重复要求同一接口，程序无法确认调用次数与实例身份。",
+                    fields=[f"requirement_map.{atom['source_id']}.actions"]))
         for index, action in enumerate(actions):
             operation_id = action["operation_id"]
             if operation_id not in operations:
@@ -688,15 +690,25 @@ def _clause_role(atom, requirement, seen_operations=(), input_quotes=()) -> Clau
         return ClauseRole.CONSTRAINT
     actions = requirement.get("actions") or []
     statuses = explicit_statuses(text)
-    if len(actions) > 1:
-        # A clause naming several approved operations cannot establish one instance identity;
-        # the existing Design path resolves the pool. Keeping it as a constraint avoids
-        # inventing N calls or blocking unrelated operations.
-        return ClauseRole.CONSTRAINT
     if text.strip() in input_quotes and not request_verbs(text):
         # "数量2" carries a confirmed input value for the request that names it; it is not a
         # second call and not an assertion.
         return ClauseRole.CONSTRAINT
+    if len(actions) > 1:
+        # A request can name a set of approved operations without spelling one HTTP verb per
+        # operation ("测一下增删改查"). Each distinct named operation is one request instance;
+        # resource identity and ordering still come from target-policy lifecycle evidence, not
+        # from the order of this array. Repeating one operation in the same clause remains
+        # ambiguous because the text does not say how many calls it means.
+        operations = [action["operation_id"] for action in actions]
+        if len(set(operations)) != len(operations):
+            return ClauseRole.CONSTRAINT
+        if (all(operation in seen_operations for operation in operations)
+                and not request_verbs(text) and not statuses):
+            # "看看增删改查有没有问题" restates a scope already requested without naming a
+            # new action; it qualifies that scope rather than creating every call a second time.
+            return ClauseRole.CONSTRAINT
+        return ClauseRole.REQUEST
     if actions and request_verbs(text):
         return ClauseRole.REQUEST
     if verification_only(text) or (statuses and not request_verbs(text)):

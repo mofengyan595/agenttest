@@ -411,6 +411,37 @@ def test_required_identity_and_action_have_actual_plan_witnesses():
     validate_plan_requirements(design([step('r', 'read', role='other')]), [requirement], ['read'])
 
 
+def test_multi_action_source_without_hidden_index_uses_the_unique_operation():
+    requirement = link(
+        ctx('测一下条目增删改查')['request_atoms'][0],
+        actions=[dict(operation_id=operation, role='owner')
+                 for operation in ('create', 'read', 'delete')])
+    steps = [{**step('create', 'create'), 'requirement_source_id': 'request_1'},
+             {**step('read', 'read'), 'requirement_source_id': 'request_1'},
+             {**step('delete', 'delete'), 'requirement_source_id': 'request_1'}]
+    prepared = design(steps)
+    validate_plan_requirements(prepared, [requirement], ['create', 'read', 'delete'])
+    assert [item.requirement_action_index for item in prepared.cases[0].plan.steps] \
+        == [0, 1, 2]
+
+
+def test_multi_action_source_with_default_zero_index_corrects_by_operation():
+    requirement = link(
+        ctx('测一下条目增删改查')['request_atoms'][0],
+        actions=[dict(operation_id=operation, role='owner')
+                 for operation in ('create', 'read', 'delete')])
+    steps = [{**step('create', 'create'), 'requirement_source_id': 'request_1',
+              'requirement_action_index': 0},
+             {**step('read', 'read'), 'requirement_source_id': 'request_1',
+              'requirement_action_index': 0},
+             {**step('delete', 'delete'), 'requirement_source_id': 'request_1',
+              'requirement_action_index': 0}]
+    prepared = design(steps)
+    validate_plan_requirements(prepared, [requirement], ['create', 'read', 'delete'])
+    assert [item.requirement_action_index for item in prepared.cases[0].plan.steps] \
+        == [0, 1, 2]
+
+
 def test_delete_before_read_is_not_satisfied_by_a_pre_delete_read():
     requirement = link(ctx('删除后读取')['request_atoms'][0],
         before=[dict(earlier='delete', later='read')])

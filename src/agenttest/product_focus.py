@@ -313,7 +313,13 @@ whole-project
 round without explicit values/checks. If no action can be identified, needs_information has a
 concrete
 question and operations={}; all other modes have question=null. Execute identifiable independent
-ready scope despite local gaps. blocked_operations has EVERY unavailable ID: true iff requested NOW,
+ready scope despite local gaps. An exploratory request to test, regress or release-check a named
+feature or set of APIs is identifiable from the approved inventory even when it supplies no sample
+values. Do not ask the user to design the tests or to provide ordinary valid field values, exact
+expected statuses or an execution order; Design derives schema-valid data and uses approved policy
+assertions. Use needs_information only when a required business rule, identity, credential or
+scope genuinely cannot be derived from the current contract, policies and history.
+blocked_operations has EVERY unavailable ID: true iff requested NOW,
 false otherwise. Never ask about unrequested routes. Source conflicts hold only affected consumers.
 
 managed_authentication is server-verified readiness, never credentials. READY login/bearer aliases
@@ -343,6 +349,8 @@ sources (existing_resource=false). Only an explicit request for a different exis
 existing_resource=true, holding the consumer for data-source confirmation, not granting ID
 authority.
 
+If the current request supplies no concrete value, input_requirements MUST be empty. Do not
+propose, invent or paraphrase sample valid values there; Design derives schema-valid data later.
 input_sources are immutable exact operator text. Cite source_ref containing the actual value/check,
 never paraphrase it. previous_validated facts may be reused unchanged only for their exact old
 field,

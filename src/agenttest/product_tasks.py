@@ -76,6 +76,12 @@ def aggregate_usage(records):
 IR_ENGINE = "NORMALIZED_IR_COMPILER_V1"
 LEGACY_ENGINE = "LEGACY"
 NOT_EXECUTED_ENGINE = "NOT_EXECUTED"
+DEFAULT_TASK_SECONDS = 600.0
+
+
+def task_max_seconds(service):
+    """Production stays at 600s; an isolated development runner may set a smaller cap."""
+    return float(getattr(service, "dev_max_seconds", DEFAULT_TASK_SECONDS))
 
 
 def unresolved_ir_clauses(planning_ir, focus_requirements):
@@ -260,7 +266,8 @@ class ProductTasks:
         budget = dict(max_requests=project.target.max_requests,
             max_model_calls=project.registration.budget.suite_max_model_calls,
             max_total_tokens=project.registration.budget.suite_max_total_tokens,
-            max_steps_per_case=project.target.max_steps, max_seconds=600,
+            max_steps_per_case=project.target.max_steps,
+            max_seconds=task_max_seconds(svc),
             max_readonly_investigations=2)
         summary = dict(mode="MODEL_DESIGNED", display_title="一轮接口测试", user_request=text,
             scope="project", inventory=inventory, budget=budget, cases=[], design_records=[],

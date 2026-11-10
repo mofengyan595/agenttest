@@ -1203,9 +1203,20 @@ def validate_plan_requirements(design, requirements, primary, expectations=None,
         if source is None:
             continue
         item = by_source.get(source)
-        index = draft.requirement_action_index or 0
         actions = [a.operation_id for a in item.actions] if item is not None else []
-        if (item is None or not 0 <= index < len(actions)
+        index = draft.requirement_action_index
+        if item is not None:
+            # The Design schema deliberately hides the array index. When a vague clause names
+            # several distinct operations, the operation itself is the unambiguous witness;
+            # only repeated occurrences of one operation still require an explicit index. Some
+            # model outputs also echo a default 0 for every step, which is not evidence.
+            matches = [position for position, action in enumerate(actions)
+                       if action == draft.operation_id]
+            if (index is None or not 0 <= index < len(actions)
+                    or actions[index] != draft.operation_id) and len(matches) == 1:
+                index = matches[0]
+                draft.requirement_action_index = index
+        if (item is None or index is None or not 0 <= index < len(actions)
                 or actions[index] != draft.operation_id):
             error = ValidationFailure(Layer.MODEL, 'DESIGN_REQUIRED_ORDER_INSTANCE_INVALID')
             error.diagnostic.fields = [f'plan.steps.{position}.requirement_source_id',
