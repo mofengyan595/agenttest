@@ -171,7 +171,8 @@ def test_a_previous_request_or_a_consumed_position_blocks_its_case():
     assert checklist["cases"]["M2"]["verdict"] == "BLOCKED"
     items = {row["item"]: row["verdict"] for row in checklist["cases"]["M2"]["items"]}
     assert items["no_replay_of_unknown_writes"] == "BLOCKED"
-    assert items["position_unconsumed"] == "READY"
+    # Historical requests are execution evidence: the position is no longer unfilled.
+    assert items["position_unconsumed"] == "BLOCKED"
 
     consumed = execution_gate.case_checklist(
         frozen, report, cases=acceptance.cases(), consumed=("M1", "F1"), manifest=manifest,

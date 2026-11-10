@@ -299,8 +299,14 @@ def write_manifest(folder, payload):
     raise SystemExit("MANIFEST_NAMESPACE_EXHAUSTED")
 
 
-def case_checklist(frozen, report, *, cases, consumed, result, manifest, identity_offline):
-    """The nine pre-flight items per frozen position, each with its own evidence."""
+def case_checklist(frozen, report, *, cases, consumed, result, manifest, identity_offline,
+                   positions=None):
+    """The nine pre-flight items per frozen position, each with its own evidence.
+
+    ``positions`` is the read-only consumption view from :mod:`consumption`: the atomic claim
+    directory decides whether a position is still runnable. Historical ``result.json`` evidence
+    is a fallback for records written before the journal existed, never a permission to replay.
+    """
     blocking = {item["reason"] for item in report["blocking"]}
     code = report.get("code") or {}
     result_requests = {}
@@ -310,10 +316,17 @@ def case_checklist(frozen, report, *, cases, consumed, result, manifest, identit
     for case in cases:
         key = case["key"]
         rows = []
+        journal = (positions or {}).get(key) or {}
+        journal_state = journal.get("status")
+        # A historical result row or a non-UNCONSUMED journal both mean "already attempted";
+        # neither may be read as permission to replay.
+        legacy = result_requests.get(key) is not None
+        historical = key in consumed or legacy or journal_state not in (None, "UNCONSUMED")
         rows.append(dict(
             item="position_unconsumed",
-            verdict="BLOCKED" if key in consumed else "READY",
-            evidence=dict(consumed=list(consumed), key=key)))
+            verdict="BLOCKED" if historical else "READY",
+            evidence=dict(consumed=list(consumed), key=key, journal=journal_state,
+                          signals=journal.get("signals"))))
         rows.append(dict(
             item="code_diff_auditable",
             verdict="READY" if manifest and not blocking else "BLOCKED",
@@ -353,11 +366,15 @@ def case_checklist(frozen, report, *, cases, consumed, result, manifest, identit
             verdict="BLOCKED" if "INITIAL_STATE_CHANGED" in blocking else "READY",
             evidence=dict(frozen=(frozen["target"].get("initial") or {}).get("state_sha256"),
                           current=report["target"].get("current_initial"))))
+        unknown_writes = (legacy or journal_state in {"RUNNING", "INTERRUPTED_OR_UNKNOWN"}
+                          or (journal_state == "COMPLETED"
+                              and bool((journal.get("completed") or {}).get("unknown"))))
         rows.append(dict(
             item="no_replay_of_unknown_writes",
-            verdict="BLOCKED" if result_requests.get(key) else "READY",
+            verdict="BLOCKED" if unknown_writes else "READY",
             evidence=dict(previous_requests=result_requests.get(key),
-                          guard="acceptance.run refuses when result.json already has requests")))
+                          journal=journal_state,
+                          guard="acceptance.run refuses any non-UNCONSUMED position")))
         rows.append(dict(
             item="evidence_completeness",
             verdict="READY" if all(frozen.get(field) for field in

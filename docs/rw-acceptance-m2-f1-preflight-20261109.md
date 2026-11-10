@@ -241,6 +241,14 @@ runs/rw-acceptance-v4b-20261109/execution-manifest-<head7>.json   （运行时�
 7. **收尾**：更新 `docs/progress.md` 与验收报告，核对 `WRITE_AUTHORITY` 已恢复 `NOT_GRANTED`，
    推送并在远端 CI 校验确切 HEAD。
 
+## 10. 后续（第 5 轮）
+
+位置消费已改为 case 级原子登记（`positions/<case>/`，`mkdir` 令牌、单向状态机、
+崩溃不恢复、不重放），`run` 一次只执行一个位置；历史 `result.json` 只作兼容证据，
+不再是运行时写入目标。详见
+[rw-acceptance-atomic-consumption-20261110.md](rw-acceptance-atomic-consumption-20261110.md)。
+本报告的 M2/F1 `READY` 结论仍要求操作者显式确认每 case **150 秒**预算后才可执行。
+
 ## 9. 本轮验证
 
 - `ruff check .`：通过（0 错误）。

@@ -3765,6 +3765,32 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 未执行：真实模型调用、生产写入、冻结的 v4 M2/F1 付费位置；`CONSUMED_POSITIONS=("M1",)` 不变，
   `WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
 
+## 2026-11-10 M2/F1 冻结位置的原子消费与崩溃安全（第 5 轮）
+
+- 原漏洞：`acceptance.run()` 只读 `row["requests"]`，真实驱动写在 `metrics.requests` /
+  `summary.requests`，该检查恒为假；`result.json` 直到全部 case 结束才写，崩溃即丢状态
+  （最小复现见 `test_the_old_result_shape_never_reached_the_old_guard`）。
+- 新机制：`scripts/rw_lifecycle/consumption.py`，以 `positions/<case>/` 目录 `mkdir` 为唯一
+  原子令牌，单向状态 `UNCONSUMED → CLAIMED → RUNNING → COMPLETED`（异常
+  `INTERRUPTED_OR_UNKNOWN`）；`claim/running/evidence/completed/interrupted` 全部独占创建
+  并 `fsync`；损坏或不完整记录仍视为已消费；只有 `UNCONSUMED` 可运行。
+- `run()` 一次只执行一个位置（`ONE_POSITION_PER_COMMAND`），顺序为
+  冻结一致性校验 → `claim` → `running` → 任务/HTTP → 证据 → `completed` → 只读汇总；
+  `result.json` 不再作为唯一证据或运行时写入目标。
+- 兼容历史：旧 `result.json`（含 0 请求、模型失败、损坏文件）与 M1 均视为已消费；
+  预检 `position_unconsumed` / `no_replay_of_unknown_writes` 改由消费视图判定。
+- 测试：`tests/test_rw_acceptance_consumption.py` 23 passed（含 6 进程真实竞争、真实
+  POST 201 后 `os._exit(9)`、`claim.json` 截断、证据写盘失败、历史/脏树在登记前拒绝、
+  `status` 只读模式）；`test_rw_acceptance_preflight.py`+`test_rw_lifecycle_next_round.py`
+  +`test_rw_lifecycle_preparation.py` 32 passed；`examples/regressions` 10 passed；
+  `ruff check .` 通过。
+- 冻结预算文案“120 秒”与冻结 `budgets.max_seconds=150` 的差异已在本轮报告显式披露；
+  未改冻结声明/rubric/预算，预检 READY 不代表新的付费或写入授权。
+- 本轮未调用模型、未消费 M2/F1、未发送业务请求，`WRITE_AUTHORITY` 仍为 `NOT_GRANTED`。
+- 全量离线：`check_full.py --jobs 4` = **2603 collected / 2588 passed / 0 failed /
+  15 skipped**（990 s，源码未变、用例 ID 全覆盖）。
+- 报告：`docs/rw-acceptance-atomic-consumption-20261110.md`。
+
 ## 2026-11-09 M2/F1 真实模型验收预检与冻结一致性（第 4 轮）
 
 - 边界：本轮只做**预检**。未调用付费模型、未执行冻结的 M2/F1 位置、未发送业务请求、

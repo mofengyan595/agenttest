@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts/rw_lifecycle"))
 
 import authority  # noqa: E402
+import consumption  # noqa: E402
 import execution_gate  # noqa: E402
 import focus_capture  # noqa: E402
 import lifecycle  # noqa: E402
@@ -510,9 +511,12 @@ def preflight_report(folder):
         report, manifest = guard(folder, identity=identity, initial=initial, write=True,
                                  enforce_code_change=False)
     offline = identity.get("credentials") != "PRESENT"
+    keys = list(dict.fromkeys([*(case["key"] for case in cases()), *CONSUMED_POSITIONS]))
+    positions = consumption.summary(
+        folder, cases=keys, consumed_positions=CONSUMED_POSITIONS)["positions"]
     checklist = execution_gate.case_checklist(
         frozen, report, cases=cases(), consumed=CONSUMED_POSITIONS, result=result,
-        manifest=manifest, identity_offline=offline)
+        manifest=manifest, identity_offline=offline, positions=positions)
     payload = dict(created_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"), manifest=manifest.name,
                    report=dict(allowed=report["allowed"], blocking=report["blocking"],
                                warnings=report["warnings"], code=report["code"],
@@ -536,69 +540,111 @@ def preflight_report(folder):
     return payload
 
 
+def only_position():
+    """One command may only execute one frozen position, so evidence can never be mixed."""
+    keys = list(SELECTED)
+    if len(keys) != 1:
+        raise SystemExit("ONE_POSITION_PER_COMMAND:" + ",".join(keys))
+    return keys[0]
+
+
 def run(folder):
     frozen = json.loads((folder / "freeze.json").read_text(encoding="utf-8"))
     assert not frozen["source"]["status"], "FREEZE_REQUIRES_CLEAN_TREE"
     # A real run must prove the same service identity the freeze recorded: a matching model name
     # is not enough when the address, protocol or approved budget changed.
     current_identity = model_identity(require_credentials=True)
-    previous = folder / "result.json"
-    if previous.exists():
-        done = json.loads(previous.read_text(encoding="utf-8"))
-        if any(row.get("requests") for row in done.get("results", [])):
-            raise SystemExit("POSITION_ALREADY_CONSUMED_NO_REPLAY")
+    drift = execution_gate.identity_drift(frozen.get("model"), current_identity)
+    if drift:
+        # The service identity is checked before position selection so a moved address is never
+        # reported as a case-selection problem.
+        raise SystemExit(f"MODEL_IDENTITY_DRIFT:{','.join(drift)}")
+    key = only_position()
+    if key in CONSUMED_POSITIONS:
+        raise SystemExit(f"CONSUMED_POSITION_REFUSED:{key}")
+    case = next(item for item in cases() if item["key"] == key)
+    before = consumption.status(folder, key, consumed_positions=CONSUMED_POSITIONS)
+    if before["status"] != "UNCONSUMED":
+        raise SystemExit(consumption.PositionConsumed(key, before["status"]))
+    run_id = time.strftime("%m%d-%H%M%S")
     results = []
     with preflight.served():
         initial = preflight.reset("e2e-freeze-0001")
         # The consistency gate runs before the first business request and after the fixture is
         # in its frozen initial state, so the manifest names the exact code and target state.
-        guard(folder, identity=current_identity, initial=initial,
-              accept_code_change=ACCEPT_CODE_CHANGE)
-        run_id = time.strftime("%m%d-%H%M%S")
-        svc, saved = service(folder / "workspace", preflight.TOKENS)
-        for case in cases():
+        report, manifest = guard(folder, identity=current_identity, initial=initial,
+                                 accept_code_change=ACCEPT_CODE_CHANGE)
+        # The atomic claim is taken after the gate passed and before any task is submitted: a
+        # crash from here on leaves the position consumed and every execution blocked.
+        claimed = consumption.claim(
+            folder, key,
+            frozen_digest=execution_gate.digest(frozen),
+            frozen_head=frozen.get("source", {}).get("head"),
+            executing_head=report["code"].get("executing_head"),
+            manifest=manifest.name,
+            budgets=APPROVED["budgets"],
+            identity_digest=execution_gate.digest(
+                execution_gate.normalize_identity(current_identity)),
+            initial=initial)
+        consumption.start(folder, key)
+        try:
+            svc, saved = service(folder / "workspace", preflight.TOKENS)
             evidence = run_case(folder, svc, saved["id"], case, run_id, initial)
-            results.append(evidence)
-            unauthorized = [finding for finding in evidence["findings"]
-                            if finding["reason"] in {"driver_denial_changed_state",
-                                                     "wrong_identity_wrote",
-                                                     "unapproved_operation",
-                                                     "namespace_violation"}]
-            unknown = "UNKNOWN" in json.dumps(evidence.get("product", {}), ensure_ascii=False)
-            print(f"{case['key']} {evidence['verdict']:<12} "
-                  f"statuses={evidence.get('checks', {}).get('statuses')} "
-                  f"requests={evidence.get('metrics', {}).get('requests')} "
-                  f"findings={[finding['reason'] for finding in evidence['findings']]}")
-            if unauthorized or unknown:
-                results.append(dict(case="STOPPED", summary="safety stop", evidence=evidence))
-                break
-    summary = dict(
-        run_id=run_id, frozen_head=frozen["source"]["head"], model=frozen["model"],
-        target=frozen["target"]["base_url"],
-        verdicts={row["case"]: row["verdict"] for row in results},
-        requests={row["case"]: row.get("metrics", {}).get("requests") for row in results},
-        model_calls={row["case"]: row.get("product", {}).get("model_calls")
-                     for row in results},
-        elapsed={row["case"]: (row["task"].get("elapsed")
-                               if isinstance(row.get("task"), dict) else None)
-                 for row in results},
-        leftovers={row["case"]: row.get("metrics", {}).get("leftovers") for row in results},
-        cleanup={row["case"]: row.get("state", {}).get("cleanup") for row in results},
-        unknown=[row["case"] for row in results
-                 if "UNKNOWN" in json.dumps(row.get("product", {}), ensure_ascii=False)],
-        authority_after_run=authority.WRITE_AUTHORITY["operator_approval"],
-        results=results)
-    (folder / "result.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
-                                        encoding="utf-8")
-    print(json.dumps({key: summary[key] for key in ("verdicts", "requests", "model_calls",
-                                                    "leftovers", "cleanup", "unknown")},
+        except BaseException as error:  # noqa: BLE001 - any abnormal end consumes the position
+            consumption.interrupt(folder, key, reason=type(error).__name__,
+                                  detail=str(error)[:800])
+            raise
+        requests = evidence.get("metrics", {}).get("requests")
+        calls = evidence.get("product", {}).get("model_calls")
+        unknown = "UNKNOWN" in json.dumps(evidence.get("product", {}), ensure_ascii=False)
+        elapsed = (evidence["task"].get("elapsed")
+                   if isinstance(evidence.get("task"), dict) else None)
+        try:
+            consumption.complete(folder, key, verdict=evidence["verdict"], evidence=evidence,
+                                 requests=requests, model_calls=calls, unknown=unknown,
+                                 elapsed=elapsed)
+        except consumption.PositionWriteFailed as error:
+            raise SystemExit(str(error)) from None
+        results.append(evidence)
+        print(f"{case['key']} {evidence['verdict']:<12} "
+              f"statuses={evidence.get('checks', {}).get('statuses')} "
+              f"requests={requests} findings={[row['reason'] for row in evidence['findings']]}")
+    keys = [item["key"] for item in cases()]
+    view = consumption.summary(folder, cases=keys, consumed_positions=CONSUMED_POSITIONS)
+    summary = dict(view, run_id=run_id, attempt=claimed["attempt_id"],
+                   frozen_head=frozen["source"]["head"], model=frozen["model"],
+                   target=frozen["target"]["base_url"],
+                   verdicts={key: evidence["verdict"]},
+                   requests={key: requests}, model_calls={key: calls},
+                   elapsed={key: elapsed}, unknown=[key] if unknown else [],
+                   authority_after_run=authority.WRITE_AUTHORITY["operator_approval"],
+                   results=results)
+    consumption.write_summary(folder, cases=keys, consumed_positions=CONSUMED_POSITIONS)
+    print(json.dumps({item: summary[item] for item in ("verdicts", "requests", "model_calls",
+                                                       "unknown", "positions")},
                      ensure_ascii=False))
     return summary
 
 
+def status_report(folder):
+    """Read-only inspection: no service, no model call, no target request."""
+    keys = list(dict.fromkeys([*(case["key"] for case in CASES), *CONSUMED_POSITIONS]))
+    payload = dict(consumption.summary(folder, cases=keys,
+                                       consumed_positions=CONSUMED_POSITIONS),
+                   plan=PLAN.__name__, consumed_positions=list(CONSUMED_POSITIONS),
+                   selected=list(SELECTED))
+    path = consumption.write_summary(folder, cases=keys,
+                                     consumed_positions=CONSUMED_POSITIONS)
+    print(json.dumps(dict(folder=str(folder), summary=path.name,
+                          positions={key: row["status"]
+                                     for key, row in payload["positions"].items()},
+                          runnable=payload["runnable"]), ensure_ascii=False))
+    return payload
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["freeze", "dry", "preflight", "run"])
+    parser.add_argument("mode", choices=["freeze", "dry", "preflight", "run", "status"])
     parser.add_argument("folder", nargs="?", default="runs/rw-acceptance-20261109")
     parser.add_argument("--plan", default="plan_v2",
                         choices=["plan_v2", "plan_v3", "plan_v4"])
@@ -632,6 +678,8 @@ def main():
         dry(folder)
     elif args.mode == "preflight":
         preflight_report(folder)
+    elif args.mode == "status":
+        status_report(folder)
     else:
         run(folder)
     assert authority.WRITE_AUTHORITY["operator_approval"] == "NOT_GRANTED"
