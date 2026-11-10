@@ -326,12 +326,24 @@ def report_of(svc, current):
 
 
 def model_calls(report):
+    """Known model calls from the product report; never inferred from absent fields."""
     if not report:
         return None
-    rows = report.get("model_calls") or report.get("models") or []
+    rows = report.get("model_calls") or report.get("models")
     if isinstance(rows, int):
         return rows
-    return len(rows)
+    if isinstance(rows, list):
+        return len(rows)
+    call = report.get("model_call")
+    if isinstance(call, dict) and isinstance(call.get("calls"), int) and call["calls"]:
+        return call["calls"]
+    calls = report.get("planner_calls")
+    if isinstance(calls, int) and calls:
+        return calls
+    usage = report.get("model_usage")
+    if isinstance(usage, dict) and isinstance(usage.get("calls"), int) and usage["calls"]:
+        return usage["calls"]
+    return None
 
 
 def checks(case, rows, created_id):
@@ -440,6 +452,7 @@ def run_case(folder, svc, project_id, case, run_id, initial):
         verdict = "NEEDS_REVIEW"
         findings.append(dict(reason="driver_no_target_requests",
                              detail=current.get("reason") or current["status"]))
+    report_steps = (report or {}).get("steps") or []
     evidence.update(
         verdict=verdict, findings=findings, metrics=scored["metrics"],
         checks=extra["checks"], created_id=created,
@@ -456,8 +469,8 @@ def run_case(folder, svc, project_id, case, run_id, initial):
                      steps=[dict(id=step.get("id"), operation_id=step.get("operation_id"),
                                  outcome=step.get("outcome"),
                                  attempts=len(step.get("attempts") or []))
-                            for step in (report or {}).get("steps", [])],
-                     requests=(report or {}).get("requests")),
+                            for step in report_steps],
+                     requests=len(rows)),
     )
     return evidence
 

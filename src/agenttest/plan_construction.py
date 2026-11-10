@@ -24,7 +24,14 @@ def construct_plan(plan, context):
     Array position in this encoding has no execution meaning. Only authentication
     nodes may be introduced; all business nodes and literal inputs remain unchanged.
     Missing or ambiguous business predecessors are a review stop, never auto-created.
+
+    When the request carries a normalized ``planning_ir``, the deterministic compiler owns
+    instance identity, policy/assertion selection, dynamic bindings and order.
     """
+    if context.get('planning_ir') is not None:
+        from agenttest.planning_compiler import compile_design
+
+        return compile_design(context['planning_ir'], plan, context)
     draft = GenericPlannerDraft.model_validate(plan)
     nodes = {}
     for node in draft.steps:
@@ -312,9 +319,13 @@ def join_read_prerequisite(cases, context):
 
 
 def construct_design(wire, context, *, construction_chains=()):
+    from agenttest.planning_compiler import validate_instance_coverage
+
     records, cases = [], []
     chains = dict(construction_chains)
     proposed = wire.get('cases', [])
+    planning_ir = context.get('planning_ir')
+    approved = {policy['id']: policy for policy in context.get('policies', [])}
     joined = join_read_prerequisite(proposed, context) if not chains else proposed
     # A required order may name an operation this case does not contain but the proposed
     # design schedules in another execution context.
@@ -322,9 +333,16 @@ def construct_design(wire, context, *, construction_chains=()):
                          if isinstance(case, dict) and isinstance(case.get('plan'), dict)
                          for step in case['plan'].get('steps', []) if isinstance(step, dict)}
     for proposed_index, case in enumerate(joined):
-        plan, record = construct_plan(case['plan'], {**context,
-            'design_operations': design_operations,
-            'composed_negative_chain': chains.get(proposed_index, [])})
+        case_context = {**context, 'design_operations': design_operations,
+                        'composed_negative_chain': chains.get(proposed_index, [])}
+        if planning_ir is not None:
+            # A negative variant is an extra test, not a required request instance; it keeps
+            # the legacy construction while the user's required obligations use the IR.
+            negative = any((approved.get(step.get('policy_id')) or {}).get('negative_test')
+                           for step in case['plan'].get('steps', [])
+                           if isinstance(step, dict))
+            case_context['planning_ir'] = None if negative else planning_ir
+        plan, record = construct_plan(case['plan'], case_context)
         edges = {key: set(value) for key, value in record.pop('node_dependencies').items()}
         record.pop('edge_reasons', None)
         nodes = {node['id']: node for node in plan['steps']}
@@ -364,5 +382,9 @@ def construct_design(wire, context, *, construction_chains=()):
         if joined is not proposed:
             record['joined_read_cases'] = len(proposed)
         records.append(record)
+    if planning_ir is not None:
+        validate_instance_coverage(planning_ir, cases,
+                                   allow_partial=bool(wire.get('not_covered')
+                                                      or wire.get('questions')))
     wire['cases'] = cases
     return records

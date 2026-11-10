@@ -204,7 +204,8 @@ def explicit_response_gap(entries, action, catalog):
                and not approved_response_predicate(entry, action, catalog) for entry in entries)
 
 
-_REPEAT_READ = re.compile(r'^(?:请\s*)?(?:连续|重复)\s*(?:读取|查询|请求|调用)\s*'
+_REPEAT_READ = re.compile(r'^(?:请\s*)?(?:连续|重复)\s*(?:读取|查询|请求|调用)'
+                          r'[^，,；;。\d]{0,20}?'
                           r'([2-9]|[1-9][0-9]+|[二两三四五六七八九十])\s*次')
 
 

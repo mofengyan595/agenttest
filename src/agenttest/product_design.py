@@ -572,7 +572,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          allow_new_questions=True, normal_operation_ids=(),
                          allow_optional_negatives=True, request_requirements=(),
                          http_status_requirements=(), response_requirements=(),
-                         permission_action_scope=None, data_references=()):
+                         permission_action_scope=None, data_references=(), planning_ir=None,
+                         witness_requirements=None):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -583,6 +584,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
     context["selected_for_current_focus"] = must_be_relevant
     context["allow_new_questions"] = allow_new_questions
     context['request_requirements'] = list(request_requirements)
+    # Trusted compiler input; compact_sources removes it from the model-visible payload.
+    context['planning_ir'] = planning_ir
     permission_action_scope = permission_action_scope or {}
     for policy in context['policies']:
         if policy['operation_id'] in permission_action_scope:
@@ -739,10 +742,16 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                                    response_expectations(project), read_operations={
                                        op.operation_id for op in project.contract.operations
                                        if op.method in {'GET', 'HEAD'}})
-        validate_http_status_witnesses(design, group['primary'], source_requirements,
+        witness_source = source_requirements
+        if witness_requirements is not None:
+            # Witness checks stay clause-level: Focus's status clause names the request it
+            # qualifies, while the Design obligations below are instance-level.
+            witness_source = [RequestRequirement.model_validate(r)
+                              if isinstance(r, dict) else r for r in witness_requirements]
+        validate_http_status_witnesses(design, group['primary'], witness_source,
                                        http_status_requirements, policies,
                                        context['requested_checks'])
-        validate_response_witnesses(design, group['primary'], source_requirements,
+        validate_response_witnesses(design, group['primary'], witness_source,
                                     response_requirements, policies, context['requested_checks'])
         validate_data_witnesses(design, group['primary'], data_references)
         operations = {s.operation_id for c in design.cases for s in c.plan.steps}

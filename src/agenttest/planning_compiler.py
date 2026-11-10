@@ -1,0 +1,334 @@
+"""Deterministic planning compiler: IR instances plus a Design proposal become one DSL plan.
+
+The compiler owns the executable facts a model used to manage by itself:
+
+* which proposal step realizes which ``ActionInstance`` (never the array position),
+* which approved policy and response assertion each instance carries,
+* which argument value comes from which producing instance,
+* the execution order (stable topological order of the IR dependency graph).
+
+A proposal that does not account for exactly one step per instance, names an unsourced clause,
+uses a self-made data reference in the wrong direction, or disagrees with the IR policy/status
+is rejected with a precise diagnostic. No edge is deleted and no order is guessed to make a
+proposal pass.
+"""
+
+from __future__ import annotations
+
+from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.llm_planner import GenericPlannerDraft
+from agenttest.planning_ir import ActionInstance, PlanningIR
+
+ENCODING = "NORMALIZED_IR_COMPILER_V1"
+
+
+def _failure(code, fields=None, construction=None):
+    error = ValidationFailure(Layer.MODEL, code)
+    if fields:
+        error.diagnostic.fields = list(fields)
+    if construction is not None:
+        error.construction = construction
+    return error
+
+
+def _instance_groups(ir: PlanningIR):
+    """Instances grouped by the clause that produced them, in deterministic order."""
+    groups: dict[str, list[ActionInstance]] = {}
+    for instance in ir.instances:
+        groups.setdefault(instance.source_id, []).append(instance)
+    for members in groups.values():
+        members.sort(key=lambda item: item.action_index)
+    return groups
+
+
+def _step_instance_map(ir: PlanningIR, draft):
+    """Map proposal steps to IR instances using declared identities, never array position.
+
+    A clause the user asked to repeat owns several instances; byte-identical proposal steps
+    are distributed over them in proposal order because identity carries no meaning between
+    identical requests. Different requests may never share one identity.
+    """
+    groups = _instance_groups(ir)
+    by_operation: dict[tuple[str, str | None], list[ActionInstance]] = {}
+    for instance in ir.instances:
+        by_operation.setdefault((instance.operation_id, instance.role), []).append(instance)
+    mapping: dict[str, str] = {}
+    by_instance: dict[str, list[str]] = {}
+    used: dict[str, int] = {}
+    for position, step in enumerate(draft.steps):
+        source = step.requirement_source_id
+        index = step.requirement_action_index or 0
+        if source is not None:
+            members = [item for item in groups.get(source, [])
+                       if item.action_index == index]
+            if not members and index == 0:
+                members = list(groups.get(source, []))
+            if not members:
+                raise _failure("PLANNING_UNSOURCED_STEP",
+                               [f"plan.steps.{position}.requirement_source_id"],
+                               dict(clause=source, index=index,
+                                    message="该子句不是本轮可执行的请求实例。"))
+            cursor = used.get(source, 0)
+            if cursor >= len(members):
+                raise _failure("PLANNING_INSTANCE_CONFLICT",
+                               [f"plan.steps.{position}.requirement_source_id"],
+                               dict(clause=source, instances=[item.instance_id
+                                                              for item in members],
+                                    message="模型为一个请求实例计划了多个不同步骤。"))
+            instance = members[cursor]
+            used[source] = cursor + 1
+        else:
+            candidates = by_operation.get((step.operation_id, step.role), [])
+            if len(candidates) != 1:
+                raise _failure(
+                    "PLANNING_INSTANCE_UNBOUND", [f"plan.steps.{position}"],
+                    dict(operation_id=step.operation_id, role=step.role,
+                         candidates=[item.instance_id for item in candidates],
+                         message="模型没有指明该步骤对应哪个请求实例；"
+                                 "程序不会按数组位置猜测。"))
+            instance = candidates[0]
+        mapping[step.id] = instance.instance_id
+        by_instance.setdefault(instance.instance_id, []).append(step.id)
+    return mapping, by_instance
+
+
+def _request_signature(step):
+    import json
+
+    return json.dumps(dict(operation_id=step.operation_id, role=step.role,
+                           policy_id=step.policy_id,
+                           arguments=[argument.model_dump(mode="json")
+                                      for argument in step.arguments]),
+                      sort_keys=True, ensure_ascii=False, default=str)
+
+
+def _policy_for(instance, policies):
+    if instance.policy_id is None:
+        raise _failure("PLANNING_POLICY_MISSING", [f"instance.{instance.instance_id}"])
+    policy = policies.get(instance.policy_id)
+    if policy is None:
+        raise _failure("CONSTRUCTION_NODE_NOT_APPROVED", [f"instance.{instance.instance_id}"])
+    if (policy.get("operation_id") != instance.operation_id
+            or instance.role not in (policy.get("roles") or [])):
+        raise _failure("CONSTRUCTION_NODE_NOT_APPROVED", [f"instance.{instance.instance_id}"])
+    return policy
+
+
+def _scalar(value):
+    return value is None or type(value) in {str, int, float, bool}
+
+
+def _apply_arguments(step, instance, mapping, instance_step, step_position):
+    """Keep approved literals, replace data references with program-resolved producers.
+
+    Execution step ids stay the proposal's ids; the program owns the *instance* identity behind
+    each step, so exported evidence and existing execution expectations remain readable.
+    """
+    arguments = {}
+    for argument in step.arguments:
+        data = argument.model_dump(mode="json")
+        if data.get("from_step") is not None:
+            target_instance = mapping.get(data["from_step"])
+            target = instance_step.get(target_instance) if target_instance else None
+            if target is None:
+                raise _failure(
+                    "PLANNING_REFERENCE_ORDER_INVALID",
+                    [f"plan.steps.{step.id}.from_step"],
+                    dict(step=step.id, from_step=data["from_step"],
+                         message="数据引用指向本场景不存在的步骤。"))
+            data["from_step"] = target
+        else:
+            data["select"] = None
+        arguments[(data["location"], data["name"])] = data
+    for argument in instance.arguments:
+        slot = (argument.location, argument.name)
+        if argument.from_instance is not None:
+            target = instance_step.get(argument.from_instance)
+            if target is None:
+                raise _failure(
+                    "PLANNING_REFERENCE_ORDER_INVALID",
+                    [f"instance.{instance.instance_id}.from_step"],
+                    dict(instance=instance.instance_id,
+                         from_instance=argument.from_instance))
+            arguments[slot] = dict(location=argument.location, name=argument.name, value=None,
+                                   from_step=target, select=argument.select)
+        elif _scalar(argument.value):
+            arguments[slot] = dict(location=argument.location, name=argument.name,
+                                   value=argument.value, from_step=None, select=None)
+    for data in arguments.values():
+        if data.get("from_step") is None:
+            continue
+        target_position = step_position.get(data["from_step"])
+        if target_position is None or target_position >= step_position[step.id]:
+            raise _failure(
+                "PLANNING_REFERENCE_ORDER_INVALID",
+                [f"instance.{instance.instance_id}.from_step"],
+                dict(instance=instance.instance_id, from_step=data["from_step"],
+                     message="引用的来源实例不在本场景，或没有先于使用它的实例执行。"))
+    return [arguments[key] for key in sorted(arguments)]
+
+
+def can_compile(ir: PlanningIR, draft, policies) -> bool:
+    """Whether this proposal is a candidate for IR compilation (no negative variant, etc.)."""
+    if not ir.instances or any(ir.ambiguities):
+        return False
+    for step in draft.steps:
+        policy = policies.get(step.policy_id)
+        if policy is not None and policy.get("negative_test"):
+            return False
+    return True
+
+
+def compile_design(ir, plan, context):
+    """Compile one Design case into an executable plan for the IR instances it realizes."""
+    if not isinstance(ir, PlanningIR):
+        ir = PlanningIR.model_validate(ir)
+    draft = GenericPlannerDraft.model_validate(plan)
+    policies = {item["id"]: item for item in context.get("policies", [])}
+    if any(ir.ambiguities):
+        ambiguity = ir.ambiguities[0]
+        raise _failure("PLANNING_IR_AMBIGUOUS", fields=list(ambiguity.fields),
+                       construction=dict(ambiguity=ambiguity.model_dump(mode="json")))
+    mapping, by_instance = _step_instance_map(ir, draft)
+    instance_step = {}
+    for design_id, instance_id in mapping.items():
+        if instance_id in instance_step:
+            raise _failure("PLANNING_INSTANCE_CONFLICT", [f"plan.steps.{design_id}"],
+                           dict(instance_id=instance_id,
+                                steps=[instance_step[instance_id], design_id],
+                                message="两个执行步骤不能声明为同一个请求实例。"))
+        instance_step[instance_id] = design_id
+    known = {item.instance_id for item in ir.instances}
+    present = sorted((instance_id for instance_id in instance_step if instance_id in known),
+                     key=lambda key: ir.instance(key).sort_key)
+    if not present:
+        raise _failure("PLANNING_INSTANCE_COVERAGE", construction=dict(covered=[]))
+    edges = ir.edge_pairs()
+    missing = sorted({source for (source, target) in edges
+                      if target in present and source not in present})
+    if missing:
+        raise _failure("PLANNING_INSTANCE_COVERAGE",
+                       fields=[f"instance.{key}" for key in missing],
+                       construction=dict(covered=present, missing=missing,
+                                         message="消费实例引用的产生者步骤不在本场景中。"))
+    order = [key for key in ir.order if key in present]
+    step_position = {instance_step[key]: position
+                     for position, key in enumerate(order)}
+    steps = []
+    for instance_id in order:
+        instance = ir.instance(instance_id)
+        design_id = instance_step[instance_id]
+        twins = by_instance.get(instance_id, [])
+        if len(twins) != 1:
+            raise _failure("PLANNING_INSTANCE_CONFLICT", [f"instance.{instance_id}"],
+                           dict(instance_id=instance_id, steps=twins,
+                                message="一个请求实例必须恰好对应一个执行步骤。"))
+        step = next(item for item in draft.steps if item.id == twins[0])
+        if step.operation_id != instance.operation_id or step.role != instance.role:
+            raise _failure("PLANNING_INSTANCE_CONFLICT", [f"plan.steps.{step.id}"],
+                           dict(instance_id=instance_id, operation_id=step.operation_id,
+                                role=step.role))
+        _policy_for(instance, policies)
+        steps.append(dict(id=design_id, operation_id=instance.operation_id,
+                          role=instance.role, policy_id=instance.policy_id,
+                          arguments=_apply_arguments(step, instance, mapping, instance_step,
+                                                     step_position),
+                          requirement_source_id=step.requirement_source_id or instance.source_id,
+                          requirement_action_index=step.requirement_action_index or 0))
+    dependencies = {instance_step[instance_id]: [] for instance_id in present}
+    reasons = {}
+    evidence = {}
+    for (source, target), items in edges.items():
+        source_id, target_id = instance_step.get(source), instance_step.get(target)
+        if target_id in dependencies and source_id in dependencies:
+            dependencies[target_id].append(source_id)
+            reasons[f"{target_id}<={source_id}"] = "+".join(item.reason for item in items)
+            evidence[f"{target_id}<={source_id}"] = [item.model_dump(mode="json")
+                                                     for item in items]
+    compiled = dict(name=draft.name, steps=steps)
+    stats = dict(encoding=ENCODING, proposed_nodes=len(draft.steps),
+                 constructed_nodes=len(steps), instances=present,
+                 instance_steps=dict(instance_step),
+                 dependency_edges=sum(len(value) for value in dependencies.values()),
+                 node_dependencies={key: sorted(value)
+                                    for key, value in dependencies.items()},
+                 edge_reasons=reasons, edge_evidence=evidence)
+    _insert_authentication(compiled, stats, context)
+    return compiled, stats
+
+
+def _insert_authentication(compiled, stats, context):
+    """Insert only the approved login node a protected operation requires."""
+    policies = {item["id"]: item for item in context.get("policies", [])}
+    inserted = 0
+    for auth in context.get("authentication", []) or []:
+        protected = [node for node in compiled["steps"]
+                     if node["role"] == auth["role"]
+                     and node["operation_id"] in auth["before_operation_ids"]]
+        if not protected or auth["login_operation_id"] is None:
+            continue
+        existing = [node for node in compiled["steps"]
+                    if node["operation_id"] == auth["login_operation_id"]
+                    and node["role"] == auth["role"]]
+        if not existing:
+            allowed = [policy for policy in policies.values()
+                       if policy["operation_id"] == auth["login_operation_id"]
+                       and auth["role"] in policy["roles"]
+                       and not policy.get("negative_test")]
+            if len(allowed) != 1:
+                raise _failure("CONSTRUCTION_AUTHENTICATION_AMBIGUOUS")
+            key = f"managed_auth_{auth['role']}"
+            if any(node["id"] == key for node in compiled["steps"]):
+                raise _failure("CONSTRUCTION_RESERVED_NODE_ID")
+            node = dict(id=key, operation_id=auth["login_operation_id"],
+                        role=auth["role"], policy_id=allowed[0]["id"], arguments=[])
+            position = min(compiled["steps"].index(item) for item in protected)
+            compiled["steps"].insert(position, node)
+            stats["node_dependencies"][key] = []
+            existing = [node]
+            inserted += 1
+        if len(existing) != 1:
+            raise _failure("CONSTRUCTION_AUTHENTICATION_AMBIGUOUS")
+        for node in protected:
+            if node["id"] == existing[0]["id"]:
+                continue
+            stats["node_dependencies"].setdefault(node["id"], [])
+            if existing[0]["id"] not in stats["node_dependencies"][node["id"]]:
+                stats["node_dependencies"][node["id"]].append(existing[0]["id"])
+                stats["edge_reasons"][f"{node['id']}<={existing[0]['id']}"] = "AUTHENTICATION"
+                stats["edge_evidence"][f"{node['id']}<={existing[0]['id']}"] = [
+                    dict(reason="AUTHENTICATION", evidence="已批准登录前置", source_id=None)]
+                stats["dependency_edges"] += 1
+    stats["managed_authentication_nodes"] = inserted
+    stats["constructed_nodes"] = len(compiled["steps"])
+
+
+def validate_instance_coverage(ir: PlanningIR, cases, *, allow_partial=False):
+    """Every required instance must be planned somewhere; none may vanish silently.
+
+    ``allow_partial`` is set only when the proposal explicitly leaves work to a question or a
+    ``not_covered`` entry; that omission stays visible to the user instead of being executed.
+    """
+    if not isinstance(ir, PlanningIR) or not ir.instances or any(ir.ambiguities):
+        return
+    if allow_partial:
+        return
+    required: dict[tuple[str, str | None], list[str]] = {}
+    for instance in ir.instances:
+        required.setdefault((instance.operation_id, instance.role), []).append(
+            instance.instance_id)
+    planned: dict[tuple[str, str | None], int] = {}
+    for case in cases:
+        for step in (case.get("plan") or {}).get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            key = (step.get("operation_id"), step.get("role"))
+            planned[key] = planned.get(key, 0) + 1
+    missing = [instance_id for key, instances in required.items()
+               if planned.get(key, 0) < len(instances) for instance_id in instances]
+    if missing:
+        raise _failure("PLANNING_INSTANCE_COVERAGE", fields=missing,
+                       construction=dict(missing=missing,
+                                         planned={f"{key[0]}:{key[1]}": count
+                                                  for key, count in planned.items()},
+                                         message="模型的方案没有覆盖原文要求的全部请求实例。"))

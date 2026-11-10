@@ -29,6 +29,50 @@ DEFAULT_ROUND = "安排一轮测试，优先正常请求、参数边界、已批
 DEFAULT_FOLLOWUP = "沿用上次测试重点，按最新已确认的信息安排尚未完成的检查。"
 
 
+def request_planning_ir(project, selection, atoms, text):
+    """Build the normalized planning representation from the validated Focus output."""
+    from agenttest.planning_ir import build_planning_ir
+
+    requirements = [item.model_dump() if hasattr(item, "model_dump") else item
+                    for item in selection.requirements]
+    inputs = [item.model_dump() if hasattr(item, "model_dump") else item
+              for item in selection.input_requirements]
+    return build_planning_ir(
+        requirements, atoms, operations=[dict(id=op.operation_id, method=op.method,
+                                              path=op.path)
+                                         for op in project.contract.operations],
+        policies=[policy.model_dump() for policy in project.registry.definitions()],
+        target_lifecycles=[rule.model_dump() for rule in project.target.resource_lifecycles],
+        read_operations={op.operation_id for op in project.contract.operations
+                         if op.method in {"GET", "HEAD", "OPTIONS"}},
+        input_requirements=inputs)
+
+
+def aggregate_usage(records):
+    """Sum every known model call; a single unknown amount keeps the total UNKNOWN."""
+    calls = [record.get("model_call") for record in records or ()
+             if isinstance(record.get("model_call"), dict) and record["model_call"].get("calls")]
+    if not calls:
+        return 0, None
+    usage = ModelCallStats(calls=sum(call["calls"] for call in calls))
+    if all(call.get("total_tokens") is not None for call in calls):
+        usage.total_tokens = sum(call["total_tokens"] for call in calls)
+        if all(call.get("input_tokens") is not None for call in calls):
+            usage.input_tokens = sum(call["input_tokens"] for call in calls)
+        if all(call.get("output_tokens") is not None for call in calls):
+            usage.output_tokens = sum(call["output_tokens"] for call in calls)
+    usage.input_token_upper_bound = sum(call.get("input_token_upper_bound") or 0
+                                       for call in calls)
+    usage.request_bytes = sum(call.get("request_bytes") or 0 for call in calls)
+    usage.response_bytes = sum(call.get("response_bytes") or 0 for call in calls)
+    usage.elapsed_ms = round(sum(call.get("elapsed_ms") or 0 for call in calls), 3)
+    names = {call.get("model_name") for call in calls}
+    usage.model_name = names.pop() if len(names) == 1 else None
+    digests = {call.get("model_sha256") for call in calls}
+    usage.model_sha256 = digests.pop() if len(digests) == 1 else None
+    return usage.calls, usage
+
+
 class JournalPlanner:
     """A crash or cancellation during a call leaves a durable usage stop, never a retry."""
 
@@ -165,6 +209,7 @@ class ProductTasks:
                 row = svc.db.transition(task_id, owner, "QUEUED", "RUNNING")
                 project = svc.project(row["project_id"])
                 project_record = svc.intake.record(row["project_id"])
+                planning_ir = None
 
                 def guard():
                     if svc.project(row["project_id"]).identity() != row["project_identity"]:
@@ -217,6 +262,16 @@ class ProductTasks:
                                 timeout=getattr(getattr(raw_focus, "_settings", None),
                                                 "timeout", 90.0) + 1)
                             summary["focus"] = selection.model_dump()
+                            try:
+                                planning_ir = request_planning_ir(
+                                    project, selection, summary["requirement_sources"],
+                                    context["current_request"])
+                                summary["planning_ir"] = planning_ir.public_summary()
+                            except Exception as exc:
+                                # The legacy path stays available for an input shape the
+                                # normalizer does not cover; nothing is guessed or applied.
+                                planning_ir = None
+                                summary["planning_ir_error"] = type(exc).__name__
                             summary["focus_presentation"] = presentation_language(
                                 selection.interpretation)
                             summary["requirement_ledger"] = selection.requirement_ledger
@@ -425,6 +480,34 @@ class ProductTasks:
                                               summary=summary)
                             svc.db.event(task_id, 'FINISHED', requests=ledger.requests)
                             return
+                        held_elsewhere = bool(
+                            summary.get("focus", {}).get("blocked_operation_ids")
+                            or summary.get("focus", {}).get("source_conflicts")
+                            or summary.get("focus", {}).get("blocked_operations")
+                            or summary.get("input_blocked_operations")
+                            or summary.get("questions")
+                            or summary.get("http_status_requirements")
+                            or summary.get("requested_checks"))
+                        if (planning_ir is not None and planning_ir.normalization_applied
+                                and planning_ir.ambiguities
+                                and len(summary["groups"]) == 1
+                                and not held_elsewhere):
+                            fields = [field for item in planning_ir.ambiguities
+                                      for field in item.fields][:20]
+                            summary.update(
+                                complete=False, checks_passed=False,
+                                reason="原文中的请求与约束还不能唯一确定执行实例；"
+                                       "本轮没有发送业务请求，请查看规划诊断。",
+                                diagnostic=dict(code="PLANNING_IR_AMBIGUOUS", layer="MODEL",
+                                                fields=fields))
+                            for group in summary["groups"]:
+                                group.update(status="NOT_EXECUTED",
+                                             reason="请求实例存在待确认的歧义。")
+                            self.coverage(summary)
+                            checkpoint()
+                            svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW",
+                                              summary=summary)
+                            return
                         selected_ids = (selection.operation_ids if selection.mode == "selected"
                                         else project.target.allowed_operations)
                         if selection.mode == 'selected':
@@ -437,6 +520,9 @@ class ProductTasks:
                         if rule_reads and not summary['groups']:
                             summary['reason'] = '业务规则待确认。本轮没有安排业务请求。'
                         checkpoint()
+                    design_requirements = summary.get('planning_requirements',
+                        summary.get('focus', {}).get('requirements', []))
+                    witness_requirements = design_requirements
                     for position, group in enumerate(summary["groups"]):
                         guard()
                         reserved_requests = (sum(len(g["primary"]) for g in
@@ -475,6 +561,25 @@ class ProductTasks:
                         summary["design_records"].append(record)
                         checkpoint()
                         design_started = time.perf_counter()
+                        group_requirements = design_requirements
+                        group_witness_requirements = witness_requirements
+                        group_ir = None
+                        if (planning_ir is not None and planning_ir.normalization_applied
+                                and not planning_ir.ambiguities
+                                and not summary.get('planning_requirements')
+                                and not summary.get('questions')
+                                and not summary.get('requested_checks')
+                                and planning_ir.instances
+                                and {item.operation_id for item in planning_ir.instances}
+                                <= set(group['primary'])):
+                            # Focus turned status/data constraints into request obligations;
+                            # the Design model sees only real requests in this group, and the
+                            # deterministic compiler realizes them as instances. A group that
+                            # covers only part of the request keeps the unchanged legacy path.
+                            group_requirements = planning_ir.normalized_requirements
+                            group_witness_requirements = summary.get('focus', {}).get(
+                                'requirements', [])
+                            group_ir = planning_ir
                         try:
                             design = await propose_design(project, text, group, model,
                                 environ=svc.environ,
@@ -493,8 +598,9 @@ class ProductTasks:
                                 input_requirements=summary.get("focus", {}).get(
                                     "input_requirements", []),
                                 requested_checks=executable_checks,
-                                request_requirements=summary.get('planning_requirements',
-                                    summary.get('focus', {}).get('requirements', [])),
+                                request_requirements=group_requirements,
+                                witness_requirements=group_witness_requirements,
+                                planning_ir=group_ir,
                                 permission_action_scope=summary.get('permission_action_scope'),
                                 data_references=summary.get('data_references', []),
                                 http_status_requirements=summary.get(
@@ -736,9 +842,13 @@ class ProductTasks:
                     diagnostic = rejected[0].get("diagnostic") or {}
                     code = rejected[0].get("reason") or diagnostic.get("code") or \
                         "DESIGN_REJECTED"
-                    report = self.failure_report(project, text, code, diagnostic)
+                    report = self.failure_report(project, text, code, diagnostic,
+                                                 records=summary["design_records"])
                     summary.update(
                         complete=False, checks_passed=False, report_id=report.run_id,
+                        model_calls=report.planner_calls,
+                        model_usage=(report.model_call.model_dump(mode="json")
+                                     if report.model_call else None),
                         reason="方案未通过校验，本轮没有发送任何业务请求。请查看诊断后重新安排测试。",
                         diagnostic=dict(code=code, layer=diagnostic.get("layer"),
                                         fields=diagnostic.get("fields") or []))
@@ -781,12 +891,13 @@ class ProductTasks:
             if transport is not None:
                 await transport.aclose()
 
-    def failure_report(self, project, text, code, diagnostic):
+    def failure_report(self, project, text, code, diagnostic, records=()):
         """Publish a no-step failure report so a rejected round still has auditable evidence."""
         from agenttest.diagnostics import Diagnostic
         from agenttest.report import RunReport, fingerprint
 
         payload = Diagnostic.model_validate(diagnostic) if diagnostic else None
+        calls, usage = aggregate_usage(records)
         report = RunReport(
             scenario_sha256=fingerprint({"task": text, "design": "REJECTED"}),
             contract_sha256=fingerprint(project.document),
@@ -796,7 +907,7 @@ class ProductTasks:
             policy_registry_sha256=project.registry.digest(),
             outcome=Outcome.NEEDS_REVIEW, reason=code, diagnostic=payload,
             task_mode="model_designed", plan_valid=False, dsl_valid=False,
-            policy_authorized=False)
+            policy_authorized=False, planner_calls=calls, model_call=usage)
         self.service.reports.save(report)
         return report
 

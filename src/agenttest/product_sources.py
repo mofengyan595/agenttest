@@ -13,6 +13,9 @@ def compact_sources(context):
     sources = {}
 
     result = deepcopy(context)
+    # The normalized planning IR drives trusted construction; it is not model input and keeps
+    # the public payload byte-compatible with requests that predate it.
+    result.pop("planning_ir", None)
     for policy in result.get("policies", []):
         # Absent optional bindings and polling are the same as their empty defaults.
         # Keep the trusted context intact for all validators and execution checks.

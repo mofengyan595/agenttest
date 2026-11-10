@@ -3915,4 +3915,31 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   人工确认证据 → 再决定 F1；失败即停，不重放、不 re-freeze、不改 prompt 重试。
 - 未执行：真实模型调用、M2/F1 位置执行、业务写请求、re-freeze、生产访问。
 
+## 2026-11-10：规划引擎重构（规范化 IR + 确定性编译器）
+
+- 诊断归档 M2：8 个 required 子句中只有 4 个真实请求（create/get/delete/get），1 个取 id，
+  3 个状态断言；旧 schema 把非请求子句逼成 action，Design 无实例身份，构造器 `node_for`
+  用整个操作池扩大未绑定节点，最终以 `CONSTRUCTION_DEPENDENCY_CYCLE`
+  （`plan.steps.1/2`）暴露。原始 Design 回复未归档，重放采用显式 4 步未绑定重建。
+- 新增 `src/agenttest/planning_ir.py`、`src/agenttest/planning_compiler.py`：
+  `ActionInstance` / `Constraint` / `ResourceHandle` / `DependencyEdge` / `Ambiguity`；
+  程序分配 `ai_N` 实例、解析动态参数、保留全部边原因（DATA_DEPENDENCY/TEXT_ORDER/
+  LIFECYCLE_CLEANUP/RESOURCE_EXISTS/RESOURCE_ABSENT/POLICY_PREREQUISITE/
+  AUTHENTICATION/SEQUENCE_MARKER）、稳定拓扑排序、输出既有 DSL。
+- 生产入口窄启用：仅当规范化去除过非请求子句、无歧义、无待确认问题、组覆盖全部实例时
+  使用编译器；负向用例、部分分组、普通单请求输入保持旧路径。wire 不新增字段，执行步骤 id
+  仍用 Design id，IR 只做内部身份与统计。
+- 生命周期修正：M2 正确顺序 `CREATE → GET(200) → DELETE(204) → GET(404)`；回读引用
+  CREATE 的 id 但排在 DELETE 后，DELETE 不等待回读；显式 `EXISTS`/`DELETED`/
+  `VERIFY_ABSENT` 阶段。
+- 用量修复：`failure_report` 汇总 `design_records[*].model_call`，已知 2 次/22574 保留，
+  缺失为 `UNKNOWN` 而非 0；归档 M2 报告不改写。
+- 离线验证：`scripts/rw_lifecycle/planning_replay.py` 复现历史环并得到 4 实例 DAG；
+  产品入口 E2E（Focus→Design→IR→DSL→Executor，MockTransport）4 请求 PASS。
+- 测试：`tests/test_planning_ir.py` 14 passed（含两层 E2E）；相关产品/规划套件 173+ passed；
+  全量离线 `check_full.py --jobs 4` = **2652 collected / 2637 passed / 0 failed / 15 skipped**
+  （1184.7s，`exact_test_id_coverage=true`）；`ruff check .` 通过。
+- 未执行：真实模型调用、M2/F1 位置执行、业务写请求、re-freeze、生产访问。下一步为独立的
+  新位置真实模型验收（需显式授权），不以“凑 PASS”为目标。
+
 
