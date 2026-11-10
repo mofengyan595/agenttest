@@ -41,54 +41,156 @@ def _instance_groups(ir: PlanningIR):
     return groups
 
 
-def _step_instance_map(ir: PlanningIR, draft):
-    """Map proposal steps to IR instances using declared identities, never array position.
+def _instance_statuses(instance):
+    """Explicit status assertions the IR attached to one request instance."""
+    return {status for assertion in instance.assertions for status in assertion.statuses}
 
-    A clause the user asked to repeat owns several instances; byte-identical proposal steps
-    are distributed over them in proposal order because identity carries no meaning between
-    identical requests. Different requests may never share one identity.
+
+def _policy_statuses(policy):
+    if not isinstance(policy, dict):
+        return set()
+    status = ((policy.get("assertions") or {}).get("status") or {})
+    return {code for code in status.get("codes") or [] if isinstance(code, int)}
+
+
+def _argument_slots(step):
+    return {(argument.location, argument.name): argument for argument in step.arguments}
+
+
+def _resource_references(step, mapping):
+    """Resolved (producer instance, selector) pairs a step already exposes."""
+    return {(mapping[argument.from_step], argument.select)
+            for argument in step.arguments
+            if argument.from_step is not None and argument.from_step in mapping}
+
+
+def _rank_instance(step, instance, mapping, policies):
+    """Score only approved semantics; no score means the model did not identify the instance."""
+    score, criteria = 0, []
+    if step.policy_id == instance.policy_id:
+        score += 8
+        criteria.append("POLICY")
+    step_statuses = _policy_statuses(policies.get(step.policy_id))
+    if step_statuses & _instance_statuses(instance):
+        score += 4
+        criteria.append("STATUS")
+    references = _resource_references(step, mapping)
+    instance_references = {(argument.from_instance, argument.select)
+                           for argument in instance.arguments
+                           if argument.from_instance is not None}
+    if references:
+        if references <= instance_references:
+            score += 4
+            criteria.append("RESOURCE")
+        elif instance_references:
+            score -= 4
+    step_arguments = _argument_slots(step)
+    instance_arguments = _argument_slots(instance)
+    for slot, argument in step_arguments.items():
+        target = instance_arguments.get(slot)
+        if (target is not None and target.from_instance is None
+                and argument.from_step is None):
+            if argument.value == target.value:
+                score += 1
+                criteria.append("ARGUMENT")
+            else:
+                score -= 2
+    for slot, target in instance_arguments.items():
+        if target.from_instance is not None:
+            supplied = step_arguments.get(slot)
+            if supplied is None or supplied.from_step is None:
+                score -= 2
+    return score, criteria
+
+
+def _step_instance_map(ir: PlanningIR, draft, policies=None):
+    """Map proposal steps to IR instances using approved semantics, never array position.
+
+    A clause with explicit ``requirement_source_id`` bindings owns its instances and consumes
+    them in that order. Different requests may never share one identity. When a repeated
+    operation has no source binding, the program first uses the approved policy, the response
+    status assertion, resolved producer references and literal argument slots. A unique winner
+    is bound; a tie remains ``NEEDS_REVIEW`` instead of being guessed. Byte-identical repeated
+    steps with no distinguishing evidence are therefore deliberately not distributed by array
+    position.
     """
+    policies = policies or {}
     groups = _instance_groups(ir)
     by_operation: dict[tuple[str, str | None], list[ActionInstance]] = {}
     for instance in ir.instances:
         by_operation.setdefault((instance.operation_id, instance.role), []).append(instance)
     mapping: dict[str, str] = {}
     by_instance: dict[str, list[str]] = {}
-    used: dict[str, int] = {}
+    used_instances: set[str] = set()
+    used_clauses: dict[str, int] = {}
+    unresolved = []
     for position, step in enumerate(draft.steps):
         source = step.requirement_source_id
         index = step.requirement_action_index or 0
-        if source is not None:
-            members = [item for item in groups.get(source, [])
-                       if item.action_index == index]
-            if not members and index == 0:
-                members = list(groups.get(source, []))
-            if not members:
-                raise _failure("PLANNING_UNSOURCED_STEP",
-                               [f"plan.steps.{position}.requirement_source_id"],
-                               dict(clause=source, index=index,
-                                    message="该子句不是本轮可执行的请求实例。"))
-            cursor = used.get(source, 0)
-            if cursor >= len(members):
-                raise _failure("PLANNING_INSTANCE_CONFLICT",
-                               [f"plan.steps.{position}.requirement_source_id"],
-                               dict(clause=source, instances=[item.instance_id
-                                                              for item in members],
-                                    message="模型为一个请求实例计划了多个不同步骤。"))
-            instance = members[cursor]
-            used[source] = cursor + 1
-        else:
-            candidates = by_operation.get((step.operation_id, step.role), [])
-            if len(candidates) != 1:
+        if source is None:
+            unresolved.append((position, step))
+            continue
+        members = [item for item in groups.get(source, [])
+                   if item.action_index == index]
+        if not members and index == 0:
+            members = list(groups.get(source, []))
+        if not members:
+            raise _failure("PLANNING_UNSOURCED_STEP",
+                           [f"plan.steps.{position}.requirement_source_id"],
+                           dict(clause=source, index=index,
+                                message="该子句不是本轮可执行的请求实例。"))
+        cursor = used_clauses.get(source, 0)
+        if cursor >= len(members):
+            raise _failure("PLANNING_INSTANCE_CONFLICT",
+                           [f"plan.steps.{position}.requirement_source_id"],
+                           dict(clause=source, instances=[item.instance_id
+                                                          for item in members],
+                                message="模型为一个请求实例计划了多个不同步骤。"))
+        instance = members[cursor]
+        used_clauses[source] = cursor + 1
+        mapping[step.id] = instance.instance_id
+        used_instances.add(instance.instance_id)
+        by_instance.setdefault(instance.instance_id, []).append(step.id)
+
+    while unresolved:
+        progress = False
+        deferred = []
+        for position, step in unresolved:
+            candidates = [item for item in by_operation.get(
+                (step.operation_id, step.role), []) if item.instance_id not in used_instances]
+            if not candidates:
                 raise _failure(
                     "PLANNING_INSTANCE_UNBOUND", [f"plan.steps.{position}"],
-                    dict(operation_id=step.operation_id, role=step.role,
-                         candidates=[item.instance_id for item in candidates],
-                         message="模型没有指明该步骤对应哪个请求实例；"
-                                 "程序不会按数组位置猜测。"))
-            instance = candidates[0]
-        mapping[step.id] = instance.instance_id
-        by_instance.setdefault(instance.instance_id, []).append(step.id)
+                    dict(operation_id=step.operation_id, role=step.role, candidates=[],
+                         message="没有剩余的同操作实例可绑定；程序不会按数组位置猜测。"))
+            if len(candidates) == 1:
+                chosen = candidates[0]
+            else:
+                ranked = [(_rank_instance(step, item, mapping, policies), item)
+                          for item in candidates]
+                best = max(score for (score, _), _ in ranked)
+                top = [item for (score, criteria), item in ranked if score == best]
+                if best <= 0 or len(top) != 1:
+                    deferred.append((position, step, candidates, ranked))
+                    continue
+                chosen = top[0]
+            mapping[step.id] = chosen.instance_id
+            used_instances.add(chosen.instance_id)
+            by_instance.setdefault(chosen.instance_id, []).append(step.id)
+            progress = True
+        if not progress:
+            position, step, candidates, ranked = deferred[0]
+            evidence = [
+                dict(instance_id=item.instance_id, score=score, criteria=criteria,
+                     policy_id=item.policy_id, statuses=sorted(_instance_statuses(item)))
+                for (score, criteria), item in ranked]
+            raise _failure(
+                "PLANNING_INSTANCE_AMBIGUOUS", [f"plan.steps.{position}"],
+                dict(operation_id=step.operation_id, role=step.role,
+                     candidates=evidence,
+                     message="模型没有提供足以唯一确定请求实例的已批准语义；"
+                             "程序不会按数组位置或相似度猜测。"))
+        unresolved = [item for item in unresolved if item[1].id not in mapping]
     return mapping, by_instance
 
 
@@ -152,7 +254,7 @@ def _apply_arguments(step, instance, mapping, instance_step, step_position):
                          from_instance=argument.from_instance))
             arguments[slot] = dict(location=argument.location, name=argument.name, value=None,
                                    from_step=target, select=argument.select)
-        elif _scalar(argument.value):
+        elif argument.value is not None and _scalar(argument.value):
             arguments[slot] = dict(location=argument.location, name=argument.name,
                                    value=argument.value, from_step=None, select=None)
     for data in arguments.values():
@@ -189,7 +291,7 @@ def compile_design(ir, plan, context):
         ambiguity = ir.ambiguities[0]
         raise _failure("PLANNING_IR_AMBIGUOUS", fields=list(ambiguity.fields),
                        construction=dict(ambiguity=ambiguity.model_dump(mode="json")))
-    mapping, by_instance = _step_instance_map(ir, draft)
+    mapping, by_instance = _step_instance_map(ir, draft, policies)
     instance_step = {}
     for design_id, instance_id in mapping.items():
         if instance_id in instance_step:

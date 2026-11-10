@@ -163,6 +163,53 @@ def test_archived_m2_ir_path_compiles_a_correct_dag():
     assert stats["edge_reasons"]["remove_item<=read_item"].startswith("LIFECYCLE_CLEANUP")
 
 
+def test_unbound_repeated_gets_match_on_approved_status():
+    """Two GET steps without source ids are distinguished by their approved 200/404 policies."""
+    ir = m2_ir()
+    steps = [
+        step("create_item", "createItem", body=True),
+        step("read_item", "getItem", source="create_item"),
+        step("remove_item", "deleteItem", source="create_item"),
+        step("read_after_delete", "getItem", source="create_item",
+             policy_id="getItem_expectation_1"),
+    ]
+    plan, stats = construct_plan(dict(name="m2-unbound", steps=steps), dict(
+        policies=m2_policies(), operations=M2_OPERATIONS, authentication=[], planning_ir=ir))
+    assert stats["instance_steps"] == {
+        "ai_1": "create_item", "ai_2": "read_item",
+        "ai_3": "remove_item", "ai_4": "read_after_delete"}
+    assert [item["id"] for item in plan["steps"]] == [
+        "create_item", "read_item", "remove_item", "read_after_delete"]
+    assert [item["policy_id"] for item in plan["steps"]] == [
+        "createItem", "getItem", "deleteItem", "getItem_expectation_1"]
+
+
+def test_unbound_identical_gets_remain_review():
+    """Without a policy/status/resource distinction the compiler must not guess."""
+    quote_one, quote_two = "读取条目甲", "读取条目乙"
+    requirements = [
+        dict(source_id="request_1", source_quote=quote_one, disposition="required",
+             actions=[dict(operation_id="getItem", role="author")], before=[],
+             same_resource=[]),
+        dict(source_id="request_2", source_quote=quote_two, disposition="required",
+             actions=[dict(operation_id="getItem", role="author")], before=[],
+             same_resource=[])]
+    atoms = [dict(source_id="request_1", text=quote_one, start=0),
+             dict(source_id="request_2", text=quote_two, start=8)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="getItem", method="GET", path="/items/{id}")],
+                           policies=[policy("getItem", "getItem", [200])],
+                           read_operations={"getItem"})
+    steps = [step("read_a", "getItem"), step("read_b", "getItem")]
+    with pytest.raises(ValidationFailure) as caught:
+        construct_plan(dict(name="ambiguous", steps=steps), dict(
+            policies=[policy("getItem", "getItem", [200])],
+            operations=[dict(id="getItem", method="GET", path="/items/{id}")],
+            authentication=[], planning_ir=ir))
+    assert caught.value.diagnostic.code == "PLANNING_INSTANCE_AMBIGUOUS"
+    assert caught.value.diagnostic.fields == ["plan.steps.0"]
+
+
 def test_status_only_clause_does_not_become_a_second_request():
     requirements = [
         dict(source_id="request_1", source_quote="读取该条目", disposition="required",
@@ -435,21 +482,17 @@ async def test_archived_m2_semantics_run_through_the_product_entry(tmp_path, mon
         flow = dict(title="最小读写闭环", kind="flow", plan=dict(name="m2", steps=[
             dict(id="c", operation_id="createItem", role=None, policy_id="web_rule_1",
                  arguments=[dict(location="body", name="name", value="first",
-                                 from_step=None, select=None)],
-                 requirement_source_id="request_1", requirement_action_index=0),
+                                 from_step=None, select=None)]),
             dict(id="r1", operation_id="readItem", role=None, policy_id="web_rule_2",
                  arguments=[dict(location="path_parameters", name="itemId", value=None,
-                                 from_step="c", select="$.id")],
-                 requirement_source_id="request_3", requirement_action_index=0),
+                                 from_step="c", select="$.id")]),
             dict(id="d", operation_id="deleteItem", role=None, policy_id="web_rule_5",
                  arguments=[dict(location="path_parameters", name="itemId", value=None,
-                                 from_step="c", select="$.id")],
-                 requirement_source_id="request_5", requirement_action_index=0),
+                                 from_step="c", select="$.id")]),
             dict(id="r2", operation_id="readItem", role=None,
                  policy_id="web_rule_2_expectation_1",
                  arguments=[dict(location="path_parameters", name="itemId", value=None,
-                                 from_step="c", select="$.id")],
-                 requirement_source_id="request_7", requirement_action_index=0),
+                                 from_step="c", select="$.id")]),
         ]))
         return response(dict(interpretation="创建、读取、删除、回读", cases=[],
                              resource_flows={"fresh_1": flow}, questions=[],
@@ -472,6 +515,24 @@ async def test_archived_m2_semantics_run_through_the_product_entry(tmp_path, mon
         done = await finished(svc, row)
         summary = done["summary"]
         assert done["status"] == "FINISHED" and summary["complete"], summary.get("reason")
+        assert summary["planning_engine"] == "NORMALIZED_IR_COMPILER_V1"
+        assert summary["planning_engine_reason"] == "IR_SELECTED"
+        assert summary["planning_instance_count"] == 4
+        assert summary["planning_instance_mapping_complete"] is True
+        assert summary["planning_dependency_edges"] == 5
+        assert len(summary["planning_requirements"]) == 8
+        conditions = summary["planning_engine_groups"][-1]["conditions"]
+        assert conditions["planning_ir"] is True
+        assert conditions["normalization_applied"] is True
+        assert conditions["no_pending_permissions"] is True
+        assert conditions["no_pending_questions"] is True
+        assert conditions["all_instances_in_group"] is True
+        assert conditions["no_unresolved_request_clauses"] is True
+        construction = summary["design_records"][-1]["plan_construction"]
+        assert [item["encoding"] for item in construction] == [
+            "NORMALIZED_IR_COMPILER_V1"]
+        assert construction[0]["instance_steps"] == {
+            "ai_1": "c", "ai_2": "r1", "ai_3": "d", "ai_4": "r2"}
         assert summary["planning_ir"]["coverage"]["instances"] == 4
         assert summary["planning_ir"]["coverage"]["required_clauses_after"] == 4
         assert target.calls == [("POST", "/items"), ("GET", "/items/item_1"),

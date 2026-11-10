@@ -1,5 +1,14 @@
 # 开发进度
 
+## 2026-11-10 — Planning IR 生产接入核查与最小修复
+
+- 核查结论：修复前生产入口**确实绕过**新编译器。归档 M2 的 IR 已生成、规范化生效、有 4 个实例，但 `planning_requirements` 被无条件设为 8 个 Focus 子句，激活条件 `not summary.get("planning_requirements")` 恒假，实际 construction encoding 为 `UNORDERED_APPROVED_NODES_V1`。
+- 最小修复：删除该错误条件，改用真实阻塞事实（权限待审、问题、requested checks、IR 歧义、未解决约束、组覆盖不全）；产品报告新增 `planning_engine`、选择/回退原因、逐条件实际值、实例数、映射完整性、实际依赖边数，数据来自真实 `construction_records`，不靠 IR 是否存在推断。
+- 无 source binding 的重复操作改为按已批准 `operation_id`/`role`/`policy_id`、状态断言、生产者引用和字面量槽位确定性匹配；证据相同则返回 `PLANNING_INSTANCE_AMBIGUOUS`/`NEEDS_REVIEW`，不按数组位置猜测。另修复“IR 的 `value=null` 覆盖模型合法字面量”导致的 `OPENAPI_VALUE_TYPE`。
+- 生产入口 E2E 使用归档 M2 Focus + MockTransport，Design 故意不带 source binding；实际 `planning_engine=NORMALIZED_IR_COMPILER_V1`，8→4 实例、4 个实例全部映射、5 条依赖边，请求 `POST /items → GET /items/item_1 → DELETE /items/item_1 → GET /items/item_1`，最后 GET 期望 404，PASS 且无额外请求。
+- 新增确定性匹配/歧义安全路径测试。定向模块通过；完整离线回归 **2654 collected / 2639 passed / 0 failed / 0 errors / 15 skipped**，wall 884.438 秒；`ruff check .` 全绿。
+- 本轮零真实模型调用，未重跑/消耗 M2/F1，未修改冻结证据与验收结果。报告：[planning-ir-production-activation.md](planning-ir-production-activation.md)。下一步需用户单独授权新的独立真实模型验收。
+
 ## 2026-11-08 — 第四轮全新真实 ecnu-max A/B 验收
 
 - 用冻结基线 `8111a37`（修复前）与候选 `a779ca5`（修复后）在**新建**只读回环项目（`127.0.0.1:19091`，新受众 custodian/curator/auditor/inspector、新路径与载荷）上跑 4 篇全新需求 × 2 版 × 2 轮 = 16 个唯一首位，一位置一提交，零重放、零重试、零停止；排程哈希 `457d909…49f407faf`。第三轮结论与证据保持冻结未动。

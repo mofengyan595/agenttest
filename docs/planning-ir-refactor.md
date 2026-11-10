@@ -37,6 +37,10 @@ M2 的 `CONSTRUCTION_DEPENDENCY_CYCLE` 不是“模型把顺序写错了”，�
 本轮**没有**调用真实模型、没有消耗 M2/F1 位置、没有改冻结 rubric/评分/原始证据。下文的
 “E2E PASS”是 MockTransport 离线 E2E，不是真实 LLM 端到端成功率。
 
+> 2026-11-10 生产接入核查补丁：修复了 `planning_requirements` 非空导致新编译器被永久绕过的
+> 激活条件缺陷，补充实际 construction encoding 证据与无 source binding 的确定性实例匹配。
+> 见 [planning-ir-production-activation.md](planning-ir-production-activation.md)。
+
 ## 1. 成熟方案对照（只依据实际代码/官方文档）
 
 | 成熟方案 | 核心设计 | AgentTest 当前实现 | 可借鉴之处 | 是否采用 |

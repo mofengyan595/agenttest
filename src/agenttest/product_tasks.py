@@ -73,6 +73,116 @@ def aggregate_usage(records):
     return usage.calls, usage
 
 
+IR_ENGINE = "NORMALIZED_IR_COMPILER_V1"
+LEGACY_ENGINE = "LEGACY"
+NOT_EXECUTED_ENGINE = "NOT_EXECUTED"
+
+
+def unresolved_ir_clauses(planning_ir, focus_requirements):
+    """Clauses where normalization hid a request the Design path would still have to hold.
+
+    Status-only, data-capture and explicit ``constraint`` clauses are intentionally not
+    requests. A ``needs_review`` clause with actions, or a multi-action required clause whose
+    identity is not resolved, must keep the legacy path so no obligation silently disappears.
+    """
+    if planning_ir is None:
+        return []
+    original = {item.get("source_id"): item for item in focus_requirements or ()}
+    unresolved = []
+    for clause in planning_ir.clauses:
+        role = getattr(clause.role, "value", str(clause.role))
+        if role != "CONSTRAINT":
+            continue
+        requirement = original.get(clause.source_id) or {}
+        actions = requirement.get("actions") or []
+        if not actions:
+            continue
+        if (requirement.get("disposition") == "needs_review"
+                or requirement.get("disposition") == "required" and len(actions) > 1):
+            unresolved.append(clause.source_id)
+    return unresolved
+
+
+def planning_engine_conditions(planning_ir, *, group, questions, requested_checks,
+                               permission_requirements, unresolved):
+    """The exact, auditable values behind the production compiler choice."""
+    instances = getattr(planning_ir, "instances", []) if planning_ir is not None else []
+    operations = {item.operation_id for item in instances}
+    return dict(
+        planning_ir=planning_ir is not None,
+        normalization_applied=bool(planning_ir is not None
+                                   and planning_ir.normalization_applied),
+        no_ambiguities=not bool(planning_ir is not None and planning_ir.ambiguities),
+        no_pending_permissions=not bool(permission_requirements),
+        no_pending_questions=not bool(questions),
+        no_requested_checks=not bool(requested_checks),
+        has_instances=bool(instances),
+        all_instances_in_group=bool(instances and operations <= set(group.get("primary") or [])),
+        no_unresolved_request_clauses=not unresolved,
+        instances=len(instances), group_operations=sorted(group.get("primary") or []),
+        unresolved_clauses=list(unresolved))
+
+
+def planning_engine_choice(conditions):
+    """First concrete reason the normalized compiler cannot own this group."""
+    for reason, key in (
+            ("NO_PLANNING_IR", "planning_ir"),
+            ("NO_NORMALIZATION", "normalization_applied"),
+            ("IR_AMBIGUITIES", "no_ambiguities"),
+            ("PENDING_PERMISSION", "no_pending_permissions"),
+            ("PENDING_QUESTIONS", "no_pending_questions"),
+            ("REQUESTED_CHECKS", "no_requested_checks"),
+            ("NO_INSTANCES", "has_instances"),
+            ("UNRESOLVED_REQUEST_CLAUSES", "no_unresolved_request_clauses"),
+            ("PARTIAL_GROUP_COVERAGE", "all_instances_in_group")):
+        if not conditions.get(key):
+            return dict(engine=LEGACY_ENGINE, reason=reason, conditions=conditions)
+    return dict(engine=IR_ENGINE, reason="IR_SELECTED", conditions=conditions)
+
+
+def actual_planning_engine(construction):
+    """Derive the engine from the construction records that actually ran, not from intent."""
+    encodings = {item.get("encoding") for item in construction or ()
+                 if isinstance(item, dict) and item.get("encoding")}
+    if not encodings:
+        return NOT_EXECUTED_ENGINE
+    if encodings == {IR_ENGINE}:
+        return IR_ENGINE
+    if IR_ENGINE not in encodings:
+        return LEGACY_ENGINE
+    return "MIXED"
+
+
+def planning_engine_evidence(engine, choice, construction):
+    """Report what the compiler actually did, including a fallback reason."""
+    compiled = [item for item in construction or ()
+                if isinstance(item, dict) and item.get("encoding") == IR_ENGINE]
+    mapped = all(len(item.get("instance_steps") or {}) == len(item.get("instances") or [])
+                 for item in compiled)
+    conditions = (choice or {}).get("conditions") or {}
+    chosen = (choice or {}).get("engine")
+    reason = (choice or {}).get("reason") or "UNKNOWN"
+    if engine == IR_ENGINE:
+        reason = "IR_SELECTED"
+    elif engine == "MIXED":
+        reason = "MIXED_COMPILER_PATHS"
+    elif engine == NOT_EXECUTED_ENGINE:
+        reason = "NOT_EXECUTED"
+    elif chosen == IR_ENGINE:
+        reason = "IR_SELECTED_BUT_LEGACY_CASE"
+    return dict(
+        planning_engine=engine,
+        planning_engine_reason=reason,
+        planning_engine_choice_engine=chosen,
+        planning_engine_choice_reason=(choice or {}).get("reason"),
+        planning_engine_conditions=conditions,
+        planning_instance_count=int(conditions.get("instances") or 0),
+        planning_instance_mapping_complete=mapped if compiled else None,
+        planning_dependency_edges=sum(item.get("dependency_edges") or 0
+                                      for item in construction or ()
+                                      if isinstance(item, dict)))
+
+
 class JournalPlanner:
     """A crash or cancellation during a call leaves a durable usage stop, never a retry."""
 
@@ -564,14 +674,16 @@ class ProductTasks:
                         group_requirements = design_requirements
                         group_witness_requirements = witness_requirements
                         group_ir = None
-                        if (planning_ir is not None and planning_ir.normalization_applied
-                                and not planning_ir.ambiguities
-                                and not summary.get('planning_requirements')
-                                and not summary.get('questions')
-                                and not summary.get('requested_checks')
-                                and planning_ir.instances
-                                and {item.operation_id for item in planning_ir.instances}
-                                <= set(group['primary'])):
+                        unresolved = unresolved_ir_clauses(
+                            planning_ir, summary.get("focus", {}).get("requirements", []))
+                        engine_conditions = planning_engine_conditions(
+                            planning_ir, group=group, questions=summary.get("questions"),
+                            requested_checks=summary.get("requested_checks"),
+                            permission_requirements=summary.get("permission_requirements"),
+                            unresolved=unresolved)
+                        choice = planning_engine_choice(engine_conditions)
+                        record["planning_engine_choice"] = choice
+                        if choice["engine"] == IR_ENGINE:
                             # Focus turned status/data constraints into request obligations;
                             # the Design model sees only real requests in this group, and the
                             # deterministic compiler realizes them as instances. A group that
@@ -670,6 +782,9 @@ class ProductTasks:
                             if hasattr(raw_model, 'construction_records'):
                                 record['plan_construction'] = raw_model.construction_records
                                 record['construction_ms'] = raw_model.construction_elapsed_ms
+                                construction = list(raw_model.construction_records or [])
+                                record.update(planning_engine_evidence(
+                                    actual_planning_engine(construction), choice, construction))
                             checkpoint()
                         for question in design.questions:
                             if question.existing_question_ref is not None:
@@ -966,6 +1081,48 @@ class ProductTasks:
                 and c.get("planned_steps", 0) > 0
                 and c.get("executed_steps") == c.get("planned_steps") for c in cases),
             assertion_passed_scenarios=sum(c.get("outcome") == "PASS" for c in cases))
+        design_records = summary.get("design_records") or []
+        engines = [record.get("planning_engine") for record in design_records
+                   if record.get("planning_engine")]
+        if not engines:
+            engine = NOT_EXECUTED_ENGINE
+        elif set(engines) == {IR_ENGINE}:
+            engine = IR_ENGINE
+        elif set(engines) == {LEGACY_ENGINE}:
+            engine = LEGACY_ENGINE
+        elif set(engines) == {NOT_EXECUTED_ENGINE}:
+            engine = NOT_EXECUTED_ENGINE
+        else:
+            engine = "MIXED"
+        reasons = [record.get("planning_engine_reason") for record in design_records
+                   if record.get("planning_engine_reason")]
+        summary.update(
+            planning_engine=engine,
+            planning_engine_reason=("IR_SELECTED" if engine == IR_ENGINE else
+                                    "MIXED_COMPILER_PATHS" if engine == "MIXED" else
+                                    reasons[0] if reasons else "NO_DESIGN_RECORD"),
+            planning_engine_groups=[dict(
+                group_id=record.get("group_id"), engine=record.get("planning_engine"),
+                choice=record.get("planning_engine_choice"),
+                choice_reason=record.get("planning_engine_choice_reason"),
+                conditions=record.get("planning_engine_conditions"),
+                instances=record.get("planning_instance_count"),
+                mapping_complete=record.get("planning_instance_mapping_complete"),
+                dependency_edges=record.get("planning_dependency_edges"))
+                for record in design_records
+                if record.get("planning_engine_choice") or record.get("planning_engine")],
+            planning_instance_count=max((record.get("planning_instance_count") or 0
+                                         for record in design_records), default=0),
+            planning_instance_mapping_complete=(all(
+                record.get("planning_instance_mapping_complete") is True
+                for record in design_records if record.get("planning_engine") == IR_ENGINE)
+                if any(record.get("planning_engine") == IR_ENGINE for record in design_records)
+                else None),
+            planning_engine_conditions=next(
+                (record.get("planning_engine_conditions") for record in design_records
+                 if record.get("planning_engine_conditions")), None),
+            planning_dependency_edges=sum(record.get("planning_dependency_edges") or 0
+                                          for record in design_records))
         required = {r["policy_id"] for r in summary.get("requested_checks", [])}
         checked = {key for c in cases for key in c.get("executed_policy_ids", [])}
         summary["coverage"].update(requested_check_denominator=len(required),
