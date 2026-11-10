@@ -3791,6 +3791,27 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   15 skipped**（990 s，源码未变、用例 ID 全覆盖）。
 - 报告：`docs/rw-acceptance-atomic-consumption-20261110.md`。
 
+## 2026-11-10 冻结 v4b M2 唯一一次真实验收（第 7 轮）
+
+- 目标 HEAD `de9a869`：工作树干净、`origin/master` 一致、Actions 通过（Keyless
+  #42756481556、Web #42756481514）；模型身份与冻结一致，凭据存在；状态
+  `M2=UNCONSUMED`、`F1=UNCONSUMED`、`M1=HISTORICAL_CONSUMED`，无任何历史 M2 证据。
+- 预检：M2/F1 均 9/9 READY，`blocking=[]`，仅 `SOURCE_CHANGED` 告警；manifest 列出
+  frozen `d8eeae1` → `de9a869` 的 44 个变更文件。
+- 授权：`authorize-M2-de9a869.json`（operator `mofengyan`，12/150/2，45 s，两项显式同意，
+  frozen 摘要 `31741a2d…`，完整性校验通过，无凭据）。
+- 唯一一次 `run --cases M2` 在 `claim` 之前被冻结门禁拒绝：
+  `FROZEN_ARTIFACT_DRIFT:CASES_CHANGED`。根因：`current_view()` 用被 `--cases` 过滤的
+  `cases()` 参与冻结比对；完整视图摘要 `f2ba78ab…` 与冻结一致，M2-only 视图为
+  `74984a42…`，于是把未选择的 F1 误报为变更。预检（无 `--cases`）与既有 run 级测试
+  （monkeypatch `guard`）均未覆盖该路径。
+- 结果：M2 未执行、未消费；零模型调用、零 token、零业务 HTTP；无 `positions/M2`、
+  无 attempt ID、无残留资源或未知写入；F1 未触碰；`WRITE_AUTHORITY=NOT_GRANTED`。
+- 按“冻结产物漂移”停止条件立即停止，未重试、未改代码、未改冻结数据。
+- 下一步（新代码轮）：门禁比对改用完整计划的 case 集合，补一条真实 `guard` +
+  `--cases M2` 集成测试；新 HEAD 重新预检并由操作者重新确认一次 M2 授权。
+- 报告：`docs/rw-acceptance-m2-execution-20261110.md`。
+
 ## 2026-11-10 真实验收入口最终加固（第 6 轮）
 
 - 三个根因：① `main()` 用进程内复制的 `APPROVAL=GRANTED` 调 `authority.startable()`，

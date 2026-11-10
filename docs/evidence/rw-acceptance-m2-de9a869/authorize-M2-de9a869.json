@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "authorization_id": "01e72f0af6294359a66137e544d49a64",
+  "case": "M2",
+  "executing_head": "de9a8691880951132f6454e351c8b536c00934bd",
+  "frozen_sha256": "31741a2d751b7e9d305f1209d3bcca6b895b6fe01ee6605ad561edc206abea63",
+  "operator": "mofengyan",
+  "created_at": "2026-11-10T12:54:33+0800",
+  "allow_model_calls": true,
+  "allow_loopback_writes": true,
+  "budgets": {
+    "max_requests": 12,
+    "max_seconds": 150,
+    "max_model_calls": 2
+  },
+  "model_timeout": 45,
+  "case_attempts": 1,
+  "statement": "仅授权本记录中的位置、提交与预算执行一次；不授权其他 case、不授权重放。",
+  "note": null,
+  "integrity": "62d13eb8a743576eb9b662fdcc6240c502fa8a914164dc97a6bb9f5e42f88146"
+}
