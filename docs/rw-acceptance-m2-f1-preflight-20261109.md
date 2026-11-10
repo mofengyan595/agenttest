@@ -248,6 +248,9 @@ runs/rw-acceptance-v4b-20261109/execution-manifest-<head7>.json   （运行时�
 不再是运行时写入目标。详见
 [rw-acceptance-atomic-consumption-20261110.md](rw-acceptance-atomic-consumption-20261110.md)。
 本报告的 M2/F1 `READY` 结论仍要求操作者显式确认每 case **150 秒**预算后才可执行。
+第 5 轮的干净预检证据：
+[preflight-ee45a33.json](evidence/rw-acceptance-v4b-preflight-20261109/preflight-ee45a33.json)、
+[execution-manifest-ee45a33.json](evidence/rw-acceptance-v4b-preflight-20261109/execution-manifest-ee45a33.json)。
 
 ## 9. 本轮验证
 

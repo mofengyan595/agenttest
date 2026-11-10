@@ -180,6 +180,13 @@ audit/checks`。旧文件损坏（JSON 不可解析）时保守地把所有计�
 - `pytest examples/regressions -q`：**10 passed**。
 - 全量离线：`python scripts/check_full.py --jobs 4` = **2603 collected / 2588 passed /
   0 failed / 15 skipped**（990 s，`source_unchanged=true`、`exact_test_id_coverage=true`）。
+- 干净提交 `ee45a33` 上的预检：
+  [preflight-ee45a33.json](evidence/rw-acceptance-v4b-preflight-20261109/preflight-ee45a33.json)
+  （M2/F1 均 9/9 READY，`position_unconsumed` 证据为 `journal=UNCONSUMED`、`consumed=["M1"]`，
+  `blocking=[]`，仅 `SOURCE_CHANGED` 告警）与
+  [execution-manifest-ee45a33.json](evidence/rw-acceptance-v4b-preflight-20261109/execution-manifest-ee45a33.json)
+  （frozen `d8eeae1` → `ee45a33`，38 个文件：20 新增 / 18 修改，工作区干净，
+  预算 12/150/2）。
 
 ## 10. 首次执行 M2 的精确安全步骤
 
