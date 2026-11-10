@@ -1004,7 +1004,9 @@ class ProductTasks:
                       "已停止后续动作；已发送请求不自动回滚或重放。")
         except TimeoutError:
             record_timing()
-            self.stop(task_id, owner, summary, ledger, "INTERRUPTED", "本轮达到 600 秒时限。")
+            limit = summary.get("budget", {}).get("max_seconds", DEFAULT_TASK_SECONDS)
+            self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
+                      f"本轮达到 {limit:g} 秒时限。")
         except Exception:
             record_timing()
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",

@@ -12,6 +12,8 @@ from agenttest.request_requirements import (
     RequestRequirement,
     bounded_span,
     decode_requirements,
+    evidence_fragment,
+    order_instances,
     request_atoms,
     requirement_schema,
     validate_plan_requirements,
@@ -137,6 +139,44 @@ def test_response_continuation_requires_reviewed_rule_and_matching_read_identity
     else:
         with pytest.raises(ValidationFailure, match='FOCUS_REQUIREMENT_WITNESS_MISSING'):
             validate_requirement_links(chosen.requirements, context, chosen)
+
+
+def test_bare_confirmation_moves_its_checks_to_the_preceding_read():
+    context = ctx('读取批次23；确认成功条数是一条。')
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
+    context['response_expectations'] = dict(count=dict(operation_id='read', policy_id='read',
+        roles=['owner'], select='$.successCount', operator='equals', expected=1))
+    first, second = context['request_atoms']
+    chosen = selection([link(first), link(second, actions=[], response_checks=['count'])])
+    validate_requirement_links(chosen.requirements, context, chosen)
+    assert chosen.requirements[1].disposition == 'constraint'
+    assert chosen.requirements[1].actions == []
+    assert chosen.requirements[0].response_checks == ['count']
+    validate_plan_requirements(design([step('read', 'read')]), chosen.requirements,
+                               ['read'], context['response_expectations'])
+
+
+def test_a_plain_check_request_is_not_non_executable_evidence():
+    assert not evidence_fragment(request_atoms('检查健康')[0])
+    assert evidence_fragment(request_atoms('确认删除成功')[0])
+
+
+def test_one_clause_with_two_operations_resolves_an_echoed_zero_index():
+    text = '创建条目后读取并删除。'
+    atoms = {atom['source_id']: atom for atom in request_atoms(text)}
+    requirements = [
+        dict(source_id='request_1', disposition='required', actions=[
+            dict(operation_id='create', role=None)], before=[], same_resource=[]),
+        dict(source_id='request_2', disposition='required', actions=[
+            dict(operation_id='read', role=None), dict(operation_id='delete', role=None)],
+            before=[dict(earlier='read', later='delete',
+                         earlier_source_id='request_2', earlier_index=0,
+                         later_source_id='request_2', later_index=0)],
+            same_resource=[]),
+    ]
+    earlier, later = order_instances(requirements[1]['before'][0], requirements, atoms)
+    assert earlier == [('request_2', 0)]
+    assert later == [('request_2', 1)]
 
 
 @pytest.mark.parametrize('predicate,status,role,linked', [

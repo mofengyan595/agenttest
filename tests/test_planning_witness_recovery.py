@@ -82,6 +82,14 @@ def test_third_round_verbless_ordering_fragment_is_evidence_not_an_action():
     assert not evidence_fragment({"text": "在创建成功之后把名称改为 second"})
 
 
+def test_a_bare_confirmation_of_a_preceding_write_is_non_executable_evidence():
+    """The write's reviewed status is already its assertion; no GET witness is required."""
+    assert evidence_fragment({"text": "确认删除成功"})
+    assert evidence_fragment({"text": "确认更新成功"})
+    assert not evidence_fragment({"text": "确认不存在的条目返回 404"})
+    assert not evidence_fragment({"text": "确认名称等于 second"})
+
+
 def test_repeated_read_and_evidence_fragments_need_no_model_witness():
     items = validate("创建条目；在同一请求成功之后，创建第二个条目，然后读取这个条目，"
                      "最后再次读取这个条目。",

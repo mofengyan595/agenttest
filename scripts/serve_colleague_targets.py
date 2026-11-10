@@ -68,15 +68,17 @@ def document(kind):
              "422": response(description="输入不符合文档约束")}, body)}
         parameter = [dict(name="parcelId", **{"in": "path"}, required=True, schema=identifier)]
         paths["/parcels/{parcelId}"] = {
-            "get": operation("readParcel", "读取包裹内容", {"200": response(returned)},
-                             parameters=parameter),
+            "get": operation("readParcel", "读取包裹内容", {"200": response(returned),
+                "404": response(description="包裹不存在")}, parameters=parameter),
             "put": operation("replaceParcel", "替换包裹内容", {"200": response(returned),
+                "404": response(description="包裹不存在"),
                 "422": response(description="输入不符合文档约束")}, body, parameter),
             "patch": operation("changeParcel", "更新包裹名称", {"200": response(returned),
+                "404": response(description="包裹不存在"),
                 "422": response(description="名称不符合文档约束")}, schema_object(dict(name=text)),
                 parameter),
-            "delete": operation("deleteParcel", "删除本轮创建的包裹", {"204": response()},
-                                parameters=parameter)}
+            "delete": operation("deleteParcel", "删除本轮创建的包裹", {"204": response(),
+                "404": response(description="包裹不存在")}, parameters=parameter)}
     elif kind == "reservations":
         body = schema_object(dict(title=text, slot=schema_object(dict(
             day=dict(type="string", enum=["Monday", "Tuesday"]),

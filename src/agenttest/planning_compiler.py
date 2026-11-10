@@ -130,23 +130,30 @@ def _step_instance_map(ir: PlanningIR, draft, policies=None):
         if source is None:
             unresolved.append((position, step))
             continue
-        members = [item for item in groups.get(source, [])
-                   if item.action_index == index]
+        all_members = list(groups.get(source, []))
+        members = [item for item in all_members if item.action_index == index]
         if not members and index == 0:
-            members = list(groups.get(source, []))
+            members = all_members
         if not members:
             raise _failure("PLANNING_UNSOURCED_STEP",
                            [f"plan.steps.{position}.requirement_source_id"],
                            dict(clause=source, index=index,
                                 message="该子句不是本轮可执行的请求实例。"))
         cursor = used_clauses.get(source, 0)
-        if cursor >= len(members):
+        instance = members[cursor] if cursor < len(members) else None
+        if instance is None:
+            # A model may reuse index 0 for a second call from the same clause when an
+            # approved expectation adds a distinct instance. The operation identity is
+            # stronger evidence than the repeated index; never guess across operations.
+            instance = next((item for item in all_members
+                             if item.instance_id not in used_instances
+                             and item.operation_id == step.operation_id), None)
+        if instance is None:
             raise _failure("PLANNING_INSTANCE_CONFLICT",
                            [f"plan.steps.{position}.requirement_source_id"],
                            dict(clause=source, instances=[item.instance_id
-                                                          for item in members],
+                                                         for item in members],
                                 message="模型为一个请求实例计划了多个不同步骤。"))
-        instance = members[cursor]
         used_clauses[source] = cursor + 1
         mapping[step.id] = instance.instance_id
         used_instances.add(instance.instance_id)

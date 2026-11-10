@@ -109,8 +109,9 @@ For optional negative proposals without explicit requested_checks, put {title,be
 in cases. The check must use a listed negative policy. Ordinary cases use {title,kind,plan} and
 contain only valid-input steps, never kind=negative or a negative policy. Do not repeat
 identical ordinary read scenarios under different titles; repeated reads belong inside one case.
+confirmation of delete success is DELETE status; post-delete GET needs an instance;
+no request instance, no step.
 Approved access denials use ordinary permission/flow cases, not negative-parameter policies.
-A missing business expectation does not remove existing documented normal checks.
 Only listed operation/policy/role combinations are authorized. Obey every binding rule and closed
 argument set. Use the existing GenericPlannerDraft format inside each case. BODY objects use
 {"object":[{"key":"field","value":...}]}; arrays use {"array":[...]} recursively.

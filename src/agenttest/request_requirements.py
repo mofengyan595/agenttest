@@ -169,19 +169,33 @@ def response_expectations(project):
 
 
 def bind_response_continuation(item, atom, previous, catalog, read_operations):
-    """Attach an approved response check to the adjacent read under the same identity."""
+    """Attach an approved response check to the adjacent read under the same identity.
+
+    A conjunction continues the preceding read; a bare ``确认字段...`` after that read is the
+    same assertion without a second request. Moving the checks to the producer keeps them
+    attached to the real read instance while the confirmation itself stays a constraint.
+    """
     if (item.disposition != 'required' or item.actions or not item.response_checks
             or atom['future'] or atom['constraint'] or atom['same_resource'] or atom['ordered']
-            or previous is None or previous.disposition != 'required'
-            or not re.match(r'(?:并(?:且|顺便)?|以及|同时|顺便|再)\s*(?:请)?\s*'
-                            r'(?:核对|确认|检查|验证)', item.source_quote)):
+            or previous is None or previous.disposition != 'required'):
         return
     rules = [catalog.get(ref, {}) for ref in item.response_checks]
     choices = [action for action in previous.actions if action.operation_id in read_operations
                and all(r.get('operation_id') == action.operation_id
                        and action.role in r.get('roles', []) for r in rules)]
-    if len(choices) == 1:
+    if len(choices) != 1:
+        return
+    if re.match(r'(?:并(?:且|顺便)?|以及|同时|顺便|再)\s*(?:请)?\s*'
+                r'(?:核对|确认|检查|验证)', item.source_quote):
         item.actions = choices
+        return
+    if re.match(r'(?:请)?\s*(?:核对|确认|检查|验证)', item.source_quote):
+        previous.response_checks = list(dict.fromkeys(
+            [*previous.response_checks, *item.response_checks]))
+        item.response_checks = []
+        item.actions = []
+        item.disposition = 'constraint'
+        atom['constraint'] = True
 
 
 def explicit_response_continuation(atom, entries):
@@ -683,10 +697,18 @@ def order_instances(order, requirements, atoms):
             return None
         item = next((r for r in requirements if r['source_id'] == source), None)
         actions = _clause_actions(item) if item is not None else []
+        matches = [position for position, action in enumerate(actions)
+                   if action['operation_id'] == order[side]]
         if (item is None or item.get('disposition') not in {'required', 'needs_review'}
                 or index is None or not 0 <= index < len(actions)
-                or actions[index]['operation_id'] != order[side]):
-            raise _invalid_order(fields=[f'requirement_map.{source}.{side}'])
+                or actions[index]['operation_id'] != order[side]
+                or len(matches) == 1):
+            # A model commonly writes index 0 for both calls in one clause. When the named
+            # operation occurs exactly once there, its position is the only identity evidence;
+            # repeated occurrences still require an explicit index.
+            if item is None or len(matches) != 1:
+                raise _invalid_order(fields=[f'requirement_map.{source}.{side}'])
+            index = matches[0]
         return [(source, index)]
 
     def candidates(side):
@@ -833,9 +855,16 @@ def evidence_fragment(atom):
     ``在同一请求成功之后`` carries no verb and no status. Demanding an action witness for it
     asks the model to invent a request, so the fragment stays accounted without actions and
     its ordering information is expressed by the neighbouring clause position instead.
+    A bare confirmation of a preceding write ("确认删除成功") is the same kind of
+    non-executable evidence: the write's reviewed status is already its assertion, and the
+    confirmation must not become an invented GET.
     """
     text = atom['text']
-    return (not ACTION_VERB.search(text) and not atom.get('future_only')
+    confirmation = (re.search(r'确认|核对|校验', text)
+                    and not re.search(r'(?<!\d)[1-5]\d{2}(?!\d)|字段|条数|等于|一致|'
+                                      r'不存在|无法|失败|返回', text))
+    return ((not ACTION_VERB.search(text) or confirmation)
+            and not atom.get('future_only')
             and not atom.get('constraint')
             and not re.search(r'(?<!\d)[1-5]\d{2}(?!\d)', text)
             # A fragment that asserts on a response is not evidence-neutral: it still needs the

@@ -114,15 +114,21 @@ def model_settings(path, timeout, max_input, max_output):
 
 
 def limited_project(project, *, max_requests, max_model_calls, max_input,
-                    max_output, max_total_tokens):
+                    max_output, max_seconds):
+    """Apply a development-only loop guard, not a project-wide spend ceiling.
+
+    ``max_model_calls`` caps one task's planning/design calls so a malformed model
+    can never loop forever. It is deliberately independent of the number of
+    independent development tasks and of their aggregate token use.
+    """
     budget = ProjectBudget(
-        max_model_calls=2, max_readonly_investigations=0,
+        max_model_calls=min(max_model_calls, 20), max_readonly_investigations=2,
         max_input_tokens=max_input, max_output_tokens=max_output,
-        max_total_tokens=max_total_tokens,
-        suite_max_model_calls=max_model_calls,
-        suite_max_total_tokens=max_total_tokens * max_model_calls)
+        max_total_tokens=min(120_000, max_input + max_output),
+        suite_max_model_calls=min(max_model_calls, 20),
+        suite_max_total_tokens=500_000)
     target = project.target.model_copy(update=dict(max_requests=max_requests,
-                                                   run_timeout=150.0))
+                                                   run_timeout=min(float(max_seconds), 300.0)))
     registration = project.registration.model_copy(update=dict(budget=budget))
     return replace(project, target=target, registration=registration)
 
@@ -264,8 +270,7 @@ async def run(args):
                                     max_model_calls=args.max_model_calls,
                                     max_input=args.model_input_bytes,
                                     max_output=args.max_output_tokens,
-                                    max_total_tokens=args.model_input_bytes
-                                    + args.max_output_tokens)
+                                    max_seconds=args.max_seconds)
                     if identifier == project_id else project)
 
         service.project = bounded_project
@@ -339,27 +344,28 @@ def main():
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--project-kind", choices=sorted(KIND_OFFSET), default="parcels")
     parser.add_argument("--port", type=int, default=18300)
-    parser.add_argument("--max-requests", type=int, default=12)
-    parser.add_argument("--max-model-calls", type=int, default=2)
-    parser.add_argument("--max-seconds", type=float, default=150.0)
+    parser.add_argument("--max-requests", type=int, default=24)
+    parser.add_argument("--max-model-calls", type=int, default=8)
+    parser.add_argument("--max-seconds", type=float, default=300.0)
     parser.add_argument("--model-timeout", type=float, default=45.0)
-    parser.add_argument("--max-input-tokens", type=int, default=20_000)
-    parser.add_argument("--model-input-bytes", type=int, default=48_000,
-                        help="Conservative UTF-8 request envelope; actual provider tokens "
-                             "must still satisfy --max-input-tokens")
+    parser.add_argument("--max-input-tokens", type=int, default=20_000,
+                        help="Reported actual provider token cap; the transport's conservative "
+                             "byte envelope is separately controlled by --model-input-bytes")
+    parser.add_argument("--model-input-bytes", type=int, default=60_000,
+                        help="Conservative UTF-8 request envelope used by the transport")
     parser.add_argument("--max-output-tokens", type=int, default=4_096)
     parser.add_argument("--model-env", type=Path, default=ROOT / ".env")
     args = parser.parse_args()
-    if args.max_seconds > 150 or args.max_seconds <= 0:
-        parser.error("development deadline must be at most 150 seconds")
-    if args.max_model_calls not in {1, 2}:
-        parser.error("development model-call budget must be 1 or 2")
-    if not 1 <= args.max_requests <= 12:
-        parser.error("development request budget must be between 1 and 12")
+    if not 0 < args.max_seconds <= 600:
+        parser.error("development deadline must be between 1 and 600 seconds")
+    if not 1 <= args.max_model_calls <= 20:
+        parser.error("development per-task model-call loop guard must be between 1 and 20")
+    if not 1 <= args.max_requests <= 40:
+        parser.error("development request loop guard must be between 1 and 40")
     if not 0 < args.model_timeout <= 45:
         parser.error("model timeout must be at most 45 seconds")
     if not 1 <= args.max_input_tokens <= 20_000:
-        parser.error("model input token cap must be at most 20000 tokens")
+        parser.error("reported model input token cap must be at most 20000 tokens")
     if not args.max_input_tokens <= args.model_input_bytes <= 60_000:
         parser.error("model byte envelope must be between the token cap and 60000")
     if not 1 <= args.max_output_tokens <= 4_096:

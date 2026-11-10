@@ -230,6 +230,147 @@ def test_a_distinct_operation_set_in_one_clause_is_an_executable_request():
     assert len(ir.edges) == 3
 
 
+def test_a_change_verb_creates_a_request_instance():
+    requirements = [
+        dict(source_id="request_1", source_quote="创建一条条目", disposition="required",
+             actions=[dict(operation_id="createItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_2", source_quote="把名称改成新的", disposition="required",
+             actions=[dict(operation_id="changeItem", role=None)], before=[], same_resource=[]),
+    ]
+    atoms = [dict(source_id="request_1", text="创建一条条目", start=0),
+             dict(source_id="request_2", text="把名称改成新的", start=7)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="createItem", method="POST", path="/items"),
+                                       dict(id="changeItem", method="PATCH",
+                                            path="/items/{itemId}")],
+                           policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                                     policy("changeItem", "changeItem", [200], roles=(None,)),
+                                     policy("getItem", "getItem", [200], roles=(None,)),
+                                     policy("deleteItem", "deleteItem", [204], roles=(None,))],
+                           read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == ["createItem", "changeItem"]
+    assert [item.role.value for item in ir.clauses] == ["REQUEST", "REQUEST"]
+    assert ir.ambiguities == []
+
+
+def test_a_bare_delete_confirmation_is_not_a_second_read_instance():
+    requirements = [
+        dict(source_id="request_1", source_quote="创建一条条目", disposition="required",
+             actions=[dict(operation_id="createItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_2", source_quote="读取该条目", disposition="required",
+             actions=[dict(operation_id="getItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_3", source_quote="删除该条目", disposition="required",
+             actions=[dict(operation_id="deleteItem", role=None)],
+             before=[dict(earlier="getItem", later="deleteItem",
+                          earlier_source_id="request_2", earlier_index=0,
+                          later_source_id="request_3", later_index=0)],
+             same_resource=[]),
+        dict(source_id="request_4", source_quote="确认删除成功", disposition="required",
+             actions=[dict(operation_id="getItem", role=None)], before=[], same_resource=[]),
+    ]
+    atoms = [dict(source_id=f"request_{index}", text=text, start=index)
+             for index, text in enumerate(
+                 ["创建一条条目", "读取该条目", "删除该条目", "确认删除成功"], 1)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="createItem", method="POST", path="/items"),
+                                       dict(id="getItem", method="GET", path="/items/{itemId}"),
+                                       dict(id="deleteItem", method="DELETE",
+                                            path="/items/{itemId}")],
+                           policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                                     policy("getItem", "getItem", [200], roles=(None,)),
+                                     policy("deleteItem", "deleteItem", [204], roles=(None,))],
+                           target_lifecycles=[dict(create_operation="createItem",
+                                                   delete_operation="deleteItem",
+                                                   path_parameter="itemId", id_selector="$.id")],
+                           read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == [
+        "createItem", "getItem", "deleteItem"]
+    assert [item.role.value for item in ir.clauses] == [
+        "REQUEST", "REQUEST", "REQUEST", "CONSTRAINT"]
+    assert ir.ambiguities == []
+
+
+def test_a_confirmed_delete_uses_the_approved_absence_readback():
+    requirements = [
+        dict(source_id="request_1", source_quote="创建一条条目", disposition="required",
+             actions=[dict(operation_id="createItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_2", source_quote="读取该条目", disposition="required",
+             actions=[dict(operation_id="getItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_3", source_quote="删除该条目", disposition="required",
+             actions=[dict(operation_id="deleteItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_4", source_quote="确认删除成功", disposition="required",
+             actions=[dict(operation_id="deleteItem", role=None)], before=[], same_resource=[]),
+    ]
+    atoms = [dict(source_id=f"request_{index}", text=text, start=index)
+             for index, text in enumerate(
+                 ["创建一条条目", "读取该条目", "删除该条目", "确认删除成功"], 1)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="createItem", method="POST", path="/items"),
+                                       dict(id="getItem", method="GET", path="/items/{itemId}"),
+                                       dict(id="deleteItem", method="DELETE",
+                                            path="/items/{itemId}")],
+                           policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                                     policy("getItem", "getItem", [200], roles=(None,)),
+                                     policy("getItem_expectation_1", "getItem", [404],
+                                            roles=(None,)),
+                                     policy("deleteItem", "deleteItem", [204], roles=(None,))],
+                           target_lifecycles=[dict(create_operation="createItem",
+                                                   delete_operation="deleteItem",
+                                                   path_parameter="itemId", id_selector="$.id")],
+                           read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == [
+        "createItem", "getItem", "deleteItem", "getItem"]
+    assert ir.instances[-1].phase == "VERIFY_ABSENT"
+    assert ir.instances[-1].policy_id == "getItem_expectation_1"
+    assert [status for assertion in ir.instances[-1].assertions
+            for status in assertion.statuses] == [404]
+    assert ir.ambiguities == []
+
+
+def test_a_read_confirmation_after_update_is_a_new_read_instance():
+    requirements = [
+        dict(source_id="request_1", source_quote="创建一条条目", disposition="required",
+             actions=[dict(operation_id="createItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_2", source_quote="读取该条目", disposition="required",
+             actions=[dict(operation_id="getItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_3", source_quote="把名称改成新的", disposition="required",
+             actions=[dict(operation_id="changeItem", role=None)], before=[], same_resource=[]),
+        dict(source_id="request_4", source_quote="再确认", disposition="required",
+             actions=[dict(operation_id="getItem", role=None)], before=[], same_resource=[]),
+    ]
+    atoms = [dict(source_id=f"request_{index}", text=text, start=index)
+             for index, text in enumerate(
+                 ["创建一条条目", "读取该条目", "把名称改成新的", "再确认"], 1)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="createItem", method="POST", path="/items"),
+                                       dict(id="getItem", method="GET", path="/items/{itemId}"),
+                                       dict(id="changeItem", method="PATCH",
+                                            path="/items/{itemId}")],
+                           policies=[policy("createItem", "createItem", [201], roles=(None,)),
+                                     policy("getItem", "getItem", [200], roles=(None,)),
+                                     policy("changeItem", "changeItem", [200], roles=(None,))],
+                           read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == [
+        "createItem", "getItem", "changeItem", "getItem"]
+    assert [item.role.value for item in ir.clauses] == [
+        "REQUEST", "REQUEST", "REQUEST", "REQUEST"]
+    assert ir.ambiguities == []
+
+
+def test_a_read_back_phrase_creates_a_read_request():
+    requirements = [dict(source_id="request_1", source_quote="按 ID 读回",
+                          disposition="required",
+                          actions=[dict(operation_id="getItem", role=None)],
+                          before=[], same_resource=[])]
+    atoms = [dict(source_id="request_1", text="按 ID 读回", start=0)]
+    ir = build_planning_ir(requirements, atoms,
+                           operations=[dict(id="getItem", method="GET", path="/items/{id}")],
+                           policies=[policy("getItem", "getItem", [200], roles=(None,))],
+                           read_operations={"getItem"})
+    assert [item.operation_id for item in ir.instances] == ["getItem"]
+    assert ir.ambiguities == []
+
+
 def test_a_meta_clause_does_not_repeat_an_already_requested_operation_set():
     first = "帮我测一下条目增删改查"
     second = "看看增删改查有没有问题"

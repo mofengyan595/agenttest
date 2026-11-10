@@ -6,7 +6,7 @@ from pathlib import Path
 from serve_colleague_targets import document
 
 from agenttest.contracts import load_openapi
-from agenttest.generic_intake import GenericSetup, IntakeRole, analyze_contract
+from agenttest.generic_intake import GenericSetup, IntakeExpectation, IntakeRole, analyze_contract
 from agenttest.project_intake import IntakeInput
 from agenttest.report import ReportStore
 from agenttest.safety import ResourceLifecycle
@@ -63,6 +63,12 @@ async def prepare(data: Path, port: int, environ):
                     delete_operation="delete" + prefix, path_parameter=parameter,
                     id_selector=selector,
                     fresh_resource_basis="自建隔离靶场每次成功创建使用全新随机ID，清理仅作用于本轮资源。")]
+            if kind == "parcels":
+                # The target already returns 404 after deletion. Document that state transition
+                # once so the agent can verify absence without inventing a business rule.
+                next(o for o in operations if o["operation_id"] == "readParcel")[
+                    "expectations"] = [IntakeExpectation(statuses=[404],
+                    rule="删除同一包裹后再次读取应返回404，确认资源不可访问。")]
             setup = GenericSetup(base_url=f"http://127.0.0.1:{port + offset}",
                 isolated_confirmed=True, allow_mutations=kind != "directory", assisted=True,
                 approve_negative_tests=True, allow_negative_value_variants=True,

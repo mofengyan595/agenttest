@@ -237,9 +237,12 @@ class PlanningIR(BaseModel):
 # --------------------------------------------------------------------------------------
 
 REQUEST_VERB = re.compile(
-    r"创建|新建|提交|上传|更新|修改|替换|读取|回读|查询|列出|获取|删除|写入|导出|执行|"
-    r"注册|登录|发布|下单|支付|调用|请求|发起")
+    r"创建|新建|提交|上传|更新|修改|替换|读取|读回|取回|回读|查询|查回|列出|获取|删除|"
+    r"写入|导出|执行|注册|登录|发布|下单|支付|调用|请求|发起|改成|改为|变更")
 VERIFY_VERB = re.compile(r"确认|验证|检查|核对|校验|断言|确保")
+READ_VERB = re.compile(r"读取|读回|取回|回读|查询|查看|查回|查一下|再查|是否还存在|不存在")
+WRITE_VERB = re.compile(r"创建|新建|提交|上传|更新|修改|替换|删除|写入|导出|"
+                        r"注册|登录|发布|下单|支付|改成|改为|变更")
 STATUS = re.compile(r"(?<!\d)([1-5]\d{2})(?!\d)")
 DATA_CAPTURE = re.compile(
     r"(?:响应|返回|结果|应答|回复).{0,8}(?:id|ID|Id|标识|编号)"
@@ -382,7 +385,7 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
         if requirement is None:
             continue
         text = atom.get("text", "")
-        role = _clause_role(atom, requirement, seen_operations, input_quotes)
+        role = _clause_role(atom, requirement, seen_operations, input_quotes, read_ops)
         statuses = explicit_statuses(text)
         clauses.append(ClauseRecord(
             source_id=atom["source_id"], text=text, start=atom.get("start", 0), role=role,
@@ -440,6 +443,43 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                     origin="DERIVED_REPETITION"))
                 _add_edge(edges, previous, current, EDGE.REPLAY_GROUP,
                           f"{atom['source_id']} 明确要求重复调用", atom["source_id"])
+
+    # 1b. A confirmed deletion may be verified through an approved absence policy. The
+    # confirmation itself is not a second DELETE; when the target publishes a 404 read-back
+    # rule, derive the missing read instance so Design can realize the check instead of
+    # inventing an unbound step. The clause stays a CONSTRAINT; the returned call is a real
+    # approved instance and is covered only when the proposal plans it.
+    for clause in clauses:
+        requirement = by_source.get(clause.source_id) or {}
+        if clause.role is not ClauseRole.CONSTRAINT:
+            continue
+        if (not VERIFY_VERB.search(clause.text) or not re.search(r"删除|移除|清理", clause.text)
+                or READ_VERB.search(clause.text)):
+            continue
+        actions = requirement.get("actions") or []
+        if any(action["operation_id"] in read_ops for action in actions):
+            continue
+        deletes = [item for item in instances
+                   if item.operation_id in {rule["delete_operation"]
+                                            for rule in target_lifecycles}
+                   and item.source_start < clause.start]
+        if not deletes:
+            continue
+        deletion = deletes[-1]
+        read_policy = next((policy for policy in policies
+                            if policy["operation_id"] in read_ops
+                            and deletion.role in (policy.get("roles") or [])
+                            and set(_status_codes(policy)) == {404}), None)
+        if read_policy is None:
+            continue
+        instances.append(ActionInstance(
+            instance_id=f"ai_{len(instances) + 1}",
+            operation_id=read_policy["operation_id"], role=deletion.role,
+            source_id=clause.source_id, source_quote=clause.text,
+            source_start=clause.start, action_index=len(actions),
+            policy_id=read_policy["id"], origin="APPROVED_EXPECTATION",
+            assertions=[ResponseAssertion(statuses=[404], source_id=clause.source_id,
+                                          source_quote=clause.text)]))
 
     # 2. Attach explicit statuses to concrete instances, never to a new request.
     request_clauses = {clause.source_id for clause in clauses if clause.role is ClauseRole.REQUEST}
@@ -578,6 +618,14 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
             earlier = _order_side(order, "earlier", instances, clauses)
             later = _order_side(order, "later", instances, clauses)
             if earlier is None or later is None:
+                # A confirmation such as "再确认" is a constraint, not a request. Focus may
+                # still attach an adjacency edge from that clause; it has no executable
+                # instance to order, so it must not block the real requests around it.
+                missing = [side for side, resolved in (("earlier", earlier), ("later", later))
+                           if resolved is None]
+                if missing and all(_non_request_order_side(order, side, clauses)
+                                   for side in missing):
+                    continue
                 ambiguities.append(Ambiguity(
                     kind=AmbiguityKind.MISSING_INSTANCE_IDENTITY, source_id=clause.source_id,
                     message="顺序约束指向的子句没有对应的请求实例。",
@@ -680,8 +728,11 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
         coverage=coverage, normalization_applied=applied, order=order)
 
 
-def _clause_role(atom, requirement, seen_operations=(), input_quotes=()) -> ClauseRole:
+def _clause_role(atom, requirement, seen_operations=(), input_quotes=(),
+                 read_operations=()) -> ClauseRole:
     text = atom.get("text", "")
+    read_actions = [action["operation_id"] for action in requirement.get("actions") or []
+                    if action["operation_id"] in read_operations]
     if requirement.get("disposition") == "deferred" or atom.get("future_only"):
         return ClauseRole.DEFERRED
     if requirement.get("disposition") in {"constraint", "needs_review"}:
@@ -709,6 +760,15 @@ def _clause_role(atom, requirement, seen_operations=(), input_quotes=()) -> Clau
             # new action; it qualifies that scope rather than creating every call a second time.
             return ClauseRole.CONSTRAINT
         return ClauseRole.REQUEST
+    if (actions and VERIFY_VERB.search(text) and not statuses
+            and not _predicate_clause(text)):
+        # A read-back after an update ("再确认") is an executable read even though it names no
+        # read verb. A delete/update success confirmation is the write's reviewed status; it
+        # must not manufacture a second POST/GET instance.
+        if read_actions and (not WRITE_VERB.search(text) or READ_VERB.search(text)):
+            return ClauseRole.REQUEST
+        if all(action["operation_id"] in seen_operations for action in actions):
+            return ClauseRole.CONSTRAINT
     if actions and request_verbs(text):
         return ClauseRole.REQUEST
     if verification_only(text) or (statuses and not request_verbs(text)):
@@ -718,10 +778,11 @@ def _clause_role(atom, requirement, seen_operations=(), input_quotes=()) -> Clau
         if _predicate_clause(text):
             return ClauseRole.CONSTRAINT
         # "检查健康" asks to call that operation; "删除后确认成功" confirms a request already
-        # asked for and therefore cannot create a second one.
+        # asked for and therefore cannot create a second one. A bare confirmation without a
+        # status or field predicate is not an independently executable assertion.
         if any(action["operation_id"] not in seen_operations for action in actions):
             return ClauseRole.REQUEST
-        return ClauseRole.ASSERTION
+        return ClauseRole.CONSTRAINT
     if data_capture(text) and not request_verbs(text):
         return ClauseRole.DATA_CAPTURE
     if not actions:
@@ -789,6 +850,15 @@ def _phase_for(instance):
                 for status in assertion.statuses}
     return (ResourcePhase.VERIFY_ABSENT.value if 404 in statuses
             else ResourcePhase.EXISTS.value)
+
+
+def _non_request_order_side(order, side, clauses):
+    """Whether one unresolved order side names a clause that is not an executable request."""
+    source = order.get(f"{side}_source_id")
+    if source is None:
+        return False
+    clause = next((item for item in clauses if item.source_id == source), None)
+    return clause is not None and clause.role in {ClauseRole.ASSERTION, ClauseRole.CONSTRAINT}
 
 
 def _order_side(order, side, instances, clauses):

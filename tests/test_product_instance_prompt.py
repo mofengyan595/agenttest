@@ -48,8 +48,12 @@ def test_the_focus_prompt_keeps_ordinary_test_design_with_the_agent():
     from agenttest.product_focus import FOCUS_PROMPT
 
     for phrase in ("exploratory request", "schema-valid data", "Do not ask the user to design",
-                   "ordinary valid field values", "input_requirements MUST be empty"):
+                   "ordinary valid field values", "input_requirements MUST be empty",
+                   "确认删除成功", "not a new read request", "approved absence check",
+                   "availability/health/readiness diagnostics"):
         assert phrase in FOCUS_PROMPT, phrase
+    for phrase in ("confirmation of delete success", "post-delete", "no request instance"):
+        assert phrase in DESIGN_PROMPT, phrase
 
 
 def test_the_focus_prompt_names_instance_addressed_ordering():

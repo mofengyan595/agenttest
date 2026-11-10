@@ -14,8 +14,12 @@ _ASSIGNMENT = re.compile(
     r'-?\d+(?:\.\d+)?|true|false|null)(?![A-Za-z0-9_]|\.\d)')
 
 _STATUS = re.compile(
-    r'(?<![A-Za-z0-9_])(?:HTTP(?:\s*状态码)?|状态码)\s*(?:为|是|[:：=＝])?\s*'
-    r'(?P<code>[1-5][0-9]{2})(?![A-Za-z0-9_]|\.\d)', re.I)
+    r'(?<![A-Za-z0-9_])(?:'
+    r'(?:(?:确认|验证|检查|核对|预期)\s*)?(?:返回|响应)\s*'
+    r'(?=[45][0-9]{2}(?![A-Za-z0-9_]|\.\d))'
+    r'|(?:HTTP(?:\s*状态码)?|状态码)\s*(?:为|是|[:：=＝])?\s*'
+    r')(?P<code>[1-5][0-9]{2})(?![A-Za-z0-9_]|\.\d)'
+    r'(?!\s*(?:条|个|次|项|行|字符|字|元))', re.I)
 _QUOTED = re.compile(r'"(?:[^"\\]|\\.)*"|“[^”]*”|「[^」]*」|\'[^\']*\'|`[^`]*`')
 _STATUS_ALTERNATIVE = re.compile(r'^\s*(?:或(?:者)?|/|、|至|到|[-–])\s*(?:HTTP\s*)?\d', re.I)
 _STATUS_UNCERTAIN = re.compile(r'(?:不是|并非|不应(?:当)?|不会|不能|不得)\s*(?:返回\s*)?$')
@@ -388,6 +392,12 @@ def explicit_http_statuses(text):
             continue
         source = atom['text']
         plain = _QUOTED.sub(lambda m: ' ' * len(m.group()), source)
+        if (re.search(r'(?:应该|是否|还是)', plain)
+                and re.search(r'(?:返回|响应)', plain)):
+            # "should it return 403 or 404?" is a permission question, not an approved
+            # assertion; treating the alternatives as explicit statuses would hold the
+            # very read the question is about.
+            continue
         matches = list(_STATUS.finditer(plain))
         for match in matches:
             ambiguous = (len(matches) != 1 or _STATUS_ALTERNATIVE.match(plain[match.end():])

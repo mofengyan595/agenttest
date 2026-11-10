@@ -54,7 +54,9 @@ class GoalCatalog(StrictModel):
 
 
 class ProjectBudget(StrictModel):
-    max_model_calls: int = Field(default=4, ge=1, le=4)
+    # Four calls remain the safe product default. A development runner may
+    # explicitly raise this per-task loop guard without lifting production limits.
+    max_model_calls: int = Field(default=4, ge=1, le=20)
     max_readonly_investigations: int = Field(default=2, ge=0, le=2)
     max_input_tokens: int = Field(default=20_000, ge=1, le=100_000)
     max_output_tokens: int = Field(default=4096, ge=1, le=16_000)

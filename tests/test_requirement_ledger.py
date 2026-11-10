@@ -75,6 +75,18 @@ def test_status_parser_preserves_current_literals_and_marks_alternatives_unresol
     assert ambiguous['reason'] == 'HTTP_STATUS_SCOPE_AMBIGUOUS'
 
 
+def test_bare_return_status_is_not_confused_with_a_count():
+    exact = explicit_http_statuses("删除后再次读取，确认返回 404。")
+    assert [(entry["expected"], bool(entry.get("preceding_source_id")))
+            for entry in exact] == [(404, True)]
+    assert not explicit_http_statuses("返回200条记录")
+
+
+def test_permission_question_alternatives_are_not_explicit_statuses():
+    text = 'reviewer 读取状态时应该返回 403 还是 404；另外匿名读取状态。'
+    assert explicit_http_statuses(text) == []
+
+
 def test_approved_negative_is_accounted_without_creating_a_new_expectation():
     ctx = context("检查size=0")
     ctx['approved_checks'] = [dict(policy_id='bad_size', name='size', operation_id='list',
