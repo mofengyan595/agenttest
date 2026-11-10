@@ -585,7 +585,7 @@ def test_run_refuses_a_historical_position(tmp_path, run_offline, monkeypatch):
 def test_the_frozen_gate_refuses_before_a_claim(tmp_path, monkeypatch, run_offline):
     folder = frozen_folder(tmp_path)
     record = execution_gate.snapshot(
-        ROOT, plan=plan_v4, cases=acceptance.cases(),
+        ROOT, plan=plan_v4, cases=acceptance.CASES,
         consumed=plan_v4.CONSUMED_POSITIONS, approved=acceptance.APPROVED,
         checklist=authority.APPROVAL_CHECKLIST, document=authority.document(),
         setup=authority.setup(), initial=INITIAL,

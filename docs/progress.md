@@ -3791,6 +3791,25 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   15 skipped**（990 s，源码未变、用例 ID 全覆盖）。
 - 报告：`docs/rw-acceptance-atomic-consumption-20261110.md`。
 
+## 2026-11-10 修复单位置冻结门禁误报（第 8 轮）
+
+- 根因：`current_view()` 使用被 `--cases` 过滤的 `cases()` 参与冻结比对，单位置执行时把
+  未选择的位置误报为 `CASES_CHANGED`。
+- 修复：`current_view` 改用完整计划集合 `CASES`；`SELECTED`/`cases()` 只决定实际执行位置；
+  `CASES_CHANGED` 与其他冻结规则未放宽。另补一道完整性检查：冻结记录自身的
+  `requirements.digest` 必须等于其 `cases` 的摘要，保留旧摘要改写题目也会被拒绝。
+- 真实 guard 集成测试：新增 `tests/test_rw_acceptance_guard_integration.py` 13 passed
+  （M2/F1/不选择均通过；改题目、改未选择的 F1、rubric、预算、模型身份、脏树均拒绝；
+  单执行 M2 不消费 F1，单执行 F1 不消费 M2；门禁失败零消费；无授权拒绝）。
+- 选择范围审查：`status`/`guard` 用完整集合，`run`/claim/证据用所选位置，消费仍按位置独立；
+  `preflight` 清单与 `freeze` 语义保持不变。
+- 离线：ruff 通过；consumption 30、authorization 15、preflight 10、guard integration 13、
+  examples/regressions 10 passed；全量 `check_full` = **待填**。
+- 预检（提交后）：**待填**。
+- 状态：`M1=HISTORICAL_CONSUMED`、`M2=UNCONSUMED`、`F1=UNCONSUMED`；未执行真实模型，
+  未创建真实授权/positions，旧授权原样保留，`WRITE_AUTHORITY=NOT_GRANTED`。
+- 报告：`docs/rw-acceptance-guard-fix-20261110.md`。
+
 ## 2026-11-10 冻结 v4b M2 唯一一次真实验收（第 7 轮）
 
 - 目标 HEAD `de9a869`：工作树干净、`origin/master` 一致、Actions 通过（Keyless

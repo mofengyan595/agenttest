@@ -146,6 +146,10 @@ def compare(frozen, current):
         blocking.append(dict(reason="PLAN_FILE_CHANGED",
                              detail=[frozen["requirements"]["plan_sha256"][:12],
                                      current["requirements"]["plan_sha256"][:12]]))
+    # The stored case digest must describe the stored cases: an edit that leaves the old digest
+    # in place is still a changed requirement set, not a trusted record.
+    if digest(frozen["requirements"]["cases"]) != frozen["requirements"]["digest"]:
+        blocking.append(dict(reason="CASES_CHANGED", detail=["frozen-digest"]))
     if frozen["requirements"]["digest"] != current["requirements"]["digest"]:
         frozen_cases = {case["key"]: case for case in frozen["requirements"]["cases"]}
         current_cases = {case["key"]: case for case in current["requirements"]["cases"]}

@@ -463,9 +463,14 @@ def run_case(folder, svc, project_id, case, run_id, initial):
 
 
 def current_view(identity, initial=None):
-    """The freeze-shaped view of this code, plan and approved scope; no request is sent."""
+    """The freeze-shaped view of this code, plan and approved scope; no request is sent.
+
+    The frozen comparison always covers the *complete* planned case set. ``--cases`` only
+    selects which position this command may execute; it must never shrink the artifact view,
+    otherwise a single-position run would report the unselected position as a changed case.
+    """
     return execution_gate.snapshot(
-        ROOT, plan=PLAN, cases=cases(), consumed=CONSUMED_POSITIONS, approved=APPROVED,
+        ROOT, plan=PLAN, cases=CASES, consumed=CONSUMED_POSITIONS, approved=APPROVED,
         checklist=authority.APPROVAL_CHECKLIST, document=authority.document(),
         setup=authority.setup(), identity=identity, initial=initial,
         base_url=APPROVED["base_url"])
