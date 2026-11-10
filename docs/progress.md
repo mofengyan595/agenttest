@@ -3992,7 +3992,8 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
   未调用 availability；`l3-c3` POST→GET→DELETE→GET 404/CLEANED；`l3-c4` 422；
   `l3-c5` 201+204/CLEANED；`l3-c6` 503 断言失败，报告给出 expected/actual、
   只读复核证据及“原因未证实”的保守结论。
-- 定向 101 passed；`ruff` 对改动文件通过。全量离线结果与剩余缺口见
+- 定向 102 passed；`ruff check src tests scripts` 通过；干净工作区 `2d8fac9` 全量离线
+  2656 passed / 15 skipped / 0 failed（2344.19 秒）。剩余缺口与证据见
   [自主测试同事开发记录](autonomous-testing-agent-l1-l3-20261110.md)。
 - 保留冻结：历史 M2/F1 未重跑、未改写。仍未解决：批准负向 422 在规范化 IR 中降级
   LEGACY；首次成功率低；真实业务环境、认证与多租户未验证。下一步是负向 IR 实例化，

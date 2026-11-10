@@ -169,11 +169,11 @@
 
 - 定向测试：`tests/test_request_requirements.py`、`tests/test_requirement_ledger.py`、
   `tests/test_planning_ir.py`、`tests/test_planning_witness_recovery.py`、
-  `tests/test_product_instance_prompt.py` 共 **101 passed**。
-- `ruff check` 对本次改动文件通过。
-- 全量离线结果见下方（以最终运行日志为准）：
-
-<!-- FULL_SUITE_RESULT -->
+  `tests/test_product_instance_prompt.py` 共 **102 passed**。
+- `ruff check src tests scripts` 全绿。
+- 全量离线（干净工作区 `2d8fac9`，`pytest -q`，2026-11-10）：
+  **2656 passed, 15 skipped, 0 failed**，墙钟 2344.19 秒；仅保留既有的
+  `PytestCollectionWarning`，无新增失败或错误。
 
 ## 9. 证据索引
 
