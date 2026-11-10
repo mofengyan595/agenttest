@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "case": "M2",
+  "attempt_id": "c41194640044409589e5c800c2a14135",
+  "claimed_at": "2026-11-10T14:22:02+0800",
+  "frozen_head": "d8eeae12e088ee8ac267ac34deda34c2d913127e",
+  "frozen_digest": "7a9b59ba007c405a08d1595639ca417c885689f349fe1ce14f148d96e1cae9e4",
+  "executing_head": "8845c31c1d7e08cc877f6fae237b6a78e65e4260",
+  "manifest": "execution-manifest-8845c31-2.json",
+  "budgets": {
+    "max_requests": 12,
+    "max_seconds": 150,
+    "max_model_calls": 2
+  },
+  "identity_digest": "a66631b5e2b36a7a8163757201ae8fc96d0c654759d2c4be11f27235b29f9f23",
+  "initial": {
+    "state_sha256": "10718ffae8dc69266135d62d6595b1468513901c1aaa9738af774197cccacaf2",
+    "namespace": "e2e-freeze-0001",
+    "items": 0,
+    "audit": 0,
+    "read_only": false,
+    "isolated": true,
+    "writable": true
+  },
+  "state": "CLAIMED"
+}

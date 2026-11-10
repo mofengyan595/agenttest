@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "case": "M2",
+  "verdict": "NEEDS_REVIEW",
+  "requests": 0,
+  "model_calls": null,
+  "unknown": false,
+  "elapsed": 36.58,
+  "evidence": "evidence.json",
+  "evidence_sha256": "3ece07629cc218e8592185a91ae0627cc9d3948cd8106d413c49386cc0beff7b",
+  "evidence_bytes": 20145,
+  "completed_at": "2026-11-10T14:22:39+0800",
+  "state": "COMPLETED"
+}

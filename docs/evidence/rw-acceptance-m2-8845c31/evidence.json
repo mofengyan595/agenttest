@@ -1,0 +1,559 @@
+{
+  "case": "M2",
+  "title": "第四轮最小读写闭环",
+  "namespace": "e2e-m2-1110-142201",
+  "text": "先由 author 身份创建名称是 first 的条目，并从返回值里拿到 id；接着按这个 id 读取该条目，确认返回 200；随后删除该条目，确认返回 204；最后用同一个 id 回读，确认返回 404。",
+  "task": {
+    "id": "7b411295edb14a058109bb8f6cc26198",
+    "status": "NEEDS_REVIEW",
+    "elapsed": 36.58
+  },
+  "focus": [
+    {
+      "model": "ecnu-max",
+      "protocol": "chatecnu",
+      "content_sha256": "0c59976752acac5cf5da5328bf7287eae8974544560ed87bd1d73ef5c9909bb3",
+      "content_bytes": 3319,
+      "content": "{\"interpretation\":\"author 依次创建(name=first，取自返回值 id)、按该 id 读取(期望 200)、按同一 id 删除(期望 204)、再用同一 id 回读(期望 404)。两次 getItem 是不同实例，由 createItem 提供资源；200/204/404 均由已批准响应规则承载。\",\"scope\":{\"mode\":\"selected\",\"operations\":{\"createItem\":{\"input_requirements\":[{\"value\":\"first\",\"field_ref\":\"body/name\",\"source_ref\":\"source_2\"},{\"value\":\"rw-lifecycle-key-0001\",\"field_ref\":\"headers/Idempotency-Key\",\"source_ref\":\"source_2\"}],\"input_questions\":[],\"requested_checks\":[],\"expectation_questions\":[],\"test_normal\":true},\"getItem\":{\"input_requirements\":[],\"input_questions\":[],\"requested_checks\":[],\"expectation_questions\":[],\"test_normal\":true,\"existing_resource\":false},\"updateItem\":null,\"replaceItem\":null,\"deleteItem\":{\"input_requirements\":[],\"input_questions\":[],\"requested_checks\":[],\"expectation_questions\":[],\"test_normal\":true,\"existing_resource\":false},\"listItems\":null},\"question\":null},\"blocked_operations\":{},\"requirement_map\":{\"request_1\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"createItem\",\"role\":\"author\"}],\"before\":[],\"same_resource\":[],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_2\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"createItem\",\"role\":\"author\"}],\"before\":[],\"same_resource\":[{\"producer\":\"createItem\",\"consumer\":\"getItem\"},{\"producer\":\"createItem\",\"consumer\":\"deleteItem\"}],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_3\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"getItem\",\"role\":\"author\"}],\"before\":[{\"earlier\":\"createItem\",\"later\":\"getItem\",\"earlier_source_id\":\"request_1\",\"later_source_id\":\"request_3\",\"earlier_index\":0,\"later_index\":0}],\"same_resource\":[{\"producer\":\"createItem\",\"consumer\":\"getItem\"}],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_4\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"getItem\",\"role\":\"author\"}],\"before\":[],\"same_resource\":[],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_5\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"deleteItem\",\"role\":\"author\"}],\"before\":[{\"earlier\":\"getItem\",\"later\":\"deleteItem\",\"earlier_source_id\":\"request_3\",\"later_source_id\":\"request_5\",\"earlier_index\":0,\"later_index\":0}],\"same_resource\":[{\"producer\":\"createItem\",\"consumer\":\"deleteItem\"}],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_6\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"deleteItem\",\"role\":\"author\"}],\"before\":[],\"same_resource\":[],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_7\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"getItem\",\"role\":\"author\"}],\"before\":[{\"earlier\":\"deleteItem\",\"later\":\"getItem\",\"earlier_source_id\":\"request_5\",\"later_source_id\":\"request_7\",\"earlier_index\":0,\"later_index\":0}],\"same_resource\":[{\"producer\":\"createItem\",\"consumer\":\"getItem\"}],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]},\"request_8\":{\"disposition\":\"required\",\"actions\":[{\"operation_id\":\"getItem\",\"role\":\"author\"}],\"before\":[],\"same_resource\":[],\"response_checks\":[],\"forbidden_operation_ids\":[],\"blocked_operation_ids\":[]}}}",
+      "parsed": {
+        "interpretation": "author 依次创建(name=first，取自返回值 id)、按该 id 读取(期望 200)、按同一 id 删除(期望 204)、再用同一 id 回读(期望 404)。两次 getItem 是不同实例，由 createItem 提供资源；200/204/404 均由已批准响应规则承载。",
+        "scope": {
+          "mode": "selected",
+          "operations": {
+            "createItem": {
+              "input_requirements": [
+                {
+                  "value": "first",
+                  "field_ref": "body/name",
+                  "source_ref": "source_2"
+                },
+                {
+                  "value": "rw-lifecycle-key-0001",
+                  "field_ref": "headers/Idempotency-Key",
+                  "source_ref": "source_2"
+                }
+              ],
+              "input_questions": [],
+              "requested_checks": [],
+              "expectation_questions": [],
+              "test_normal": true
+            },
+            "getItem": {
+              "input_requirements": [],
+              "input_questions": [],
+              "requested_checks": [],
+              "expectation_questions": [],
+              "test_normal": true,
+              "existing_resource": false
+            },
+            "updateItem": null,
+            "replaceItem": null,
+            "deleteItem": {
+              "input_requirements": [],
+              "input_questions": [],
+              "requested_checks": [],
+              "expectation_questions": [],
+              "test_normal": true,
+              "existing_resource": false
+            },
+            "listItems": null
+          },
+          "question": null
+        },
+        "blocked_operations": {},
+        "requirement_map": {
+          "request_1": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "createItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_2": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "createItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              },
+              {
+                "producer": "createItem",
+                "consumer": "deleteItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_3": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "createItem",
+                "later": "getItem",
+                "earlier_source_id": "request_1",
+                "later_source_id": "request_3",
+                "earlier_index": 0,
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_4": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_5": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "deleteItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "getItem",
+                "later": "deleteItem",
+                "earlier_source_id": "request_3",
+                "later_source_id": "request_5",
+                "earlier_index": 0,
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "deleteItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_6": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "deleteItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_7": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "deleteItem",
+                "later": "getItem",
+                "earlier_source_id": "request_5",
+                "later_source_id": "request_7",
+                "earlier_index": 0,
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          "request_8": {
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          }
+        }
+      },
+      "decoded": {
+        "interpretation": "author 依次创建(name=first，取自返回值 id)、按该 id 读取(期望 200)、按同一 id 删除(期望 204)、再用同一 id 回读(期望 404)。两次 getItem 是不同实例，由 createItem 提供资源；200/204/404 均由已批准响应规则承载。",
+        "mode": "selected",
+        "operation_ids": [
+          "createItem",
+          "getItem",
+          "deleteItem"
+        ],
+        "normal_operation_ids": [
+          "createItem",
+          "getItem",
+          "deleteItem"
+        ],
+        "question": null,
+        "pending_questions": [],
+        "not_covered": [],
+        "blocked_operation_ids": [],
+        "input_requirements": [
+          {
+            "operation_id": "createItem",
+            "location": "body",
+            "name": "name",
+            "path": [],
+            "value": "first",
+            "source_quote": "先由 author 身份创建名称是 first 的条目"
+          },
+          {
+            "operation_id": "createItem",
+            "location": "headers",
+            "name": "Idempotency-Key",
+            "path": [],
+            "value": "rw-lifecycle-key-0001",
+            "source_quote": "先由 author 身份创建名称是 first 的条目"
+          }
+        ],
+        "input_questions": [],
+        "requested_checks": [],
+        "expectation_questions": [],
+        "source_conflicts": [],
+        "requirement_ledger": [],
+        "requirements": [
+          {
+            "source_id": "request_1",
+            "source_quote": "先由 author 身份创建名称是 first 的条目",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "createItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_2",
+            "source_quote": "并从返回值里拿到 id",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "createItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              },
+              {
+                "producer": "createItem",
+                "consumer": "deleteItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_3",
+            "source_quote": "接着按这个 id 读取该条目",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "createItem",
+                "later": "getItem",
+                "earlier_source_id": "request_1",
+                "earlier_index": 0,
+                "later_source_id": "request_3",
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_4",
+            "source_quote": "确认返回 200",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_5",
+            "source_quote": "随后删除该条目",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "deleteItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "getItem",
+                "later": "deleteItem",
+                "earlier_source_id": "request_3",
+                "earlier_index": 0,
+                "later_source_id": "request_5",
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "deleteItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_6",
+            "source_quote": "确认返回 204",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "deleteItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_7",
+            "source_quote": "最后用同一个 id 回读",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [
+              {
+                "earlier": "deleteItem",
+                "later": "getItem",
+                "earlier_source_id": "request_5",
+                "earlier_index": 0,
+                "later_source_id": "request_7",
+                "later_index": 0
+              }
+            ],
+            "same_resource": [
+              {
+                "producer": "createItem",
+                "consumer": "getItem"
+              }
+            ],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          },
+          {
+            "source_id": "request_8",
+            "source_quote": "确认返回 404",
+            "disposition": "required",
+            "actions": [
+              {
+                "operation_id": "getItem",
+                "role": "author"
+              }
+            ],
+            "before": [],
+            "same_resource": [],
+            "response_checks": [],
+            "forbidden_operation_ids": [],
+            "blocked_operation_ids": []
+          }
+        ],
+        "operation_sources": {
+          "createItem": "USER_REQUIREMENT",
+          "getItem": "USER_REQUIREMENT",
+          "deleteItem": "USER_REQUIREMENT"
+        }
+      },
+      "diagnostic": null,
+      "usage": {
+        "calls": 1,
+        "input_tokens": 11276,
+        "output_tokens": 892,
+        "total_tokens": 12168,
+        "request_sha256": "c65535d09ee6ffbf845ab3e38ee70482c756e469a32423cb427d790a22de8970",
+        "output_sha256": null
+      }
+    }
+  ],
+  "verdict": "NEEDS_REVIEW",
+  "findings": [
+    {
+      "reason": "create_not_confirmed",
+      "detail": 0
+    },
+    {
+      "reason": "create_count_mismatch",
+      "detail": 0
+    },
+    {
+      "reason": "cleanup_unverified",
+      "detail": {
+        "deleted": false,
+        "read_back": false
+      }
+    },
+    {
+      "reason": "driver_sequence_mismatch",
+      "detail": {
+        "methods": [],
+        "statuses": []
+      }
+    },
+    {
+      "reason": "driver_no_target_requests",
+      "detail": "NEEDS_REVIEW"
+    }
+  ],
+  "metrics": {
+    "creates": 0,
+    "conflicts": 0,
+    "replays": 0,
+    "updates": 0,
+    "deletes": 0,
+    "reads": 0,
+    "requests": 0,
+    "identity_violations": 0,
+    "denials": 0,
+    "unapproved_operations": 0,
+    "namespace_violations": 0,
+    "created_id": null,
+    "cleanup_verified": false,
+    "leftovers": 0,
+    "faults": 0,
+    "compensation_verified": null
+  },
+  "checks": {
+    "methods": [],
+    "statuses": [],
+    "dynamic_binding_rows": 0,
+    "idempotency_keys": 0,
+    "identity_rows": {
+      "author": 0,
+      "auditor": 0,
+      "anonymous": 0
+    },
+    "denials": []
+  },
+  "created_id": null,
+  "state": {
+    "before": {
+      "state_sha256": "f98c3ad5270217377ab694a9f7d3e5a5371603164c1143a60e2e7d34a92a4173",
+      "namespace": "e2e-m2-1110-142201",
+      "items": 0,
+      "audit": 0,
+      "read_only": false,
+      "isolated": true,
+      "writable": true
+    },
+    "after": {
+      "state_sha256": "f98c3ad5270217377ab694a9f7d3e5a5371603164c1143a60e2e7d34a92a4173",
+      "namespace": "e2e-m2-1110-142201",
+      "items": 0,
+      "audit": 0,
+      "read_only": false,
+      "isolated": true,
+      "writable": true
+    },
+    "cleanup": true
+  },
+  "audit": [],
+  "product": {
+    "status": "NEEDS_REVIEW",
+    "reason": null,
+    "model_calls": null,
+    "outcome": null,
+    "report_reason": null,
+    "steps": [],
+    "requests": null
+  }
+}

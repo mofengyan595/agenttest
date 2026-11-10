@@ -1,0 +1,43 @@
+[
+  {
+    "journal_id": "8fe89014a4244dceb368ad0eecc26061",
+    "state": "KNOWN",
+    "diagnostic": null,
+    "calls": 1,
+    "model_name": "ecnu-max",
+    "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+    "http_status": 200,
+    "elapsed_ms": 27843.0,
+    "request_bytes": 41835,
+    "response_bytes": 4255,
+    "input_token_upper_bound": 42347,
+    "input_tokens": 11276,
+    "output_tokens": 892,
+    "total_tokens": 12168,
+    "reason": "MODEL_OUTPUT_RECEIVED"
+  },
+  {
+    "journal_id": "f1bf8e7296e54bd9810567e78675358c",
+    "state": "KNOWN",
+    "diagnostic": {
+      "layer": "model",
+      "code": "CONSTRUCTION_DEPENDENCY_CYCLE",
+      "fields": [
+        "plan.steps.1",
+        "plan.steps.2"
+      ]
+    },
+    "calls": 1,
+    "model_name": "ecnu-max",
+    "model_sha256": "28c7f772f8547602eab430f3e8a8de58737462c179197afffd75d56c616d0c0a",
+    "http_status": 200,
+    "elapsed_ms": 8344.0,
+    "request_bytes": 37319,
+    "response_bytes": 6880,
+    "input_token_upper_bound": 37831,
+    "input_tokens": 8924,
+    "output_tokens": 1482,
+    "total_tokens": 10406,
+    "reason": "MODEL_INVALID_RESPONSE"
+  }
+]

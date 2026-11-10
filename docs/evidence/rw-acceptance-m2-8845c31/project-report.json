@@ -1,0 +1,42 @@
+{
+  "run_id": "ffc371ea5536440ca69f2f94d159a0de",
+  "revision": 1,
+  "started_at": "2026-11-10T06:22:39.643375+00:00",
+  "scenario_sha256": "e0fc3618c4c78583ae4cd2feac99c89fa4e4df0f808ee7262538d3d8d96c5e57",
+  "contract_sha256": "2d570a8ba3a4516a0bd99dc850fdc6daae77e8b5f44f928fd14f66f7da177f7f",
+  "outcome": "NEEDS_REVIEW",
+  "steps": [],
+  "completed": false,
+  "reason": "MODEL_INVALID_RESPONSE",
+  "environment": "isolated",
+  "target_origin": "http://127.0.0.1:19097",
+  "target_config_sha256": "e8482a79ad8833d262d4fdceb9ed65c23b48a028a5ef27dc09474425443938dd",
+  "policy_registry_sha256": "a9631b61711818e113c3ac7a52cf6aab930979fbfc3d320b1e580ceb8016061f",
+  "workflow_nodes": [],
+  "planner_calls": 0,
+  "tool_calls": 0,
+  "analysis_code": null,
+  "workflow_completed": null,
+  "user_task_sha256": null,
+  "plan_valid": false,
+  "dsl_valid": false,
+  "policy_authorized": false,
+  "selected_policy_ids": [],
+  "model_call": null,
+  "plan_structure": [],
+  "validation_issue": null,
+  "diagnostic": {
+    "layer": "model",
+    "code": "CONSTRUCTION_DEPENDENCY_CYCLE",
+    "fields": [
+      "plan.steps.1",
+      "plan.steps.2"
+    ]
+  },
+  "intent_verified": false,
+  "task_mode": "model_designed",
+  "task_satisfied": null,
+  "investigations": [],
+  "investigation_error": null,
+  "cleanup": "未记录数据清理结论，请结合本轮资源记录核查。"
+}
