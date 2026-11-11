@@ -2,17 +2,21 @@
 
 import asyncio
 import json
+import sys
 from dataclasses import replace
 from uuid import uuid4
 
 import httpx
 import pytest
-from test_product_design import case, project, settings
 
-from agenttest.contracts import load_openapi
-from agenttest.generic_intake import GenericSetup, analyze_contract, build_generic_project
-from agenttest.product_design import TestDesignModel as DesignModel
-from agenttest.product_supervisor import (
+pytest.importorskip("langgraph", reason="Round supervision runs on the optional agent graph")
+
+from test_product_design import case, project, settings  # noqa: E402
+
+from agenttest.contracts import load_openapi  # noqa: E402
+from agenttest.generic_intake import GenericSetup, analyze_contract, build_generic_project  # noqa: E402
+from agenttest.product_design import TestDesignModel as DesignModel  # noqa: E402
+from agenttest.product_supervisor import (  # noqa: E402
     NextAction,
     RoundSupervisor,
     SupervisorModel,
@@ -467,6 +471,8 @@ async def test_supervisor_off_by_default_keeps_the_legacy_round(tmp_path, monkey
     requests = []
     monkeypatch.setattr(httpx, "AsyncHTTPTransport",
                         lambda **_: httpx.MockTransport(jobs_target(requests)))
+    # Base installs have no langgraph: the disabled path must never import the graph module.
+    monkeypatch.setitem(sys.modules, "agenttest.product_supervisor", None)
     svc = service(tmp_path, design_transport(jobs_design), supervisor=Forbidden())
     try:
         proj, setup = project()

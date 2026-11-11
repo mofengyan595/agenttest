@@ -1114,14 +1114,15 @@ class ProductTasks:
         values stay in ``run()``. With ``supervisor_max_rounds == 0`` (the product default)
         this method returns immediately and the round behaves exactly as before.
         """
-        from agenttest.product_obligations import supervision_facts
-        from agenttest.product_supervisor import RoundSupervisor
-
         svc, summary, ledger, project = scope.svc, scope.summary, scope.ledger, scope.project
         rounds = int(getattr(project.registration.budget, "supervisor_max_rounds", 0) or 0)
         factory = getattr(svc, "supervisor_factory", None)
         if rounds < 1 or factory is None:
             return None
+        # A base install has no langgraph; only the enabled path may need it.
+        from agenttest.product_obligations import supervision_facts
+        from agenttest.product_supervisor import RoundSupervisor
+
         allow_negatives = bool(scope.text == DEFAULT_ROUND
                                or summary.get("focus", {}).get("mode") != "selected")
 
