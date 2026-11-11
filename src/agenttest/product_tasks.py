@@ -2,6 +2,8 @@
 
 import asyncio
 import time
+from dataclasses import dataclass, field
+from typing import Callable
 from uuid import uuid4
 
 import httpx
@@ -210,6 +212,34 @@ class JournalPlanner:
             return await self.delegate.generate(context)
         finally:
             self.db.finish_model_call(call_id, self.stats)
+
+
+@dataclass
+class RunScope:
+    """References one product round needs; it carries no business rule of its own.
+
+    The same object reaches every group of the deterministic round and every round
+    supervision action, so an extra round cannot accidentally run against a different
+    project, budget, transport or authority guard.
+    """
+
+    svc: object
+    task_id: str
+    owner: str
+    row: dict
+    project: object
+    project_record: dict
+    summary: dict
+    context: dict
+    text: str
+    ledger: object
+    transport: object
+    guard: Callable[[], None]
+    checkpoint: Callable[[], None]
+    executable_checks: list
+    planning_ir: object | None
+    requirements: list
+    state: dict = field(default_factory=dict)
 
 
 class ProductTasks:
@@ -639,323 +669,16 @@ class ProductTasks:
                         checkpoint()
                     design_requirements = summary.get('planning_requirements',
                         summary.get('focus', {}).get('requirements', []))
-                    witness_requirements = design_requirements
+                    scope = RunScope(svc=svc, task_id=task_id, owner=owner, row=row,
+                        project=project, project_record=project_record, summary=summary,
+                        context=context, text=text, ledger=ledger,
+                        transport=bounded_transport, guard=guard, checkpoint=checkpoint,
+                        executable_checks=executable_checks, planning_ir=planning_ir,
+                        requirements=design_requirements)
                     for position, group in enumerate(summary["groups"]):
-                        guard()
-                        reserved_requests = (sum(len(g["primary"]) for g in
-                            summary["groups"][position + 1:] if g["supported"])
-                            if text == DEFAULT_ROUND else 0)
-                        reserved_requests = min(reserved_requests, max(0,
-                            ledger.max_requests - ledger.requests - len(group["primary"])))
-                        group_request_limit = max(ledger.requests,
-                            ledger.max_requests - reserved_requests)
-                        if (not group["supported"] or ledger.requests >= ledger.max_requests
-                                or ledger.model_calls >= ledger.max_model_calls
-                                or ledger.usage_unknown or svc.db.model_usage_blocked()):
-                            reason = ("本组依赖超过一次可处理的 12 个接口，需拆分测试范围。"
-                                if not group["supported"] else
-                                "本轮 HTTP 请求预算已用尽。"
-                                if ledger.requests >= ledger.max_requests else
-                                "本轮模型调用次数已达上限。"
-                                if ledger.model_calls >= ledger.max_model_calls else
-                                "此前模型调用的用量未知，本轮没有继续调用模型。")
-                            group.update(status="NOT_EXECUTED", reason=reason)
-                            checkpoint()
-                            continue
-                        svc.db.event(task_id, "PLANNING", requests=ledger.requests)
-                        raw_model = svc.designer_factory(project)
-                        model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id),
-                                              ledger, guard)
-                        record = dict(group_id=group["id"], status="PLANNING")
-                        suggested = None
-                        if text == DEFAULT_ROUND:
-                            future = summary["groups"][position:]
-                            primary = sum(len(g["primary"]) for g in future)
-                            extra = max(0, ledger.max_requests - ledger.requests - primary)
-                            suggested = min(ledger.max_requests - ledger.requests,
-                                            len(group["primary"]) + extra // len(future))
-                            record["suggested_group_requests"] = suggested
-                        summary["design_records"].append(record)
-                        checkpoint()
-                        design_started = time.perf_counter()
-                        group_requirements = design_requirements
-                        group_witness_requirements = witness_requirements
-                        group_ir = None
-                        unresolved = unresolved_ir_clauses(
-                            planning_ir, summary.get("focus", {}).get("requirements", []))
-                        engine_conditions = planning_engine_conditions(
-                            planning_ir, group=group, questions=summary.get("questions"),
-                            requested_checks=summary.get("requested_checks"),
-                            permission_requirements=summary.get("permission_requirements"),
-                            unresolved=unresolved)
-                        choice = planning_engine_choice(engine_conditions)
-                        record["planning_engine_choice"] = choice
-                        if choice["engine"] == IR_ENGINE:
-                            # Focus turned status/data constraints into request obligations;
-                            # the Design model sees only real requests in this group, and the
-                            # deterministic compiler realizes them as instances. A group that
-                            # covers only part of the request keeps the unchanged legacy path.
-                            group_requirements = planning_ir.normalized_requirements
-                            group_witness_requirements = summary.get('focus', {}).get(
-                                'requirements', [])
-                            group_ir = planning_ir
-                        try:
-                            design = await propose_design(project, text, group, model,
-                                environ=svc.environ,
-                                remaining_requests=group_request_limit - ledger.requests,
-                                inventory_total=summary["inventory"]["total"],
-                                pending_checks=summary["inventory"].get("pending_checks", []),
-                                handled_questions=(summary["questions"]
-                                    if context.get("current_request", text) != DEFAULT_ROUND
-                                    else []),
-                                task_context=context,
-                                allow_new_questions="focus" not in summary,
-                                normal_operation_ids=(project.target.allowed_operations
-                                    if text == DEFAULT_ROUND or summary.get("focus", {}).get(
-                                        "mode") == "all_ready" else summary.get("focus", {}).get(
-                                        "normal_operation_ids", [])),
-                                input_requirements=summary.get("focus", {}).get(
-                                    "input_requirements", []),
-                                requested_checks=executable_checks,
-                                request_requirements=group_requirements,
-                                witness_requirements=group_witness_requirements,
-                                planning_ir=group_ir,
-                                permission_action_scope=summary.get('permission_action_scope'),
-                                data_references=summary.get('data_references', []),
-                                http_status_requirements=summary.get(
-                                    'http_status_requirements', []),
-                                response_requirements=summary.get('response_requirements', []),
-                                pending_negative_values=summary.get("pending_negative_values", []),
-                                project_notes=project_record.get("business_notes", ""),
-                                group_http_budget=suggested,
-                                allow_optional_negatives=(summary.get("focus", {}).get(
-                                    "mode") != "selected"),
-                                must_be_relevant=(text == DEFAULT_ROUND
-                                    or summary.get("focus", {}).get("mode") in {
-                                        "selected", "all_ready"}),
-                                available_identity_aliases=[r["alias"] for r in svc.intake.record(
-                                    row["project_id"])["generic"]["roles"]],
-                                timeout=getattr(getattr(raw_model, "_settings", None),
-                                                "timeout", 30.0) + 1)
-                            record.update(status="PROPOSED", interpretation=design.interpretation,
-                                          presentation=presentation_language(
-                                              design.interpretation))
-                            if design._coalesced_read_cases:
-                                record['coalesced_read_cases'] = design._coalesced_read_cases
-                            if not design.relevant:
-                                record["outside_focus_notes"] = design.not_covered
-                            group["status"] = "DESIGNED" if design.relevant else "OUTSIDE_FOCUS"
-                        except (PlannerFailure, ValueError, TimeoutError) as exc:
-                            reason = getattr(exc, "reason", None) or getattr(
-                                getattr(exc, "diagnostic", None), "code", "DESIGN_REJECTED")
-                            if exc.args and isinstance(exc.args[0], str) and exc.args[0] in {
-                                    "DESIGN_EMPTY_RESPONSE", "DESIGN_SELECTED_SCOPE_NOT_COVERED",
-                                    "IRRELEVANT_DESIGN_HAS_REQUESTED_WORK",
-                                    "DESIGN_OPERATION_OUTSIDE_GROUP", "DESIGN_STEP_BUDGET_EXCEEDED",
-                                    "DESIGN_QUESTION_OUTSIDE_GROUP",
-                                    "DESIGN_EXISTING_QUESTION_REF_INVALID",
-                                    "DESIGN_PERMISSION_QUESTION_REJECTED", "DRAFT_UNSAFE_METADATA",
-                                    "DESIGN_EXPLICIT_INPUT_NOT_PRESERVED",
-                                    "DESIGN_CHECK_BATCH_LIMIT", "DESIGN_DUPLICATE_RESOURCE_SETUP",
-                                    "DESIGN_UNAPPROVED_NEGATIVE_VALUE",
-                                    "DESIGN_REQUESTED_OPERATIONS_MISSING",
-                                    "DESIGN_REQUESTED_CHECKS_MISSING",
-                                    "DESIGN_REQUESTED_CHECK_NOT_APPROVED",
-                                    "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW"}:
-                                reason = exc.args[0]
-                            diagnostic = getattr(exc, "diagnostic", None)
-                            if diagnostic is not None:
-                                record['diagnostic'] = diagnostic.model_dump(mode='json')
-                            if isinstance(exc, ValidationError):
-                                from agenttest.diagnostics import Layer, schema_diagnostic
-
-                                reason = "DESIGN_SCENARIO_INVALID"
-                                record["diagnostic"] = schema_diagnostic(
-                                    exc, Layer.DSL).model_dump(mode="json")
-                            if diagnostic and diagnostic.code == "DESIGN_REQUESTED_CHECKS_MISSING":
-                                reason = diagnostic.code
-                            if reason in {'DESIGN_REQUIRED_HTTP_STATUS_MISSING',
-                                          'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING'}:
-                                for entry in summary.get('http_status_requirements', []):
-                                    if f"requirement_map.{entry['source_id']}" in diagnostic.fields:
-                                        entry['status'] = 'NEEDS_REVIEW'
-                            record.update(status="REJECTED", reason=reason)
-                            group.update(status="NOT_EXECUTED", reason=reason)
-                            continue
-                        finally:
-                            record["elapsed_ms"] = round(
-                                (time.perf_counter() - design_started) * 1000, 3)
-                            record["model_call"] = model.stats.model_dump(mode="json")
-                            if hasattr(raw_model, 'construction_records'):
-                                record['plan_construction'] = raw_model.construction_records
-                                record['construction_ms'] = raw_model.construction_elapsed_ms
-                                construction = list(raw_model.construction_records or [])
-                                record.update(planning_engine_evidence(
-                                    actual_planning_engine(construction), choice, construction))
-                            checkpoint()
-                        for question in design.questions:
-                            if question.existing_question_ref is not None:
-                                continue
-                            data = question.model_dump()
-                            data["id"] = "question_" + fingerprint(data)[:20]
-                            if data not in summary["questions"]:
-                                summary["questions"].append(data)
-                        if design.relevant:
-                            summary["not_covered"].extend(design.not_covered)
-                        summary.setdefault('suggestions', []).extend(design.suggestions)
-                        clarification_operations = {q.operation_id for q in design.questions
-                            if q.kind == "clarification" and q.existing_question_ref is None}
-                        negative_policies = {p.id for p in project.registry.definitions()
-                                             if p.negative}
-                        ordered_cases = sorted(design.cases, key=lambda c: not any(
-                            s.operation_id in group["primary"] and s.policy_id not in
-                            negative_policies for s in c.plan.steps)) if text == DEFAULT_ROUND \
-                            else design.cases
-                        # Validate the whole group before any login or business write.
-                        # Independent valid cases may run; rejected cases are never repaired.
-                        preflight = []
-                        for case in ordered_cases:
-                            try:
-                                preflight.append(validate_design_case(project, case, svc.reports,
-                                    cleanup_operations=group["primary"],
-                                    requested_checks=executable_checks,
-                                    environ=svc.environ, transport=bounded_transport))
-                            except ValueError as exc:
-                                preflight.append(exc)
-                        for index, case in enumerate(ordered_cases):
-                            case_row = dict(case_id=f"{group['id']}_case_{index + 1}",
-                                title=case.title, kinds=[case.kind], operation_id=None,
-                                planned_operations=list(dict.fromkeys(
-                                    s.operation_id for s in case.plan.steps)),
-                                planned_steps=len(case.plan.steps),
-                                planned_policy_ids=[s.policy_id for s in case.plan.steps],
-                                status="NOT_EXECUTED", max_business_requests=len(case.plan.steps),
-                                plan_source="MODEL_SUGGESTION", task_satisfied=None)
-                            if case._http_status_steps:
-                                case_row['http_status_steps'] = case._http_status_steps
-                            if case._response_steps:
-                                case_row['response_steps'] = case._response_steps
-                            if case._data_source_steps:
-                                case_row['data_source_steps'] = case._data_source_steps
-                            record_requirement_evidence(summary, case_row)
-                            summary["cases"].append(case_row)
-                            checkpoint()
-                            if any(s.operation_id in clarification_operations
-                                   and s.policy_id in negative_policies for s in case.plan.steps):
-                                case_row["reason"] = (
-                                    "本场景的异常输入或判断依据仍待补充，未发送请求。")
-                                continue
-                            if ledger.requests + len(case.plan.steps) > group_request_limit:
-                                case_row["reason"] = (
-                                    "保留后续接口的基本请求预算，未执行此额外场景。"
-                                    if reserved_requests else
-                                    "剩余 HTTP 预算不足，未执行此场景。")
-                                continue
-                            svc.db.event(task_id, "VALIDATING", requests=ledger.requests)
-                            try:
-                                scenario = preflight[index]
-                                if isinstance(scenario, ValueError):
-                                    raise scenario
-                            except ValueError as exc:
-                                case_row.update(status="REJECTED", reason=getattr(
-                                    getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))
-                                continue
-                            from agenttest.investigation import FeedbackBudget, InvestigationConfig
-                            from agenttest.task_service import ProgressStore
-                            from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
-
-                            def progress(phase, run_id, _requests):
-                                if case_row.get("run_id") != run_id:
-                                    case_row.update(run_id=run_id, status="RUNNING")
-                                    checkpoint()
-                                svc.db.event(task_id, phase, run_id=run_id,
-                                             requests=ledger.requests)
-
-                            store = ProgressStore(svc.reports.root, progress)
-                            probe_remaining = max(0, 2 - sum(i.get("requests", 0)
-                                for previous in summary["cases"]
-                                for i in previous.get("investigations", [])))
-                            probe_allowed = (probe_remaining > 0 and ledger.requests
-                                             + len(scenario.steps) < group_request_limit)
-                            probe_model = (BudgetPlanner(JournalPlanner(
-                                svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
-                                if probe_allowed and svc.product_probe_factory else None)
-                            case_started = time.perf_counter()
-                            try:
-                                report = await Workflow(project.document, project.target,
-                                    project.registry, FakeLLM(""), store,
-                                    transport=bounded_transport, environ=svc.environ,
-                                    task_mode="model_designed", user_task=text,
-                                    prepared_plan=scenario, analyzer=probe_model,
-                                    investigation=InvestigationConfig(enabled=probe_allowed,
-                                        product_read_probe=probe_allowed, feedback=FeedbackBudget(
-                                            max_requests=probe_remaining,
-                                            max_model_calls=probe_remaining)),
-                                    execution_guard=guard,
-                                    plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
-                                        model_request_sha256=model.stats.request_sha256),
-                                    budget=WorkflowBudget(max_model_calls=0,
-                                        workflow_timeout=min(300.,
-                                            project.target.run_timeout + 220))).run()
-                            finally:
-                                case_row["elapsed_ms"] = round(
-                                    (time.perf_counter() - case_started) * 1000, 3)
-                            if (report.steps and report.outcome != Outcome.PASS
-                                    and report.failure_explanation is None):
-                                from agenttest.product_probe import explain_failure
-
-                                report.failure_explanation = explain_failure(report)
-                                store.save(report)
-                            plan_roles = {p.step_id: p.role for p in report.plan_structure}
-                            case_row.update(status="FINISHED", run_id=report.run_id,
-                                outcome=report.outcome.value, task_satisfied=None,
-                                planned_steps=len(scenario.steps),
-                                executed_steps=sum(bool(s.attempts) for s in report.steps),
-                                executed_operations=[s.operation_id for s in report.steps
-                                                     if s.attempts],
-                                http_requests=sum(len(s.attempts) for s in report.steps),
-                                resource_lifecycle=report.resource_lifecycle,
-                                created_resources=report.created_resources,
-                                cleanup=report.cleanup,
-                                failure_explanation=report.failure_explanation,
-                                probe_decisions=report.probe_decisions,
-                                cleanup_requests=sum(len(s.attempts)
-                                    for s in report.lifecycle_cleanup),
-                                approved_negative_steps=sum(
-                                    s.input_validation == "APPROVED_NEGATIVE"
-                                    for s in report.steps),
-                                negative_rejections_passed=sum(
-                                    s.negative_rejected_as_expected is True for s in report.steps),
-                                investigations=[dict(operation_id=i.operation_id,
-                                    role=i.role,
-                                    method=i.method, path=i.path_template, outcome=i.outcome.value,
-                                    requests=i.requests_used, reason=i.reason,
-                                    checks=[c.model_dump() for c in i.checks],
-                                    cause_confirmed=False) for i in report.investigations],
-                                evidence=[dict(operation_id=s.operation_id, method=s.method,
-                                    step_id=s.step_id, role=plan_roles.get(s.step_id),
-                                    executed=bool(s.attempts),
-                                    path=s.path_template, outcome=s.outcome.value,
-                                    request=s.request_evidence,
-                                    checks=[c.model_dump() for c in s.checks])
-                                    for s in report.steps])
-                            from agenttest.product_checks import executed_policies
-
-                            case_row["executed_policy_ids"] = executed_policies(report)
-                            record_requirement_evidence(summary, case_row, report)
-                            if report.outcome != Outcome.PASS:
-                                case_row["reason"] = {
-                                    Outcome.ASSERTION_FAILED: "响应不符合已确认的预期。",
-                                    Outcome.TEST_INFRA_ERROR:
-                                        "环境或传输异常，不能据此认定业务缺陷。",
-                                    Outcome.TOOL_ERROR: "计划或执行参数未能通过校验。",
-                                    Outcome.NEEDS_REVIEW: "缺少可靠的执行或判断依据。",
-                                }[report.outcome]
-                                case_row["diagnostic"] = (report.diagnostic.code
-                                    if report.diagnostic else report.reason)
-                            if report.outcome == Outcome.PASS and report.completed:
-                                self.retain(row, text, scenario, project, report, case_row)
-                            checkpoint()
+                        await self.run_group(scope, group, position=position,
+                                             future_groups=summary["groups"][position + 1:])
+                    await self.supervise(scope)
                 rejected = [entry for entry in summary["design_records"]
                             if entry.get("status") == "REJECTED"]
                 if rejected and not summary["cases"] and not ledger.requests:
@@ -1014,6 +737,562 @@ class ProductTasks:
         finally:
             if transport is not None:
                 await transport.aclose()
+
+    async def run_group(self, scope, group, *, position=None, future_groups=(),
+                        supervision=None):
+        """Design, preflight and execute one group; the only design/execute action.
+
+        Both the first deterministic round and a supervisor ``DESIGN_MORE`` round call this
+        method, so extra tests reuse the same Planning IR/compiler, the same
+        ``validate_design_case`` preflight and the same single ``Workflow``/``Executor``
+        HTTP exit. ``supervision`` narrows the design scope to one open obligation; it never
+        widens authority, skips validation or changes a terminal verdict.
+        """
+        svc, summary, ledger = scope.svc, scope.summary, scope.ledger
+        project, project_record = scope.project, scope.project_record
+        guard, checkpoint = scope.guard, scope.checkpoint
+        task_id, row = scope.task_id, scope.row
+        context, text = scope.context, scope.text
+        bounded_transport, executable_checks = scope.transport, scope.executable_checks
+        future_groups = list(future_groups)
+        # A supervision round owns one obligation, not the round-1 clause map: those IR
+        # instances and clause witnesses belong to groups that already ran.
+        planning_ir = None if supervision is not None else scope.planning_ir
+        design_requirements = [] if supervision is not None else scope.requirements
+        witness_requirements = design_requirements
+        design_text = text if supervision is None else supervision["text"]
+        proposal_context = context
+        if supervision is not None:
+            proposal_context = {**context, "current_request": design_text,
+                "requests": [*(context.get("requests") or ()), design_text]}
+        if supervision is not None:
+            required_normal_operations = list(group["primary"])
+        elif text == DEFAULT_ROUND or summary.get("focus", {}).get("mode") == "all_ready":
+            required_normal_operations = project.target.allowed_operations
+        else:
+            required_normal_operations = summary.get("focus", {}).get(
+                "normal_operation_ids", [])
+        must_be_relevant = bool(supervision is not None or text == DEFAULT_ROUND
+                                or summary.get("focus", {}).get("mode") in {"selected",
+                                                                            "all_ready"})
+        guard()
+        if supervision is None:
+            reserved_requests = (sum(len(g["primary"]) for g in future_groups
+                                     if g["supported"]) if text == DEFAULT_ROUND else 0)
+            reserved_requests = min(reserved_requests, max(0,
+                ledger.max_requests - ledger.requests - len(group["primary"])))
+        else:
+            # A supervision round owns the remaining budget; nothing is reserved after it.
+            reserved_requests = 0
+        group_request_limit = max(ledger.requests,
+            ledger.max_requests - reserved_requests)
+        if (not group["supported"] or ledger.requests >= ledger.max_requests
+                or ledger.model_calls >= ledger.max_model_calls
+                or ledger.usage_unknown or svc.db.model_usage_blocked()):
+            reason = ("本组依赖超过一次可处理的 12 个接口，需拆分测试范围。"
+                if not group["supported"] else
+                "本轮 HTTP 请求预算已用尽。"
+                if ledger.requests >= ledger.max_requests else
+                "本轮模型调用次数已达上限。"
+                if ledger.model_calls >= ledger.max_model_calls else
+                "此前模型调用的用量未知，本轮没有继续调用模型。")
+            group.update(status="NOT_EXECUTED", reason=reason)
+            checkpoint()
+            return
+        svc.db.event(task_id, "PLANNING", requests=ledger.requests)
+        raw_model = svc.designer_factory(project)
+        model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id),
+                              ledger, guard)
+        record = dict(group_id=group["id"], status="PLANNING")
+        suggested = None
+        if supervision is None and text == DEFAULT_ROUND:
+            future = [group, *future_groups]
+            primary = sum(len(g["primary"]) for g in future)
+            spare = max(0, ledger.max_requests - ledger.requests - primary)
+            suggested = min(ledger.max_requests - ledger.requests,
+                            len(group["primary"]) + spare // len(future))
+            record["suggested_group_requests"] = suggested
+        summary["design_records"].append(record)
+        checkpoint()
+        design_started = time.perf_counter()
+        group_requirements = design_requirements
+        group_witness_requirements = witness_requirements
+        group_ir = None
+        unresolved = unresolved_ir_clauses(
+            planning_ir, summary.get("focus", {}).get("requirements", []))
+        engine_conditions = planning_engine_conditions(
+            planning_ir, group=group, questions=summary.get("questions"),
+            requested_checks=summary.get("requested_checks"),
+            permission_requirements=summary.get("permission_requirements"),
+            unresolved=unresolved)
+        choice = planning_engine_choice(engine_conditions)
+        record["planning_engine_choice"] = choice
+        if supervision is not None:
+            # Auditable: which round asked for this extra group and for which obligation.
+            record["supervision_round"] = supervision["round"]
+            record["supervision_target"] = supervision.get("target")
+        if choice["engine"] == IR_ENGINE:
+            # Focus turned status/data constraints into request obligations;
+            # the Design model sees only real requests in this group, and the
+            # deterministic compiler realizes them as instances. A group that
+            # covers only part of the request keeps the unchanged legacy path.
+            group_requirements = planning_ir.normalized_requirements
+            group_witness_requirements = summary.get('focus', {}).get(
+                'requirements', [])
+            group_ir = planning_ir
+        try:
+            design = await propose_design(project, design_text, group, model,
+                environ=svc.environ,
+                remaining_requests=group_request_limit - ledger.requests,
+                inventory_total=summary["inventory"]["total"],
+                pending_checks=summary["inventory"].get("pending_checks", []),
+                handled_questions=(summary["questions"]
+                    if context.get("current_request", text) != DEFAULT_ROUND
+                    else []),
+                task_context=proposal_context,
+                allow_new_questions="focus" not in summary,
+                normal_operation_ids=required_normal_operations,
+                input_requirements=summary.get("focus", {}).get(
+                    "input_requirements", []),
+                requested_checks=executable_checks,
+                request_requirements=group_requirements,
+                witness_requirements=group_witness_requirements,
+                planning_ir=group_ir,
+                permission_action_scope=summary.get('permission_action_scope'),
+                data_references=summary.get('data_references', []),
+                http_status_requirements=summary.get(
+                    'http_status_requirements', []),
+                response_requirements=summary.get('response_requirements', []),
+                pending_negative_values=summary.get("pending_negative_values", []),
+                project_notes=project_record.get("business_notes", ""),
+                group_http_budget=suggested,
+                allow_optional_negatives=(summary.get("focus", {}).get(
+                    "mode") != "selected"),
+                must_be_relevant=must_be_relevant,
+                available_identity_aliases=[r["alias"] for r in svc.intake.record(
+                    row["project_id"])["generic"]["roles"]],
+                timeout=getattr(getattr(raw_model, "_settings", None),
+                                "timeout", 30.0) + 1)
+            record.update(status="PROPOSED", interpretation=design.interpretation,
+                          presentation=presentation_language(
+                              design.interpretation))
+            if design._coalesced_read_cases:
+                record['coalesced_read_cases'] = design._coalesced_read_cases
+            if not design.relevant:
+                record["outside_focus_notes"] = design.not_covered
+            group["status"] = "DESIGNED" if design.relevant else "OUTSIDE_FOCUS"
+        except (PlannerFailure, ValueError, TimeoutError) as exc:
+            reason = getattr(exc, "reason", None) or getattr(
+                getattr(exc, "diagnostic", None), "code", "DESIGN_REJECTED")
+            if exc.args and isinstance(exc.args[0], str) and exc.args[0] in {
+                    "DESIGN_EMPTY_RESPONSE", "DESIGN_SELECTED_SCOPE_NOT_COVERED",
+                    "IRRELEVANT_DESIGN_HAS_REQUESTED_WORK",
+                    "DESIGN_OPERATION_OUTSIDE_GROUP", "DESIGN_STEP_BUDGET_EXCEEDED",
+                    "DESIGN_QUESTION_OUTSIDE_GROUP",
+                    "DESIGN_EXISTING_QUESTION_REF_INVALID",
+                    "DESIGN_PERMISSION_QUESTION_REJECTED", "DRAFT_UNSAFE_METADATA",
+                    "DESIGN_EXPLICIT_INPUT_NOT_PRESERVED",
+                    "DESIGN_CHECK_BATCH_LIMIT", "DESIGN_DUPLICATE_RESOURCE_SETUP",
+                    "DESIGN_UNAPPROVED_NEGATIVE_VALUE",
+                    "DESIGN_REQUESTED_OPERATIONS_MISSING",
+                    "DESIGN_REQUESTED_CHECKS_MISSING",
+                    "DESIGN_REQUESTED_CHECK_NOT_APPROVED",
+                    "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW"}:
+                reason = exc.args[0]
+            diagnostic = getattr(exc, "diagnostic", None)
+            if diagnostic is not None:
+                record['diagnostic'] = diagnostic.model_dump(mode='json')
+            if isinstance(exc, ValidationError):
+                from agenttest.diagnostics import Layer, schema_diagnostic
+
+                reason = "DESIGN_SCENARIO_INVALID"
+                record["diagnostic"] = schema_diagnostic(
+                    exc, Layer.DSL).model_dump(mode="json")
+            if diagnostic and diagnostic.code == "DESIGN_REQUESTED_CHECKS_MISSING":
+                reason = diagnostic.code
+            if reason in {'DESIGN_REQUIRED_HTTP_STATUS_MISSING',
+                          'DESIGN_REQUIRED_RESPONSE_WITNESS_MISSING'}:
+                for entry in summary.get('http_status_requirements', []):
+                    if f"requirement_map.{entry['source_id']}" in diagnostic.fields:
+                        entry['status'] = 'NEEDS_REVIEW'
+            record.update(status="REJECTED", reason=reason)
+            group.update(status="NOT_EXECUTED", reason=reason)
+            return
+        finally:
+            record["elapsed_ms"] = round(
+                (time.perf_counter() - design_started) * 1000, 3)
+            record["model_call"] = model.stats.model_dump(mode="json")
+            if hasattr(raw_model, 'construction_records'):
+                record['plan_construction'] = raw_model.construction_records
+                record['construction_ms'] = raw_model.construction_elapsed_ms
+                construction = list(raw_model.construction_records or [])
+                record.update(planning_engine_evidence(
+                    actual_planning_engine(construction), choice, construction))
+            checkpoint()
+        for question in design.questions:
+            if question.existing_question_ref is not None:
+                continue
+            data = question.model_dump()
+            data["id"] = "question_" + fingerprint(data)[:20]
+            if data not in summary["questions"]:
+                summary["questions"].append(data)
+        if design.relevant:
+            summary["not_covered"].extend(design.not_covered)
+        summary.setdefault('suggestions', []).extend(design.suggestions)
+        clarification_operations = {q.operation_id for q in design.questions
+            if q.kind == "clarification" and q.existing_question_ref is None}
+        negative_policies = {p.id for p in project.registry.definitions()
+                             if p.negative}
+        ordered_cases = sorted(design.cases, key=lambda c: not any(
+        s.operation_id in group["primary"] and s.policy_id not in
+        negative_policies for s in c.plan.steps)) \
+        if supervision is None and text == DEFAULT_ROUND else design.cases
+        # Validate the whole group before any login or business write.
+        # Independent valid cases may run; rejected cases are never repaired.
+        preflight = []
+        for case in ordered_cases:
+            try:
+                preflight.append(validate_design_case(project, case, svc.reports,
+                    cleanup_operations=group["primary"],
+                    requested_checks=executable_checks,
+                    environ=svc.environ, transport=bounded_transport))
+            except ValueError as exc:
+                preflight.append(exc)
+        for index, case in enumerate(ordered_cases):
+            case_row = dict(case_id=f"{group['id']}_case_{index + 1}",
+                title=case.title, kinds=[case.kind], operation_id=None,
+                planned_operations=list(dict.fromkeys(
+                    s.operation_id for s in case.plan.steps)),
+                planned_steps=len(case.plan.steps),
+                planned_policy_ids=[s.policy_id for s in case.plan.steps],
+                status="NOT_EXECUTED", max_business_requests=len(case.plan.steps),
+                plan_source="MODEL_SUGGESTION", task_satisfied=None)
+            if case._http_status_steps:
+                case_row['http_status_steps'] = case._http_status_steps
+            if case._response_steps:
+                case_row['response_steps'] = case._response_steps
+            if case._data_source_steps:
+                case_row['data_source_steps'] = case._data_source_steps
+            record_requirement_evidence(summary, case_row)
+            summary["cases"].append(case_row)
+            checkpoint()
+            if any(s.operation_id in clarification_operations
+                   and s.policy_id in negative_policies for s in case.plan.steps):
+                case_row["reason"] = (
+                    "本场景的异常输入或判断依据仍待补充，未发送请求。")
+                continue
+            if ledger.requests + len(case.plan.steps) > group_request_limit:
+                case_row["reason"] = (
+                    "保留后续接口的基本请求预算，未执行此额外场景。"
+                    if reserved_requests else
+                    "剩余 HTTP 预算不足，未执行此场景。")
+                continue
+            svc.db.event(task_id, "VALIDATING", requests=ledger.requests)
+            try:
+                scenario = preflight[index]
+                if isinstance(scenario, ValueError):
+                    raise scenario
+            except ValueError as exc:
+                case_row.update(status="REJECTED", reason=getattr(
+                    getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))
+                continue
+            from agenttest.investigation import FeedbackBudget, InvestigationConfig
+            from agenttest.task_service import ProgressStore
+            from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
+
+            def progress(phase, run_id, _requests):
+                if case_row.get("run_id") != run_id:
+                    case_row.update(run_id=run_id, status="RUNNING")
+                    checkpoint()
+                svc.db.event(task_id, phase, run_id=run_id,
+                             requests=ledger.requests)
+
+            store = ProgressStore(svc.reports.root, progress)
+            probe_remaining = max(0, 2 - sum(i.get("requests", 0)
+                for previous in summary["cases"]
+                for i in previous.get("investigations", [])))
+            probe_allowed = (probe_remaining > 0 and ledger.requests
+                             + len(scenario.steps) < group_request_limit)
+            probe_model = (BudgetPlanner(JournalPlanner(
+                svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
+                if probe_allowed and svc.product_probe_factory else None)
+            case_started = time.perf_counter()
+            try:
+                report = await Workflow(project.document, project.target,
+                    project.registry, FakeLLM(""), store,
+                    transport=bounded_transport, environ=svc.environ,
+                    task_mode="model_designed", user_task=design_text,
+                    prepared_plan=scenario, analyzer=probe_model,
+                    investigation=InvestigationConfig(enabled=probe_allowed,
+                        product_read_probe=probe_allowed, feedback=FeedbackBudget(
+                            max_requests=probe_remaining,
+                            max_model_calls=probe_remaining)),
+                    execution_guard=guard,
+                    plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
+                        model_request_sha256=model.stats.request_sha256),
+                    budget=WorkflowBudget(max_model_calls=0,
+                        workflow_timeout=min(300.,
+                            project.target.run_timeout + 220))).run()
+            finally:
+                case_row["elapsed_ms"] = round(
+                    (time.perf_counter() - case_started) * 1000, 3)
+            if (report.steps and report.outcome != Outcome.PASS
+                    and report.failure_explanation is None):
+                from agenttest.product_probe import explain_failure
+
+                report.failure_explanation = explain_failure(report)
+                store.save(report)
+            plan_roles = {p.step_id: p.role for p in report.plan_structure}
+            plan_policies = {p.step_id: p.policy_id for p in report.plan_structure}
+            case_row.update(status="FINISHED", run_id=report.run_id,
+                outcome=report.outcome.value, task_satisfied=None,
+                planned_steps=len(scenario.steps),
+                executed_steps=sum(bool(s.attempts) for s in report.steps),
+                executed_operations=[s.operation_id for s in report.steps
+                                     if s.attempts],
+                http_requests=sum(len(s.attempts) for s in report.steps),
+                resource_lifecycle=report.resource_lifecycle,
+                created_resources=report.created_resources,
+                cleanup=report.cleanup,
+                failure_explanation=report.failure_explanation,
+                probe_decisions=report.probe_decisions,
+                cleanup_requests=sum(len(s.attempts)
+                    for s in report.lifecycle_cleanup),
+                approved_negative_steps=sum(
+                    s.input_validation == "APPROVED_NEGATIVE"
+                    for s in report.steps),
+                negative_rejections_passed=sum(
+                    s.negative_rejected_as_expected is True for s in report.steps),
+                investigations=[dict(operation_id=i.operation_id,
+                    role=i.role,
+                    method=i.method, path=i.path_template, outcome=i.outcome.value,
+                    requests=i.requests_used, reason=i.reason,
+                    checks=[c.model_dump() for c in i.checks],
+                    cause_confirmed=False) for i in report.investigations],
+                evidence=[dict(operation_id=s.operation_id, method=s.method,
+                    step_id=s.step_id, role=plan_roles.get(s.step_id),
+                    policy_id=plan_policies.get(s.step_id),
+                    executed=bool(s.attempts),
+                    path=s.path_template, outcome=s.outcome.value,
+                    request=s.request_evidence,
+                    checks=[c.model_dump() for c in s.checks])
+                    for s in report.steps],
+                # A lifecycle cleanup the executor really ran is execution evidence for its
+                # own approved policy; it is kept apart from the scenario steps.
+                cleanup_evidence=[dict(operation_id=s.operation_id, method=s.method,
+                    step_id=s.step_id, role=plan_roles.get(s.step_id),
+                    policy_id=plan_policies.get(s.step_id),
+                    executed=bool(s.attempts), cleanup=True,
+                    path=s.path_template, outcome=s.outcome.value,
+                    request=s.request_evidence,
+                    checks=[c.model_dump() for c in s.checks])
+                    for s in report.lifecycle_cleanup])
+            from agenttest.product_checks import executed_policies
+
+            case_row["executed_policy_ids"] = executed_policies(report)
+            record_requirement_evidence(summary, case_row, report)
+            if report.outcome != Outcome.PASS:
+                case_row["reason"] = {
+                    Outcome.ASSERTION_FAILED: "响应不符合已确认的预期。",
+                    Outcome.TEST_INFRA_ERROR:
+                        "环境或传输异常，不能据此认定业务缺陷。",
+                    Outcome.TOOL_ERROR: "计划或执行参数未能通过校验。",
+                    Outcome.NEEDS_REVIEW: "缺少可靠的执行或判断依据。",
+                }[report.outcome]
+                case_row["diagnostic"] = (report.diagnostic.code
+                    if report.diagnostic else report.reason)
+            if report.outcome == Outcome.PASS and report.completed:
+                self.retain(row, design_text, scenario, project, report, case_row)
+            checkpoint()
+
+    async def supervise(self, scope):
+        """Let the cyclic LangGraph supervisor decide whether one more bounded action is due.
+
+        This is the only place where a model chooses the next business action. The choice
+        cannot widen authority, skip validation or write a verdict: every action returns
+        through ``run_group``/``Workflow`` and the terminal ``complete``/``checks_passed``
+        values stay in ``run()``. With ``supervisor_max_rounds == 0`` (the product default)
+        this method returns immediately and the round behaves exactly as before.
+        """
+        from agenttest.product_obligations import supervision_facts
+        from agenttest.product_supervisor import RoundSupervisor
+
+        svc, summary, ledger, project = scope.svc, scope.summary, scope.ledger, scope.project
+        rounds = int(getattr(project.registration.budget, "supervisor_max_rounds", 0) or 0)
+        factory = getattr(svc, "supervisor_factory", None)
+        if rounds < 1 or factory is None:
+            return None
+        allow_negatives = bool(scope.text == DEFAULT_ROUND
+                               or summary.get("focus", {}).get("mode") != "selected")
+
+        def facts():
+            attempts = list(scope.state.get("attempts") or ())
+            return supervision_facts(project=project, summary=summary, text=scope.text,
+                remaining=dict(requests=max(0, ledger.max_requests - ledger.requests),
+                               model_calls=max(0, ledger.max_model_calls - ledger.model_calls),
+                               rounds=rounds, usage_known=not ledger.usage_unknown),
+                allow_negatives=allow_negatives, attempts=attempts,
+                attempted=[item.get("target") for item in attempts if item.get("target")])
+
+        supervisor = RoundSupervisor(BudgetPlanner(JournalPlanner(
+                factory(project), svc.db, scope.task_id), ledger, scope.guard), facts,
+            design_and_execute=lambda candidate: self.supervise_design(scope, candidate),
+            read_probe=lambda candidate: self.supervise_read(scope, candidate),
+            ask=lambda candidate, question, reason: self.supervise_ask(scope, candidate,
+                                                                      question, reason),
+            guard=scope.guard, max_rounds=rounds,
+            timeout=max(30.0, min(240.0, project.target.run_timeout + 120.0)),
+            secret_in=svc.private_input_guard,
+            cancelled=lambda: bool(getattr(svc, "_shutting_down", False)))
+        svc.db.event(scope.task_id, "SUPERVISING", requests=ledger.requests)
+        try:
+            outcome = await supervisor.run()
+        except asyncio.CancelledError:
+            summary["supervision"] = self.supervision_payload(
+                supervisor.interrupted_outcome(), scope)
+            raise
+        summary["supervision"] = self.supervision_payload(outcome, scope)
+        scope.checkpoint()
+        return outcome
+
+    @staticmethod
+    def supervision_payload(outcome, scope):
+        """Report-safe record: the real graph shape, decisions, actions and probe evidence."""
+        payload = outcome.public()
+        payload["trace"] = list(outcome.trace)
+        payload["probes"] = list(scope.state.get("probes") or ())
+        return payload
+
+    @staticmethod
+    def next_supervision_round(scope):
+        scope.state["round"] = int(scope.state.get("round") or 0) + 1
+        return scope.state["round"]
+
+    @staticmethod
+    def round_evidence(summary):
+        """Measured counters only: a design record is never counted as an executed request."""
+        cases = summary.get("cases") or ()
+        return dict(cases=len(cases),
+                    requests=sum(case.get("http_requests") or 0 for case in cases),
+                    assertions=sum(len(step.get("checks") or ())
+                                   for case in cases for step in case.get("evidence") or ()
+                                   if step.get("executed")))
+
+    @staticmethod
+    def supervision_text(scope, candidate):
+        """Server-composed scope note; it names one approved obligation, never a new rule."""
+        operations = "、".join(candidate.get("operations") or ())
+        why = candidate.get("why") or "该义务仍缺少执行证据。"
+        note = f"\n[本轮只补测一个已批准的检查] 目标接口：{operations}；原因：{why}"
+        if candidate.get("cleanup_policies"):
+            note += "如果该检查会创建资源，必须在同一场景中按已批准的删除策略清理。"
+        return f"{scope.text}{note}"[:2000]
+
+    async def supervise_design(self, scope, candidate):
+        """DESIGN_MORE: one new group for one open obligation, through the normal chain."""
+        from agenttest.product_design import design_groups
+        from agenttest.product_supervisor import ActionOutcome
+
+        summary, project = scope.summary, scope.project
+        operations = [operation for operation in candidate.get("operations") or ()
+                      if operation in project.target.allowed_operations]
+        groups = [group for group in design_groups(project, operation_ids=operations)
+                  if set(operations) & set(group["primary"])]
+        if not groups:
+            return ActionOutcome(executed=False, note="SUPERVISION_TARGET_NOT_GROUPABLE",
+                                 detail=dict(target=candidate.get("id")))
+        round_number = self.next_supervision_round(scope)
+        group = dict(groups[0])
+        group["id"] = f"supervision_{round_number}_{group['id']}"
+        group["status"] = "PENDING"
+        summary["groups"].append(group)
+        attempt = dict(round=round_number, action="DESIGN_MORE", target=candidate.get("id"),
+                       operations=operations, policies=list(candidate.get("policies") or ()),
+                       group_id=group["id"], status="PENDING")
+        scope.state.setdefault("attempts", []).append(attempt)
+        before = self.round_evidence(summary)
+        await self.run_group(scope, group, supervision=dict(round=round_number,
+            target=candidate.get("id"), text=self.supervision_text(scope, candidate)))
+        after = self.round_evidence(summary)
+        status = group.get("status")
+        attempt.update(status=status, cases=after["cases"] - before["cases"],
+                       requests=after["requests"] - before["requests"],
+                       assertions=after["assertions"] - before["assertions"])
+        executed = status in {"DESIGNED", "OUTSIDE_FOCUS"}
+        return ActionOutcome(executed=executed, cases=attempt["cases"],
+            requests=attempt["requests"], assertions=attempt["assertions"],
+            detail=dict(group_id=group["id"], status=status, operations=operations,
+                        reason=(group.get("reason") or "")[:160] or None,
+                        target=candidate.get("id")),
+            note=None if executed else "SUPERVISION_GROUP_NOT_DESIGNED")
+
+    async def supervise_read(self, scope, candidate):
+        """READ_PROBE: one approved read-only step; it can never write or replay a write."""
+        from agenttest.dsl import validate_plan
+        from agenttest.executor import Executor
+        from agenttest.investigation import InvestigationConfig
+        from agenttest.product_design import validate_cleanup_dependencies
+        from agenttest.product_obligations import probe_scenario
+        from agenttest.product_supervisor import ActionOutcome
+        from agenttest.task_service import ProgressStore
+        from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
+
+        svc, project, ledger = scope.svc, scope.project, scope.ledger
+        round_number = self.next_supervision_round(scope)
+        attempt = dict(round=round_number, action="READ_PROBE", target=candidate.get("id"),
+                       operations=list(candidate.get("operations") or ()), status="PENDING")
+        scope.state.setdefault("attempts", []).append(attempt)
+        try:
+            scenario = probe_scenario(project, candidate, round_number)
+            validate_plan(scenario, project.contract, project.target, svc.environ)
+            store = ProgressStore(svc.reports.root, lambda phase, run_id, _requests:
+                                  svc.db.event(scope.task_id, phase, run_id=run_id,
+                                               requests=ledger.requests))
+            Executor(project.target, project.contract, store, scope.transport, svc.environ,
+                     registry=project.registry).validate(scenario)
+            validate_cleanup_dependencies(project, scenario, ())
+        except (PlannerFailure, ValueError, TimeoutError) as exc:
+            attempt.update(status="REJECTED",
+                           reason=getattr(getattr(exc, "diagnostic", None), "code", None)
+                           or str(exc)[:120])
+            return ActionOutcome(executed=False, note="SUPERVISION_PROBE_REJECTED",
+                                 detail=dict(target=candidate.get("id"),
+                                             reason=attempt["reason"]))
+        step = scenario.steps[0]
+        report = await Workflow(project.document, project.target, project.registry,
+            FakeLLM(""), store, transport=scope.transport, environ=svc.environ,
+            task_mode="model_designed", user_task=self.supervision_text(scope, candidate),
+            prepared_plan=scenario, investigation=InvestigationConfig(enabled=False),
+            execution_guard=scope.guard,
+            plan_derivation=dict(source="SUPERVISION_READ_PROBE", group=step.operation_id),
+            budget=WorkflowBudget(max_model_calls=0,
+                workflow_timeout=min(300.0, project.target.run_timeout + 220.0))).run()
+        requests = sum(len(item.attempts) for item in report.steps)
+        checks = [dict(kind=check.kind, selector=check.selector, expected=check.expected,
+                       actual=check.actual, passed=check.passed)
+                  for item in report.steps for check in item.checks][:6]
+        scope.state.setdefault("probes", []).append(dict(round=round_number,
+            target=candidate.get("id"), run_id=report.run_id, operation_id=step.operation_id,
+            policy_id=step.policy_id, outcome=report.outcome.value, requests=requests,
+            checks=checks, reason=(report.reason or "")[:160] or None))
+        attempt.update(status="EXECUTED", run_id=report.run_id,
+                       outcome=report.outcome.value, requests=requests)
+        executed = bool(report.steps)
+        return ActionOutcome(executed=executed, requests=requests, assertions=len(checks),
+            detail=dict(run_id=report.run_id, operation_id=step.operation_id,
+                        outcome=report.outcome.value, target=candidate.get("id")),
+            note=None if executed else "SUPERVISION_PROBE_NOT_EXECUTED")
+
+    def supervise_ask(self, scope, candidate, question, reason):
+        """ASK_QUESTION reuses the pending-question channel; no expectation is invented."""
+        from agenttest.product_supervisor import question_record
+
+        record = question_record(candidate, question, reason)
+        scope.summary["questions"].append(record)
+        scope.state.setdefault("attempts", []).append(dict(
+            round=int(scope.state.get("round") or 0), action="ASK_QUESTION",
+            target=(candidate or {}).get("id"), question=record["id"], status="ASKED"))
+        return record
 
     def failure_report(self, project, text, code, diagnostic, records=()):
         """Publish a no-step failure report so a rejected round still has auditable evidence."""

@@ -131,7 +131,8 @@ class TaskStore:
         return self.public(row)
 
     def event(self, task_id, phase, *, run_id=None, requests=0):
-        if phase not in STATES | {"PLANNING", "VALIDATING", "EXECUTING", "REPORT"}:
+        if phase not in STATES | {"PLANNING", "VALIDATING", "EXECUTING", "REPORT",
+                                  "SUPERVISING"}:
             raise ValueError("TASK_EVENT_INVALID")
         with self.connect() as db:
             count = db.execute("SELECT COUNT(*) FROM task_events WHERE task_id=?",

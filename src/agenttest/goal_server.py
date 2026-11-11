@@ -88,6 +88,7 @@ def configured_task_service(runs_dir, *, projects=None, model_env=None, generic_
         designer_factory=lambda project: test_designer(settings_for(project)),
         focus_factory=lambda project: test_focus(settings_for(project)),
         product_probe_factory=lambda project: product_probe(settings_for(project)),
+        supervisor_factory=lambda project: round_supervisor(settings_for(project)),
         model_status=model_status, generic_intake=generic_intake,
         private_input_guard=private_input_guard,
         environ=target_environment(model_env or os.environ.get("AGENTTEST_MODEL_ENV")),
@@ -123,3 +124,10 @@ def test_focus(settings):
     from agenttest.product_focus import TestFocusModel
 
     return TestFocusModel(settings.model_copy(update={"timeout": 90.0}), profile="generic")
+
+
+def round_supervisor(settings):
+    """The decision model only runs when a project opts in with supervisor_max_rounds."""
+    from agenttest.product_supervisor import SupervisorModel
+
+    return SupervisorModel(settings.model_copy(update={"timeout": 60.0}), profile="generic")

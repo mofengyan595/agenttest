@@ -63,6 +63,9 @@ class ProjectBudget(StrictModel):
     max_total_tokens: int = Field(default=25_000, ge=1, le=120_000)
     suite_max_model_calls: int = Field(default=8, ge=1, le=20)
     suite_max_total_tokens: int = Field(default=100_000, ge=1, le=500_000)
+    # The round supervisor is off by default so every existing project keeps its exact
+    # behaviour; a project (or an isolated development runner) opts in explicitly.
+    supervisor_max_rounds: int = Field(default=0, ge=0, le=4)
 
 
 class RegisteredProject(StrictModel):

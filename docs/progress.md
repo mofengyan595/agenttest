@@ -1,5 +1,29 @@
 # 开发进度
 
+## 2026-11-11 — P0：LangGraph 自主测试闭环与统一编排第一段
+
+- 起点 `cd55d02`。新增 `src/agenttest/product_supervisor.py`（LangGraph `StateGraph`：`gather_facts
+  → decide →{design_more|read_probe|ask_question|finish}`，唯一回边回到 `gather_facts`，
+  `recursion_limit=6+3×max_rounds`）与 `src/agenttest/product_obligations.py`（义务/证据/异常/
+  资源的收窄事实），`ProductTasks` 在组循环之后接入 `supervise()`，额外动作复用同一个
+  `run_group` 与 `Executor`，没有第二套编排。默认关闭（`supervisor_max_rounds=0`），
+  打开后默认 2 轮、上限 4，决策前跑六道确定性闸门，动作目标来自服务端候选集合，
+  非法动作最多修复 1 次。
+- 4 个真实任务 × OFF/ON（独立请求、独立靶场实例、真实 `ecnu-max`）：**ON 4/4 单元收敛**
+  （8 次决策 / 8 次动作，7 次真实执行）；**OFF 2/4**（C、D 各 3 次尝试仍 0 请求，属 Focus 层，
+  与监督器无关）。上报 6 次运行合计 **24 次模型调用 / 184,491 tokens / 39 次业务 HTTP**；
+  全部 38 次真实运行 **98 次调用 / 827,427 tokens / 93 次业务 HTTP / 53 个写请求**，
+  **0 次写重放**，10 个创建资源全部 `CLEANED`。
+- 真实运行暴露并修复两个缺口：生命周期清理执行未被算作证据（导致重复创建/删除），
+  以及补测创建的资源未被要求清理（现在创建义务自动携带其批准删除策略）。
+- 不粉饰的反向结果：(1) B 单元 ON 比 OFF 差——把"删除后 404"的期望用在资源仍存在的场景上，
+  得到 4 次误报（直连靶场 `POST 201 → GET 200 → DELETE 204 → GET 404` 证明靶场正确）；
+  (2) 监督器连续两次补测沿用同一错误装配，未产生新信息。请求/调用指标因此未达
+  "≤基线×1.5 / +2" 的目标（A 7→3 ✓，B 2→14 ✗）。
+- 报告：[autonomous-agent-langgraph-p0-20261111.md](autonomous-agent-langgraph-p0-20261111.md)。
+  已知限制：期望前置条件未建模、补测可能重复同一错误装配、额外轮次走 LEGACY 设计路径、
+  `READ_PROBE` 只支持无前置只读策略。下一步（P1）：期望前置条件建模 + 补测必须"有所不同"。
+
 ## 2026-11-10 — Planning IR 生产接入核查与最小修复
 
 - 核查结论：修复前生产入口**确实绕过**新编译器。归档 M2 的 IR 已生成、规范化生效、有 4 个实例，但 `planning_requirements` 被无条件设为 8 个 Focus 子句，激活条件 `not summary.get("planning_requirements")` 恒假，实际 construction encoding 为 `UNORDERED_APPROVED_NODES_V1`。

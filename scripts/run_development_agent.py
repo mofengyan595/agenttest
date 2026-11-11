@@ -25,6 +25,7 @@ from agenttest.goal_server import product_probe
 from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
 from agenttest.product_design import TestDesignModel
 from agenttest.product_focus import TestFocusModel
+from agenttest.product_supervisor import SupervisorModel
 from agenttest.product_tasks import aggregate_usage
 from agenttest.project_goals import ProjectBudget
 from agenttest.report import ReportStore
@@ -114,7 +115,7 @@ def model_settings(path, timeout, max_input, max_output):
 
 
 def limited_project(project, *, max_requests, max_model_calls, max_input,
-                    max_output, max_seconds):
+                    max_output, max_seconds, supervisor_rounds=0):
     """Apply a development-only loop guard, not a project-wide spend ceiling.
 
     ``max_model_calls`` caps one task's planning/design calls so a malformed model
@@ -126,7 +127,8 @@ def limited_project(project, *, max_requests, max_model_calls, max_input,
         max_input_tokens=max_input, max_output_tokens=max_output,
         max_total_tokens=min(120_000, max_input + max_output),
         suite_max_model_calls=min(max_model_calls, 20),
-        suite_max_total_tokens=500_000)
+        suite_max_total_tokens=500_000,
+        supervisor_max_rounds=max(0, min(int(supervisor_rounds), 4)))
     target = project.target.model_copy(update=dict(max_requests=max_requests,
                                                    run_timeout=min(float(max_seconds), 300.0)))
     registration = project.registration.model_copy(update=dict(budget=budget))
@@ -200,6 +202,7 @@ def evidence_metrics(summary, task_row, model_calls, reports, target_events,
         model_elapsed_ms=model_calls.get("elapsed_ms"),
         input_token_limit=input_limit,
         uncovered_risks=summary.get("not_covered") or [],
+        supervision=summary.get("supervision"),
         questions=summary.get("questions") or [])
 
 
@@ -233,7 +236,8 @@ async def run(args):
                       max_seconds=args.max_seconds, model_timeout=args.model_timeout,
                       max_input_tokens=args.max_input_tokens,
                       model_input_bytes=args.model_input_bytes,
-                      max_output_tokens=args.max_output_tokens))
+                      max_output_tokens=args.max_output_tokens,
+                      supervisor_rounds=args.supervisor_rounds))
     try:
         wait_health(target_port)
         await prepare(data, base, environment)
@@ -253,6 +257,10 @@ async def run(args):
             designer_factory=lambda project: RecordingModel(
                 TestDesignModel(settings, profile="generic"), "design",
                 evidence / "model-outputs.jsonl"),
+            supervisor_factory=lambda project: RecordingModel(
+                SupervisorModel(settings.model_copy(
+                    update={"timeout": args.model_timeout}), profile="generic"),
+                "supervisor", evidence / "model-outputs.jsonl"),
             product_probe_factory=lambda project: product_probe(
                 settings.model_copy(update={"timeout": args.model_timeout})))
         service = project_service
@@ -270,7 +278,8 @@ async def run(args):
                                     max_model_calls=args.max_model_calls,
                                     max_input=args.model_input_bytes,
                                     max_output=args.max_output_tokens,
-                                    max_seconds=args.max_seconds)
+                                    max_seconds=args.max_seconds,
+                                    supervisor_rounds=args.supervisor_rounds)
                     if identifier == project_id else project)
 
         service.project = bounded_project
@@ -287,7 +296,11 @@ async def run(args):
             row = await service.cancel(task_id, "dev_operator")
         summary = row.get("summary") or {}
         reports = collect_reports(service, summary)
-        model_calls, usage = aggregate_usage(summary.get("design_records") or [])
+        decision_usage = [dict(model_call=entry.get("model_call"))
+                          for entry in (summary.get("supervision") or {}).get("decisions") or ()
+                          if isinstance(entry.get("model_call"), dict)]
+        model_calls, usage = aggregate_usage(
+            [*(summary.get("design_records") or ()), *decision_usage])
         target_events = []
         if events_path.exists():
             target_events = [json.loads(line) for line in events_path.read_text(
@@ -346,6 +359,8 @@ def main():
     parser.add_argument("--port", type=int, default=18300)
     parser.add_argument("--max-requests", type=int, default=24)
     parser.add_argument("--max-model-calls", type=int, default=8)
+    parser.add_argument("--supervisor-rounds", type=int, default=0,
+                        help="0 keeps the legacy round; 1-4 opt into the LangGraph supervisor")
     parser.add_argument("--max-seconds", type=float, default=300.0)
     parser.add_argument("--model-timeout", type=float, default=45.0)
     parser.add_argument("--max-input-tokens", type=int, default=20_000,
