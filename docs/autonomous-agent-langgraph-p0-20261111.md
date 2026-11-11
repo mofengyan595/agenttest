@@ -210,7 +210,7 @@ question: str | None
 | `SUPERVISION_QUESTION_TEXT_MISSING` | 提问却没问题文本 |
 
 被拒绝时只允许 **1 次**修复重试（`max_repairs=1`），并把拒绝码回填给模型；
-仍不合法就按 `SUPERVISION_MODEL_REJECTED` 结束，且**不执行任何业务请求**。
+仍不合法就按 `SUPERVISION_DECISION_REJECTED` 结束，且**不执行任何业务请求**。
 
 选择动作之前，`_gate` 按固定顺序跑六道确定性闸门，任何一道命中都不会调用模型：
 
