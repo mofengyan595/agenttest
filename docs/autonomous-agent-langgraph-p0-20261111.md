@@ -420,6 +420,13 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
   （两次并发运行分别出现 1 个和 5 个失败，单独重跑 2 passed），
   疑似负载/时序敏感，与本次改动无关，日志保留在 `runs/p0-20261111/full-suite*.txt`。
 - `ruff check src/agenttest scripts tests`：`All checks passed!`
+- **CI**：`Keyless Python checks` 与 `Web Console checks` 在代码提交 `6d06e3f`
+  上全部 success（`base`/`agent` × `ubuntu-latest`/`windows-latest` 四个 job 都通过；
+  本文件随后的提交只改文档）。中途 `5e0b4d8`/`30e3781` 的 base job 曾在 "Offline tests"
+  失败，原因是 base 环境**不安装 `langgraph`**：新增的测试模块在导入期就要求可选依赖。
+  修复：测试模块加 `pytest.importorskip("langgraph")`，`ProductTasks.supervise()`
+  把两处 import 移到 `supervisor_max_rounds == 0` 的早退之后
+  （OFF 测试用 `sys.modules[...] = None` 阻塞该模块，证明关闭路径永不导入图运行时）。
 - 新增 `tests/test_product_supervisor.py`：18 个测试函数（21 个用例，含 6 组参数化），覆盖：
   - 图结构（节点、回边、`recursion_limit==12`）、排序稳定性；
   - `DESIGN_MORE` 两次后正常结束、目标被拒后的修复重试、重复目标拒绝；
