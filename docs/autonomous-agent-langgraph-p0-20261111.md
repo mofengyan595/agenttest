@@ -23,7 +23,8 @@
     8 次动作（7 次真实执行，1 次补测设计失败）；
   - **OFF：2/4 单元收敛**（A 1 次、B 2 次；C、D 各 3 次尝试仍未收敛，失败在 Focus 层，
     与监督器无关）；
-  - 全部 38 次运行：**0 次写请求重放**，10 个真实创建资源 **全部 CLEANED**（上报单元内）。
+  - 全部 38 次运行：**0 次写请求重放**；21 个真实创建资源 **21 个 CLEANED**
+    （上报的 6 次运行占其中 10 个）。
 
 **两个必须如实记录的反向结果**
 
@@ -50,7 +51,7 @@
 | 预算与开关 | `src/agenttest/project_goals.py`（`supervisor_max_rounds`） |
 | 服务装配（默认关闭，可注入） | `src/agenttest/task_service.py`、`goal_server.py`、`task_store.py` |
 | 开发运行器开关与证据 | `scripts/run_development_agent.py`（`--supervisor-rounds`） |
-| 离线测试（20 例） | `tests/test_product_supervisor.py`（新增） |
+| 离线测试（18 个函数 / 21 个用例） | `tests/test_product_supervisor.py`（新增） |
 
 **非目标（本轮刻意不做）**
 
@@ -176,12 +177,13 @@ p0-d-on-c1: gather_facts, decide, read_probe, gather_facts, decide, design_more,
 
 候选集合由服务端生成（不是模型自由发挥）：每个候选是
 `probe:<policy_id>`（只读、无前置、已有批准）或 `design:<policy_id>`（缺执行证据或已失败）。
-真实一次候选（A 单元首轮之后）：
+A 单元首轮之后的义务状态对应下面这类候选（真实列表由服务端按当时的证据生成，
+模型只能从中选，选不到就报 `SUPERVISION_TARGET_NOT_OPEN`）：
 
 ```
 probe:web_rule_1            只读可用性策略，尚无执行证据
 design:web_rule_2           创建策略预期 201 尚无执行证据（同场景需按 web_rule_3 清理）
-design:web_rule_4/expec…    读取策略预期 200 / 删除后预期 404 尚无证据
+design:web_rule_4…          读取策略预期 200 / 删除后预期 404 尚无证据
 design:web_rule_5/6         改名 / 替换策略尚无证据
 ```
 
@@ -287,7 +289,7 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
 - **验证**：直连靶场 `POST 201 → GET 200 → DELETE 204 → GET 404`，
   说明靶场语义正确，失败来自"404 期望没有被前置的删除步骤满足"。
 - 结论：这是**监督器决策质量**的真实缺陷（重复同一错误装配、无新增信息），
-  也是**确定性设计校验**的真实缺口（期望前置条件没有建模）。两者都进 §8/§9。
+  也是**确定性设计校验**的真实缺口（期望前置条件没有建模）。两者都进 §9/§10。
 
 ### 6.5 C：OFF 三次未收敛，ON 两次收敛并补出一条 PASS
 
@@ -305,7 +307,7 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
   `DESIGN_MORE design:web_rule_4_expectation_1`（*"web_rule_4_expectation_1 的 404 状态预期
   尚无执行证据，且有已批准的清理策略，可补齐该只读断言。"*）→ 该组设计返回
   `MODEL_INVALID_RESPONSE`，`executed=false`、0 请求、`note=SUPERVISION_GROUP_NOT_DESIGNED`。
-  但首轮之后的另一条用例把 5 步生命周期（create 201 → change 200 → read 200 → replace 200
+  同一轮首轮设计的另一条用例把 5 步生命周期（create 201 → change 200 → read 200 → replace 200
   → delete 204）全部跑通并 PASS，资源 CLEANED。
 - 结论：503 是靶场稳定行为（直连验证同样是 503），`ASSERTION_FAILED` 是真实结论；
   监督器的一次补测失败被完整记录，没有伪造成功。
@@ -342,7 +344,7 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
 - 每次 `DESIGN_MORE` 天然要付 1 次决策 + 1 次设计调用，A/B 各 2 次决策 → 超过 "+2"；
 - C/D 的 OFF 基线是 0，比例无意义，只能定性比较（ON 有真实断言，OFF 没有）。
 
-所以"H TTP 请求与模型调用不膨胀"这条，在 P0 里**没有做到**，
+所以"HTTP 请求与模型调用不膨胀"这条，在 P0 里**没有做到**，
 根因是 §6.4 的重复补测，而不是 LangGraph 本身的开销（监督器 8 次调用共 28,547 tokens）。
 
 ### 6.9 真实使用量
@@ -363,8 +365,8 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
 - 重复读只有两类，且都在文档允许范围内：靶场内置的有界只读调查（每用例 ≤2 次）、
   监督器的只读探针（每轮 1 次）；
 - 上报单元的 10 个创建资源全部 `CLEANED / cleanup_result=PASS`；
-- 唯二"没清理"的场景是 D-ON 的 `readAvailability`（本来就不创建资源），
-  报告文案是靶场既有提示"此场景缺少完整且已授权的数据生命周期"。
+- 唯一没有清理动作的用例是 D-ON 的 `readAvailability`（它不创建资源），
+  继承靶场既有文案"此场景缺少完整且已授权的数据生命周期，不能保存为写回归"。
 
 ### 6.11 失败尝试（全部保留）
 
@@ -416,7 +418,7 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
   `test_composed_planning.py::test_archive_rescore_*` 与
   `test_pocketbase_acceptance.py::test_full_denominator_*` 这类归档重算测试会偶发失败
   （两次并发运行分别出现 1 个和 5 个失败，单独重跑 2 passed），
-  疑似负载/时序敏感，与本次改动无关，已如实记录在本文件的运行日志里。
+  疑似负载/时序敏感，与本次改动无关，日志保留在 `runs/p0-20261111/full-suite*.txt`。
 - `ruff check src/agenttest scripts tests`：`All checks passed!`
 - 新增 `tests/test_product_supervisor.py`：18 个测试函数（21 个用例，含 6 组参数化），覆盖：
   - 图结构（节点、回边、`recursion_limit==12`）、排序稳定性；
@@ -437,8 +439,11 @@ A-ON 与 C-ON 的 `complete=false` 是因为仍有组未设计（首轮设计被
    目前只能靠设计模型的语义理解；缺失时会得到 `ASSERTION_FAILED` 误报（A-OFF、B-ON）。
 2. **监督器的补测可能重复同一个错误装配**：`candidates` 只看"是否缺证据"，
    看不出"这次补测和上次是同一个错误场景"，因此在 B 上产生了 3 次无新增信息的重测。
-3. **额外轮次走 LEGACY 设计路径**：监督组的设计没有 Planning IR
-   （`planning_ir=None` → `LEGACY`/`NO_PLANNING_IR`），`coverage()` 可能报 `planning_engine="MIXED"`。
+3. **额外轮次走 LEGACY 设计路径**：监督组的设计记录是
+   `planning_engine=LEGACY`、`planning_engine_reason=NO_PLANNING_IR`
+   （A-ON 的 `supervision_2_group_1`、C-ON 的同名组都是这样），
+   即额外轮次没有 Planning IR 参与；本轮报告的 `coverage()` 里没有 `planning_engine` 字段，
+   一旦首轮与补测轮混在同一个报告里，就会出现 `MIXED` 口径问题，需要在 P2 统一。
 4. **`READ_PROBE` 只能测"无前置的只读策略"**：绑定资源的读（如 `readParcel`）需要现成资源，
    不能用写去"造"前置，所以监督器对这类义务只能走 `DESIGN_MORE`。
 5. **OFF 侧的 Focus 层采样失败率仍高**：C/D 各 3 次全部 0 请求，这是本轮之前就存在的问题，
