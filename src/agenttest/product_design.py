@@ -901,6 +901,12 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
                         registry=project.registry)
     executor.validate(scenario)
     validate_cleanup_dependencies(project, scenario, cleanup_operations)
+    # An "absent" expectation (approved 404/410) is only legal once an approved deletion of
+    # the same resource has established that phase; otherwise the run would accuse the
+    # target of a defect the plan itself created (measured in P0, fixed here).
+    from agenttest.product_preconditions import validate_expectation_preconditions
+
+    validate_expectation_preconditions(project, scenario)
     return scenario
 
 

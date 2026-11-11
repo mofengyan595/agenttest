@@ -231,6 +231,76 @@ class PlanningIR(BaseModel):
             order=self.order,
         )
 
+    def scope_to(self, operations, *, source_ids=None) -> "PlanningIR":
+        """The same representation narrowed to one group, with its dependency closure.
+
+        A later round owns one obligation, not the whole request. Narrowing must not be done by
+        discarding the IR (that silently changes the planning engine): the group keeps its
+        instances, resources, edges and constraints. Instances the group *depends on* are kept
+        even when their operation is outside the obligation -- a follow-up read of a deleted
+        resource is meaningless without the create and delete that establish that phase, and
+        dropping them is what made the P0 rounds redesign the precondition from text.
+        """
+        keep = set(operations)
+        seed = {item.instance_id for item in self.instances
+                if item.operation_id in keep
+                and (source_ids is None or item.source_id in set(source_ids))}
+        # Dependency closure: resource producers and argument sources of what is in scope.
+        by_id = {item.instance_id: item for item in self.instances}
+        closure = set(seed)
+        changed = True
+        while changed:
+            changed = False
+            for instance_id in list(closure):
+                item = by_id.get(instance_id)
+                if item is None:
+                    continue
+                needed = {argument.from_instance for argument in item.arguments
+                          if argument.from_instance} | {resource.producer_instance
+                            for resource in self.resources
+                            if resource.producer_instance in by_id
+                            and self._resource_feeds(resource, instance_id)}
+                for needed_id in needed - closure:
+                    if needed_id in by_id:
+                        closure.add(needed_id)
+                        changed = True
+            for edge in self.edges:
+                if edge.target_instance in closure and edge.source_instance not in closure:
+                    closure.add(edge.source_instance)
+                    changed = True
+        instances = [item for item in self.instances if item.instance_id in closure]
+        instance_ids = {item.instance_id for item in instances}
+        # Preconditions live in these three lists; carrying them is what lets the scoped
+        # round reason about "delete then 404" instead of designing a fresh plan from text.
+        resources = [item for item in self.resources
+                     if item.producer_instance in instance_ids]
+        edges = [item for item in self.edges
+                 if item.source_instance in instance_ids and item.target_instance in instance_ids]
+        constraints = [item for item in self.constraints
+                       if not item.instances or set(item.instances) & instance_ids]
+        source_scope = {item.source_id for item in instances}
+        clauses = [item for item in self.clauses if item.source_id in source_scope]
+        kept_operations = {item.operation_id for item in instances}
+        return self.model_copy(update=dict(
+            instances=instances, resources=resources, edges=edges, constraints=constraints,
+            clauses=clauses,
+            normalized_requirements=[item for item in self.normalized_requirements
+                                     if item.get("source_id") in source_scope],
+            ambiguities=[item for item in self.ambiguities
+                         if item.source_id is None or item.source_id in source_scope],
+            order=[item for item in self.order if item in kept_operations]))
+
+    def _resource_feeds(self, resource: "ResourceHandle", instance_id: str) -> bool:
+        """True when this instance consumes the resource a producer instance creates."""
+        target = next((item for item in self.instances if item.instance_id == instance_id), None)
+        if target is None:
+            return False
+        consumed = {argument.from_instance for argument in target.arguments}
+        producer = resource.producer_instance
+        return producer in consumed or any(
+            edge.target_instance == instance_id and edge.source_instance == producer
+            for edge in self.edges)
+
 
 # --------------------------------------------------------------------------------------
 # Deterministic clause evidence

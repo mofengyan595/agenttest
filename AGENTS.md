@@ -17,6 +17,23 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-11-11 P1 harness milestone is complete; see
+docs/deepagents-harness-p1-evaluation.md. Outcome is ADAPT, not ADOPT: Deep Agents
+0.7.35 stays an optional loop layer over the deterministic Executor (isolated
+.venv-deepagents) and is never the product default. Native tool calling through
+EcnuxChatModel is verified 9/9; the nine default tools and the general-purpose
+subagent are denied and proven denied by an adversarial probe, because the harness
+profile filters only the model view while the executor keeps those tools registered.
+The profile key resolves through the adapter's explicit _get_ls_params/model_name;
+re-implementing those on a wrapper silently disables narrowing, so every run must
+re-prove enforcement instead of trusting configuration. The delete-404 defect is
+fixed in both directions (absence needs a same-identity deletion; existence must not
+be deleted by its own plan) with real-HTTP regressions S1-S5. Arm B still costs 2-4x
+the tokens, can leave a real goal shallowly covered, and arm A's strict complete stays
+false across all four goals - do not hide either fact by switching harness. GitHub
+Actions was not run because nothing was pushed.
+
+### Previous milestone (preserved)
 The 2026-11-01 reliable testing-colleague Goal supersedes related freezes only within
 docs/reliable-colleague-goal.md. Implement its five stages in order from 628b2dd.
 Scoped local commits on the current branch are authorized after stage checks; no push,

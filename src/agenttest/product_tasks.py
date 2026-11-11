@@ -15,7 +15,7 @@ from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
 from agenttest.product_design import design_groups, propose_design, validate_design_case
-from agenttest.report import ModelCallStats, Outcome, fingerprint
+from agenttest.report import ModelCallStats, Outcome, aggregate, fingerprint
 from agenttest.requirement_ledger import (
     explicit_data_references,
     explicit_http_statuses,
@@ -146,6 +146,40 @@ def planning_engine_choice(conditions):
         if not conditions.get(key):
             return dict(engine=LEGACY_ENGINE, reason=reason, conditions=conditions)
     return dict(engine=IR_ENGINE, reason="IR_SELECTED", conditions=conditions)
+
+
+SUPERVISION_IR_SCOPED = "SUPERVISION_IR_SCOPED"
+SUPERVISION_IR_UNAVAILABLE = "SUPERVISION_IR_UNAVAILABLE"
+SUPERVISION_IR_EMPTY = "SUPERVISION_IR_EMPTY"
+
+
+def scoped_supervision_ir(planning_ir, group):
+    """The Planning IR a follow-up round plans from, and why it had to fall back.
+
+    Returning ``None`` here is a *recorded* downgrade, never a silent one: the caller puts the
+    reason in the round's design record, so a reader can tell an IR-planned follow-up from a
+    legacy redesign. The IR itself is narrowed, not copied blindly: instances outside the
+    obligation would make ``all_instances_in_group`` false and drop the compiler path anyway.
+    """
+    if planning_ir is None:
+        return None, dict(code=SUPERVISION_IR_UNAVAILABLE,
+                          reason="本轮原始需求的 Planning IR 不可用，"
+                                 "补测只能走既有 Legacy 设计路径。")
+    scoped = planning_ir.scope_to(group.get("primary") or ())
+    if not scoped.instances:
+        return None, dict(code=SUPERVISION_IR_EMPTY,
+                          reason="补测义务在 Planning IR 中没有对应实例，"
+                                 "补测只能走既有 Legacy 设计路径。",
+                          operations=sorted(group.get("primary") or ()))
+    closure = sorted({item.operation_id for item in scoped.instances})
+    return scoped, dict(code=SUPERVISION_IR_SCOPED,
+                        instances=len(scoped.instances),
+                        operations=closure,
+                        requested=sorted(group.get("primary") or ()),
+                        closure_added=sorted(set(closure)
+                                             - set(group.get("primary") or ())),
+                        resources=[item.resource_id for item in scoped.resources],
+                        edges=len(scoped.edges))
 
 
 def actual_planning_engine(construction):
@@ -756,8 +790,17 @@ class ProductTasks:
         bounded_transport, executable_checks = scope.transport, scope.executable_checks
         future_groups = list(future_groups)
         # A supervision round owns one obligation, not the round-1 clause map: those IR
-        # instances and clause witnesses belong to groups that already ran.
-        planning_ir = None if supervision is not None else scope.planning_ir
+        # instances and clause witnesses belong to groups that already ran. The round still
+        # plans through Planning IR -- it receives the *scoped* representation of its own
+        # obligation, so preconditions (delete -> 404) stay visible instead of being redesigned
+        # from text. Dropping the IR here (P0) silently switched these rounds to the legacy
+        # path, which is exactly the downgrade P1 forbids; if a scope cannot be built the
+        # reason is recorded on the round instead of disappearing.
+        planning_ir = scope.planning_ir
+        supervision_downgrade = None
+        if supervision is not None:
+            planning_ir, supervision_downgrade = scoped_supervision_ir(
+                scope.planning_ir, group)
         design_requirements = [] if supervision is not None else scope.requirements
         witness_requirements = design_requirements
         design_text = text if supervision is None else supervision["text"]
@@ -820,8 +863,15 @@ class ProductTasks:
         group_ir = None
         unresolved = unresolved_ir_clauses(
             planning_ir, summary.get("focus", {}).get("requirements", []))
+        # A supervision round's coverage is the dependency closure it must realize (e.g. the
+        # create/delete that establish the phase before a 404 read), not just the obligation's
+        # own operations; otherwise the compiler would always look "partially covering".
+        engine_group = group
+        if supervision is not None and planning_ir is not None:
+            engine_group = {**group, "primary": sorted({item.operation_id
+                                                       for item in planning_ir.instances})}
         engine_conditions = planning_engine_conditions(
-            planning_ir, group=group, questions=summary.get("questions"),
+            planning_ir, group=engine_group, questions=summary.get("questions"),
             requested_checks=summary.get("requested_checks"),
             permission_requirements=summary.get("permission_requirements"),
             unresolved=unresolved)
@@ -831,6 +881,7 @@ class ProductTasks:
             # Auditable: which round asked for this extra group and for which obligation.
             record["supervision_round"] = supervision["round"]
             record["supervision_target"] = supervision.get("target")
+            record["supervision_planning_ir"] = supervision_downgrade
         if choice["engine"] == IR_ENGINE:
             # Focus turned status/data constraints into request obligations;
             # the Design model sees only real requests in this group, and the
@@ -897,7 +948,8 @@ class ProductTasks:
                     "DESIGN_REQUESTED_OPERATIONS_MISSING",
                     "DESIGN_REQUESTED_CHECKS_MISSING",
                     "DESIGN_REQUESTED_CHECK_NOT_APPROVED",
-                    "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW"}:
+                    "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW",
+                    "DESIGN_ABSENCE_PRECONDITION_MISSING"}:
                 reason = exc.args[0]
             diagnostic = getattr(exc, "diagnostic", None)
             if diagnostic is not None:
@@ -996,6 +1048,32 @@ class ProductTasks:
                 case_row.update(status="REJECTED", reason=getattr(
                     getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))
                 continue
+            # A supervision round exists to add information. If this plan is semantically the
+            # same test as an earlier non-passing attempt, running it again would only repeat
+            # the same writes and the same conclusion, so it is refused before any HTTP.
+            from agenttest.product_fingerprint import (
+                annotate_case,
+                duplicate_attempt,
+                duplicate_failure_reason,
+                scenario_fingerprint,
+            )
+            from agenttest.product_preconditions import precondition_report
+
+            precondition_audit = precondition_report(project, scenario)
+            if supervision is not None:
+                digest = scenario_fingerprint(project, scenario, precondition_audit)
+                case_row["scenario_fingerprint"] = digest
+                repeated = duplicate_attempt(summary["cases"][:-1], digest)
+                if repeated is not None:
+                    case_row.update(status="SKIPPED_DUPLICATE",
+                                    duplicate_of=repeated["case_id"],
+                                    reason=duplicate_failure_reason(repeated))
+                    summary.setdefault("duplicate_retests", []).append(
+                        dict(case_id=case_row["case_id"], duplicate_of=repeated["case_id"],
+                             outcome=repeated["outcome"],
+                             fingerprint=digest))
+                    checkpoint()
+                    continue
             from agenttest.investigation import FeedbackBudget, InvestigationConfig
             from agenttest.task_service import ProgressStore
             from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
@@ -1036,6 +1114,38 @@ class ProductTasks:
             finally:
                 case_row["elapsed_ms"] = round(
                     (time.perf_counter() - case_started) * 1000, 3)
+            # Situation 2 of the absence-expectation rule: if the approved deletion never
+            # established "deleted", a failing 404 check is a plan/state problem, not an
+            # independent business defect. Only a satisfied precondition keeps it as
+            # ASSERTION_FAILED evidence; nothing is ever upgraded to PASS.
+            from agenttest.product_preconditions import reclassify_unestablished
+
+            precondition_changes = reclassify_unestablished(report, scenario, project)
+            if precondition_changes:
+                directions = {item["direction"] for item in precondition_changes}
+                reasons = {item["reason"] for item in precondition_changes}
+                plan_induced = reasons == {"PRECONDITION_NOT_ESTABLISHED"}
+                report.outcome = aggregate(report.steps)
+                report.reason = ("PRECONDITION_NOT_ESTABLISHED" if plan_induced
+                                 else "PRECONDITION_UNPROVEN")
+                report.failure_explanation = dict(
+                    mismatch=("删除前置条件未成立，因此未把后续读取判为业务缺陷。"
+                              if plan_induced else
+                              "前置条件无法证明，因此未把响应差异判为业务缺陷。"),
+                    evidence=[item["step_id"] for item in precondition_changes],
+                    additional_checks=[], confirmed_observation=(
+                        "响应与预期不符，但计划没有证明该资源在请求时处于预期状态。"),
+                    cause_confirmed=False,
+                    uncertainty="前置条件未成立或无法证明时，不能据此认定服务存在缺陷。",
+                    precondition=dict(changes=precondition_changes,
+                                      directions=sorted(directions),
+                                      rule="an expectation needs its resource phase: an absent "
+                                           "claim needs an approved deletion of the same "
+                                           "resource, and an exists claim needs the plan not "
+                                           "to have deleted it"))
+                store.save(report)
+                case_row["precondition_changes"] = precondition_changes
+                case_row["precondition_rule"] = "PHASE_MUST_BE_ESTABLISHED"
             if (report.steps and report.outcome != Outcome.PASS
                     and report.failure_explanation is None):
                 from agenttest.product_probe import explain_failure
@@ -1090,6 +1200,13 @@ class ProductTasks:
             from agenttest.product_checks import executed_policies
 
             case_row["executed_policy_ids"] = executed_policies(report)
+            # Record what was actually tested so a later round can refuse an equivalent retest
+            # without a model's opinion about whether the two plans "look the same".
+            annotate_case(case_row, project, scenario, precondition_audit, report)
+            if precondition_audit["expectations"]:
+                # Evidence, not a verdict: which absence expectations this case carried and
+                # whether an approved deletion established each one.
+                case_row["absence_expectations"] = precondition_audit["rows"]
             record_requirement_evidence(summary, case_row, report)
             if report.outcome != Outcome.PASS:
                 case_row["reason"] = {

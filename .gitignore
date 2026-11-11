@@ -29,3 +29,8 @@ web/node_modules/
 web/dist/
 web/test-results/
 web/playwright-report/
+# P1 harness experiment environment and run evidence. Both are local-only: the production
+# suite must stay runnable without them, and the evaluation freeze hashes every untracked
+# file git can see, so a multi-hundred-megabyte venv here would stall every frozen run.
+.venv-deepagents/
+.eduwork/

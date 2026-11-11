@@ -4022,3 +4022,40 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 保留冻结：历史 M2/F1 未重跑、未改写。仍未解决：批准负向 422 在规范化 IR 中降级
   LEGACY；首次成功率低；真实业务环境、认证与多租户未验证。下一步是负向 IR 实例化，
   再用未调参的短自然语言集只测首次成功率，不追分数重跑已消费位置。
+
+## 2026-11-11 P1 Deep Agents Harness 集成与 Tool Calling 验证
+
+- 基线 `1a8c1b9`。五个阶段全部执行，交付说明见
+  [Deep Agents Harness P1 评估](deepagents-harness-p1-evaluation.md)；结论 **ADAPT**
+  （可选循环层，非产品默认）。
+- 阶段一：`ecnu-max` 经 `EcnuxChatModel` 的原生 Tool Calling 9/9 通过，调用来自
+  `AIMessage.tool_calls` 而非 JSON 文本；网关四处非标准行为（空 `tool_calls` 键 500、
+  `tool_choice` 必须对象、`"any"` 不支持、重名工具 500）都在适配层显式处理。
+- 阶段二：`.venv-deepagents`（deepagents 0.7.35 / langchain 1.4.10 / langchain-core
+  1.7.7 / langgraph 1.2.20）隔离运行，生产 `.venv` 未升级。8 个逻辑工具全部落在既有
+  确定性组件上；9 个默认工具与 general-purpose subagent 实测禁用，`FilesystemMiddleware`
+  与 `SubAgentMiddleware` 为构造期硬依赖、不可剔除。
+- 安全发现（本轮修正）：profile 键来自 `ls_provider[:model_name]`，基线实现用**类名**
+  推导 provider，因此任何包装子类都会静默失去收窄。适配器改为显式 `_get_ls_params()` +
+  `model_name`，注册并双键回读 `provider` 与 `provider:model`；收窄以对抗探针
+  `verify_enforcement` 证明（模型视图恰为 `["probe_marker"]`、边界拒绝、文件未创建）。
+- 阶段三：删除-404 前置条件改为双向相位规则（`absence` 需同身份删除、`existence`
+  不得被本计划删除），预检拒绝 `DESIGN_ABSENCE_PRECONDITION_MISSING`；运行时只降级不升级。
+  真实 HTTP 回归：S1 缺失/镜像均拒跑 0 请求、S3 删除后 404 → PASS、S4 删除谎报 204 →
+  仍 `ASSERTION_FAILED`（真缺陷未被掩盖）。S2（删除 503）由 Executor 的非 PASS 即停
+  兜住，后续回读不会执行，因此不存在 404 误报；降级分支保留为防御并有 12 项单元测试。
+- 阶段四 A/B（4 个自然语言目标）：B 终止性更好（3/4 给出带证据的最终答复，G3 触顶但
+  已执行 4 个计划），且会把预检拒绝当反馈重新设计（G1 拒绝后改设计拿到 PASS）；A 更省
+  （2–3 请求 / 约 2 万 token vs B 2–8 请求 / 2.2–9.3 万 token）且覆盖更稳。两边都未解决：
+  A 的严格 `complete` 4/4 全为 false。工具选择实测：严格首工具 3/8，运行内用到正确工具
+  7/8（唯一真失败缺 `design_id` 参数说明）。
+- 检查：定向 144 passed；`ruff check src/ tests/ experiments/ scripts/` 通过；全量离线
+  **2704 passed / 15 skipped / 0 failed**（2411.55s）。**GitHub Actions 未运行**——本轮不 push，
+  无法触发远端工作流。
+- 环境交互（已修）：`checkout_identity()` 会哈希 `git ls-files --cached --others
+  --exclude-standard` 的全部文件，未 ignore 的本地目录会拖垮评估冻结；`.venv-deepagents/`
+  与 `.eduwork/` 曾使 `test_cancel_preserves_reservation_and_report_without_sealing_success`
+  超时失败（同样的失败在基线上复现，确认与源码无关），加入 `.gitignore` 后该测试 10.30s 通过。
+- 未解决/风险：lab 三项目均无原生缺失断言，S1–S5 依赖实验脚本注入的批准策略，真实
+  “路径资源必须消失”需要新的 `AbsenceApproval` 模式；B 的 G1 覆盖偏浅（只测
+  availability）；profile 键依赖适配器实现，必须每次运行验证；A 的严格完成率需单独立项。

@@ -1,0 +1,1495 @@
+{
+  "probe": "native_tool_calling",
+  "model": "ecnu-max",
+  "base_url": "https://chat.ecnu.edu.cn/open/api/v1",
+  "protocol": "chatecnu",
+  "tools": [
+    "get_contract",
+    "get_test_coverage",
+    "investigate_failure"
+  ],
+  "turns": [
+    {
+      "label": "s1_single",
+      "status": 200,
+      "elapsed_ms": 1277.256,
+      "usage": {
+        "prompt_tokens": 529,
+        "completion_tokens": 55,
+        "total_tokens": 584,
+        "prompt_tokens_details": {
+          "cached_tokens": 384
+        },
+        "prompt_cache_hit_tokens": 384,
+        "prompt_cache_miss_tokens": 145
+      },
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_00_0H5C16WMYO5rIbbi912C7782",
+          "type": "function",
+          "name": "get_contract",
+          "arguments_raw": "{\"resource\": \"parcels\"}",
+          "arguments": {
+            "resource": "parcels"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        }
+      ],
+      "content": "我先查看包裹（parcels）资源的契约，确认可用的操作。",
+      "error": null,
+      "request_bytes": 1557,
+      "response_bytes": 701,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "先看清包裹接口有哪些操作，再决定怎么测。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s2_turn1",
+      "status": 200,
+      "elapsed_ms": 1241.677,
+      "usage": {
+        "prompt_tokens": 533,
+        "completion_tokens": 83,
+        "total_tokens": 616,
+        "prompt_tokens_details": {
+          "cached_tokens": 384
+        },
+        "prompt_cache_hit_tokens": 384,
+        "prompt_cache_miss_tokens": 149
+      },
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_00_R4HjHihzQzbxN9exhog07004",
+          "type": "function",
+          "name": "get_contract",
+          "arguments_raw": "{\"resource\": \"parcels\"}",
+          "arguments": {
+            "resource": "parcels"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        },
+        {
+          "id": "call_01_fTxZZschfFundjep5r3j1450",
+          "type": "function",
+          "name": "get_test_coverage",
+          "arguments_raw": "{\"resource\": \"parcels\"}",
+          "arguments": {
+            "resource": "parcels"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        }
+      ],
+      "content": "我先获取包裹资源的接口约定以及当前测试覆盖情况。",
+      "error": null,
+      "request_bytes": 1566,
+      "response_bytes": 852,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "包裹管理功能要测，先看接口，再看还缺哪些证据。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s2_turn2",
+      "status": 200,
+      "elapsed_ms": 13232.639,
+      "usage": {
+        "prompt_tokens": 769,
+        "total_tokens": 1185,
+        "completion_tokens": 416,
+        "prompt_tokens_details": {
+          "cached_tokens": 512
+        },
+        "reasoning_tokens": 0,
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "content": "## 一、接口现状（parcels 资源）\n\n已批准的 OpenAPI 操作只有 **3 个**：\n\n| operation_id | 方法 | 路径 |\n|---|---|---|\n| `createParcel` | POST | `/api/parcels` |\n| `readParcel` | GET | `/api/parcels/{id}` |\n| `deleteParcel` | DELETE | `/api/parcels/{id}` |\n\n值得注意的是：**没有 list/更新类操作**。如果“包裹管理”预期包含列表查询或修改包裹（PATCH/PUT），那部分不在已批准契约里，不能自行测试或假设其存在。\n\n## 二、证据覆盖\n\n**已满足（1 项）**\n- `createParcel` → 201 已创建\n\n**仍缺失（2 项）**\n- `deleteParcel` → 期望 204\n- `readParcel` → 删除后读取期望 404（`404-after-delete`）\n\n## 三、缺口特征与下一步\n\n这两个缺口是**同一条业务链上的前后两步**：删除成功是“删后读返回 404”的前提。因此应先验证 `deleteParcel` 的 204，再验证 `readParcel` 的 404，顺序不能颠倒或并行。\n\n在补齐之前，我需要你确认一点：这两个缺口是在**实际执行中失败了**，还是**根本还没跑过**？\n- 如果是**没跑过**：结论就是上面这个缺口清单，直接安排执行即可。\n- 如果是**跑过且失败**：请告诉我，我会按只读调查流程定位原因。对应关系是：204 未达标先查 `deleteParcel` 的前置条件或目标可用性；404-after-delete 未达标则更可能是前置删除未完成，或契约行为不一致。\n\n我不打算在没有实际失败信号的情况下凭猜测发起调查，避免把“未执行”误判成“缺陷”。",
+      "error": null,
+      "request_bytes": 2610,
+      "response_bytes": 2147,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "包裹管理功能要测，先看接口，再看还缺哪些证据。"
+          },
+          {
+            "role": "assistant",
+            "content": "我先获取包裹资源的接口约定以及当前测试覆盖情况。",
+            "tool_calls": [
+              {
+                "id": "call_00_R4HjHihzQzbxN9exhog07004",
+                "type": "function",
+                "function": {
+                  "name": "get_contract",
+                  "arguments": "{\"resource\": \"parcels\"}"
+                }
+              },
+              {
+                "id": "call_01_fTxZZschfFundjep5r3j1450",
+                "type": "function",
+                "function": {
+                  "name": "get_test_coverage",
+                  "arguments": "{\"resource\": \"parcels\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_00_R4HjHihzQzbxN9exhog07004",
+            "content": "{\"resource\": \"parcels\", \"operations\": [{\"operation_id\": \"createParcel\", \"method\": \"POST\", \"path\": \"/api/parcels\"}, {\"operation_id\": \"readParcel\", \"method\": \"GET\", \"path\": \"/api/parcels/{id}\"}, {\"operation_id\": \"deleteParcel\", \"method\": \"DELETE\", \"path\": \"/api/parcels/{id}\"}]}"
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_01_fTxZZschfFundjep5r3j1450",
+            "content": "{\"resource\": \"parcels\", \"open\": [\"deleteParcel:204\", \"readParcel:404-after-delete\"], \"satisfied\": [\"createParcel:201\"]}"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s2_turn3",
+      "status": 500,
+      "elapsed_ms": 217.905,
+      "usage": null,
+      "finish_reason": null,
+      "tool_calls": [],
+      "content": null,
+      "error": "HTTP_500:Internal Server Error",
+      "request_bytes": 4419,
+      "response_bytes": 21,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "包裹管理功能要测，先看接口，再看还缺哪些证据。"
+          },
+          {
+            "role": "assistant",
+            "content": "我先获取包裹资源的接口约定以及当前测试覆盖情况。",
+            "tool_calls": [
+              {
+                "id": "call_00_R4HjHihzQzbxN9exhog07004",
+                "type": "function",
+                "function": {
+                  "name": "get_contract",
+                  "arguments": "{\"resource\": \"parcels\"}"
+                }
+              },
+              {
+                "id": "call_01_fTxZZschfFundjep5r3j1450",
+                "type": "function",
+                "function": {
+                  "name": "get_test_coverage",
+                  "arguments": "{\"resource\": \"parcels\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_00_R4HjHihzQzbxN9exhog07004",
+            "content": "{\"resource\": \"parcels\", \"operations\": [{\"operation_id\": \"createParcel\", \"method\": \"POST\", \"path\": \"/api/parcels\"}, {\"operation_id\": \"readParcel\", \"method\": \"GET\", \"path\": \"/api/parcels/{id}\"}, {\"operation_id\": \"deleteParcel\", \"method\": \"DELETE\", \"path\": \"/api/parcels/{id}\"}]}"
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_01_fTxZZschfFundjep5r3j1450",
+            "content": "{\"resource\": \"parcels\", \"open\": [\"deleteParcel:204\", \"readParcel:404-after-delete\"], \"satisfied\": [\"createParcel:201\"]}"
+          },
+          {
+            "role": "assistant",
+            "content": "## 一、接口现状（parcels 资源）\n\n已批准的 OpenAPI 操作只有 **3 个**：\n\n| operation_id | 方法 | 路径 |\n|---|---|---|\n| `createParcel` | POST | `/api/parcels` |\n| `readParcel` | GET | `/api/parcels/{id}` |\n| `deleteParcel` | DELETE | `/api/parcels/{id}` |\n\n值得注意的是：**没有 list/更新类操作**。如果“包裹管理”预期包含列表查询或修改包裹（PATCH/PUT），那部分不在已批准契约里，不能自行测试或假设其存在。\n\n## 二、证据覆盖\n\n**已满足（1 项）**\n- `createParcel` → 201 已创建\n\n**仍缺失（2 项）**\n- `deleteParcel` → 期望 204\n- `readParcel` → 删除后读取期望 404（`404-after-delete`）\n\n## 三、缺口特征与下一步\n\n这两个缺口是**同一条业务链上的前后两步**：删除成功是“删后读返回 404”的前提。因此应先验证 `deleteParcel` 的 204，再验证 `readParcel` 的 404，顺序不能颠倒或并行。\n\n在补齐之前，我需要你确认一点：这两个缺口是在**实际执行中失败了**，还是**根本还没跑过**？\n- 如果是**没跑过**：结论就是上面这个缺口清单，直接安排执行即可。\n- 如果是**跑过且失败**：请告诉我，我会按只读调查流程定位原因。对应关系是：204 未达标先查 `deleteParcel` 的前置条件或目标可用性；404-after-delete 未达标则更可能是前置删除未完成，或契约行为不一致。\n\n我不打算在没有实际失败信号的情况下凭猜测发起调查，避免把“未执行”误判成“缺陷”。",
+            "tool_calls": []
+          },
+          {
+            "role": "user",
+            "content": "现在用只读调查确认 readParcel 的 404 失败是否属于前置条件缺失（PRECONDITION_MISSING）。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s3_forced",
+      "status": 200,
+      "elapsed_ms": 816.958,
+      "usage": {
+        "prompt_tokens": 310,
+        "completion_tokens": 34,
+        "total_tokens": 344,
+        "prompt_tokens_details": {
+          "cached_tokens": 128
+        },
+        "prompt_cache_hit_tokens": 128,
+        "prompt_cache_miss_tokens": 182
+      },
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_00_gqlYTrm1D4yHA42j1Xrh0234",
+          "type": "function",
+          "name": "get_test_coverage",
+          "arguments_raw": "{\"resource\": \"all\"}",
+          "arguments": {
+            "resource": "all"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        }
+      ],
+      "content": "",
+      "error": null,
+      "request_bytes": 1616,
+      "response_bytes": 629,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "帮我看一下已经覆盖了什么。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "function",
+          "function": {
+            "name": "get_test_coverage"
+          }
+        }
+      }
+    },
+    {
+      "label": "s4_json_schema_with_tools",
+      "status": 200,
+      "elapsed_ms": 1515.634,
+      "usage": {
+        "prompt_tokens": 626,
+        "total_tokens": 693,
+        "completion_tokens": 67,
+        "prompt_tokens_details": {
+          "cached_tokens": 512
+        },
+        "reasoning_tokens": 0,
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "content": "{\"next_action\": \"ASK_QUESTION\", \"target\": null, \"reason\": \"目前没有提供任何资源名、已批准的接口约定、测试覆盖情况或失败检查信息，因此没有任何依据来决定是否继续设计、读取探针还是完成；需要先明确要测试的资源以及当前的目标或失败点。\"}",
+      "error": null,
+      "request_bytes": 1936,
+      "response_bytes": 862,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "接下来应该做什么？只输出规定的 JSON。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ],
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "probe_next_action",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "next_action": {
+                  "type": "string",
+                  "enum": [
+                    "DESIGN_MORE",
+                    "READ_PROBE",
+                    "FINISH",
+                    "ASK_QUESTION"
+                  ]
+                },
+                "target": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "next_action",
+                "target",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "s4_control_without_tools",
+      "status": 200,
+      "elapsed_ms": 1070.561,
+      "usage": {
+        "prompt_tokens": 220,
+        "completion_tokens": 47,
+        "total_tokens": 267,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 220
+      },
+      "finish_reason": "stop",
+      "tool_calls": [],
+      "content": "{\"next_action\":\"FINISH\",\"target\":null,\"reason\":\"未提供探测历史、目标接口或已收集的事实，也没有可用的工具调用上下文；在没有依据继续设计探测或读取结果时，应结束本轮。\"}",
+      "error": null,
+      "request_bytes": 737,
+      "response_bytes": 690,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "接下来应该做什么？只输出规定的 JSON。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "probe_next_action",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "next_action": {
+                  "type": "string",
+                  "enum": [
+                    "DESIGN_MORE",
+                    "READ_PROBE",
+                    "FINISH",
+                    "ASK_QUESTION"
+                  ]
+                },
+                "target": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "next_action",
+                "target",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "s5_selection",
+      "status": 200,
+      "elapsed_ms": 645.535,
+      "usage": {
+        "prompt_tokens": 802,
+        "total_tokens": 850,
+        "completion_tokens": 48,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "reasoning_tokens": 0,
+        "completion_tokens_details": null
+      },
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_ae104788f083427b8fd03673",
+          "type": "function",
+          "name": "get_test_coverage",
+          "arguments_raw": "{\"resource\": \"parcels\"}",
+          "arguments": {
+            "resource": "parcels"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        }
+      ],
+      "content": "我会直接查看测试覆盖情况。",
+      "error": null,
+      "request_bytes": 2888,
+      "response_bytes": 746,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "哪些已批准的测试还缺证据？用最直接的工具查。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_approved_policies",
+              "description": "Read operator-approved assertions only.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "design_test_cases",
+              "description": "Design legal test scenarios for one obligation.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "validate_test_plan",
+              "description": "Compile and validate a plan without sending HTTP.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "execute_approved_test",
+              "description": "Execute an already validated plan.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "read_test_report",
+              "description": "Read redacted execution evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s6_error_feedback",
+      "status": 200,
+      "elapsed_ms": 3569.538,
+      "usage": {
+        "prompt_tokens": 589,
+        "total_tokens": 656,
+        "completion_tokens": 67,
+        "prompt_tokens_details": {
+          "cached_tokens": 512
+        },
+        "reasoning_tokens": 0,
+        "completion_tokens_details": null
+      },
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "call_b7ed243f73984a1c8e72820b",
+          "type": "function",
+          "name": "get_contract",
+          "arguments_raw": "{\"resource\": \"parcels\"}",
+          "arguments": {
+            "resource": "parcels"
+          },
+          "arguments_valid_json": true,
+          "parse_error": null
+        }
+      ],
+      "content": "parcels 的契约查询第一次超时了（TOOL_TIMEOUT，可重试）。我重试一下：",
+      "error": null,
+      "request_bytes": 1811,
+      "response_bytes": 796,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "查一下契约。"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_probe_1",
+                "type": "function",
+                "function": {
+                  "name": "get_contract",
+                  "arguments": "{\"resource\":\"parcels\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_probe_1",
+            "content": "{\"error\": \"TOOL_TIMEOUT\", \"retryable\": true}"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read the approved OpenAPI operations for one resource family.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string",
+                    "description": "Resource family name, e.g. parcels."
+                  },
+                  "methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                      ]
+                    },
+                    "description": "Optional method filter."
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_test_coverage",
+              "description": "List which approved testing obligations already have evidence.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "investigate_failure",
+              "description": "Run one approved read-only investigation for a failed check.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "hypothesis": {
+                    "type": "string",
+                    "enum": [
+                      "PRECONDITION_MISSING",
+                      "TARGET_UNAVAILABLE",
+                      "CONTRACT_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "hypothesis"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "s7_duplicate_catalog",
+      "status": 500,
+      "elapsed_ms": 28.78,
+      "usage": null,
+      "finish_reason": null,
+      "tool_calls": [],
+      "content": null,
+      "error": "HTTP_500:Internal Server Error",
+      "request_bytes": 827,
+      "response_bytes": 21,
+      "request": {
+        "model": "ecnu-max",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a bounded API-testing agent. Use the supplied tools to gather facts. Never invent tool names, arguments or results."
+          },
+          {
+            "role": "user",
+            "content": "查一下契约。"
+          }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "thinking": {
+          "type": "disabled"
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read approved operations.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_contract",
+              "description": "Read approved operations (second copy).",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "resource": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "assertions": {
+    "s1_tool_call_returned": true,
+    "s1_finish_reason_tool_calls": true,
+    "s1_usage_reported": true,
+    "s1_arguments_match_schema": true,
+    "s2_turn1_tool_call": true,
+    "s2_tool_results_reach_model": true,
+    "s2_continuation_quotes_tool_output": true,
+    "s2_third_turn_answered_in_text": false,
+    "s3_forced_choice_status_200": true,
+    "s3_forced_choice_named_tool": true,
+    "s4_json_schema_with_tools_ok": true,
+    "s4_control_json_schema_ok": true,
+    "s5_selected_expected_tool": true,
+    "s5_no_invented_tool": true,
+    "s6_tool_error_reaches_model": true,
+    "s6_no_http_500": true
+  },
+  "checks": {
+    "s1_arguments": {
+      "ok": true,
+      "problems": [],
+      "arguments": {
+        "resource": "parcels"
+      }
+    },
+    "s4_parsed": {
+      "next_action": "ASK_QUESTION",
+      "target": null,
+      "reason": "目前没有提供任何资源名、已批准的接口约定、测试覆盖情况或失败检查信息，因此没有任何依据来决定是否继续设计、读取探针还是完成；需要先明确要测试的资源以及当前的目标或失败点。"
+    },
+    "s7_observed": {
+      "status": 500,
+      "error": "HTTP_500:Internal Server Error"
+    }
+  },
+  "started_at": "2026-11-11T18:46:05+0800",
+  "facts": {
+    "s2_parallel_tool_calls_supported": true,
+    "s2_turn1_calls": [
+      "get_contract",
+      "get_test_coverage"
+    ],
+    "s5_catalog_size": 8,
+    "s5_catalog_unique": true,
+    "s7_duplicate_catalog_status": 500,
+    "s7_duplicate_catalog_error": "HTTP_500:Internal Server Error"
+  },
+  "s2_call_names": [
+    [
+      "get_contract",
+      "get_test_coverage"
+    ],
+    [],
+    []
+  ],
+  "s5_selected": [
+    "get_test_coverage"
+  ],
+  "finished_at": "2026-11-11T18:46:29+0800",
+  "summary": {
+    "turns": 10,
+    "passed": 15,
+    "failed": [
+      "s2_third_turn_answered_in_text"
+    ],
+    "total_tokens": 5195,
+    "errors": [
+      "HTTP_500:Internal Server Error",
+      "HTTP_500:Internal Server Error"
+    ]
+  }
+}

@@ -134,13 +134,18 @@ def document(kind):
     return result
 
 
-def create_target(kind, environ=None, events=None, fault_http_status=503, read_delay=0):
+def create_target(kind, environ=None, events=None, fault_http_status=503, read_delay=0,
+                  delete_fault_status=None, delete_noop=False):
     if kind not in {"parcels", "reservations", "directory"}:
         raise ValueError("Unknown fixture project")
     if fault_http_status not in {200, 503}:
         raise ValueError("Unsupported disposable fault status")
     if not 0 <= read_delay <= 4:
         raise ValueError("Disposable read delay must be between zero and four seconds")
+    if delete_fault_status is not None and delete_fault_status not in {500, 503}:
+        # Only an isolated-lab switch for precondition evidence: a delete that never happens
+        # must be reproducible against a real HTTP surface, not simulated in the product.
+        raise ValueError("Unsupported disposable delete fault status")
     env = dict(os.environ if environ is None else environ)
     app = FastAPI(title="Disposable acceptance target")
     records = {}
@@ -206,6 +211,12 @@ def create_target(kind, environ=None, events=None, fault_http_status=503, read_d
             if parcel_id not in records:
                 raise HTTPException(404, "Missing disposable record")
             if request.method == "DELETE":
+                if delete_fault_status is not None:
+                    raise HTTPException(delete_fault_status, "Disposable delete fault")
+                if delete_noop:
+                    # A delete that answers 204 without deleting: the real defect a
+                    # trustworthy "after deletion it must be 404" expectation has to catch.
+                    return Response(status_code=204)
                 del records[parcel_id]
                 return Response(status_code=204)
             if request.method in {"PUT", "PATCH"}:
@@ -281,6 +292,8 @@ def main():
     parser.add_argument("--events", type=Path)
     parser.add_argument("--fault-http-status", type=int, choices=[200, 503], default=503)
     parser.add_argument("--read-delay", type=float, default=0)
+    parser.add_argument("--delete-fault-status", type=int, choices=[500, 503], default=None)
+    parser.add_argument("--delete-noop", action="store_true")
     args = parser.parse_args()
     if args.documents:
         args.documents.mkdir(parents=True, exist_ok=True)
@@ -292,7 +305,9 @@ def main():
             parser.error("An explicit local port is required")
         uvicorn.run(create_target(args.project, events=args.events,
                                   fault_http_status=args.fault_http_status,
-                                  read_delay=args.read_delay),
+                                  read_delay=args.read_delay,
+                                  delete_fault_status=args.delete_fault_status,
+                                  delete_noop=args.delete_noop),
                     host="127.0.0.1", port=args.port,
                     proxy_headers=False, access_log=False)
 
