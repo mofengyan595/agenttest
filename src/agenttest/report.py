@@ -118,6 +118,10 @@ class ModelCallStats(BaseModel):
     total_tokens: int | None = None
     output_sha256: str | None = None
     reason: str | None = None
+    # The gateway answered with an error envelope instead of a completion. No tokens were
+    # generated, so a rejected call must not poison the run's "usage unknown" gate; a timeout
+    # or a dropped connection still does, because it may have been processed.
+    refused: bool = False
 
 
 class FeedbackDecisionEvidence(BaseModel):

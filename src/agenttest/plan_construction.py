@@ -222,6 +222,34 @@ def construct_plan(plan, context):
 
     # Operator-approved lifecycle cleanup follows consumers of that exact fresh ID.
     # Explicit post-delete checks already depend on deletion and stay after it.
+    def identity(node):
+        """The fresh identities this node consumes: (producer step, selector) pairs."""
+        return {(argument.get('from_step'), argument.get('select'))
+                for argument in node['arguments']
+                if argument['location'] == 'path_parameters' and argument.get('from_step')}
+
+    def absence_policy(policy):
+        """An approved 404/410 expectation, i.e. a claim that the resource must not exist."""
+        if policy.get('negative_test') is not None:
+            return False
+        codes = set((((policy.get('assertions') or {}).get('status') or {}).get('codes')) or ())
+        return bool(codes) and codes <= {404, 410}
+
+    # String order must never put an absence assertion before the deletion that establishes it:
+    # the same resource has to be deleted first, otherwise the assertion would accuse the target
+    # of a defect the plan invented (and the precondition audit would refuse the case anyway).
+    for node in nodes.values():
+        if not absence_policy(policies[node['policy_id']]):
+            continue
+        for prior in nodes.values():
+            if prior['id'] == node['id'] or not identity(node) & identity(prior):
+                continue
+            prior_policy = policies[prior['policy_id']]
+            if prior_policy.get('negative_test') is not None:
+                continue
+            if prior['operation_id'] != node['operation_id']:
+                depend(node['id'], prior['id'], 'RESOURCE_ABSENCE')
+
     for lifecycle in context.get('resource_lifecycles', []):
         for deletion in nodes.values():
             if deletion['operation_id'] != lifecycle['delete_operation']:

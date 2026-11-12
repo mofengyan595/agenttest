@@ -37,6 +37,7 @@ from agenttest.deep_harness.loop import (
 )
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.product_obligations import executed_evidence, supervision_facts
+from agenttest.report import fingerprint
 from agenttest.task_completion import classify_task, evaluate, public_view, subject_scope
 
 ENGINE = "DEEP_AGENTS"
@@ -67,6 +68,10 @@ STOP_DEADLINE = "DEADLINE"
 
 MAX_GROUP_RUNS = 2          # one broad attempt plus one informed redesign, then stop
 MAX_RESULT_BYTES = 6_000    # one tool result, re-sent on every following model turn
+# Context editing threshold for old tool output. P2 re-sent the first contract/policy/scope
+# reads on every later turn (~20 KB per request by turn 3). Eight thousand approximate tokens
+# leaves the recent four results untouched and only drops what has already been superseded.
+CONTEXT_CLEAR_TRIGGER_TOKENS = 8_000
 
 SYSTEM_PROMPT = """你是 AgentTest 的自主接口测试 Agent。你只描述测试目标，通过工具决定下一步做什么；
 测试计划、断言、权限与 HTTP 执行全部由确定性代码负责。
@@ -139,14 +144,41 @@ def _json(payload) -> str:
     one-off. Chinese text costs three bytes per character, which is why this bound is in bytes:
     P1's B1 run grew a request to the provider's envelope and lost the round to a token stop.
     """
+def _transient_model_error(exc: Exception) -> bool:
+    """Only a transient gateway failure may be retried; budgets and rejections never are."""
+    code = str(getattr(exc, "code", "") or "")
+    if code in {"MODEL_TOKEN_BUDGET", "MODEL_CALL_BUDGET", "MODEL_INPUT_REJECTED",
+                "MODEL_TOOL_CATALOG_INVALID", "MODEL_SECRET_OUTPUT", "MODEL_REFUSAL"}:
+        return False
+    text = f"{code} {exc}"
+    return any(marker in text for marker in (
+        "MODEL_SERVICE_ERROR", "MODEL_TIMEOUT", "MODEL_CONNECTION_ERROR",
+        "MODEL_USAGE_UNKNOWN", "concurrency", "429", "502", "503", "504", "timed out"))
+
+
+def _json(payload, limit: int = MAX_RESULT_BYTES) -> str:
+    """Serialize one tool result under a byte budget without losing the repair fields.
+
+    P2'S 6 KB preview cut from the front of the message, so a rejection whose ``error`` sat
+    after a long case list lost exactly the code and detail the model needed to repair it.
+    The essential keys are always kept in full; only the preview of the rest is truncated.
+    """
     text = json.dumps(payload, ensure_ascii=False, sort_keys=False, default=str)
     raw = text.encode("utf-8")
-    if len(raw) <= MAX_RESULT_BYTES:
+    if len(raw) <= limit:
         return text
-    preview = raw[:MAX_RESULT_BYTES].decode("utf-8", "ignore")
-    return json.dumps(dict(truncated=True,
-                           note="结果过大已截断；请用更窄的参数重新查询（候选与分组在结果前部）。",
-                           preview=preview), ensure_ascii=False)
+    if isinstance(payload, dict):
+        head_keys = ("ok", "error", "design", "status", "group_id", "candidate_id",
+                     "executed", "requests", "budget", "next_step", "duplicates")
+        head = {key: payload[key] for key in head_keys if key in payload}
+        head["truncated"] = True
+        head["note"] = ("结果过大：错误/设计/预算字段完整保留，其余为前部预览；"
+                        "用更窄的参数读取完整证据（如 read_test_report(run_id)）。")
+        head["preview"] = raw[:max(1024, limit // 2)].decode("utf-8", "ignore")
+        return json.dumps(head, ensure_ascii=False, default=str)
+    preview = raw[:limit].decode("utf-8", "ignore")
+    return json.dumps(dict(truncated=True, note="结果过大已截断。", preview=preview),
+                      ensure_ascii=False)
 
 
 def _refusal(code: str, message: str, *, retryable: bool = True, hint: str = "",
@@ -179,6 +211,8 @@ class AgentSession:
                                     summary=self.summary)
         self.tool_calls: list[dict] = []
         self.group_runs: dict[str, int] = {}
+        self.generation = 0
+        self.seen: dict[str, dict] = {}
         self.stop = "RUNNING"
         self.error: dict | None = None
         self.started = time.monotonic()
@@ -352,6 +386,16 @@ class AgentSession:
             investigations=(facts.get("investigations") or [])[:6],
             resources=facts.get("resources"),
             candidates=[item["id"] for item in facts.get("candidates") or ()][:12],
+            # A rejected design is the one fact a repair depends on. It is repeated here as a
+            # bounded structured summary so trimming old tool output can never remove the code
+            # and the missing dependency the model must act on.
+            design_failures=[
+                dict(group_id=row.get("group_id"), reason=row.get("reason"),
+                     code=(row.get("diagnostic") or {}).get("code"),
+                     fields=((row.get("diagnostic") or {}).get("fields") or [])[:4],
+                     detail=(row.get("diagnostic") or {}).get("detail") or {})
+                for row in (self.summary.get("design_records") or ())[-4:]
+                if row.get("status") == "REJECTED"],
             budget=self._budget_view(), completion=self._completion_preview(),
             duplicates=self.summary.get("duplicate_retests") or [])
         return base
@@ -444,6 +488,7 @@ class AgentSession:
                         error=type(exc).__name__)
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该动作没有完成；读取覆盖后决定是否换一个候选。")
+        self.generation += 1
         record = (self.summary.get("design_records") or [None])[-1] \
             if len(self.summary.get("design_records") or ()) > before_records else None
         cases = (self.summary.get("cases") or ())[before_cases:]
@@ -453,6 +498,9 @@ class AgentSession:
                        operations=list(group.get("primary") or ()),
                        design=dict(status=(record or {}).get("status"),
                                    reason=(record or {}).get("reason"),
+                                   code=self._diagnostic_code(record),
+                                   fields=self._diagnostic(record).get("fields") or [],
+                                   detail=self._diagnostic(record).get("detail") or {},
                                    planning_engine=(record or {}).get("actual_planning_engine")
                                    or (record or {}).get("planning_engine")),
                        cases=[self._case_summary(case) for case in cases][:8],
@@ -460,13 +508,53 @@ class AgentSession:
                        budget=self._budget_view(),
                        next_step=dict(tool="get_test_coverage", arguments={}))
         if group.get("status") == "NOT_EXECUTED":
+            code = self._diagnostic_code(record) or "GROUP_NOT_DESIGNED"
+            detail = self._diagnostic(record).get("detail") or {}
             payload["ok"] = False
-            payload["error"] = dict(code=record.get("reason") if record else
-                                    "GROUP_NOT_DESIGNED",
-                                    message="设计或预检没有通过，未发送业务请求。",
-                                    retryable=bool(note) is False,
-                                    hint="如要重试，提供 design_note 说明一条新的设计约束。")
+            payload["error"] = dict(
+                code=code,
+                message="设计或预检没有通过，未发送业务请求。",
+                fields=self._diagnostic(record).get("fields") or [],
+                detail=detail,
+                retryable=bool(note) is False,
+                hint=detail.get("hint") or self._repair_hint(code))
         return payload
+
+    @staticmethod
+    def _diagnostic(record) -> dict:
+        """The deterministic rejection diagnosis, bounded and free of request values."""
+        value = (record or {}).get("diagnostic")
+        return value if isinstance(value, dict) else {}
+
+    def _diagnostic_code(self, record) -> str:
+        """The compiler/precondition code, which is more actionable than MODEL_INVALID_RESPONSE."""
+        diagnostic = self._diagnostic(record)
+        return str(diagnostic.get("code") or (record or {}).get("reason") or "")
+
+    @staticmethod
+    def _repair_hint(code: str) -> str:
+        return {
+            "PLANNING_INSTANCE_COVERAGE":
+                "这些产生者实例不在本场景中：要么补上它们的步骤，要么去掉消费它们的步骤。",
+            "PLANNING_INSTANCE_UNBOUND":
+                "有步骤找不到可绑定的规划实例；按 operation_id/policy_id 选择真实实例，"
+                "不要为同一操作臆造额外步骤。",
+            "PLANNING_INSTANCE_AMBIGUOUS":
+                "同一操作有多个实例且无法唯一确定；用 planning 字段或不同 policy_id 区分。",
+            "PLANNING_UNSOURCED_STEP":
+                "requirement_source_id 必须来自本轮可执行请求子句。",
+            "DESIGN_SELECTED_CLEANUP_MISSING":
+                "该目标有已批准的清理删除；创建资源的场景必须计划这一步，否则会遗留资源。",
+            "DESIGN_ABSENCE_PRECONDITION_MISSING":
+                "404/410 断言必须在同一资源已批准删除之后；补上删除步骤或去掉该断言。",
+            "MODEL_JSON_INVALID":
+                "上一版方案不是合法 JSON：detail 给出了 position 和出错附近的 window，"
+                "修正该处后重新提交，不要重复同一段输出。",
+            "MODEL_OUTPUT_TRUNCATED":
+                "上一版方案超过单次输出上限被截断：把这一组拆成更小的方案（更少的用例或"
+                "更少的步骤）再调用一次。",
+        }.get(code, "按 code 与 detail 调整设计方案；如无更具体的修复信息，请提供 design_note "
+                    "说明一条新的设计约束。预检未通过时不会发送任何业务请求。")
 
     async def run_obligation(self, candidate_id: str, design_note: str = "") -> dict:
         """One obligation-level action, chosen from the server's candidate set."""
@@ -500,21 +588,45 @@ class AgentSession:
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该候选动作没有完成；读取覆盖后再决定。")
         cases = (self.summary.get("cases") or ())[before_cases:]
+        self.generation += 1
         self.record("run_open_obligation", candidate_id=candidate_id,
                     executed=outcome.executed, requests=self.ledger.requests - before_requests)
+        record = (self.summary.get("design_records") or [None])[-1]
+        diagnostic = self._diagnostic(record) if record else {}
+        code = diagnostic.get("code") or (outcome.note or "ACTION_NOT_EXECUTED")
         return dict(ok=bool(outcome.executed), candidate_id=candidate_id,
                     action=candidate.get("action"), executed=outcome.executed,
                     cases=[self._case_summary(case) for case in cases][:6],
                     requests=self.ledger.requests - before_requests,
                     detail=outcome.detail, note=outcome.note,
                     error=None if outcome.executed else dict(
-                        code=(outcome.note or "ACTION_NOT_EXECUTED"),
+                        code=code,
                         message="该候选动作没有产生执行证据。", retryable=False,
-                        hint="读取 get_test_coverage 后换一个候选或结束。"),
+                        fields=diagnostic.get("fields") or [],
+                        detail=diagnostic.get("detail") or {},
+                        hint=(diagnostic.get("detail") or {}).get("hint")
+                        or self._repair_hint(code)),
                     budget=self._budget_view(),
                     next_step=dict(tool="get_test_coverage", arguments={}))
 
     # ------------------------------------------------------------------ read-only evidence
+    def read_view(self, name: str, build) -> dict:
+        """A repeated read-only view is a pointer, not the same bytes a second time.
+
+        The transcript already holds the first answer, and the generation counter changes on
+        every state-changing action, so a read after new evidence is always answered in full.
+        """
+        payload = build()
+        previous = self.seen.get(name)
+        self.seen[name] = dict(generation=self.generation)
+        if previous is not None and previous["generation"] == self.generation:
+            body = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            return dict(ok=True, repeated=True, unchanged_since_previous_call=True,
+                        generation=self.generation,
+                        note="本轮状态没有变化；直接使用上文同名结果，不要再重复读取。",
+                        sha256=fingerprint(body))
+        return payload
+
     def report_view(self, run_id: str) -> dict:
         known = self.run_ids()
         if run_id not in known:
@@ -667,21 +779,25 @@ def build_tools(session: AgentSession) -> list:
 
     async def contract() -> str:
         session.record("get_contract")
-        return result(session.facts.contract_view())
+        return result(session.read_view("get_contract", session.facts.contract_view))
 
     async def policies() -> str:
         session.record("get_approved_policies")
-        view = session.facts.policy_view()
-        view["absence_approvals"] = _absence_approvals(session.project)
-        return result(view)
+
+        def build():
+            view = session.facts.policy_view()
+            view["absence_approvals"] = _absence_approvals(session.project)
+            return view
+
+        return result(session.read_view("get_approved_policies", build))
 
     async def scope() -> str:
         session.record("get_test_scope")
-        return result(session.scope_view())
+        return result(session.read_view("get_test_scope", session.scope_view))
 
     async def coverage() -> str:
         session.record("get_test_coverage")
-        return result(session.coverage_view())
+        return result(session.read_view("get_test_coverage", session.coverage_view))
 
     async def group(group_id: str, design_note: str = "") -> str:
         return result(await session.run_group(group_id, design_note))
@@ -770,7 +886,11 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     configured adapter; the default is the same ``EcnuxChatModel`` every other model call uses.
     """
     from deepagents import create_deep_agent
-    from langchain.agents.middleware import ModelCallLimitMiddleware, ToolCallLimitMiddleware
+    from langchain.agents.middleware import (
+        ModelCallLimitMiddleware,
+        ModelRetryMiddleware,
+        ToolCallLimitMiddleware,
+    )
     from langchain_core.messages import HumanMessage
     from langgraph.errors import GraphRecursionError
 
@@ -794,9 +914,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         ledger = scope.ledger
         ledger.model_calls += stats.calls
         if stats.calls:
-            if stats.total_tokens is None:
+            if stats.total_tokens is None and not getattr(stats, "refused", False):
                 ledger.usage_unknown = True
-            else:
+            elif stats.total_tokens is not None:
                 ledger.known_tokens += stats.total_tokens
 
     model.on_call = charge
@@ -804,15 +924,36 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     enforcement = await verify_enforcement(model)
     tools = build_tools(session)
     middleware = [
+        # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
+        # one bounded retry keeps an otherwise healthy run alive. Budget and input rejections are
+        # deterministic, so they are never retried and keep their stop reason.
+        ModelRetryMiddleware(max_retries=2, retry_on=_transient_model_error,
+                             on_failure="error", initial_delay=1.0, max_delay=8.0),
         ModelCallLimitMiddleware(run_limit=max_model_calls, exit_behavior="end"),
         ToolCallLimitMiddleware(run_limit=max_tool_calls, exit_behavior="end"),
-        ToolCallLimitMiddleware(tool_name="run_test_group", run_limit=3,
+        ToolCallLimitMiddleware(tool_name="run_test_group", run_limit=4,
                                 exit_behavior="continue"),
-        ToolCallLimitMiddleware(tool_name="run_open_obligation", run_limit=4,
+        ToolCallLimitMiddleware(tool_name="run_open_obligation", run_limit=8,
                                 exit_behavior="continue"),
         ToolCallLimitMiddleware(tool_name="get_test_scope", run_limit=4,
                                 exit_behavior="continue"),
     ]
+    # Context editing is LangChain's own facility, not a second context manager: once the
+    # transcript passes the trigger, the oldest tool outputs become a placeholder. The newest
+    # results (including a rejection's error/detail) stay intact, and every repair fact is also
+    # repeated by get_test_coverage, so trimming cannot remove the evidence a decision needs.
+    try:
+        from langchain.agents.middleware import (
+            ClearToolUsesEdit,
+            ContextEditingMiddleware,
+        )
+
+        middleware.append(ContextEditingMiddleware(edits=[
+            ClearToolUsesEdit(trigger=CONTEXT_CLEAR_TRIGGER_TOKENS, keep=4,
+                              clear_tool_inputs=True,
+                              placeholder="[已清理的旧工具结果；需要时按 run_id 重新读取]")]))
+    except ImportError:  # an older LangChain keeps the untrimmed transcript; no behaviour loss
+        pass
     agent = create_deep_agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT,
                               middleware=middleware)
     catalogue = verify_catalogue(agent)
@@ -828,6 +969,11 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     except (ModelHarnessError, GraphRecursionError) as exc:
         if isinstance(exc, GraphRecursionError):
             stop_reason = STOP_TURN_LIMIT
+        elif exc.code in {"MODEL_TOKEN_BUDGET", "MODEL_CALL_BUDGET"}:
+            # The envelope refused the next request before it was sent. That is a spent budget,
+            # not a broken model, and the deterministic report is still produced.
+            stop_reason = STOP_MODEL_CALL_LIMIT
+            error = dict(code=exc.code, message=str(exc))
         else:
             stop_reason, error = STOP_MODEL_ERROR, dict(code=str(exc))
     except Exception as exc:  # a framework failure is reported, never turned into success

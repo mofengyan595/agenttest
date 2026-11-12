@@ -272,7 +272,7 @@ def test_negative_preparation_keeps_consumed_resources_and_same_case_cleanup(tmp
             validate_negative_preparation(proj, design)
 
 
-def test_selected_cleanup_rejects_another_cases_resource_and_preserves_create_only_scope():
+def test_selected_cleanup_rejects_another_cases_resource_and_refuses_create_only_scope():
     from dataclasses import replace
 
     from agenttest.dsl import ArgumentBinding, Scenario, Step
@@ -288,7 +288,11 @@ def test_selected_cleanup_rejects_another_cases_resource_and_preserves_create_on
     plan = Scenario(name="one-resource", steps=[creation, removal])
     validate_cleanup_dependencies(proj, plan, ["readJob"])
     plan.steps = [creation]
-    validate_cleanup_dependencies(proj, plan, [])
+    # P2.1: selecting a cleanup operation is not what creates the obligation. As soon as an
+    # approved deletion can remove this identity, a case that omits it is refused -- the
+    # pre-release round leaked ten parcels through exactly this create-only hole.
+    with pytest.raises(ValueError, match="SELECTED_CLEANUP_MISSING"):
+        validate_cleanup_dependencies(proj, plan, [])
     with pytest.raises(ValueError, match="SELECTED_CLEANUP_MISSING"):
         validate_cleanup_dependencies(proj, plan, ["readJob"])
     other = creation.model_copy(update={"id": "another"})
@@ -296,6 +300,17 @@ def test_selected_cleanup_rejects_another_cases_resource_and_preserves_create_on
     plan.steps = [creation, other, removal]
     with pytest.raises(ValueError, match="SELECTED_CLEANUP_MISSING"):
         validate_cleanup_dependencies(proj, plan, ["readJob"])
+
+
+def test_a_create_stays_allowed_when_the_target_has_no_approved_cleanup_path():
+    """No removal authority: the case may run, but the report counts the resource as unsafe."""
+    from agenttest.dsl import Scenario
+    from agenttest.product_design import validate_cleanup_dependencies
+
+    proj, _ = project()
+    creation = DesignCase.model_validate(case()).plan.scenario().steps[0]
+    plan = Scenario(name="one-resource", steps=[creation])
+    validate_cleanup_dependencies(proj, plan, [])
 
 
 @pytest.mark.asyncio

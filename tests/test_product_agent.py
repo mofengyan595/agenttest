@@ -6,6 +6,7 @@ model instead of a silent generic error, that a repeated action is admitted only
 genuinely new, and that completion/budget/authority are decided by code rather than prose.
 """
 
+import json
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -184,6 +185,33 @@ async def test_an_unknown_group_is_refused_with_the_valid_ids(tmp_path):
     assert payload["error"]["code"] == "UNKNOWN_GROUP_ID"
     assert payload["valid_group_ids"] == ["group_1"]
     assert tasks.calls == []
+
+
+@pytest.mark.asyncio
+async def test_a_rejected_design_reports_the_compiler_code_and_a_repair_hint(tmp_path):
+    """MODEL_INVALID_RESPONSE alone told the model nothing; the compiler code is the repair key."""
+
+    def rejected(summary, group, supervision):
+        summary["design_records"].append(dict(
+            group_id=group["id"], status="REJECTED", reason="MODEL_INVALID_RESPONSE",
+            diagnostic=dict(layer="model", code="PLANNING_INSTANCE_COVERAGE",
+                            fields=["instance.ai_2"],
+                            detail=dict(missing=["ai_2"],
+                                        operations={"ai_2": "readParcel"},
+                                        hint="补上产生者步骤。"))))
+        group["status"] = "NOT_EXECUTED"
+        group["reason"] = "MODEL_INVALID_RESPONSE"
+
+    session_, _, _, _, _ = session(tmp_path, effect=rejected)
+    payload = await session_.run_group("group_1")
+    assert payload["ok"] is False
+    assert payload["requests"] == 0
+    assert payload["error"]["code"] == "PLANNING_INSTANCE_COVERAGE"
+    assert payload["error"]["fields"] == ["instance.ai_2"]
+    assert payload["error"]["detail"]["missing"] == ["ai_2"]
+    assert payload["error"]["hint"] == "补上产生者步骤。"
+    assert payload["design"]["code"] == "PLANNING_INSTANCE_COVERAGE"
+    assert payload["design"]["reason"] == "MODEL_INVALID_RESPONSE"
 
 
 @pytest.mark.asyncio
@@ -413,3 +441,49 @@ async def test_a_cancelled_task_sends_nothing_and_says_so(tmp_path):
                           stop=dict(reason=result.stop_reason))
     assert completion["complete"] is False
     assert completion["flags"]["evidence_produced"] is False
+
+
+# ------------------------------------------------------------------ cost without losing facts
+
+
+def test_a_repeated_read_is_a_pointer_until_the_state_changes(tmp_path):
+    session_, *_ = session(tmp_path)
+    first = session_.read_view("get_contract", lambda: dict(operations=["createParcel"]))
+    again = session_.read_view("get_contract", lambda: dict(operations=["createParcel"]))
+    assert first == dict(operations=["createParcel"])
+    assert again["repeated"] is True and again["unchanged_since_previous_call"] is True
+    assert again["sha256"] and "note" in again
+    # Any state-changing action bumps the generation, so the next read is answered in full.
+    session_.generation += 1
+    assert session_.read_view("get_contract", lambda: dict(operations=["createParcel"])) == {
+        "operations": ["createParcel"]}
+
+
+def test_a_truncated_tool_result_keeps_the_error_and_the_repair_fields():
+    from agenttest.product_agent import _json
+
+    payload = dict(ok=False, status="NOT_EXECUTED",
+                   error=dict(code="PLANNING_INSTANCE_COVERAGE",
+                              fields=["instance.ai_3"], detail=dict(missing=["ai_3"])),
+                   budget=dict(remaining_requests=7),
+                   cases=[dict(title="很长的用例" * 20, steps=list(range(30)))
+                          for _ in range(40)])
+    wire = json.loads(_json(payload, limit=2000))
+    assert wire["truncated"] is True
+    assert wire["error"]["code"] == "PLANNING_INSTANCE_COVERAGE"
+    assert wire["error"]["detail"] == dict(missing=["ai_3"])
+    assert wire["budget"] == dict(remaining_requests=7)
+    assert wire["status"] == "NOT_EXECUTED"
+    assert "preview" in wire and "read_test_report" in wire["note"]
+
+
+def test_only_a_transient_gateway_failure_is_retried():
+    from agenttest.deep_harness.chat_model import ModelHarnessError
+    from agenttest.product_agent import _transient_model_error
+
+    assert _transient_model_error(ModelHarnessError("MODEL_SERVICE_ERROR", "concurrency")) is True
+    assert _transient_model_error(ModelHarnessError("MODEL_TIMEOUT")) is True
+    assert _transient_model_error(ModelHarnessError("MODEL_CONNECTION_ERROR")) is True
+    assert _transient_model_error(ModelHarnessError("MODEL_TOKEN_BUDGET", "limit")) is False
+    assert _transient_model_error(ModelHarnessError("MODEL_INPUT_REJECTED")) is False
+    assert _transient_model_error(ModelHarnessError("MODEL_REFUSAL")) is False

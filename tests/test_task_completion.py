@@ -227,3 +227,18 @@ def test_an_investigation_without_a_request_proves_nothing():
     assert report["complete"] is False
     assert "SUBJECT_REPRODUCED" in report["unmet"]
     assert report["flags"]["evidence_produced"] is False
+
+
+def test_an_executed_create_without_a_cleanup_receipt_is_pending_cleanup():
+    """Ten pre-release parcels leaked while completion reported "created 2, pending 0"."""
+    project, _ = lifecycle_project()
+    summary = summary_for(project, lifecycle=False)
+    summary["cases"][0]["evidence"][0].update(
+        method="POST", request=dict(method="POST", path="/parcels"))
+    report = evaluate(project, summary, "帮我测一下包裹管理功能。", stop=dict(reason="ANSWER"))
+    row = criterion(report, "RESOURCES_RESOLVED")
+    assert row["status"] == "UNMET"
+    assert row["evidence"] == dict(created=1, pending=1, lifecycle=0, unproven=1)
+    assert "没有清理凭据" in row["detail"]
+    assert report["complete"] is False
+    assert any(item["item"] == "resource" for item in report["pending"])

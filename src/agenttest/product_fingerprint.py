@@ -15,9 +15,11 @@ The fingerprint below is a canonical hash of what the plan actually does:
 * the lifecycle phase each step needs and whether its precondition is satisfied,
 * the ordered read/write shape.
 
-Two plans with the same fingerprint are the same test. A retest is refused only when the
-fingerprint matches **and** the earlier attempt did not pass: a passing obligation is already
-closed, and a failing one is only worth repeating if the plan actually changed.
+Two plans with the same fingerprint are the same test. An identical shape adds no information
+whether the earlier attempt passed (the obligation is closed) or failed (nothing changed, so the
+same conclusion is the only possible one); a real change -- another operation, role, approved
+expectation, lifecycle phase, fixed precondition or a different approved negative value --
+changes the fingerprint and is allowed through.
 """
 
 import json
@@ -61,15 +63,23 @@ def scenario_shape(project, scenario, precondition=None) -> dict:
             for name, bound in sorted(getattr(step, location).items()):
                 if bound.from_step is not None:
                     # Producer position, not producer id: ids are free text.
-                    bindings.append([location, name, positions.get(bound.from_step), bound.select])
+                    bindings.append([location, name, positions.get(bound.from_step),
+                                     bound.select, None])
                 else:
-                    bindings.append([location, name, None, None])
+                    # A different literal is a different input, so it is a different experiment
+                    # (an input variation). Only a digest is kept, never the value.
+                    bindings.append([location, name, None, None,
+                                     fingerprint(bound.value)])
         steps.append(dict(
             position=index, operation_id=step.operation_id,
             method=operation.method if operation is not None else None,
             role=step.role, policy=step.policy_id,
             expectation=policy_expectation(policy) if policy is not None else None,
             negative=step.negative_value is not None,
+            # Two approved negative probes of the same shape are different experiments when
+            # they inject different values; only a digest, never the value itself.
+            negative_digest=(fingerprint(step.negative_value.value)
+                             if step.negative_value is not None else None),
             bindings=sorted(bindings),
             phase=(phase_of(policy, operation) if policy is not None and operation is not None
                    else None),
@@ -97,18 +107,21 @@ def failure_signature(report) -> list[str]:
 
 
 def duplicate_attempt(cases, digest) -> dict | None:
-    """The earlier attempt this plan repeats, or ``None`` when the plan adds information.
+    """The earlier executed attempt this plan repeats, or ``None`` when it adds information.
 
-    A passing attempt is closed and is not a reason to refuse anything; only a non-passing
-    attempt on the *same* fingerprint makes a repeat worthless.
+    A passing attempt closed the obligation; a failing one still produced its conclusion. In
+    both cases an identical shape can only repeat the same requests and the same verdict, so it
+    is refused before any HTTP. Attempts that never executed carry no information and are not
+    duplicate sources themselves.
     """
     for case in cases or ():
         if case.get("scenario_fingerprint") != digest:
             continue
-        if case.get("outcome") in {"PASS", None} or case.get("status") == "SKIPPED_DUPLICATE":
+        if case.get("status") in {"SKIPPED_DUPLICATE", "NOT_EXECUTED", "REJECTED"}:
             continue
-        return dict(case_id=case.get("id"), run_id=case.get("run_id"),
-                    outcome=case.get("outcome"),
+        return dict(case_id=case.get("case_id") or case.get("id"),
+                    run_id=case.get("run_id"),
+                    outcome=case.get("outcome") or case.get("status"),
                     scenario_fingerprint=digest,
                     failure_signature=case.get("failure_signature") or [])
     return None
@@ -124,6 +137,6 @@ def annotate_case(case_row, project, scenario, precondition=None, report=None) -
 
 def duplicate_failure_reason(match) -> str:
     """One sentence the report can show without a model: what was skipped and why."""
-    return ("与已执行的补测 " + str(match.get("case_id")) + " 语义等价（同一指纹 "
+    return ("与已执行的场景 " + str(match.get("case_id")) + " 语义等价（同一指纹 "
             + str(match.get("scenario_fingerprint") or "")[:12] + "，上次结论 "
-            + str(match.get("outcome")) + "），未修正前置条件也没有新的信息价值，未重复执行。")
+            + str(match.get("outcome")) + "），重复执行不会产生新的信息，未重复执行。")

@@ -89,7 +89,9 @@ def test_policy_and_dependency_review_codes_preserved():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("content,code", [
-    ("{bad", "JSON_SYNTAX"),
+    # P2.1 split the old catch-all JSON_SYNTAX into a precise, repairable code: the same
+    # failure now also carries position/length and can be told apart from output truncation.
+    ("{bad", "MODEL_JSON_INVALID"),
     (json.dumps({**draft(), "jwt-private-field": "private-token"}), "MODEL_SCHEMA_EXTRA_FIELD"),
 ])
 async def test_model_output_has_safe_diagnostic(content, code):

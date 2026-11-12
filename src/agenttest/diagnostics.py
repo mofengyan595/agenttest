@@ -2,7 +2,7 @@
 
 import re
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError, model_serializer
 
@@ -35,6 +35,9 @@ class Diagnostic(BaseModel):
     reference: ReferenceDiagnostic | None = None
     # Closed rule families and operator requirement indexes, never values or rubric keys.
     intent: list["IntentDiagnostic"] | None = Field(default=None, max_length=8)
+    # Bounded repair facts the model needs: instance/operation ids, missing dependencies and a
+    # deterministic hint. Never request or response values; callers trim before assigning.
+    detail: dict[str, Any] = Field(default_factory=dict, max_length=12)
 
     @model_serializer(mode="wrap")
     def serialize_reference(self, handler):
@@ -43,6 +46,8 @@ class Diagnostic(BaseModel):
             data.pop("reference", None)
         if self.intent is None:
             data.pop("intent", None)
+        if not self.detail:
+            data.pop("detail", None)
         return data
 
 

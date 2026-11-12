@@ -474,8 +474,8 @@ def main():
         parser.error("reported model input token cap must be at most 20000 tokens")
     if not args.max_input_tokens <= args.model_input_bytes <= 60_000:
         parser.error("model byte envelope must be between the token cap and 60000")
-    if not 1 <= args.max_output_tokens <= 4_096:
-        parser.error("model output budget must be at most 4096 tokens")
+    if not 1 <= args.max_output_tokens <= 8_192:
+        parser.error("model output budget must be at most 8192 tokens")
     if not 1 <= args.agent_max_turns <= 40:
         parser.error("agent turn budget must be between 1 and 40")
     result = asyncio.run(run(args))

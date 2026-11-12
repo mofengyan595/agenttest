@@ -108,10 +108,10 @@ async def test_provider_schema_error_is_bounded_closed_and_does_not_invent_usage
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("response,reason", [
-    (completion("{bad"), "MODEL_INVALID_RESPONSE"),
-    (completion('{"name":"x","name":"y","steps":[]}'), "MODEL_INVALID_RESPONSE"),
+    (completion("{bad"), "MODEL_JSON_INVALID"),
+    (completion('{"name":"x","name":"y","steps":[]}'), "MODEL_JSON_INVALID"),
     (completion(json.dumps({**draft(), "reviewed": True})), "MODEL_INVALID_RESPONSE"),
-    (completion("{\"name\":1e309}"), "MODEL_INVALID_RESPONSE"),
+    (completion("{\"name\":1e309}"), "MODEL_JSON_INVALID"),
     (completion(finish="length"), "MODEL_OUTPUT_TRUNCATED"),
     (completion(choices=[{"finish_reason": "stop", "message": {"refusal": "refused"}}]),
      "MODEL_REFUSAL"),
@@ -126,6 +126,26 @@ async def test_malformed_refused_truncated_and_over_budget(response, reason):
     with pytest.raises(PlannerFailure) as caught:
         await llm.generate(context())
     assert caught.value.reason == reason and llm.stats.reason == reason
+
+
+@pytest.mark.asyncio
+async def test_an_unparsable_answer_reports_where_and_whether_it_hit_the_ceiling():
+    broken = '{"name":"x","steps":[{"id":"s","operation_id" "x"}]}'
+    llm = planner(lambda request: httpx.Response(200, json=completion(broken)))
+    with pytest.raises(PlannerFailure) as caught:
+        await llm.generate(context())
+    detail = caught.value.diagnostic.detail
+    assert caught.value.reason == "MODEL_JSON_INVALID"
+    assert detail["position"] > broken.index('"operation_id"')
+    assert '"operation_id"' in detail["window"]
+    # The provider claims a clean stop but the answer used the whole output ceiling: the same
+    # request would be cut again, so it is classified as truncation, not as a model typo.
+    full = planner(lambda request: httpx.Response(200, json=completion(
+        broken, usage={"prompt_tokens": 10, "completion_tokens": 4096, "total_tokens": 4106})))
+    with pytest.raises(PlannerFailure) as caught:
+        await full.generate(context())
+    assert caught.value.reason == "MODEL_OUTPUT_TRUNCATED"
+    assert caught.value.diagnostic.detail["max_output_tokens"] == full._settings.max_output_tokens
 
 
 @pytest.mark.asyncio

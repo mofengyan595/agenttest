@@ -50,12 +50,25 @@ def test_the_fingerprint_ignores_step_ids_and_case_titles():
         read_step(policies["readParcel"].id)])
     # Same semantics, every id and the title changed: a rename is not a new test.
     renamed = Scenario(name="场景二", steps=[
-        create_step(policies["createParcel"].id, identifier="make", name="parcel-z"),
+        create_step(policies["createParcel"].id, identifier="make"),
         Step(id="remove", operation_id="deleteParcel", role=None,
              policy_id=policies["deleteParcel"].id,
              path_parameters={"parcelId": binding("make")}),
         read_step(policies["readParcel"].id, from_step="make", identifier="fetch")])
     assert scenario_fingerprint(project, first) == scenario_fingerprint(project, renamed)
+
+
+def test_a_different_input_literal_is_a_different_experiment():
+    """An input variation adds information; only a rename must collapse to one fingerprint."""
+    project, _ = lifecycle_project()
+    policies = lifecycle(project)
+    first = Scenario(name="场景一", steps=[
+        create_step(policies["createParcel"].id, name="parcel-a")])
+    second = Scenario(name="场景一", steps=[
+        create_step(policies["createParcel"].id, name="parcel-b")])
+    assert scenario_fingerprint(project, first) != scenario_fingerprint(project, second)
+    # The literal itself is never part of the published shape.
+    assert "parcel-a" not in str(scenario_shape(project, first))
 
 
 def test_a_different_operation_order_is_a_different_test():
@@ -116,13 +129,34 @@ def case_row(identifier, digest, outcome, signature=None):
                 failure_signature=signature or [])
 
 
-def test_a_failed_equivalent_plan_is_refused_but_a_passing_one_is_not():
-    cases = [case_row("c1", "abc", "ASSERTION_FAILED", ["readParcel|http_status|None|200|404"])]
-    assert duplicate_attempt(cases, "abc") is not None
+def test_an_equivalent_plan_is_refused_whether_the_earlier_attempt_passed_or_failed():
+    failed = [case_row("c1", "abc", "ASSERTION_FAILED", ["readParcel|http_status|None|200|404"])]
+    assert duplicate_attempt(failed, "abc")["case_id"] == "c1"
     # Nothing to suppress when the plan changed...
-    assert duplicate_attempt(cases, "def") is None
-    # ...and a closed (passing) obligation is not a reason to refuse anything either.
-    assert duplicate_attempt([case_row("c2", "abc", "PASS")], "abc") is None
+    assert duplicate_attempt(failed, "def") is None
+    # ...and a closed (passing) obligation repeats the same requests for no new information.
+    assert duplicate_attempt([case_row("c2", "abc", "PASS")], "abc")["case_id"] == "c2"
+
+
+def test_two_different_approved_negative_values_are_different_experiments():
+    from agenttest.dsl import NegativeValue
+
+    project, _ = lifecycle_project()
+    policies = lifecycle(project)
+    base = Scenario(name="negative", steps=[
+        create_step(policies["createParcel"].id),
+        delete_step(policies["deleteParcel"].id),
+        read_step(policies["readParcel"].id)])
+    first = base.model_copy(deep=True)
+    second = base.model_copy(deep=True)
+    first.steps[2].negative_value = NegativeValue(value="")
+    second.steps[2].negative_value = NegativeValue(value="x" * 400)
+    assert scenario_fingerprint(project, first) != scenario_fingerprint(project, second)
+    # The same negative value is the same experiment, and the raw value is never stored.
+    third = base.model_copy(deep=True)
+    third.steps[2].negative_value = NegativeValue(value="")
+    assert scenario_fingerprint(project, first) == scenario_fingerprint(project, third)
+    assert "x" * 400 not in str(scenario_shape(project, second))
 
 
 def test_a_skipped_duplicate_is_not_itself_a_duplicate_source():
@@ -141,7 +175,7 @@ def test_the_shape_is_replay_stable_and_carries_the_approved_expectation():
     read = shape["steps"][2]
     assert read["phase"] == "EXISTS"
     assert read["expectation"]["statuses"] == [200]
-    assert read["bindings"] == [["path_parameters", "parcelId", 0, "$.id"]]
+    assert read["bindings"] == [["path_parameters", "parcelId", 0, "$.id", None]]
     # The delete's phase is documented, so a plan that drops it cannot look identical.
     assert shape["steps"][1]["phase"] == "DELETED"
 

@@ -1,4 +1,4 @@
-﻿# AGENTS.md — instructions for Codex
+# AGENTS.md — instructions for Codex
 
 Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK.md` before any changes.
 
@@ -17,6 +17,35 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
+The 2026-11-12 P2.1 milestone fixes the reliability defects that kept P2's autonomous loop from
+completing, without adding a second harness or agent loop. See
+docs/deepagents-reliability-p21.md. Deep Agents stays the only main Agent runtime; LangChain
+supplies the ChatModel/tool calling/tools/middleware, LangGraph the runtime and domain
+subgraphs, and AgentTest owns Planning IR, compiler, policy, validator, executor and trusted
+evidence. Fixed in this milestone: the engine gate (`normalization_applied` meant "clauses were
+dropped", so ordinary multi-action requests could never reach the normalized compiler), clause
+to instance identity collapse in the compiler, the missing `DATA_DEPENDENCY` edge for approved
+policy bindings (create and "read the id it returned" were split into two scenarios), duplicate
+derived absence instances, legacy absence ordering, unclassified clauses blocking valid
+requests, `MODEL_INVALID_RESPONSE` without position/ceiling diagnostics, gateway refusals
+poisoning unknown-usage accounting, and a rejected design being reported as `complete=True`.
+A model-proposed binding, selector or literal that disagrees with the approved policy is now
+refused (`PLANNING_REFERENCE_MISMATCH` / `DESIGN_LITERAL_NOT_APPROVED`) instead of silently
+replaced with the approved value. Every creation counts as `CLEANUP_UNPROVEN` until a lifecycle
+receipt proves cleanup. Real ecnu-max, real HTTP, four literal goals, strictly sequential, each
+in its own isolated lab: the final acceptance batch reached strict completion 2/4
+(`functional-06`, `regression-07`), with `functional-05` and `investigation-03` also complete in
+the debug set, versus P2's 0/4. `functional-06` both found a real `ASSERTION_FAILED` and ran a
+6-step create-to-delete lifecycle with `created == deleted`. All executed rounds leaked nothing
+and produced no duplicate case records (P2's pre-release round leaked 10 of 12). Cost fell to
+22k-74k tokens per task against P2's 100k-120k, by context editing, repeated-read pointers,
+four memoized tools and early stops, never by dropping errors. Unresolved: a focus order
+failure still interrupts a round instead of asking once more, per-task cost is still above P1,
+the pre-release goal is still not strictly complete, and two archived cases are preserved as
+`xfail(strict=True)` (a repeated identical read compiling to one step, and a diagnostic code
+that moved earlier).
+
+### Previous milestone (P2, preserved)
 The 2026-11-12 P2 milestone replaces P1's ADAPT conclusion with a controlled adoption: Deep
 Agents is now the product's only autonomous Agent runtime, and the legacy RoundSupervisor is
 kept solely as a regression/fallback path behind `loop_engine`. See

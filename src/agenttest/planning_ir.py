@@ -79,6 +79,21 @@ class EDGE:
     SEQUENCE_MARKER = "SEQUENCE_MARKER"
 
 
+# Only these reasons make a producer *required* for its consumer to run. Ordering-only reasons
+# ("the delete happens after whichever reads occurred") must not force a whole request into one
+# case: that made create+delete impossible and pushed the model towards create-only designs.
+HARD_EDGE_REASONS = frozenset({
+    EDGE.DATA_DEPENDENCY,
+    EDGE.POLICY_PREREQUISITE,
+    EDGE.RESOURCE_EXISTS,
+    EDGE.RESOURCE_ABSENT,
+})
+
+# The IR derives this instance from an approved 404/410 rule and a planned deletion. It is a
+# lifecycle verification of an existing instance, not an action the user's clause named.
+ABSENCE_INSTANCE_ORIGIN = "APPROVED_ABSENCE_POLICY"
+
+
 class ResponseAssertion(BaseModel):
     """An expected status that belongs to a request instance, never to a new request."""
 
@@ -265,7 +280,9 @@ class PlanningIR(BaseModel):
                         closure.add(needed_id)
                         changed = True
             for edge in self.edges:
-                if edge.target_instance in closure and edge.source_instance not in closure:
+                if edge.target_instance not in closure or edge.source_instance in closure:
+                    continue
+                if any(reason.reason in HARD_EDGE_REASONS for reason in edge.reasons):
                     closure.add(edge.source_instance)
                     changed = True
         instances = [item for item in self.instances if item.instance_id in closure]
@@ -280,6 +297,7 @@ class PlanningIR(BaseModel):
                        if not item.instances or set(item.instances) & instance_ids]
         source_scope = {item.source_id for item in instances}
         clauses = [item for item in self.clauses if item.source_id in source_scope]
+        kept_ids = {item.instance_id for item in instances}
         kept_operations = {item.operation_id for item in instances}
         return self.model_copy(update=dict(
             instances=instances, resources=resources, edges=edges, constraints=constraints,
@@ -288,7 +306,9 @@ class PlanningIR(BaseModel):
                                      if item.get("source_id") in source_scope],
             ambiguities=[item for item in self.ambiguities
                          if item.source_id is None or item.source_id in source_scope],
-            order=[item for item in self.order if item in kept_operations]))
+            # ``order`` holds instance ids (an older IR may hold operation ids); filter by both
+            # so a scoped round never compiles an empty plan.
+            order=[item for item in self.order if item in kept_ids or item in kept_operations]))
 
     def _resource_feeds(self, resource: "ResourceHandle", instance_id: str) -> bool:
         """True when this instance consumes the resource a producer instance creates."""
@@ -360,9 +380,15 @@ def _policy_candidates(policies, operation_id, role):
 
 def _is_expectation(policy) -> bool:
     source = ((policy.get("assertions") or {}).get("source") or "")
-    return (("_expectation_" in policy.get("id", ""))
+    if ("_expectation_" in policy.get("id", "")
             or source.endswith("OPERATOR_EXPECTATION_RULE")
-            or source.endswith("OPERATOR_ACCESS_RULE"))
+            or source.endswith("OPERATOR_ACCESS_RULE")):
+        return True
+    # An approved 404/410 is an *absence expectation*, never the default success criterion of
+    # its operation. Without this an injected `<read>_absence404` policy made every ordinary
+    # read ambiguous ("two approved policies, no status stated") and blocked the whole IR.
+    codes = _status_codes(policy)
+    return bool(codes) and set(codes) <= {404, 410}
 
 
 def _status_codes(policy):
@@ -441,6 +467,7 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
     instances: list[ActionInstance] = []
     constraints: list[Constraint] = []
     ambiguities: list[Ambiguity] = []
+    advisories: list[dict] = []
     edges: dict[tuple[str, str], list[EdgeReason]] = {}
     by_source = {item["source_id"]: item for item in requirements}
     read_ops = set(read_operations or ())
@@ -465,11 +492,23 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                         data_capture=data_capture(text),
                         sequence_marker=starts_with_sequence_marker(text))))
         if role is ClauseRole.UNCLASSIFIED:
-            ambiguities.append(Ambiguity(
-                kind=AmbiguityKind.UNCLASSIFIED_CLAUSE, source_id=atom["source_id"],
-                message="该子句既不像新的请求，也不像状态/数据约束；不能据此凭空创建请求。",
-                fields=[f"requirement_map.{atom['source_id']}"]))
-            continue
+            actions = [action.get("operation_id") for action in requirement.get("actions") or []]
+            if actions and all(action in operations for action in actions):
+                # The text does not read like a fresh request, but the model named only approved
+                # operations for it. Refusing to plan would send the whole round to a human while
+                # the legacy path would happily execute the same actions; instead the clause is
+                # planned and the classification doubt is recorded as an advisory.
+                role = ClauseRole.REQUEST
+                clauses[-1] = clauses[-1].model_copy(update=dict(role=role))
+                advisories.append(dict(code="UNCLASSIFIED_CLAUSE_PLANNED",
+                                       source_id=atom["source_id"], actions=actions,
+                                       reason="ACTIONS_ARE_APPROVED_OPERATIONS"))
+            else:
+                ambiguities.append(Ambiguity(
+                    kind=AmbiguityKind.UNCLASSIFIED_CLAUSE, source_id=atom["source_id"],
+                    message="该子句既不像新的请求，也不像状态/数据约束；不能据此凭空创建请求。",
+                    fields=[f"requirement_map.{atom['source_id']}"]))
+                continue
         if role is not ClauseRole.REQUEST:
             continue
         actions = requirement.get("actions") or []
@@ -651,6 +690,83 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                       f"{consumer.source_id} 消费 {producer.instance_id} 产生的 "
                       f"{rule['id_selector']}", consumer.source_id)
 
+    # 3b. An approved absence rule is an expectation the operator already confirmed. Derive the
+    # post-delete read instance from that policy instead of waiting for the request text to say
+    # "verify it is gone": a narrowed round then has a real instance to bind, and the compiler
+    # keeps the delete->readback dependency as a hard RESOURCE_ABSENT edge.
+    for handle in resources:
+        consumers = consumers_by_handle.get(handle.resource_id, [])
+        if any(item.phase == ResourcePhase.VERIFY_ABSENT.value for item in consumers):
+            continue
+        deletes = [item for item in consumers if item.phase == ResourcePhase.DELETED.value]
+        if not deletes:
+            continue
+        deletion = deletes[0]
+        absence = _approved_absence_policy(policies, read_ops, deletion)
+        if absence is None:
+            continue
+        # The request may already name the post-delete read ("create, delete, then read"): that
+        # existing read instance *is* the absence verification. Deriving a second one would put
+        # the same read both after and before the deletion and manufacture a dependency cycle.
+        orders = {(order.get("earlier"), order.get("later"))
+                  for order in (by_source.get(deletion.source_id) or {}).get("before") or ()}
+        candidates = [item for item in consumers
+                      if item.instance_id != deletion.instance_id
+                      and item.operation_id == absence["operation_id"]
+                      and item.source_id == deletion.source_id
+                      and item.phase in (None, ResourcePhase.EXISTS.value)
+                      and (deletion.operation_id, item.operation_id) in orders]
+        reused = candidates[0] if len(candidates) == 1 else None
+        if reused is not None:
+            absent = reused
+            absent.phase = ResourcePhase.VERIFY_ABSENT.value
+            absent.policy_id = absence["id"]
+            absent.policy_origin = "APPROVED_ABSENCE"
+            absent.origin = ABSENCE_INSTANCE_ORIGIN
+            absent.assertions = [ResponseAssertion(
+                statuses=sorted(_status_codes(absence)), source_id=deletion.source_id,
+                source_quote=deletion.source_quote, origin="APPROVED_ABSENCE")]
+        else:
+            absent = ActionInstance(
+                instance_id=f"ai_{len(instances) + 1}",
+                operation_id=absence["operation_id"], role=deletion.role,
+                source_id=deletion.source_id, source_quote=deletion.source_quote,
+                source_start=deletion.source_start, action_index=deletion.action_index,
+                policy_id=absence["id"], policy_origin="APPROVED_ABSENCE",
+                resource_id=handle.resource_id, phase=ResourcePhase.VERIFY_ABSENT.value,
+                assertions=[ResponseAssertion(statuses=sorted(_status_codes(absence)),
+                                              source_id=deletion.source_id,
+                                              source_quote=deletion.source_quote,
+                                              origin="APPROVED_ABSENCE")],
+                origin="APPROVED_ABSENCE_POLICY")
+            instances.append(absent)
+            consumers.append(absent)
+        if not any(argument.location == "path_parameters"
+                   and argument.name == handle.path_parameter
+                   for argument in absent.arguments):
+            absent.arguments.append(InstanceArgument(
+                location="path_parameters", name=handle.path_parameter, value=None,
+                from_instance=handle.producer_instance, select=handle.selector,
+                origin="RESOURCE_HANDLE"))
+        constraints.append(Constraint(
+            kind=ConstraintKind.SAME_RESOURCE, source_id=deletion.source_id,
+            source_quote=deletion.source_quote,
+            instances=[handle.producer_instance, absent.instance_id],
+            detail=dict(resource_id=handle.resource_id,
+                        phase=ResourcePhase.VERIFY_ABSENT.value),
+            origin="APPROVED_ABSENCE"))
+        constraints.append(Constraint(
+            kind=ConstraintKind.DATA_DEPENDENCY, source_id=deletion.source_id,
+            source_quote=deletion.source_quote,
+            instances=[absent.instance_id, handle.producer_instance],
+            detail=dict(location="path_parameters", name=handle.path_parameter,
+                        select=handle.selector, producer=handle.producer_instance),
+            origin="APPROVED_ABSENCE"))
+        _add_edge(edges, handle.producer_instance, absent.instance_id,
+                  EDGE.DATA_DEPENDENCY,
+                  f"删除后回读沿用 {handle.producer_instance} 产生的 {handle.selector}",
+                  deletion.source_id)
+
     # 4. Lifecycle edges by resource phase; the post-delete readback never delays the delete.
     for handle in resources:
         consumers = consumers_by_handle.get(handle.resource_id, [])
@@ -683,6 +799,10 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
     for clause in clauses:
         requirement = by_source.get(clause.source_id) or {}
         if requirement.get("disposition") != "required":
+            continue
+        if not any(item.source_id == clause.source_id for item in instances):
+            # A clause that produced no instance (constraint, deferred, or refused request) has
+            # nothing this round can order; its adjacency must not block the real requests.
             continue
         for order in requirement.get("before") or []:
             earlier = _order_side(order, "earlier", instances, clauses)
@@ -762,6 +882,26 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                       EDGE.POLICY_PREREQUISITE, f"已批准策略前置 {prerequisite}",
                       instance.source_id)
 
+    # 3c. A policy-bound argument is a data dependency. Bindings are resolved in step 7, so this
+    # pass runs after it; without the edge the compiler saw "create" and "read ?id from create"
+    # as separate scenarios and rejected the read as DEPENDENCY_FORWARD_OR_UNKNOWN.
+    known = {item.instance_id for item in instances}
+    for consumer in instances:
+        for argument in consumer.arguments:
+            producer = argument.from_instance
+            if producer is None or producer not in known or producer == consumer.instance_id:
+                continue
+            _add_edge(edges, producer, consumer.instance_id, EDGE.DATA_DEPENDENCY,
+                      f"{consumer.instance_id} 使用 {producer} 的 {argument.select}",
+                      consumer.source_id)
+            constraints.append(Constraint(
+                kind=ConstraintKind.DATA_DEPENDENCY, source_id=consumer.source_id,
+                source_quote=consumer.source_quote,
+                instances=[consumer.instance_id, producer],
+                detail=dict(location=argument.location, name=argument.name,
+                            select=argument.select, producer=producer),
+                origin="POLICY_BINDING"))
+
     # 8. Cycle detection and stable order; a real contradiction is never repaired.
     order, cycle = topological_order(instances, edges)
     if cycle:
@@ -776,7 +916,8 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
         order = []
 
     # 9. Normalized requirements: only real requests remain Design obligations.
-    normalized, applied = _normalize_requirements(requirements, clauses, request_clauses)
+    normalized, applied, dropped = _normalize_requirements(requirements, clauses,
+                                                           request_clauses)
     coverage = dict(
         source_clauses=len(clauses), request_clauses=len(request_clauses),
         assertion_clauses=sum(clause.role is ClauseRole.ASSERTION for clause in clauses),
@@ -787,7 +928,8 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                                  for clause in clauses),
         required_clauses_before=len(raw_required), required_clauses_after=len(normalized),
         instances=len(instances), resources=len(resources),
-        normalization_applied=applied)
+        normalization_applied=applied, dropped_required=list(dropped),
+        advisories=list(advisories))
 
     return PlanningIR(
         instances=instances, resources=resources, clauses=clauses,
@@ -902,6 +1044,39 @@ def _previous_request(clause, instances):
     return max(preceding, key=lambda item: item.sort_key)
 
 
+def _approved_absence_policy(policies, read_ops, deletion):
+    """The approved 404/410 read policy that reads the same identity this deletion removes.
+
+    The operator approval is the ordinary Policy schema: a reviewed status assertion on a read
+    operation, bound through the same producer links as the deletion. The link is the *identity*
+    (both bind the path parameter from the create), not the deletion policy id, so an injected
+    ``<read>_absence404`` copy and a natively reviewed rule are both recognized.
+    """
+    producers = set()
+    for candidate in policies:
+        if candidate["operation_id"] != deletion.operation_id:
+            continue
+        for rule in candidate.get("binding_rules") or []:
+            if rule.get("source_policy_id"):
+                producers.add(rule["source_policy_id"])
+    if not producers:
+        return None
+    for policy in policies:
+        if policy.get("negative_test"):
+            continue
+        if policy["operation_id"] not in read_ops:
+            continue
+        codes = set(_status_codes(policy))
+        if not codes or not codes <= {404, 410}:
+            continue
+        if deletion.role not in (policy.get("roles") or []):
+            continue
+        sources = {rule.get("source_policy_id") for rule in policy.get("binding_rules") or []}
+        if sources & producers:
+            return policy
+    return None
+
+
 def _consumes_resource(instance, producer, operations, rule):
     """A call on the created resource's path, not a same-named operation."""
     if instance.operation_id == rule["delete_operation"]:
@@ -932,20 +1107,43 @@ def _non_request_order_side(order, side, clauses):
 
 
 def _order_side(order, side, instances, clauses):
-    """Resolve one side of a written order to the instances it names, or ``None``."""
+    """Resolve one side of a written order to the instances it names, or ``None``.
+
+    Instances the IR *derived* (a post-delete absence readback) are not clause actions, so a
+    text order such as "create before read" must not become ambiguous merely because the read
+    operation now occurs twice.
+    """
     source = order.get(f"{side}_source_id")
     index = order.get(f"{side}_index")
+    operation = order.get(side)
+
+    def named(item):
+        return item.origin != ABSENCE_INSTANCE_ORIGIN
+
+    def one_of(items):
+        """Prefer the clause's own action; fall back to a lifecycle verification if it is the
+        only instance of that operation (the request itself asked for the post-delete read)."""
+        preferred = [item for item in items if named(item)]
+        pool = preferred or list(items)
+        return pool if len(pool) == 1 else None
+
     if source is None:
-        candidates = [item for item in instances if item.operation_id == order.get(side)]
-        return candidates if len(candidates) == 1 else None
+        return one_of([item for item in instances if item.operation_id == operation])
     matched = [item for item in instances
                if item.source_id == source and item.action_index == (index or 0)]
     if matched:
-        return matched
+        return one_of(matched) or matched
+    if index is None:
+        # A side that names only an operation inside a known request clause: the operation is
+        # the unambiguous witness as long as it occurs once among the clause's own actions.
+        by_operation = one_of([item for item in instances if item.source_id == source
+                               and item.operation_id == operation])
+        if by_operation is not None:
+            return by_operation
     # A removed assertion clause names no request; its anchor is the request it qualifies.
     clause = next((item for item in clauses if item.source_id == source), None)
     if clause is not None and clause.role is ClauseRole.REQUEST:
-        return [item for item in instances if item.source_id == source]
+        return [item for item in instances if item.source_id == source and named(item)]
     return None
 
 
@@ -1035,10 +1233,19 @@ def _normalize_requirements(requirements, clauses, request_clauses):
     """Drop constraint clauses from Design obligations; keep only executable requests."""
     clause_by_source = {clause.source_id: clause for clause in clauses}
     normalized = []
+    dropped = []
     for requirement in requirements:
         if requirement.get("disposition") != "required":
             continue
         if requirement["source_id"] not in request_clauses:
+            # A required clause the IR could not treat as an executable request. An assertion,
+            # data-capture or constraint clause is *expected* here (it is not a Design
+            # obligation); an unclassified or deferred one means an action would be lost, so the
+            # legacy path must keep it and this is recorded rather than silently deleted.
+            clause = clause_by_source.get(requirement["source_id"])
+            role = getattr(getattr(clause, "role", None), "value", None)
+            if role in {None, "DEFERRED", "UNCLASSIFIED"}:
+                dropped.append(requirement["source_id"])
             continue
         item = {key: requirement.get(key) for key in (
             "source_id", "source_quote", "disposition", "actions", "before",
@@ -1060,7 +1267,7 @@ def _normalize_requirements(requirements, clauses, request_clauses):
         normalized.append(RequestRequirement.model_validate(item).model_dump())
     applied = len(normalized) != len([item for item in requirements
                                       if item.get("disposition") == "required"])
-    return normalized, applied
+    return normalized, applied, dropped
 
 
 def _remap_order(order, clause_by_source, request_clauses):

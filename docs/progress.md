@@ -1,4 +1,38 @@
-﻿# 开发进度
+# 开发进度
+
+## 2026-11-12 — P2.1：修复自主测试可靠性，打通真实完整测试闭环
+
+- 起点 `8199187`(P2)。逐条重放 P2 原始轨迹后按五类归因(模型规划/工具契约/确定性校验/
+  执行/完成判定)，修掉 9 个确定性缺陷，并把"模型输出失败"变成可修复的结构化错误。详见
+  `docs/deepagents-reliability-p21.md`。
+- 归一化编译器：引擎门槛由 `normalization_applied`(语义是"丢了子句")改为
+  `no_dropped_requirements`，普通多动作请求不再被 `NO_NORMALIZATION` 挡回 legacy；
+  编译器从 IR 实例读取子句来源/动作下标(修掉 `DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT`)；
+  为策略绑定补 `DATA_DEPENDENCY` 边(修掉 create/read 被拆成两场景的
+  `DEPENDENCY_FORWARD_OR_UNKNOWN`)；请求本身写明"删完读 404"时复用同一读取实例，
+  legacy 补 `RESOURCE_ABSENCE` 排序边(修掉 `DESIGN_ABSENCE_PRECONDITION_MISSING` /
+  `DEPENDENCY_CYCLE`)；全部已批准动作的未分类子句升级为可规划请求并留建议。
+- 模型输出：`MODEL_JSON_INVALID`(位置/窗口/长度)与 `MODEL_OUTPUT_TRUNCATED`
+  (触顶判定，即使 `finish_reason=stop`)，`_repair_hint` 给出具体改法；网关拒绝不再污染
+  `usage_unknown`；开发跑测输出上限 4096→8192。
+- 安全与完成判定：模型写出的 `from_step`/`select`/字面量必须与批准策略一致，否则
+  `PLANNING_REFERENCE_MISMATCH`/`DESIGN_LITERAL_NOT_APPROVED`(不再用程序值覆盖模型计划)；
+  被拒方案 + `no_current_action` 不再记 `complete=True`；执行了 POST 但没有清理凭据计为
+  `CLEANUP_UNPROVEN`。
+- 真实 ecnu-max + 真实 HTTP，四个目标逐字、串行、各自独立靶场：最终验收批
+  `functional-06`(8 次调用/55,157 tokens，3 用例，1 条真实断言失败 + 1 条 6 步完整生命周期，
+  created==deleted，严格 complete **True**)、`regression-07`(5/22,084，complete **True**)、
+  `prerelease-04`(13/73,996，3 用例全 PASS、清理干净，但 `ALL_OBLIGATIONS_MEASURED`/
+  `ALL_GROUPS_DECIDED` 未满足 → complete False)、`investigation-04`(Focus 被拒，无证据即停)。
+  调试期 `functional-05`、`investigation-03` 也拿到完整闭环；P2 为 0/4。
+- 资源生命周期：P2 `prerelease-01` 12 POST / 2 DELETE → 10 泄漏；P2.1 所有执行到用例的轮次
+  created==deleted、`leaked=0`、`duplicate-records=0`。
+- 成本：完整轮次 22k–74k tokens/任务(P2 同口径 47k–74k，P2 报告口径 100k–120k)，手段是
+  上下文清理、重复读取指针、四类工具记忆、失败快停；错误信息一律保留。
+- 离线：全量回归数字见下一条验证记录；`ruff` 全绿；两个归档用例以
+  `xfail(strict=True)` 留痕(同子句重复读取只发一次、字面量守卫前移导致诊断码不同)。
+- 未解决：Focus 语义顺序失败没有有界重问(会直接中断)；单目标成本仍高于 P1；
+  上线前目标仍不能判定完整。
 
 ## 2026-11-11 — P0：LangGraph 自主测试闭环与统一编排第一段
 

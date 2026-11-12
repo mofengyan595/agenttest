@@ -630,8 +630,20 @@ class OpenAICompatiblePlanner:
         return choice["message"]["content"]
 
     def _decode_output(self, content: str, context: dict) -> str:
-        draft = self._draft_type.model_validate(bounded_json(
-            content, self._settings.max_response_bytes))
+        try:
+            json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise self._unparsable(content, exc) from None
+        try:
+            payload = bounded_json(content, self._settings.max_response_bytes)
+        except ValidationFailure as exc:
+            detail = dict(code=exc.diagnostic.code, length=len(content),
+                          output_tokens=self.stats.output_tokens,
+                          max_output_tokens=self._settings.max_output_tokens)
+            raise PlannerFailure(
+                Outcome.TOOL_ERROR, "MODEL_JSON_INVALID",
+                Diagnostic(layer=Layer.MODEL, code="MODEL_JSON_INVALID", detail=detail)) from None
+        draft = self._draft_type.model_validate(payload)
         if not draft.steps:
             raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_NO_APPROVED_PLAN")
         if self._profile == "mini_composed":
@@ -650,3 +662,28 @@ class OpenAICompatiblePlanner:
                 raise PlannerFailure(Outcome.NEEDS_REVIEW, "MODEL_REFERENCE_NEEDS_REVIEW",
                                      exc.diagnostic) from None
         return draft.scenario().model_dump_json()
+
+    def _unparsable(self, content: str, exc: ValueError):
+        """Classify unparsable model JSON: a ceiling hit is a budget fact, a typo is a repair.
+
+        The exact offset and a short window around it are handed back so the model can fix the
+        same output instead of guessing; nothing is repaired or truncated here.
+        """
+        position = getattr(exc, "pos", None)
+        if position is None:
+            window, position = content[-160:], len(content)
+        else:
+            window = content[max(0, position - 60):position + 60]
+        detail = dict(message=str(exc)[:180], length=len(content), position=position,
+                      window=window, output_tokens=self.stats.output_tokens,
+                      max_output_tokens=self._settings.max_output_tokens)
+        diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_JSON_INVALID", detail=detail)
+        if (self.stats.output_tokens is not None
+                and self.stats.output_tokens >= self._settings.max_output_tokens):
+            # The provider reported a clean stop while the JSON was still open: the answer ran
+            # into the output ceiling, so retrying the same request reproduces the failure.
+            diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_OUTPUT_TRUNCATED",
+                                    detail=detail)
+            return PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_OUTPUT_TRUNCATED",
+                                  diagnostic)
+        return PlannerFailure(Outcome.TOOL_ERROR, "MODEL_JSON_INVALID", diagnostic)

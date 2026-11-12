@@ -17,18 +17,36 @@ from __future__ import annotations
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
-from agenttest.planning_ir import ActionInstance, PlanningIR
+from agenttest.planning_ir import HARD_EDGE_REASONS, ActionInstance, PlanningIR
 
 ENCODING = "NORMALIZED_IR_COMPILER_V1"
+# The IR marks a read instance it derived from an approved 404/410 rule with this origin.
+ABSENCE_ORIGIN = "APPROVED_ABSENCE_POLICY"
 
 
 def _failure(code, fields=None, construction=None):
     error = ValidationFailure(Layer.MODEL, code)
     if fields:
-        error.diagnostic.fields = list(fields)
-    if construction is not None:
+        error.diagnostic.fields = list(fields)[:8]
+    if construction:
         error.construction = construction
+        error.diagnostic.detail = _repair_facts(construction)
     return error
+
+
+def _repair_facts(detail):
+    """Keep the repair-relevant facts small and free of request/response values."""
+    kept = {}
+    for key, value in list(detail.items())[:10]:
+        if isinstance(value, str):
+            kept[key] = value[:160]
+        elif isinstance(value, (int, float, bool)) or value is None:
+            kept[key] = value
+        elif isinstance(value, (list, tuple)):
+            kept[key] = [str(item)[:80] for item in list(value)[:6]]
+        elif isinstance(value, dict):
+            kept[key] = {str(k)[:40]: str(v)[:80] for k, v in list(value.items())[:6]}
+    return kept
 
 
 def _instance_groups(ir: PlanningIR):
@@ -131,9 +149,13 @@ def _step_instance_map(ir: PlanningIR, draft, policies=None):
             unresolved.append((position, step))
             continue
         all_members = list(groups.get(source, []))
-        members = [item for item in all_members if item.action_index == index]
+        # The operation id is part of the identity: a clause may own a delete and an approved
+        # post-delete readback at the same action index, and a proposal step must never be
+        # mapped to an instance of a different operation just because the index matches.
+        members = [item for item in all_members if item.action_index == index
+                   and item.operation_id == step.operation_id]
         if not members and index == 0:
-            members = all_members
+            members = [item for item in all_members if item.operation_id == step.operation_id]
         if not members:
             raise _failure("PLANNING_UNSOURCED_STEP",
                            [f"plan.steps.{position}.requirement_source_id"],
@@ -234,6 +256,7 @@ def _apply_arguments(step, instance, mapping, instance_step, step_position):
     each step, so exported evidence and existing execution expectations remain readable.
     """
     arguments = {}
+    provided = {}
     for argument in step.arguments:
         data = argument.model_dump(mode="json")
         if data.get("from_step") is not None:
@@ -249,6 +272,7 @@ def _apply_arguments(step, instance, mapping, instance_step, step_position):
         else:
             data["select"] = None
         arguments[(data["location"], data["name"])] = data
+        provided[(data["location"], data["name"])] = data
     for argument in instance.arguments:
         slot = (argument.location, argument.name)
         if argument.from_instance is not None:
@@ -264,6 +288,38 @@ def _apply_arguments(step, instance, mapping, instance_step, step_position):
         elif argument.value is not None and _scalar(argument.value):
             arguments[slot] = dict(location=argument.location, name=argument.name,
                                    value=argument.value, from_step=None, select=None)
+    # A proposal that names a binding or a literal must agree with the approved one. Silently
+    # substituting the approved value would turn "the model planned something else" into a pass
+    # and hide exactly the defect the operator needs to see (P0: never replace unapproved data).
+    for slot, data in provided.items():
+        approved = next((item for item in instance.arguments
+                         if (item.location, item.name) == slot), None)
+        if approved is None:
+            continue
+        if approved.from_instance is not None:
+            expected = instance_step.get(approved.from_instance)
+            if data.get("from_step") != expected:
+                raise _failure(
+                    "PLANNING_REFERENCE_MISMATCH",
+                    [f"plan.steps.{step.id}.from_step"],
+                    dict(step=step.id, slot=list(slot), approved_from_step=expected,
+                         proposed_from_step=data.get("from_step"),
+                         message="步骤的数据来源与已批准策略不一致。"))
+            if (data.get("select") is not None and approved.select is not None
+                    and data["select"] != approved.select):
+                raise _failure(
+                    "PLANNING_REFERENCE_MISMATCH",
+                    [f"plan.steps.{step.id}.select"],
+                    dict(step=step.id, slot=list(slot), approved_select=approved.select,
+                         proposed_select=data["select"],
+                         message="步骤的取值路径与已批准策略不一致。"))
+        elif approved.value is not None and data.get("value") is not None:
+            if data["value"] != approved.value:
+                raise _failure(
+                    "DESIGN_LITERAL_NOT_APPROVED",
+                    [f"plan.steps.{step.id}.value"],
+                    dict(step=step.id, slot=list(slot),
+                         message="步骤使用的字面量与已批准取值不一致。"))
     for data in arguments.values():
         if data.get("from_step") is None:
             continue
@@ -313,13 +369,20 @@ def compile_design(ir, plan, context):
     if not present:
         raise _failure("PLANNING_INSTANCE_COVERAGE", construction=dict(covered=[]))
     edges = ir.edge_pairs()
-    missing = sorted({source for (source, target) in edges
-                      if target in present and source not in present})
+    missing = sorted({(source, target) for (source, target), reasons in edges.items()
+                      if target in present and source not in present
+                      and any(reason.reason in HARD_EDGE_REASONS for reason in reasons)})
     if missing:
-        raise _failure("PLANNING_INSTANCE_COVERAGE",
-                       fields=[f"instance.{key}" for key in missing],
-                       construction=dict(covered=present, missing=missing,
-                                         message="消费实例引用的产生者步骤不在本场景中。"))
+        fields = [f"instance.{source}" for source, _ in missing]
+        raise _failure(
+            "PLANNING_INSTANCE_COVERAGE", fields=fields,
+            construction=dict(
+                covered=present, missing=[source for source, _ in missing],
+                consumers=sorted({target for _, target in missing}),
+                operations={source: ir.instance(source).operation_id
+                            for source, _ in missing},
+                message="消费实例引用的产生者步骤不在本场景中。",
+                hint="这些是数据/生命周期前置；要么补上产生者步骤，要么去掉消费它的步骤。"))
     order = [key for key in ir.order if key in present]
     step_position = {instance_step[key]: position
                      for position, key in enumerate(order)}
@@ -338,12 +401,21 @@ def compile_design(ir, plan, context):
                            dict(instance_id=instance_id, operation_id=step.operation_id,
                                 role=step.role))
         _policy_for(instance, policies)
+        # The compiler owns identity: an instance's clause occurrence comes from the IR, never
+        # from a model-echoed default (a null index on every step used to collapse all of them
+        # onto `request_1:0` and be rejected as a conflict). A derived post-delete read is a
+        # lifecycle verification, not a clause action, so it carries no requirement slot and the
+        # clause validator does not try to count it twice.
+        synthesized = instance.origin == ABSENCE_ORIGIN
         steps.append(dict(id=design_id, operation_id=instance.operation_id,
                           role=instance.role, policy_id=instance.policy_id,
                           arguments=_apply_arguments(step, instance, mapping, instance_step,
                                                      step_position),
-                          requirement_source_id=step.requirement_source_id or instance.source_id,
-                          requirement_action_index=step.requirement_action_index or 0))
+                          requirement_source_id=None if synthesized
+                          else (step.requirement_source_id or instance.source_id),
+                          requirement_action_index=None if synthesized
+                          else (instance.action_index if step.requirement_action_index is None
+                                else step.requirement_action_index)))
     dependencies = {instance_step[instance_id]: [] for instance_id in present}
     reasons = {}
     evidence = {}

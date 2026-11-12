@@ -251,11 +251,27 @@ def _executed_cases(summary):
 
 
 def _created_resources(summary):
+    """Counts every resource the run really created, not only the ones with a lifecycle rule.
+
+    A case that sends an approved POST without a lifecycle receipt still created a resource on
+    the isolated target; reporting "0 created" hid ten leaked parcels in the pre-release round.
+    Identity-level cleanup is only provable through a lifecycle receipt, so an executed POST
+    without one is *pending* (never silently clean). The detail names the operations so the
+    report can show which creations have no auditable cleanup.
+    """
     rows = [item for case in summary.get("cases") or ()
             for item in case.get("resource_lifecycle") or ()]
     pending = [row for row in rows
                if row.get("status") in {"OWNED", "CLEANUP_PENDING", "CLEANUP_OUTCOME_UNKNOWN"}]
-    return dict(total=len(rows), pending=pending)
+    posts = [step for case in summary.get("cases") or ()
+             for step in case.get("evidence") or ()
+             if (step.get("method") or "").upper() == "POST" and step.get("request")]
+    unproven = max(0, len(posts) - len(rows))
+    pending.extend(dict(operation_id=step.get("operation_id"), status="CLEANUP_UNPROVEN",
+                        basis="EXECUTED_CREATE_WITHOUT_CLEANUP")
+                   for step in posts[len(rows):])
+    return dict(total=len(rows) + unproven, pending=pending,
+                lifecycle=len(rows), posts=len(posts), unproven=unproven)
 
 
 def _write_lifecycle(summary):
@@ -324,8 +340,12 @@ def _common_criteria(summary):
                    dict(executed_cases=len(executed), checks=len(checks))),
         _criterion("RESOURCES_RESOLVED", "已创建资源具备可审计清理结果",
                    MET if not resources["pending"] else UNMET,
-                   f"创建 {resources['total']} 个资源，待清理 {len(resources['pending'])} 个。",
-                   dict(created=resources["total"], pending=len(resources["pending"]))),
+                   f"创建 {resources['total']} 个资源，待清理 {len(resources['pending'])} 个。"
+                   + (f"其中 {resources['unproven']} 个只有执行记录、没有清理凭据。"
+                      if resources.get("unproven") else ""),
+                   dict(created=resources["total"], pending=len(resources["pending"]),
+                        lifecycle=resources.get("lifecycle"),
+                        unproven=resources.get("unproven"))),
         _criterion("ANOMALIES_EVIDENCED", "异常结论都有期望值与实测值",
                    MET if all(item.get("failed") for item in confirmed) else UNMET,
                    f"已确认异常 {len(confirmed)} 条；每条都带有期望/实测检查证据。"

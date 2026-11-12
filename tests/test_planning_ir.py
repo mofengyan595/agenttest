@@ -83,6 +83,7 @@ def test_archived_m2_normalizes_eight_clauses_into_four_instances():
     assert ir.normalization_applied is True
     assert ir.coverage["required_clauses_before"] == 8
     assert ir.coverage["required_clauses_after"] == 4
+    assert ir.coverage["dropped_required"] == []
     assert ir.coverage["assertion_clauses"] == 3
     assert ir.coverage["data_capture_clauses"] == 1
     assert [(item.instance_id, item.operation_id) for item in ir.instances] == [
@@ -516,6 +517,53 @@ def test_unapproved_operation_is_an_ambiguity():
                            policies=m2_policies(), read_operations={"getItem"})
     assert [item.kind.value for item in ir.ambiguities] == ["OPERATION_NOT_APPROVED"]
     assert ir.instances == []
+
+
+def test_a_plain_multi_action_request_is_eligible_for_the_normalized_compiler():
+    """P2 gated the compiler on "normalization changed something", so a request whose clauses all
+    became instances -- the ordinary case -- was sent to the legacy path by default."""
+    from agenttest.product_tasks import planning_engine_choice, planning_engine_conditions
+
+    requirements = [dict(source_id="request_1", source_quote="创建包裹后读取并删除",
+                         disposition="required",
+                         actions=[dict(operation_id=name, role="author")
+                                  for name in ("createItem", "getItem", "deleteItem")],
+                         before=[],
+                         same_resource=[dict(producer="createItem", consumer="getItem"),
+                                        dict(producer="createItem", consumer="deleteItem")],
+                         response_checks=[], forbidden_operation_ids=[],
+                         blocked_operation_ids=[])]
+    atoms = [dict(source_id="request_1", text="创建包裹后读取并删除", start=0)]
+    ir = build_planning_ir(requirements, atoms, operations=M2_OPERATIONS,
+                           policies=m2_policies(), target_lifecycles=M2_LIFECYCLE,
+                           read_operations={"getItem"})
+    assert ir.normalization_applied is False  # nothing had to be dropped
+    conditions = planning_engine_conditions(
+        ir, group={"primary": [item.operation_id for item in ir.instances]},
+        questions=None, requested_checks=None, permission_requirements=None, unresolved=[])
+    assert conditions["no_dropped_requirements"] is True
+    assert planning_engine_choice(conditions)["reason"] == "IR_SELECTED"
+
+
+def test_a_required_clause_the_ir_dropped_keeps_the_legacy_path():
+    from agenttest.product_tasks import planning_engine_choice, planning_engine_conditions
+
+    requirements = [dict(source_id="request_1", source_quote="顺便清空一下", disposition="required",
+                         actions=[dict(operation_id="wipeAll", role="author")], before=[],
+                         same_resource=[], response_checks=[], forbidden_operation_ids=[],
+                         blocked_operation_ids=[])]
+    # The clause names an operation the contract never approved: the IR cannot plan it, and
+    # dropping the requirement silently would lose the user's instruction.
+    ir = build_planning_ir(requirements,
+                           [dict(source_id="request_1", text="顺便清空一下", start=0)],
+                           operations=M2_OPERATIONS, policies=m2_policies(),
+                           read_operations={"getItem"})
+    assert ir.coverage["dropped_required"] == ["request_1"]
+    conditions = planning_engine_conditions(ir, group={"primary": ["getItem"]},
+                                           questions=None, requested_checks=None,
+                                           permission_requirements=None, unresolved=[])
+    assert conditions["no_dropped_requirements"] is False
+    assert planning_engine_choice(conditions)["reason"] == "DROPPED_REQUIREMENTS"
 
 
 def test_usage_survives_a_later_design_failure():

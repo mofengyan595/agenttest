@@ -119,10 +119,18 @@ def planning_engine_conditions(planning_ir, *, group, questions, requested_check
     """The exact, auditable values behind the production compiler choice."""
     instances = getattr(planning_ir, "instances", []) if planning_ir is not None else []
     operations = {item.operation_id for item in instances}
+    coverage = getattr(planning_ir, "coverage", {}) if planning_ir is not None else {}
+    dropped = list((coverage or {}).get("dropped_required") or ())
     return dict(
         planning_ir=planning_ir is not None,
+        # ``normalization_applied`` records that the IR *did* normalize something. It is not a
+        # gate by itself: a request whose clauses all become instances needs no rewrite, and
+        # gating on it (P2's ``NO_NORMALIZATION``) disabled the compiler for exactly the plain
+        # multi-action flows it was built for.
         normalization_applied=bool(planning_ir is not None
                                    and planning_ir.normalization_applied),
+        no_dropped_requirements=not dropped,
+        dropped_required=dropped,
         no_ambiguities=not bool(planning_ir is not None and planning_ir.ambiguities),
         no_pending_permissions=not bool(permission_requirements),
         no_pending_questions=not bool(questions),
@@ -138,7 +146,7 @@ def planning_engine_choice(conditions):
     """First concrete reason the normalized compiler cannot own this group."""
     for reason, key in (
             ("NO_PLANNING_IR", "planning_ir"),
-            ("NO_NORMALIZATION", "normalization_applied"),
+            ("DROPPED_REQUIREMENTS", "no_dropped_requirements"),
             ("IR_AMBIGUITIES", "no_ambiguities"),
             ("PENDING_PERMISSION", "no_pending_permissions"),
             ("PENDING_QUESTIONS", "no_pending_questions"),
@@ -741,7 +749,12 @@ class ProductTasks:
                         if selection.mode == 'no_current_action':
                             unresolved = (status_requirements or response_requirements
                                           or data_references)
-                            summary.update(complete=not unresolved,
+                            # A refused design leaves no evidence: "nothing unresolved" must never
+                            # be read as "the task succeeded". A genuinely future-only request has
+                            # no refused record and still completes.
+                            refused = any(record.get('status') == 'REJECTED'
+                                          for record in summary.get('design_records') or ())
+                            summary.update(complete=(not unresolved and not refused),
                                 checks_passed=False,
                                 reason='本轮仅包含未来动作或范围约束，没有安排当前业务请求。',
                                 groups=[])
@@ -1054,6 +1067,8 @@ class ProductTasks:
                     "DESIGN_REQUESTED_CHECKS_MISSING",
                     "DESIGN_REQUESTED_CHECK_NOT_APPROVED",
                     "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW",
+                    "DESIGN_CREATE_NOT_CLEANABLE",
+                    "DESIGN_SELECTED_CLEANUP_MISSING",
                     "DESIGN_ABSENCE_PRECONDITION_MISSING"}:
                 reason = exc.args[0]
             diagnostic = getattr(exc, "diagnostic", None)
@@ -1165,20 +1180,23 @@ class ProductTasks:
             from agenttest.product_preconditions import precondition_report
 
             precondition_audit = precondition_report(project, scenario)
-            if supervision is not None:
-                digest = scenario_fingerprint(project, scenario, precondition_audit)
-                case_row["scenario_fingerprint"] = digest
-                repeated = duplicate_attempt(summary["cases"][:-1], digest)
-                if repeated is not None:
-                    case_row.update(status="SKIPPED_DUPLICATE",
-                                    duplicate_of=repeated["case_id"],
-                                    reason=duplicate_failure_reason(repeated))
-                    summary.setdefault("duplicate_retests", []).append(
-                        dict(case_id=case_row["case_id"], duplicate_of=repeated["case_id"],
-                             outcome=repeated["outcome"],
-                             fingerprint=digest))
-                    checkpoint()
-                    continue
+            # Every design path, not only follow-up rounds: the pre-release round produced ten
+            # first-round cases with the same shape and no cleanup, and this guard never saw
+            # them because it was gated on `supervision`. A repeated shape adds no information
+            # no matter which round produced it.
+            digest = scenario_fingerprint(project, scenario, precondition_audit)
+            case_row["scenario_fingerprint"] = digest
+            repeated = duplicate_attempt(summary["cases"][:-1], digest)
+            if repeated is not None:
+                case_row.update(status="SKIPPED_DUPLICATE",
+                                duplicate_of=repeated["case_id"],
+                                reason=duplicate_failure_reason(repeated))
+                summary.setdefault("duplicate_retests", []).append(
+                    dict(case_id=case_row["case_id"], duplicate_of=repeated["case_id"],
+                         outcome=repeated["outcome"],
+                         fingerprint=digest))
+                checkpoint()
+                continue
             from agenttest.investigation import FeedbackBudget, InvestigationConfig
             from agenttest.task_service import ProgressStore
             from agenttest.workflow import FakeLLM, Workflow, WorkflowBudget
@@ -1738,6 +1756,9 @@ class ProductTasks:
                             item['operation_id'])})
         messages = dict(MODEL_TIMEOUT="模型生成方案时超时，此组没有执行。",
             MODEL_INVALID_RESPONSE="模型方案未通过格式校验，此组没有执行。",
+            MODEL_JSON_INVALID="模型输出不是合法 JSON，此组没有执行；detail 给出出错位置。",
+            MODEL_OUTPUT_TRUNCATED=("模型的方案超过单次输出上限而被截断，此组没有执行；"
+                                    "请把方案拆小（减少用例或步骤）后重试。"),
             MODEL_TOKEN_BUDGET="本组资料超过模型输入预算，未发送模型或业务请求。",
             MODEL_SERVICE_ERROR="模型服务暂不可用，此组没有执行。",
             MODEL_API_ERROR="模型服务拒绝请求，此组没有执行。",

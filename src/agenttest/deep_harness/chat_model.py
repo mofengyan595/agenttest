@@ -340,6 +340,7 @@ class EcnuxChatModel(BaseChatModel):
                             raise ModelHarnessError(MODEL_RESPONSE_LIMIT)
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
+                        stats.refused = True
                         raise ModelHarnessError(
                             MODEL_SERVICE_ERROR if infra else MODEL_API_ERROR,
                             bytes(raw[:200]).decode("utf-8", "replace"),
@@ -429,7 +430,7 @@ class EcnuxChatModel(BaseChatModel):
         self.totals.request_bytes += stats.request_bytes or 0
         self.totals.response_bytes += stats.response_bytes or 0
         self.totals.elapsed_ms += stats.elapsed_ms or 0.0
-        if stats.calls and stats.total_tokens is None:
+        if stats.calls and stats.total_tokens is None and not stats.refused:
             self.totals.unknown_usage_calls += 1
         if error:
             self.totals.failed_calls += 1

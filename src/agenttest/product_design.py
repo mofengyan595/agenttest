@@ -959,26 +959,43 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
 
 
 def validate_cleanup_dependencies(project, scenario, cleanup_operations):
-    """Selected, approved deletion dependencies cannot clean a different case's resource."""
+    """Every created resource needs an approved cleanup step, or must not run at all.
+
+    ``cleanup_operations`` names the deletions this round selected, but a creation is only safe
+    when *some* approved deletion can consume its identity and the case actually plans it. The
+    pre-release round created ten parcels with no cleanup at all while reporting PASS. When the
+    operator approved a cleanup path, a case that omits it is refused; when the target has no
+    cleanup path at all, the creation stays allowed but the report and completion count it as
+    an unsafe, uncleaned resource instead of silently claiming a clean run.
+    """
     operations = {o.operation_id: o for o in project.contract.operations}
     policies = {p.id: p for p in project.registry.definitions()}
+    lifecycles = {rule.create_operation: rule for rule in project.target.resource_lifecycles}
+    creations = set(project.target.resource_creations) | set(lifecycles)
+    logins = {role.login_operation for role in project.target.roles.values()
+              if role.login_operation}
     deletions = [p for p in policies.values() if not p.negative
-        and p.operation_id in cleanup_operations and operations[p.operation_id].method == "DELETE"]
+        and operations[p.operation_id].method == "DELETE"]
     for index, step in enumerate(scenario.steps):
         policy = policies[step.policy_id]
         if policy.negative or operations[step.operation_id].method != "POST":
             continue
-        for deletion in deletions:
-            rules = [r for r in deletion.binding_rules if r.source_policy_id == policy.id]
-            if not rules or step.role not in deletion.roles:
-                continue
-            cleaned = any(later.policy_id == deletion.id and all(
-                (binding := getattr(later, r.location).get(r.name)) is not None
-                and binding.from_step == step.id and binding.select == r.source_selector
-                for r in rules) for later in scenario.steps[index + 1:])
-            if cleaned:
-                break
-        else:
-            if any(step.role in p.roles and any(r.source_policy_id == policy.id
-                    for r in p.binding_rules) for p in deletions):
-                raise NeedsReview("DESIGN_SELECTED_CLEANUP_MISSING")
+        if step.operation_id in logins:
+            continue
+        if creations and step.operation_id not in creations:
+            continue
+        cleanable = [deletion for deletion in deletions
+                     if step.role in deletion.roles
+                     and any(rule.source_policy_id == policy.id
+                             for rule in deletion.binding_rules)]
+        if not cleanable:
+            # No approved removal exists for this identity. Nothing to plan; the run is marked
+            # unsafe and the created resource is reported as pending cleanup.
+            continue
+        cleaned = any(later.policy_id == deletion.id and all(
+            (binding := getattr(later, r.location).get(r.name)) is not None
+            and binding.from_step == step.id and binding.select == r.source_selector
+            for r in deletion.binding_rules if r.source_policy_id == policy.id)
+            for deletion in cleanable for later in scenario.steps[index + 1:])
+        if not cleaned:
+            raise NeedsReview("DESIGN_SELECTED_CLEANUP_MISSING")

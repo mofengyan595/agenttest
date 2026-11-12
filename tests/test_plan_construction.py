@@ -146,6 +146,33 @@ def test_approved_cleanup_follows_consumers_but_preserves_explicit_post_delete_r
     assert [s['operation_id'] for s in plan['steps']] == ['create', 'delete', 'read']
 
 
+def test_an_approved_absence_assertion_never_precedes_its_own_deletion():
+    """String order must not put "it is gone" before the deletion that makes it gone."""
+    ctx = context()
+    ctx['policies'] = ctx['policies'] + [
+        dict(id='delete', operation_id='delete', roles=[None], negative_test=None),
+        dict(id='read_absent', operation_id='read', roles=[None], negative_test=None,
+             assertions=dict(status=dict(codes=[404]))),
+        dict(id='read_present', operation_id='read', roles=[None], negative_test=None,
+             assertions=dict(status=dict(codes=[200])))]
+    # `read_absent` sorts before `delete`, so nothing but the lifecycle rule orders them.
+    raw = dict(name='absence', steps=[
+        dict(id='read_absent', operation_id='read', role=None, policy_id='read_absent',
+             arguments=[dict(location='path_parameters', name='id', value=None,
+                             from_step='c', select='$.id')]),
+        dict(id='d', operation_id='delete', role=None, policy_id='delete',
+             arguments=[dict(location='path_parameters', name='id', value=None,
+                             from_step='c', select='$.id')]),
+        dict(id='c', operation_id='create', role=None, policy_id='create', arguments=[])])
+    plan, stats = construct_plan(raw, ctx)
+    assert [s['id'] for s in plan['steps']] == ['c', 'd', 'read_absent']
+    assert stats['edge_reasons']['read_absent<=d'] == 'RESOURCE_ABSENCE'
+    # An ordinary read expectation keeps its own order: only absence is a post-deletion claim.
+    raw['steps'][0]['policy_id'] = 'read_present'
+    plan, stats = construct_plan(raw, ctx)
+    assert 'read_absent<=d' not in stats['edge_reasons']
+
+
 @pytest.mark.asyncio
 async def test_independent_failed_assertion_does_not_suppress_another_actual_request(
         tmp_path, monkeypatch):
