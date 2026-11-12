@@ -42,7 +42,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from agenttest.llm_planner import ModelSettings
 from agenttest.report import ModelCallStats, fingerprint
@@ -60,6 +60,31 @@ MODEL_INVALID_RESPONSE = "MODEL_INVALID_RESPONSE"
 MODEL_SECRET_OUTPUT = "MODEL_SECRET_OUTPUT"
 MODEL_INPUT_REJECTED = "MODEL_INPUT_REJECTED"
 MODEL_TOOL_CATALOG_INVALID = "MODEL_TOOL_CATALOG_INVALID"
+MODEL_CALL_BUDGET = "MODEL_CALL_BUDGET"
+
+
+class ModelBudgetLimits(BaseModel):
+    """One run's hard envelope for the harness model; exceeded before sending, never after."""
+
+    max_calls: int | None = Field(default=None, ge=0)
+    max_total_tokens: int | None = Field(default=None, ge=0)
+
+
+class ModelTotals(BaseModel):
+    """Per-run accumulation that P1 measured in an ad-hoc subclass; now part of the adapter."""
+
+    calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    unknown_usage_calls: int = 0
+    failed_calls: int = 0
+    request_bytes: int = 0
+    response_bytes: int = 0
+    elapsed_ms: float = 0.0
+
+    def public(self) -> dict:
+        return self.model_dump(mode="json")
 
 
 class ModelHarnessError(RuntimeError):
@@ -201,6 +226,10 @@ class EcnuxChatModel(BaseChatModel):
 
     settings: ModelSettings
     model_stats: ModelCallStats = Field(default_factory=ModelCallStats)
+    totals: ModelTotals = Field(default_factory=ModelTotals)
+    limits: ModelBudgetLimits | None = None
+    call_trace: list = Field(default_factory=list)
+    on_call: Any = Field(default=None, exclude=True)
     transport: Any = None
     max_response_bytes: int = 200_000
 
@@ -264,6 +293,13 @@ class EcnuxChatModel(BaseChatModel):
     def _encode(self, payload: dict) -> bytes:
         """Budget-check the exact request and refuse to send a body containing the key."""
         settings = self.settings
+        if self.limits is not None:
+            if (self.limits.max_calls is not None
+                    and self.totals.calls >= self.limits.max_calls):
+                raise ModelHarnessError(MODEL_CALL_BUDGET, "run call limit reached")
+            if (self.limits.max_total_tokens is not None
+                    and self.totals.total_tokens >= self.limits.max_total_tokens):
+                raise ModelHarnessError(MODEL_TOKEN_BUDGET, "run token limit reached")
         encoded = json.dumps(payload, ensure_ascii=False).encode()
         if settings.api_key.get_secret_value() in encoded.decode("utf-8", "ignore"):
             raise ModelHarnessError(MODEL_INPUT_REJECTED, "credential in request body")
@@ -283,11 +319,13 @@ class EcnuxChatModel(BaseChatModel):
         started = time.monotonic()
         stats = self.model_stats
         stats.model_name, stats.model_sha256 = settings.model, fingerprint(settings.model)
+        # Count the attempt before dispatch: a timeout may already have reached the gateway,
+        # so a request that produced no measured answer still consumed one call.
+        stats.calls = 1
         try:
             async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                          follow_redirects=False,
                                          timeout=settings.timeout) as client:
-                stats.calls = 1
                 async with client.stream(
                         "POST", settings.base_url + "/chat/completions", content=encoded,
                         headers={"Content-Type": "application/json",
@@ -367,9 +405,45 @@ class EcnuxChatModel(BaseChatModel):
         payload = self._payload(messages, tools if isinstance(tools, list) else None,
                                kwargs.get("tool_choice"))
         self.model_stats = ModelCallStats()
-        data, message, _elapsed = await self._acall(payload)
-        return ChatResult(generations=[ChatGeneration(
-            message=self._message(data, message, 0))])
+        tool_names: list[str] = []
+        error = None
+        try:
+            data, message, _elapsed = await self._acall(payload)
+            result = self._message(data, message, 0)
+            tool_names = [call.get("name") for call in result.tool_calls or ()]
+            return ChatResult(generations=[ChatGeneration(message=result)])
+        except ModelHarnessError as exc:
+            error = exc.code
+            raise
+        finally:
+            self._accumulate(payload, tool_names, error)
+
+    def _accumulate(self, payload: dict, tool_names: list[str],
+                    error: str | None) -> None:
+        """One authoritative ledger row per attempted call, beside the per-call stat."""
+        stats = self.model_stats
+        self.totals.calls += stats.calls
+        self.totals.input_tokens += stats.input_tokens or 0
+        self.totals.output_tokens += stats.output_tokens or 0
+        self.totals.total_tokens += stats.total_tokens or 0
+        self.totals.request_bytes += stats.request_bytes or 0
+        self.totals.response_bytes += stats.response_bytes or 0
+        self.totals.elapsed_ms += stats.elapsed_ms or 0.0
+        if stats.calls and stats.total_tokens is None:
+            self.totals.unknown_usage_calls += 1
+        if error:
+            self.totals.failed_calls += 1
+        self.call_trace.append(dict(
+            index=len(self.call_trace) + 1, calls=stats.calls,
+            http_status=stats.http_status, elapsed_ms=stats.elapsed_ms,
+            request_bytes=stats.request_bytes, response_bytes=stats.response_bytes,
+            input_tokens=stats.input_tokens, output_tokens=stats.output_tokens,
+            total_tokens=stats.total_tokens, request_sha256=stats.request_sha256,
+            tool_names=[name for name in tool_names if name],
+            tool_count=len(payload.get("tools") or ()), error=error,
+            reason=stats.reason))
+        if self.on_call is not None:
+            self.on_call(stats)
 
     def _generate(self, messages: Sequence[BaseMessage], stop: list[str] | None = None,
                   run_manager: CallbackManagerForLLMRun | None = None,

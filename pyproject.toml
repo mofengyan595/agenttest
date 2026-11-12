@@ -22,6 +22,14 @@ dependencies = [
 agent = [
   "langgraph==1.2.14",
 ]
+# P2: the product's autonomous runtime. Pinned as one coherent set so a base install stays
+# free of it and a deployment opts in explicitly (`pip install -e ".[deepagents]"`).
+deepagents = [
+  "deepagents==0.7.35",
+  "langchain==1.4.10",
+  "langchain-core==1.7.7",
+  "langgraph==1.2.20",
+]
 mcp = [
   "mcp==2.3.0",
 ]

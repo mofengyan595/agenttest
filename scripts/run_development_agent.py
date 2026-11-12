@@ -114,8 +114,54 @@ def model_settings(path, timeout, max_input, max_output):
         max_total_tokens=max_input + max_output))
 
 
+def absence_approval(project):
+    """Add one operator-style absence policy (404 after the approved deletion).
+
+    This is the *existing* approval structure, not a new one: an ordinary reviewed policy with
+    a status assertion, bound through the same producer links. The development runner injects
+    it in memory and records it in ``run.json`` so no product default quietly widens what may
+    be asserted. Returns ``(project, record)``.
+    """
+    from agenttest.policies import PolicyRegistry
+
+    definitions = list(project.registry.definitions())
+    methods = {operation.operation_id: operation.method
+               for operation in project.contract.operations}
+    deletes = [policy for policy in definitions if not policy.negative
+               and methods.get(policy.operation_id) == "DELETE"]
+    for deletion in deletes:
+        producers = {rule.source_policy_id for rule in deletion.binding_rules
+                     if rule.source_policy_id}
+        if not producers:
+            continue
+        read = next((policy for policy in definitions
+                     if not policy.negative and policy.operation_id != deletion.operation_id
+                     and methods.get(policy.operation_id) in {"GET", "HEAD"}
+                     and {rule.source_policy_id for rule in policy.binding_rules} & producers),
+                    None)
+        if read is None:
+            continue
+        policy_id = f"{read.id}_absence404"
+        if any(policy.id == policy_id for policy in definitions):
+            return project, dict(policy_id=policy_id, already_present=True)
+        absence = read.model_copy(update=dict(
+            id=policy_id,
+            assertions=read.assertions.model_copy(update=dict(
+                status=read.assertions.status.model_copy(update=dict(codes=[404])),
+                source=(f"operator: after {deletion.id} deletes the resource, "
+                        f"{read.operation_id} must answer 404")))))
+        record = dict(policy_id=policy_id, operation_id=read.operation_id,
+                      method=methods[read.operation_id], approved_statuses=[404],
+                      bound_source_policies=sorted(producers),
+                      establishing_delete_policy_id=deletion.id,
+                      source=absence.assertions.source, injected=True)
+        return replace(project, registry=PolicyRegistry(definitions + [absence])), record
+    return project, dict(policy_id=None, reason="NO_DELETE_LIFECYCLE")
+
+
 def limited_project(project, *, max_requests, max_model_calls, max_input,
-                    max_output, max_seconds, supervisor_rounds=0):
+                    max_output, max_seconds, supervisor_rounds=0, loop_engine="AUTO",
+                    agent_max_turns=16, agent_max_tool_calls=24, agent_max_model_calls=0):
     """Apply a development-only loop guard, not a project-wide spend ceiling.
 
     ``max_model_calls`` caps one task's planning/design calls so a malformed model
@@ -128,7 +174,10 @@ def limited_project(project, *, max_requests, max_model_calls, max_input,
         max_total_tokens=min(120_000, max_input + max_output),
         suite_max_model_calls=min(max_model_calls, 20),
         suite_max_total_tokens=500_000,
-        supervisor_max_rounds=max(0, min(int(supervisor_rounds), 4)))
+        supervisor_max_rounds=max(0, min(int(supervisor_rounds), 4)),
+        loop_engine=loop_engine, agent_max_turns=max(1, min(int(agent_max_turns), 40)),
+        agent_max_tool_calls=max(1, min(int(agent_max_tool_calls), 60)),
+        agent_max_model_calls=max(0, min(int(agent_max_model_calls), 20)))
     target = project.target.model_copy(update=dict(max_requests=max_requests,
                                                    run_timeout=min(float(max_seconds), 300.0)))
     registration = project.registration.model_copy(update=dict(budget=budget))
@@ -203,6 +252,17 @@ def evidence_metrics(summary, task_row, model_calls, reports, target_events,
         input_token_limit=input_limit,
         uncovered_risks=summary.get("not_covered") or [],
         supervision=summary.get("supervision"),
+        focus_fallback=summary.get("focus_fallback"),
+        agent_runtime=dict(
+            engine=(summary.get("agent_runtime") or {}).get("engine"),
+            reason=(summary.get("agent_runtime") or {}).get("reason"),
+            stop_reason=(summary.get("agent_runtime") or {}).get("stop_reason"),
+            model=(summary.get("agent_runtime") or {}).get("model"),
+            tool_calls=[dict(tool=item.get("tool"), at=item.get("at"))
+                        for item in (summary.get("agent_runtime") or {}).get(
+                            "tool_calls") or ()],
+            enforcement=(summary.get("agent_runtime") or {}).get("enforcement")),
+        task_completion=summary.get("task_completion"),
         questions=summary.get("questions") or [])
 
 
@@ -223,7 +283,10 @@ async def run(args):
     target = subprocess.Popen(
         [sys.executable, "-X", "utf8", str(ROOT / "scripts/serve_colleague_targets.py"),
          "--project", args.project_kind, "--port", str(target_port),
-         "--events", str(events_path)],
+         "--events", str(events_path),
+         *(["--delete-noop"] if args.delete_noop else []),
+         *(["--delete-fault-status", str(args.delete_fault_status)]
+           if args.delete_fault_status else [])],
         cwd=ROOT, env=environment, stdout=target_log, stderr=subprocess.STDOUT,
         creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     service = None
@@ -237,7 +300,11 @@ async def run(args):
                       max_input_tokens=args.max_input_tokens,
                       model_input_bytes=args.model_input_bytes,
                       max_output_tokens=args.max_output_tokens,
-                      supervisor_rounds=args.supervisor_rounds))
+                      supervisor_rounds=args.supervisor_rounds,
+                      loop_engine=args.loop_engine,
+                      agent_max_turns=args.agent_max_turns,
+                      agent_max_tool_calls=args.agent_max_tool_calls,
+                      agent_max_model_calls=args.agent_max_model_calls))
     try:
         wait_health(target_port)
         await prepare(data, base, environment)
@@ -261,6 +328,8 @@ async def run(args):
                 SupervisorModel(settings.model_copy(
                     update={"timeout": args.model_timeout}), profile="generic"),
                 "supervisor", evidence / "model-outputs.jsonl"),
+            agent_model_factory=lambda project: settings.model_copy(
+                update={"timeout": args.model_timeout}),
             product_probe_factory=lambda project: product_probe(
                 settings.model_copy(update={"timeout": args.model_timeout})))
         service = project_service
@@ -274,13 +343,22 @@ async def run(args):
 
         def bounded_project(identifier):
             project = original_project(identifier)
-            return (limited_project(project, max_requests=args.max_requests,
-                                    max_model_calls=args.max_model_calls,
-                                    max_input=args.model_input_bytes,
-                                    max_output=args.max_output_tokens,
-                                    max_seconds=args.max_seconds,
-                                    supervisor_rounds=args.supervisor_rounds)
-                    if identifier == project_id else project)
+            if identifier != project_id:
+                return project
+            project = limited_project(project, max_requests=args.max_requests,
+                                      max_model_calls=args.max_model_calls,
+                                      max_input=args.model_input_bytes,
+                                      max_output=args.max_output_tokens,
+                                      max_seconds=args.max_seconds,
+                                      supervisor_rounds=args.supervisor_rounds,
+                                      loop_engine=args.loop_engine,
+                                      agent_max_turns=args.agent_max_turns,
+                                      agent_max_tool_calls=args.agent_max_tool_calls,
+                                      agent_max_model_calls=args.agent_max_model_calls)
+            if args.absence_approval:
+                project, record = absence_approval(project)
+                result["absence_approval"] = record
+            return project
 
         service.project = bounded_project
         service.dev_max_seconds = args.max_seconds
@@ -361,6 +439,13 @@ def main():
     parser.add_argument("--max-model-calls", type=int, default=8)
     parser.add_argument("--supervisor-rounds", type=int, default=0,
                         help="0 keeps the legacy round; 1-4 opt into the LangGraph supervisor")
+    parser.add_argument("--loop-engine", default="AUTO",
+                        choices=["AUTO", "DEEP_AGENTS", "LEGACY_SUPERVISOR", "DETERMINISTIC"],
+                        help="AUTO uses Deep Agents when the optional dependencies are installed")
+    parser.add_argument("--agent-max-turns", type=int, default=16)
+    parser.add_argument("--agent-max-tool-calls", type=int, default=24)
+    parser.add_argument("--agent-max-model-calls", type=int, default=0,
+                        help="0 = spend whatever per-task model budget remains")
     parser.add_argument("--max-seconds", type=float, default=300.0)
     parser.add_argument("--model-timeout", type=float, default=45.0)
     parser.add_argument("--max-input-tokens", type=int, default=20_000,
@@ -370,6 +455,12 @@ def main():
                         help="Conservative UTF-8 request envelope used by the transport")
     parser.add_argument("--max-output-tokens", type=int, default=4_096)
     parser.add_argument("--model-env", type=Path, default=ROOT / ".env")
+    parser.add_argument("--absence-approval", action="store_true",
+                        help="inject one operator-style 404 policy bound to the delete lifecycle")
+    parser.add_argument("--delete-noop", action="store_true",
+                        help="lab answers the delete with 204 but does not delete")
+    parser.add_argument("--delete-fault-status", type=int, choices=[500, 503], default=None,
+                        help="lab fails the delete with this status")
     args = parser.parse_args()
     if not 0 < args.max_seconds <= 600:
         parser.error("development deadline must be between 1 and 600 seconds")
@@ -385,6 +476,8 @@ def main():
         parser.error("model byte envelope must be between the token cap and 60000")
     if not 1 <= args.max_output_tokens <= 4_096:
         parser.error("model output budget must be at most 4096 tokens")
+    if not 1 <= args.agent_max_turns <= 40:
+        parser.error("agent turn budget must be between 1 and 40")
     result = asyncio.run(run(args))
     print(json.dumps(dict(task_id=result.get("task_id"), status=result.get("task_status"),
                           metrics=result.get("metrics"), run_dir=str(args.run_dir),

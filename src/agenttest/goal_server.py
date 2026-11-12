@@ -89,6 +89,9 @@ def configured_task_service(runs_dir, *, projects=None, model_env=None, generic_
         focus_factory=lambda project: test_focus(settings_for(project)),
         product_probe_factory=lambda project: product_probe(settings_for(project)),
         supervisor_factory=lambda project: round_supervisor(settings_for(project)),
+        # Deep Agents resolves through AUTO only when this factory exists *and* the optional
+        # dependencies import; the runtime itself builds the adapter per task.
+        agent_model_factory=settings_for,
         model_status=model_status, generic_intake=generic_intake,
         private_input_guard=private_input_guard,
         environ=target_environment(model_env or os.environ.get("AGENTTEST_MODEL_ENV")),

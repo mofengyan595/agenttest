@@ -29,6 +29,9 @@ from agenttest.task_store import TERMINAL, TaskConflict
 
 DEFAULT_ROUND = "安排一轮测试，优先正常请求、参数边界、已批准的身份检查与跨接口流程，并说明遗漏。"
 DEFAULT_FOLLOWUP = "沿用上次测试重点，按最新已确认的信息安排尚未完成的检查。"
+# The autonomous engine name is defined here as a plain string so the base install can import
+# this module without deepagents/langchain; product_agent owns the resolution rules.
+AGENT_ENGINE = "DEEP_AGENTS"
 
 
 def request_planning_ir(project, selection, atoms, text):
@@ -276,6 +279,54 @@ class RunScope:
     state: dict = field(default_factory=dict)
 
 
+def resolve_planning_ambiguities(project, planning_ir):
+    """Split Planning-IR ambiguities into blocking ones and ones the design can resolve.
+
+    The IR is produced by a model, so it can report an "unknown parameter source" even when an
+    approved producer exists, or flag a clause it could not classify that produced no instance
+    at all. Stopping on those makes an ordinary regression request ("删除功能刚改过，帮我回归
+    一下") unreachable, while stopping on a *real* ambiguity -- an approved input with no
+    producer, or a sequence whose producer is not an allowed operation -- is exactly right.
+    Advisories are kept on the summary so nothing is silently downgraded.
+    """
+    def field(item, name):
+        value = item.get(name) if isinstance(item, dict) else getattr(item, name, None)
+        return getattr(value, "value", value)
+
+    policies = {policy.id: policy for policy in project.registry.definitions()}
+    methods = {operation.operation_id: operation.method
+               for operation in project.contract.operations}
+    allowed = set(project.target.allowed_operations)
+    writes = {"POST", "PUT", "PATCH"}
+    blocking, advisories = [], []
+    for ambiguity in getattr(planning_ir, "ambiguities", ()) or ():
+        kind, detail = field(ambiguity, "kind"), field(ambiguity, "detail") or {}
+        entry = dict(kind=kind, source_id=field(ambiguity, "source_id"),
+                     message=field(ambiguity, "message"),
+                     fields=list(field(ambiguity, "fields") or ()))
+        if kind == "UNCLASSIFIED_CLAUSE":
+            entry["resolved_by"] = "该子句没有产生任何请求实例，无法改变实际执行内容。"
+            advisories.append(entry)
+            continue
+        if kind == "PARAMETER_SOURCE_UNKNOWN":
+            policy = policies.get(detail.get("policy_id"))
+            producer = (policy is not None and policy.operation_id in allowed
+                        and methods.get(policy.operation_id) in writes)
+            entry["resolved_by"] = (f"已批准的生产者 {policy.operation_id} 可以补入同一轮设计。"
+                                    if producer else "没有已批准的生产者。")
+            (advisories if producer else blocking).append(entry)
+            continue
+        if kind == "MISSING_INSTANCE_IDENTITY":
+            earlier = (detail.get("order") or {}).get("earlier")
+            resolvable = earlier in allowed and methods.get(earlier) in writes
+            entry["resolved_by"] = (f"顺序生产者 {earlier} 是已批准写操作，由分组依赖补入。"
+                                    if resolvable else "顺序生产者不是已批准写操作。")
+            (advisories if resolvable else blocking).append(entry)
+            continue
+        blocking.append(entry)
+    return blocking, advisories
+
+
 class ProductTasks:
     def __init__(self, service):
         self.service = service
@@ -399,6 +450,22 @@ class ProductTasks:
                 guard()
                 if svc.designer_factory is None:
                     raise ValueError("PRODUCT_DESIGNER_NOT_CONFIGURED")
+                try:
+                    engine, engine_reason = self.resolve_engine(project, svc)
+                except ValueError as exc:
+                    code = str(exc)
+                    summary.update(
+                        agent_runtime=dict(engine=AGENT_ENGINE, reason=code),
+                        complete=False, checks_passed=False,
+                        reason=(f"自主运行时配置不可用（{code}）；本轮没有发送任何业务请求。"),
+                        diagnostic=dict(code=code, layer="RUNTIME", fields=[]))
+                    for group in summary["groups"]:
+                        group.update(status="NOT_EXECUTED", reason="自主运行时不可用。")
+                    self.coverage(summary)
+                    checkpoint()
+                    svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW", summary=summary)
+                    return
+                summary["agent_runtime"] = dict(engine=engine, reason=engine_reason)
                 transport = httpx.AsyncHTTPTransport(retries=0, trust_env=False)
                 bounded_transport = BudgetTransport(transport, ledger, guard)
                 async with asyncio.timeout(summary["budget"]["max_seconds"]):
@@ -611,6 +678,29 @@ class ProductTasks:
                             focus_record['proposed_question_count'] = getattr(
                                 raw_focus, 'proposed_question_count', None)
                             checkpoint()
+                        if selection is None and engine == AGENT_ENGINE:
+                            # The model could not confirm a narrow scope. The autonomous runtime
+                            # still runs, on the deterministic *approved* scope, and records why:
+                            # P0/P1 showed a Focus failure otherwise yields 0 requests and no
+                            # testing at all. Nothing is widened beyond approved policies.
+                            from agenttest.product_focus import FocusSelection
+
+                            code = getattr(getattr(focus_model, "stats", None),
+                                           "diagnostic", None)
+                            code = getattr(code, "code", None) or "FOCUS_NOT_VALIDATED"
+                            selection = FocusSelection(
+                                interpretation=("测试重点未能可靠确认；自主运行时按全部已批准"
+                                                "就绪接口执行确定性范围。"),
+                                mode="all_ready", operation_ids=[], question=None,
+                                pending_questions=[], not_covered=[],
+                                normal_operation_ids=list(project.target.allowed_operations))
+                            summary["focus_fallback"] = dict(code=code, mode="all_ready",
+                                operations=list(project.target.allowed_operations))
+                            summary["focus"] = selection.model_dump()
+                            summary["not_covered"].append(
+                                "测试重点未确认；已按全部已批准就绪接口执行，结论不覆盖未批准范围。")
+                            focus_record.update(status="FALLBACK", reason=code)
+                            checkpoint()
                         if selection is None or selection.mode == "needs_information":
                             if selection:
                                 summary["questions"].append(dict(id="focus_question",
@@ -669,12 +759,16 @@ class ProductTasks:
                             or summary.get("questions")
                             or summary.get("http_status_requirements")
                             or summary.get("requested_checks"))
+                        planning_blocking, planning_advisories = \
+                            resolve_planning_ambiguities(project, planning_ir)
+                        if planning_advisories:
+                            summary["planning_advisories"] = planning_advisories
                         if (planning_ir is not None and planning_ir.normalization_applied
-                                and planning_ir.ambiguities
+                                and planning_blocking
                                 and len(summary["groups"]) == 1
                                 and not held_elsewhere):
-                            fields = [field for item in planning_ir.ambiguities
-                                      for field in item.fields][:20]
+                            fields = [field for item in planning_blocking
+                                      for field in item.get("fields") or ()][:20]
                             summary.update(
                                 complete=False, checks_passed=False,
                                 reason="原文中的请求与约束还不能唯一确定执行实例；"
@@ -709,10 +803,13 @@ class ProductTasks:
                         transport=bounded_transport, guard=guard, checkpoint=checkpoint,
                         executable_checks=executable_checks, planning_ir=planning_ir,
                         requirements=design_requirements)
-                    for position, group in enumerate(summary["groups"]):
-                        await self.run_group(scope, group, position=position,
-                                             future_groups=summary["groups"][position + 1:])
-                    await self.supervise(scope)
+                    if engine == AGENT_ENGINE:
+                        await self.run_deep_agent(scope)
+                    else:
+                        for position, group in enumerate(summary["groups"]):
+                            await self.run_group(scope, group, position=position,
+                                                 future_groups=summary["groups"][position + 1:])
+                        await self.supervise(scope)
                 rejected = [entry for entry in summary["design_records"]
                             if entry.get("status") == "REJECTED"]
                 if rejected and not summary["cases"] and not ledger.requests:
@@ -739,17 +836,21 @@ class ProductTasks:
                 status_states = {item['status'] for key in (
                     'http_status_requirements', 'response_requirements')
                     for item in summary.get(key, [])}
-                summary["complete"] = bool(summary["cases"]) and all(
-                    c.get("outcome") in {"PASS", "ASSERTION_FAILED"}
-                    and c.get("executed_steps") == c.get("planned_steps")
-                    for c in summary["cases"]
-                ) and not summary["questions"] and not summary["not_covered"] and all(
-                    g.get("status") in {"DESIGNED", "OUTSIDE_FOCUS"} for g in summary["groups"]
-                ) and status_states <= {'PASS', 'ASSERTION_FAILED'} and all(
-                    entry['status'] == 'EXECUTED' for entry in summary.get('data_references', []))
-                summary["checks_passed"] = bool(summary["cases"]) and all(
-                    c.get("outcome") == "PASS" for c in summary["cases"]
-                ) and status_states <= {'PASS'}
+                if summary.get("task_completion") is None:
+                    # The Deep Agents runtime already published its deterministic criteria;
+                    # a legacy screenshot of ``cases`` must never overwrite that verdict.
+                    summary["complete"] = bool(summary["cases"]) and all(
+                        c.get("outcome") in {"PASS", "ASSERTION_FAILED"}
+                        and c.get("executed_steps") == c.get("planned_steps")
+                        for c in summary["cases"]
+                    ) and not summary["questions"] and not summary["not_covered"] and all(
+                        g.get("status") in {"DESIGNED", "OUTSIDE_FOCUS"} for g in summary["groups"]
+                    ) and status_states <= {'PASS', 'ASSERTION_FAILED'} and all(
+                        entry['status'] == 'EXECUTED'
+                        for entry in summary.get('data_references', []))
+                    summary["checks_passed"] = bool(summary["cases"]) and all(
+                        c.get("outcome") == "PASS" for c in summary["cases"]
+                    ) and status_states <= {'PASS'}
                 self.coverage(summary)
                 checkpoint()
                 svc.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=summary)
@@ -764,8 +865,12 @@ class ProductTasks:
             limit = summary.get("budget", {}).get("max_seconds", DEFAULT_TASK_SECONDS)
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       f"本轮达到 {limit:g} 秒时限。")
-        except Exception:
+        except Exception as exc:
             record_timing()
+            # The type is safe to persist (no target URL, body or credential); without it an
+            # interrupted round is indistinguishable from a plain timeout.
+            summary["failure_type"] = type(exc).__name__
+            summary["failure_detail"] = str(exc)[:300]
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       "执行条件发生变化或工具停止；保留已发生的证据，不重放请求。")
         finally:
@@ -1221,6 +1326,75 @@ class ProductTasks:
             if report.outcome == Outcome.PASS and report.completed:
                 self.retain(row, design_text, scenario, project, report, case_row)
             checkpoint()
+
+    @staticmethod
+    def resolve_engine(project, service):
+        """Resolve the single autonomous runtime for this task.
+
+        ``AUTO`` degrades to the deterministic round (and records why) only when the deployment
+        did not configure the runtime; an explicit project request fails closed instead.
+        """
+        from agenttest.product_agent import AgentRuntimeUnavailable, resolve_engine
+
+        try:
+            return resolve_engine(project, service)
+        except AgentRuntimeUnavailable as exc:
+            raise ValueError(str(exc)) from exc
+
+    async def run_deep_agent(self, scope):
+        """Let Deep Agents choose the actions; every verdict stays deterministic.
+
+        This replaces the P0/P1 ``RoundSupervisor`` decision layer instead of wrapping it: the
+        agent drives the *whole* round (which groups/obligations to exercise, in which order,
+        when to stop) while ``run_group``/``Workflow``/``Executor`` own design, preflight,
+        authority and HTTP. Completion is published from measured evidence by
+        :mod:`agenttest.task_completion`, never from the model's closing prose.
+        """
+        from agenttest.product_agent import report_payload, run_agent
+        from agenttest.task_completion import evaluate, public_view
+
+        svc, summary, ledger = scope.svc, scope.summary, scope.ledger
+        budget = scope.project.registration.budget
+        remaining_calls = max(1, ledger.max_model_calls - ledger.model_calls)
+        requested_calls = int(getattr(budget, "agent_max_model_calls", 0) or 0)
+        max_calls = min(remaining_calls, requested_calls) if requested_calls else remaining_calls
+        max_turns = int(getattr(budget, "agent_max_turns", 16) or 16)
+        max_tools = int(getattr(budget, "agent_max_tool_calls", 24) or 24)
+        settings = svc.agent_model_factory(scope.project)
+        scope.max_seconds = float(summary["budget"]["max_seconds"])
+        # The store's phase vocabulary is fixed; the runtime's own detail lives on the summary,
+        # where a reader can audit it without a schema change.
+        svc.db.event(scope.task_id, "SUPERVISING", requests=ledger.requests)
+        try:
+            result = await run_agent(scope, self, settings, max_turns=max_turns,
+                                     max_tool_calls=max_tools, max_model_calls=max_calls)
+        except asyncio.CancelledError:
+            summary["agent_runtime"] = {**summary.get("agent_runtime", {}),
+                                        "engine": AGENT_ENGINE, "stop_reason": "CANCELLED"}
+            raise
+        completion = evaluate(scope.project, summary, scope.text,
+                              stop=dict(reason=result.stop_reason, error=result.error))
+        resolution = dict(summary.get("agent_runtime") or {})
+        payload = report_payload(result, completion=completion, budget=dict(
+            ledger=ledger.summary(), **result.session._budget_view()))
+        payload["reason"] = resolution.get("reason")
+        payload["task_completion"] = public_view(completion)
+        summary["agent_runtime"] = payload
+        summary["task_completion"] = completion
+        summary["complete"] = completion["complete"]
+        summary["checks_passed"] = completion["checks_passed"]
+        summary["reason"] = {
+            "MODEL_CALL_LIMIT": "模型调用预算已用尽；已按已获得证据生成确定性任务报告。",
+            "TOOL_CALL_LIMIT": "工具调用预算已用尽；已按已获得证据生成确定性任务报告。",
+            "TURN_LIMIT": "Agent 轮次预算已用尽；已按已获得证据生成确定性任务报告。",
+            "MODEL_ERROR": "模型调用失败；已保留已发生的证据并生成确定性任务报告。",
+            "RUNTIME_ERROR": "自主运行时异常终止；已保留已发生的证据并生成确定性任务报告。",
+            "AUTHORITY_CHANGED": "项目授权在任务执行期间发生变化；已停止后续动作。",
+        }.get(result.stop_reason,
+              "自主运行时已结束；完成情况由确定性判据给出，不采用模型总结作为结论。")
+        self.coverage(summary)
+        scope.checkpoint()
+        return result
 
     async def supervise(self, scope):
         """Let the cyclic LangGraph supervisor decide whether one more bounded action is due.

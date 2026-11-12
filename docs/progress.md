@@ -1,4 +1,4 @@
-# 开发进度
+﻿# 开发进度
 
 ## 2026-11-11 — P0：LangGraph 自主测试闭环与统一编排第一段
 
@@ -4059,3 +4059,44 @@ macOS/Linux 安装脚本尚未实际执行；Windows 脚本本次验证的是已
 - 未解决/风险：lab 三项目均无原生缺失断言，S1–S5 依赖实验脚本注入的批准策略，真实
   “路径资源必须消失”需要新的 `AbsenceApproval` 模式；B 的 G1 覆盖偏浅（只测
   availability）；profile 键依赖适配器实现，必须每次运行验证；A 的严格完成率需单独立项。
+
+## 2026-11-12 P2 Deep Agents 成为产品唯一自主运行时（第 9 轮）
+
+- 目标：把 P1 的 ADAPT 结论推进一步——Deep Agents 从"可选实验层"变成产品唯一的自主 Agent
+  运行时，旧 `RoundSupervisor` 只作回归/降级；完成判据必须确定性、可审计、按任务类型区分。
+- 实现：
+  - 新增 `src/agenttest/product_agent.py`：8 个产品工具（契约/批准策略/范围/覆盖/分组/候选/
+    报告/调查）、`AgentSession` 事实投影与预算门、`verify_catalogue`（缺失/多余=0，执行器里的
+    默认被拒工具报 `executor_only`）、`verify_enforcement`（真实诱捕 `write_file`）、
+    `ModelCallLimit`/`ToolCallLimit` 中间件、字节上限 6 KB 的工具结果、结构化错误码。
+  - 新增 `src/agenttest/task_completion.py`（`agenttest.task-completion.v1`）：功能/回归/
+    上线前/调查四类判据，`complete` 与 `checks_passed` 分离，`flags` 区分终止、证据、覆盖、
+    完成、异常、待办；中文主体用 n-gram 匹配已批准摘要。
+  - `product_tasks.py`：`loop_engine` 派发（AUTO→DEEP_AGENTS），`run_deep_agent` 统一入口，
+    focus 被拒时降级 `all_ready` 并记录；规范化 IR 的歧义拆成"阻塞"与"设计可解决"两类；
+    `approved_scope` 纳入由本轮生产者产生的 404/410 缺失断言；`product_design` 增加
+    `required_absence_checks`（仅在有缺失策略时出现，冻结请求字节数不变）。
+  - `run_development_agent.py`：`--loop-engine/--agent-max-*`、`--absence-approval`（用既有
+    批准结构注入 404 策略）、`--delete-noop/--delete-fault-status` 透传实验室故障。
+  - 依赖：`pyproject.toml` 新增 `deepagents` extra 与 `requirements-deepagents.lock`
+    （0.7.35 / langchain 1.4.10 / langgraph 1.2.20，`--no-deps` + 显式锁定，理由见 lock 头部）。
+- 真实 ecnu-max（隔离实验室、独立 run 目录 `.eduwork/runs/p2/`）：
+  - 测包裹管理 `functional-04`：14 次调用 / 103,802 token / 6 请求，5 个用例，readAvailability
+    实测 503 → `ASSERTION_FAILED`（不判业务缺陷），严格完成 false（7 项义务测 4 项）。
+  - 删除回归 `regression-06`：15 / 116,937 / 2，create→delete PASS；缺失断言候选尝试 3 次均在
+    设计层 `MODEL_INVALID_RESPONSE`，严格完成 false。
+  - 上线前 `prerelease-01`：14 / 102,411 / 14，分组设计 `MODEL_TOKEN_BUDGET`，监督轮产出
+    10 个只建不删的重复形状用例，`ALL_GROUPS_DECIDED` 未满足；终止 `MODEL_ERROR`。
+  - 偶发报错 `investigation-02`：13 / 99,327 / 0 请求，`PLANNING_INSTANCE_COVERAGE` /
+    `PLANNING_INSTANCE_UNBOUND` 拒绝，如实报"没有证据"。
+  - 严格完成 0/4；13 次真实运行 0 未授权、0 写重放、0 删除-404 假阳性。
+- 缺失断言 S1–S5（真实 HTTP，`experiments/deepagents_p1/regression.py` 重跑，exit 0）：
+  预检拒绝 ×2、S2 断言失败、S3 通过、**S4「删除返回 204 但记录仍在」→ 断言失败（违例被检出）**、
+  S5 字面 id → NEEDS_REVIEW。
+- 测试：新增 `tests/test_product_agent.py`（19）、`test_task_completion.py`（14）、
+  `test_planning_ambiguities.py`（7）；产品面 454 passed；全量离线 2744 passed / 15 skipped /
+  0 failed；`ruff` 全绿。基础安装（无 deepagents）可导入、AUTO→DETERMINISTIC、显式 DEEP_AGENTS
+  失败关闭。GitHub Actions 未跑（未 push）。
+- 未解决（阻塞严格完成）：多实例 flow 的 IR 覆盖校验过严；窄目标（只读缺失断言）设计连续
+  `MODEL_INVALID_RESPONSE`；真实模型仍未写出"删除→读回 404"用例；上线前一轮存在重复形状用例；
+  成本为 P1 A 的 3–5 倍、B 的 1.2–3 倍。详见 `docs/deepagents-product-runtime-p2.md` §8。

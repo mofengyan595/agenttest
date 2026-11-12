@@ -36,7 +36,7 @@ class TaskService:
                  semantic_factory=None, expose_registered=True, model_status=None,
                  generic_intake=False, intake_authorized_ips=(), designer_factory=None,
                  focus_factory=None, private_input_guard=None, product_probe_factory=None,
-                 supervisor_factory=None):
+                 supervisor_factory=None, agent_model_factory=None):
         self.projects = dict(projects)
         for key, path in self.projects.items():
             if load_goal_project(path).registration.id != key:
@@ -51,6 +51,9 @@ class TaskService:
         self.focus_factory = focus_factory
         self.product_probe_factory = product_probe_factory
         self.supervisor_factory = supervisor_factory
+        # Returns a chat-model settings object for the autonomous runtime; None means the
+        # deployment did not configure it and AUTO resolves to the deterministic round.
+        self.agent_model_factory = agent_model_factory
         self.private_input_guard = private_input_guard or (lambda _: False)
         self.environ = dict(os.environ if environ is None else environ)
         self._inputs, self._workers = {}, {}

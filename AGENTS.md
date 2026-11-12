@@ -1,4 +1,4 @@
-# AGENTS.md — instructions for Codex
+﻿# AGENTS.md — instructions for Codex
 
 Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK.md` before any changes.
 
@@ -17,21 +17,31 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
 ## Current milestone
-The 2026-11-11 P1 harness milestone is complete; see
-docs/deepagents-harness-p1-evaluation.md. Outcome is ADAPT, not ADOPT: Deep Agents
-0.7.35 stays an optional loop layer over the deterministic Executor (isolated
-.venv-deepagents) and is never the product default. Native tool calling through
-EcnuxChatModel is verified 9/9; the nine default tools and the general-purpose
-subagent are denied and proven denied by an adversarial probe, because the harness
-profile filters only the model view while the executor keeps those tools registered.
-The profile key resolves through the adapter's explicit _get_ls_params/model_name;
-re-implementing those on a wrapper silently disables narrowing, so every run must
-re-prove enforcement instead of trusting configuration. The delete-404 defect is
-fixed in both directions (absence needs a same-identity deletion; existence must not
-be deleted by its own plan) with real-HTTP regressions S1-S5. Arm B still costs 2-4x
-the tokens, can leave a real goal shallowly covered, and arm A's strict complete stays
-false across all four goals - do not hide either fact by switching harness. GitHub
-Actions was not run because nothing was pushed.
+The 2026-11-12 P2 milestone replaces P1's ADAPT conclusion with a controlled adoption: Deep
+Agents is now the product's only autonomous Agent runtime, and the legacy RoundSupervisor is
+kept solely as a regression/fallback path behind `loop_engine`. See
+docs/deepagents-product-runtime-p2.md. `ProjectBudget.loop_engine` defaults to AUTO, which
+resolves to DEEP_AGENTS only when the harness is installed and a model is configured; a base
+install stays importable and degrades to DETERMINISTIC, while an explicit DEEP_AGENTS request
+fails closed. All four entries (Web/CLI/Goal/Suite) share `ProductTasks.run`; the eight product
+tools reuse the P1 ProductSession semantics and the single Executor, and the catalogue plus the
+`write_file` enforcement probe are re-proved on every run. Task completion is deterministic per
+goal type (`agenttest.task-completion.v1`): agent termination, evidence produced, obligations
+covered, task complete, anomalies found and pending items are separate flags, `checks_passed`
+never implies `complete`, and a model's final answer is not a verdict. Real ecnu-max runs on the
+isolated lab (13 independent runs) reached strict completion 0/4: one narrowed functional round
+measured 4 of 7 in-scope obligations with a real 503 anomaly, the delete regression passed its
+lifecycle but never got the model to author the approved post-delete 404 case, the pre-release
+round produced ten repeated create-only cases, and the investigation round sent zero requests
+after `PLANNING_INSTANCE_COVERAGE`/`PLANNING_INSTANCE_UNBOUND` rejections. Safety held: zero
+unauthorized tool executions, zero unknown-result write replays, zero delete-404 false
+positives. The delete-then-read violation is still detected (S1-S5 real-HTTP regression: S4
+answers 204 but keeps the record and is reported ASSERTION_FAILED). Offline: 2744 passed /
+15 skipped / 0 failed, ruff clean. Unresolved and blocking "strict completion as a product
+claim": multi-instance flow coverage in the IR compiler, narrow-target design stability
+(`MODEL_INVALID_RESPONSE`), the model-authored absence case, duplicate case shapes in the
+pre-release round, and a cost of 3-5x P1 arm A. Do not describe completion rate as improved
+until those are fixed.
 
 ### Previous milestone (preserved)
 The 2026-11-01 reliable testing-colleague Goal supersedes related freezes only within

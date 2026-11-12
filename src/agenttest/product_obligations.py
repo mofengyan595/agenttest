@@ -59,12 +59,35 @@ def obligation_kind(policy):
 
 
 def approved_scope(project, summary):
-    """Approved policies for the round's own operations, with their approved expectations."""
+    """Approved policies for the round's own operations, with their approved expectations.
+
+    An approved absence rule (404/410) that reads a resource this round produces or deletes is
+    part of the scope even when its own operation is not a grouped step: the round really does
+    create/delete that identity, so "after the deletion it is absent" is one of the obligations
+    its own actions established. Without this the round can report a passing delete while the
+    only check that makes the deletion trustworthy is never required.
+    """
     operations = set(round_operations(project, summary))
     logins = login_operations(project)
+    allowed = set(project.target.allowed_operations)
     scope = []
     for policy in project.registry.definitions():
         if policy.operation_id not in operations or policy.operation_id in logins:
+            continue
+        scope.append(dict(policy_id=policy.id, operation_id=policy.operation_id,
+                          roles=list(policy.roles), kind=obligation_kind(policy),
+                          expected=policy_expectation(policy)))
+    producers = {item["policy_id"] for item in scope}
+    for policy in project.registry.definitions():
+        status = policy.assertions.status
+        if (policy.negative is not None or status is None
+                or not set(status.codes or ()) <= {404, 410}
+                or policy.operation_id not in allowed or policy.operation_id in logins):
+            continue
+        sources = {rule.source_policy_id for rule in policy.binding_rules if rule.source_policy_id}
+        if not sources & producers:
+            continue
+        if any(item["policy_id"] == policy.id for item in scope):
             continue
         scope.append(dict(policy_id=policy.id, operation_id=policy.operation_id,
                           roles=list(policy.roles), kind=obligation_kind(policy),

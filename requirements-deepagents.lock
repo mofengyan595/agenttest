@@ -1,0 +1,20 @@
+# P2 autonomous runtime: the exact set the product installs for Deep Agents.
+#
+# Install offline from the vendored wheelhouse:
+#   pip install --no-index --find-links .eduwork/wheels --no-deps \
+#       -r requirements-deepagents.lock
+#
+# Why --no-deps: deepagents 0.7.35 also declares the Anthropic and Google GenAI provider
+# packages. AgentTest reaches its gateway through the existing OpenAI-compatible
+# `EcnuxChatModel`, so those providers are dead weight -- and their `google-auth` chain is
+# not in the offline wheelhouse. Omitting them keeps a base install free of the harness and
+# keeps the deployment install reproducible without network access. Every package below is
+# still version-pinned, so a different dependency resolution cannot silently change behaviour.
+deepagents==0.7.35
+langchain==1.4.10
+langchain-core==1.7.7
+langchain-protocol==0.0.21
+langgraph==1.2.20
+langgraph-checkpoint==4.3.1
+wcmatch==12.0.1
+bracex==3.2.2

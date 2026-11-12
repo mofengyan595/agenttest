@@ -561,8 +561,56 @@ def design_context(project, text, group, remaining_requests, inventory_total):
             mutation=p.negative.model_dump(exclude={"allow_value_variants"}),
             expected_statuses=p.assertions.status.codes)
             for p in policies if p.negative])
+    checks = _absence_checks(project, policies, selected)
+    if checks:
+        # Added only when such a rule exists, and only then: an ordinary project's request keeps
+        # its exact frozen size (P1's budget test pins that envelope), and a rare instruction
+        # must not consume it.
+        context["required_absence_checks"] = checks
+        context["required_absence_instruction"] = (
+            "required_absence_checks 是本组已批准的删除后缺失断言：用一个普通 flow 用例先成功"
+            "执行 establishing_operation_id 删除同一资源，再执行 read_operation_id 并期望"
+            " expected_statuses。这是已批准的普通期望，不是负向参数用例；不要跳过，"
+            "也不要把 404/410 当成错误。")
     _public_metadata(context)
     return context
+
+
+def _absence_checks(project, policies, selected) -> list[dict]:
+    """Approved "after deletion it must be absent" rules the designer has to cover.
+
+    The information already existed in ``confirmed_rules`` and in the policy bindings, but the
+    design prompt's case taxonomy has no slot for "an approved 404 that is not a negative test",
+    so the model skipped it and the round stayed incomplete. Naming the establishing deletion and
+    the narrowed scope turns a rule into an actionable obligation without inventing authority.
+    """
+    methods = {operation.operation_id: operation.method
+               for operation in project.contract.operations}
+    deletes = [policy for policy in policies if policy.negative is None
+               and methods.get(policy.operation_id) == "DELETE"]
+    checks = []
+    for policy in policies:
+        status = policy.assertions.status
+        if policy.negative is not None or status is None:
+            continue
+        if not set(status.codes or ()) <= {404, 410}:
+            continue
+        producers = {rule.source_policy_id for rule in policy.binding_rules
+                     if rule.source_policy_id}
+        if not producers:
+            continue
+        deletion = next((item for item in deletes if item.operation_id in selected
+                         and producers & {rule.source_policy_id for rule in item.binding_rules}),
+                        None)
+        if deletion is None or deletion.operation_id == policy.operation_id:
+            continue
+        checks.append(dict(policy_id=policy.id, read_operation_id=policy.operation_id,
+                           expected_statuses=list(status.codes),
+                           establishing_policy_id=deletion.id,
+                           establishing_operation_id=deletion.operation_id,
+                           resource_source_policy_ids=sorted(producers),
+                           source=policy.assertions.source))
+    return checks
 
 
 async def propose_design(project, text, group, model, *, environ, remaining_requests,

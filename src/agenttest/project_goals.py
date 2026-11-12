@@ -66,6 +66,14 @@ class ProjectBudget(StrictModel):
     # The round supervisor is off by default so every existing project keeps its exact
     # behaviour; a project (or an isolated development runner) opts in explicitly.
     supervisor_max_rounds: int = Field(default=0, ge=0, le=4)
+    # Which autonomous runtime owns tool selection. AUTO = Deep Agents when the deployment
+    # configured a harness model and the optional dependencies are installed, otherwise the
+    # deterministic round (with the resolved reason recorded on the task).
+    loop_engine: Literal["AUTO", "DEEP_AGENTS", "LEGACY_SUPERVISOR", "DETERMINISTIC"] = "AUTO"
+    agent_max_turns: int = Field(default=16, ge=1, le=40)
+    agent_max_tool_calls: int = Field(default=24, ge=1, le=60)
+    # 0 = use whatever task budget remains after the deterministic focus/design calls.
+    agent_max_model_calls: int = Field(default=0, ge=0, le=20)
 
 
 class RegisteredProject(StrictModel):
