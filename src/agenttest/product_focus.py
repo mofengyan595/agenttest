@@ -578,7 +578,7 @@ def operation_choices(identifiers):
 
 
 async def select_focus(project, model, task_context, *, environ, notes="", timeout=91,
-                       inventory=None, available_identity_aliases=None):
+                       inventory=None, available_identity_aliases=None, order_feedback=None):
     operations = {o.operation_id: o for o in project.contract.operations}
     groups = design_groups(project)
     index = [dict(group_id=g["id"], operations=[dict(id=key, method=operations[key].method,
@@ -594,6 +594,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     from agenttest.request_requirements import request_atoms
 
     context['request_atoms'] = request_atoms(context['user_task'])
+    if order_feedback:
+        context['previous_order_error'] = order_feedback
     from agenttest.request_requirements import existing_resource_index, response_expectations
 
     context['response_expectations'] = response_expectations(project)

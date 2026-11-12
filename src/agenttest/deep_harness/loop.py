@@ -1,23 +1,4 @@
-"""The Deep Agents loop: the eight product tools and nothing else.
-
-The P1 brief allows this harness only if its default capabilities can be *reliably* removed.
-The measured facts behind the configuration below (see ``experiments/deepagents_p1/
-audit_harness.py`` and the P1 report):
-
-* Deep Agents always registers ``FilesystemMiddleware`` and ``SubAgentMiddleware``; excluding
-  them raises at construction time, so they cannot be removed, only narrowed.
-* ``HarnessProfile.excluded_tools`` does remove the individual tools: ``ls/read_file/write_file/
-  edit_file/delete/glob/grep/execute``.
-* ``GeneralPurposeSubagentProfile(enabled=False)`` removes the general-purpose subagent, which
-  would otherwise re-introduce the file and shell tools.
-* The profile registry is process-global and keyed by provider+model, so the profile name is
-  asserted before use; a silent fallback to ``default`` would widen authority.
-
-What is left for the model is exactly the eight logical tools, plus ``task`` (delegation) which
-is disabled below. Nothing in the resulting catalogue can read the filesystem, run a command or
-reach an arbitrary URL, so the AgentTest security requirements are not lowered to fit the
-framework -- either the catalogue is exactly this, or the loop refuses to start.
-"""
+"""Deep Agents profile and runtime permission probes shared with the P1 experiment."""
 
 import json
 
@@ -34,8 +15,8 @@ HARNESS_TOOL_NAMES = (
     "investigate_failure",
 )
 
-# Tools the framework would add on its own; every one of these must be gone before a run.
-DENIED_DEFAULT_TOOLS = ("ls", "read_file", "write_file", "edit_file", "delete", "glob",
+# The product separately supplies a native reader for exact virtual skill paths.
+DENIED_DEFAULT_TOOLS = ("ls", "write_file", "edit_file", "delete", "glob",
                         "grep", "execute", "task")
 
 SYSTEM_PROMPT = """你是 AgentTest 的测试助手。你只能通过工具完成工作：不能执行代码、读写文件或直接发
@@ -123,17 +104,18 @@ def catalogue_of(agent) -> list[str]:
     return sorted({name for name in names if name})
 
 
-async def verify_enforcement(model, *, prompt: str = "离线校验") -> dict:
-    """Prove, offline, that the denied capabilities are neither advertised nor executed.
-
-    Markers: a benign tool passed in must be the *only* thing the model sees; the denied
-    filesystem/executors must be absent from the request and rejected at the call boundary."""
+async def verify_enforcement(model, *, prompt: str = "离线校验", build_agent=None,
+                             files=None) -> dict:
+    """Measure the advertised catalogue and attempt forbidden calls through the real graph."""
     import tempfile
     from pathlib import Path
 
     from deepagents import create_deep_agent
+    from deepagents.backends import StateBackend
     from langchain_core.messages import AIMessage, HumanMessage
     from langchain_core.tools import StructuredTool
+
+    from agenttest.deep_harness.skills import skill_filesystem
 
     async def marker_probe() -> dict:
         """A benign tool that must survive filtering, so the probe cannot pass vacuously."""
@@ -144,46 +126,55 @@ async def verify_enforcement(model, *, prompt: str = "离线校验") -> dict:
 
     scripted_observed: list = []
     identifier = getattr(model, "model_name", None) or ""
-    install_narrow_profile(model)
-    probe_error = None
+    if build_agent is None:
+        def build_agent(probe_model, tools):
+            backend = StateBackend()
+            return create_deep_agent(
+                model=probe_model, tools=tools, backend=backend,
+                middleware=[skill_filesystem(backend, ())], system_prompt="offline probe")
+
     written: list[str] = []
     with tempfile.TemporaryDirectory() as workdir:
         target = Path(workdir) / "should-not-exist.txt"
+        skill_target = next(iter(files or ()), "/skills/unknown/SKILL.md")
         scripted = scripted_model([
-            AIMessage(content="", tool_calls=[dict(name="write_file", args={
-                "file_path": str(target), "content": "leak"}, id="probe-1")]),
+            AIMessage(content="", tool_calls=[
+                dict(name="write_file", args={"file_path": str(target), "content": "probe"},
+                     id="probe-write"),
+                dict(name="read_file", args={"file_path": "/private/probe.txt"},
+                     id="probe-read"),
+                dict(name="edit_file", args={"file_path": skill_target, "old_string": "---",
+                                             "new_string": "probe"}, id="probe-edit"),
+                dict(name="execute", args={"command": ""}, id="probe-execute"),
+                dict(name="task", args={"description": "probe"}, id="probe-task"),
+            ]),
             AIMessage(content="done"),
         ], scripted_observed, identifier)
-        agent = create_deep_agent(model=scripted, tools=[marker],
-                                  system_prompt="offline enforcement probe")
+        install_narrow_profile(scripted)
+        agent = build_agent(scripted, [marker])
+        inputs = {"messages": [HumanMessage(content=prompt)]}
+        if files:
+            inputs["files"] = files
         try:
-            result = await agent.ainvoke({"messages": [HumanMessage(content=prompt)]},
-                                         config={"recursion_limit": 6})
-        except Exception as exc:  # a refusal at the boundary is also acceptable evidence
-            probe_error = type(exc).__name__
-            result = {"messages": []}
-        outputs = [str(getattr(item, "content", ""))[:200]
-                   for item in result.get("messages") or []
-                   if getattr(item, "type", "") == "tool"]
+            result = await agent.ainvoke(inputs, config={"recursion_limit": 64})
+        except Exception as exc:
+            raise HarnessUnavailable("权限探针失败：" + type(exc).__name__) from exc
+        outputs = {item.tool_call_id: str(item.content)[:300]
+                   for item in result.get("messages") or [] if item.type == "tool"}
         if target.exists():
             written.append(str(target))
     view = scripted_observed[0]["tool_names"] if scripted_observed else []
     advertised = sorted({name for name in view if name})
-    denied_advertised = sorted(set(advertised) & set(DENIED_DEFAULT_TOOLS))
-    rejected = any("is not available" in text for text in outputs)
-    if not advertised and probe_error:
-        # A probe that failed for an unrelated reason proves nothing, so it must not pass.
-        raise HarnessUnavailable("权限探针未能运行，无法证明默认工具被禁用：" + probe_error)
-    if denied_advertised:
-        raise HarnessUnavailable("模型仍看到被禁用的工具：" + ", ".join(denied_advertised))
-    if set(advertised) != {"probe_marker"}:
+    if set(advertised) != {"probe_marker", "read_file"}:
         raise HarnessUnavailable("模型看到的工具集不是预期的收窄结果：" + ", ".join(advertised))
-    if not rejected:
-        raise HarnessUnavailable("被禁用的 write_file 调用没有被拒绝，拒绝在未验证权限时运行。")
-    if written:
-        raise HarnessUnavailable("被禁用的 write_file 实际写入了文件：" + ", ".join(written))
-    return dict(model_view=advertised, boundary_rejected=rejected,
-                probe_error=probe_error, tool_outputs=outputs,
+    denied = {key: ("is not available" in outputs.get(key, "") or
+                    "not a valid tool" in outputs.get(key, ""))
+              for key in ("probe-write", "probe-edit", "probe-execute", "probe-task")}
+    denied["probe-read"] = "permission denied" in outputs.get("probe-read", "")
+    if not all(denied.values()) or written:
+        raise HarnessUnavailable("工具权限探针未通过：" + json.dumps(denied))
+    return dict(model_view=advertised, boundary_rejected=True,
+                denied=denied, tool_outputs=outputs,
                 files_written=written)
 
 
@@ -209,8 +200,9 @@ def scripted_model(script, observed, model_name: str):
             for item in tools or ():
                 schema = item.get("function", {}) if isinstance(item, dict) else {}
                 schemas.append(schema.get("name"))
-            observed.append(dict(turn=len(observed), tool_names=schemas))
-            return super()._payload(messages, tools, tool_choice)
+            payload = super()._payload(messages, tools, tool_choice)
+            observed.append(dict(turn=len(observed), tool_names=schemas, payload=payload))
+            return payload
 
         async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
             from langchain_core.messages import AIMessage as _AI
@@ -231,7 +223,7 @@ def verify_catalogue(agent) -> dict:
     """Refuse to run unless the catalogue is exactly the eight logical tools."""
     names = catalogue_of(agent)
     denied_present = sorted(set(names) & set(DENIED_DEFAULT_TOOLS))
-    unexpected = sorted(set(names) - set(HARNESS_TOOL_NAMES) - set(DENIED_DEFAULT_TOOLS))
+    unexpected = sorted(set(names) - set(HARNESS_TOOL_NAMES) - {"read_file"})
     if denied_present or unexpected:
         raise HarnessUnavailable(
             "工具目录未被可靠收窄：denied=" + json.dumps(denied_present, ensure_ascii=False)
@@ -362,12 +354,18 @@ async def run_goal(session, model, *, recursion_limit: int = 40) -> dict:
     claim: the caller decides whether the run produced value.
     """
     from deepagents import create_deep_agent
+    from deepagents.backends import StateBackend
     from langchain_core.messages import HumanMessage
+
+    from agenttest.deep_harness.skills import skill_filesystem
 
     install_narrow_profile(model)
     enforcement = await verify_enforcement(model)
     tools = build_tools(session)
-    agent = create_deep_agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT)
+    backend = StateBackend()
+    agent = create_deep_agent(model=model, tools=tools, backend=backend,
+                              middleware=[skill_filesystem(backend, ())],
+                              system_prompt=SYSTEM_PROMPT)
     catalogue = dict(bound_tools=catalogue_of(agent), enforcement=enforcement,
                      expected=list(HARNESS_TOOL_NAMES))
     started = 0

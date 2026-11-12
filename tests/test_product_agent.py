@@ -11,10 +11,12 @@ from dataclasses import replace
 from importlib.util import find_spec
 from types import SimpleNamespace
 
+import httpx
 import pytest
 from test_product_supervisor import lifecycle_project, obligation_summary
 
 from agenttest.goal_suite import SuiteLedger
+from agenttest.llm_planner import ModelSettings
 from agenttest.policies import PolicyRegistry
 from agenttest.product_agent import (
     TOOL_NAMES,
@@ -26,11 +28,11 @@ from agenttest.product_agent import (
     verify_catalogue,
 )
 from agenttest.project_goals import ProjectBudget
-from agenttest.report import ReportStore
+from agenttest.report import CheckResult, Outcome, ReportStore, RunReport, StepResult
 from agenttest.task_completion import evaluate
 
 FUNCTIONAL_GOAL = "帮我测一下包裹管理功能。"
-# The five runtime tests below drive a real create_deep_agent; a profile without the Deep
+# The runtime tests below drive a real create_deep_agent; a profile without the Deep
 # Agents extra (the CI "agent" profile installs the Fake-LLM workflow only) must skip them
 # instead of failing on an import. Everything else in this file is harness-independent.
 requires_deep_agents = pytest.mark.skipif(find_spec("deepagents") is None,
@@ -153,12 +155,11 @@ def test_the_bound_catalogue_must_be_exactly_the_product_tools():
         bound = SimpleNamespace(tools_by_name={name: object() for name in names})
         return SimpleNamespace(nodes={"tools": SimpleNamespace(bound=bound)})
 
-    # The executor keeps the denied defaults registered (P1 measured this); the catalogue
-    # check accepts exactly those and still refuses anything else.
-    catalogue = verify_catalogue(agent(*TOOL_NAMES, "write_file", "execute"))
-    assert catalogue["bound_tools"] == sorted([*TOOL_NAMES, "write_file", "execute"])
+    catalogue = verify_catalogue(agent(*TOOL_NAMES, "read_file"))
+    assert catalogue["bound_tools"] == sorted([*TOOL_NAMES, "read_file"])
     assert catalogue["missing"] == []
-    assert catalogue["executor_only"] == ["execute", "write_file"]
+    with pytest.raises(AgentRuntimeUnavailable, match="TOOL_CATALOGUE_NOT_NARROWED"):
+        verify_catalogue(agent(*TOOL_NAMES, "read_file", "write_file", "execute"))
     with pytest.raises(AgentRuntimeUnavailable, match="TOOL_CATALOGUE_NOT_NARROWED"):
         verify_catalogue(agent(*TOOL_NAMES, "run_python"))
     with pytest.raises(AgentRuntimeUnavailable, match="TOOL_CATALOGUE_NOT_NARROWED"):
@@ -354,6 +355,161 @@ def scripted(*messages):
                           observed, "ecnu-max"), observed
 
 
+def tool_turn(name, call_id, **args):
+    return "", dict(tool_calls=[dict(name=name, id=call_id, args=args)])
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+@pytest.mark.parametrize(("goal", "name", "heading", "action", "args"), [
+    (FUNCTIONAL_GOAL, "api-functional-testing", "功能测试", "run_test_group",
+     {"group_id": "group_1", "design_note": "同一资源先读取再清理"}),
+    ("删除功能刚改过，帮我回归一下。", "api-regression-testing", "回归测试",
+     "get_approved_policies", {}),
+    ("包裹接口偶尔报错，帮我看看。", "api-failure-investigation", "失败调查",
+     "investigate_failure", {"run_id": "invented"}),
+])
+async def test_official_skill_disclosure_and_domain_tool_loop(
+        tmp_path, goal, name, heading, action, args):
+    from agenttest.deep_harness.skills import SKILL_NAMES, skill_path
+
+    path = skill_path(name)
+    model, observed = scripted(
+        tool_turn("read_file", "skill-1", file_path=path),
+        tool_turn(action, "domain-1", **args),
+        ("已收集证据。", {}))
+    session_, tasks, _, _, _ = session(tmp_path, goal)
+    result = await run_agent(session_.scope, tasks, SimpleNamespace(max_total_tokens=0),
+                             max_model_calls=4, model=model)
+    first, second, _ = result.session.context_trace
+    assert first["skills_discovered"] == sorted(map(skill_path, SKILL_NAMES))
+    assert first["skills_in_context"] == []
+    assert second["skills_in_context"] == [path]
+    assert not any(f"# {heading}" in (item.get("content") or "")
+                   for item in observed[0]["payload"]["messages"])
+    answer = next(item for item in observed[1]["payload"]["messages"]
+                  if item["role"] == "tool" and item["tool_call_id"] == "skill-1")
+    assert f"# {heading}" in answer["content"]
+    assert result.catalogue["bound_tools"] == sorted([*TOOL_NAMES, "read_file"])
+    assert all(result.enforcement["denied"].values())
+    assert [row["name"] for row in result.transcript if row["kind"] == "TOOL_CALL"] == [
+        "read_file", action]
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+async def test_product_tools_work_without_skills(tmp_path):
+    session_, tasks, *_ = session(tmp_path)
+    model, _ = scripted(tool_turn("get_test_scope", "scope"), ("完成读取。", {}))
+    result = await run_agent(session_.scope, tasks, SimpleNamespace(max_total_tokens=0),
+                             max_model_calls=3, model=model, enable_skills=False)
+    assert result.stop_reason == "ANSWER"
+    assert result.session.context_trace[0]["skills_discovered"] == []
+    assert "groups" in result.transcript[1]["preview"]
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+async def test_native_context_editing_allows_full_read_after_pointer(tmp_path, monkeypatch):
+    monkeypatch.setattr("agenttest.product_agent.CONTEXT_CLEAR_TRIGGER_TOKENS", 1)
+    model, observed = scripted(
+        tool_turn("get_contract", "original"),
+        *(tool_turn("get_approved_policies", f"policy-{index}") for index in range(4)),
+        tool_turn("get_contract", "pointer"),
+        tool_turn("get_contract", "refreshed", refresh=True),
+        ("已恢复契约。", {}))
+    session_, tasks, *_ = session(tmp_path)
+    result = await run_agent(session_.scope, tasks, SimpleNamespace(max_total_tokens=0),
+                             max_model_calls=9, model=model)
+    assert result.session.context_trace[-1]["cleared_tool_results"] > 0
+    last = {row["tool_call_id"]: row["content"] for row in observed[-1]["payload"]["messages"]
+            if row["role"] == "tool"}
+    assert json.loads(last["pointer"])["next_step"]["arguments"] == {"refresh": True}
+    assert "operations" in json.loads(last["refreshed"])
+    assert result.session.ledger.requests == 0
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+async def test_compaction_keeps_persisted_failure_and_cleanup_available(tmp_path, monkeypatch):
+    monkeypatch.setattr("agenttest.product_agent.CONTEXT_CLEAR_TRIGGER_TOKENS", 1)
+    session_, tasks, _, _, summary = session(tmp_path)
+    failure = StepResult(step_id="read", operation_id="readParcel", method="GET",
+                         path_template="/parcels/{id}", outcome=Outcome.ASSERTION_FAILED,
+                         reason="Unexpected status", policy_sha256="approved",
+                         checks=[CheckResult(kind="http_status", passed=False,
+                                             expected=[200], actual=503)])
+    report = RunReport(scenario_sha256="scenario", contract_sha256="contract",
+                       environment="fixture", target_origin="http://127.0.0.1:18991",
+                       outcome=Outcome.ASSERTION_FAILED, completed=True,
+                       cleanup="cleanup pending",
+                       resource_lifecycle=[dict(status="CLEANUP_PENDING", create_step="create")],
+                       steps=[failure] * 4)
+    session_.svc.reports.save(report)
+    summary["cases"].append(dict(run_id=report.run_id, outcome=report.outcome.value,
+                                 resource_lifecycle=report.resource_lifecycle))
+    model, observed = scripted(
+        tool_turn("read_test_report", "first-page", run_id=report.run_id),
+        *(tool_turn("get_contract", f"contract-{index}") for index in range(4)),
+        tool_turn("get_test_coverage", "coverage"),
+        tool_turn("read_test_report", "last-page", run_id=report.run_id, step_offset=3),
+        ("证据仍为断言失败，清理待处理。", {}))
+    result = await run_agent(session_.scope, tasks, SimpleNamespace(max_total_tokens=0),
+                             max_model_calls=9, model=model)
+    last = {row["tool_call_id"]: row["content"] for row in observed[-1]["payload"]["messages"]
+            if row["role"] == "tool"}
+    assert result.session.context_trace[-1]["cleared_tool_results"] > 0
+    coverage, page = json.loads(last["coverage"]), json.loads(last["last-page"])
+    assert coverage["evidence_refs"] == [dict(run_id=report.run_id, outcome="ASSERTION_FAILED")]
+    assert coverage["resources"]["pending"][0]["status"] == "CLEANUP_PENDING"
+    assert page["outcome"] == "ASSERTION_FAILED" and page["steps_total"] == 4
+    check, = page["steps"][0]["checks"]
+    assert (check["passed"], check["expected"], check["actual"]) == (False, [200], 503)
+    assert session_.svc.reports.read(report.run_id).steps == report.steps
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+async def test_schema_error_and_tool_limit_use_real_tool_messages(tmp_path):
+    model, observed = scripted(
+        tool_turn("read_test_report", "invalid", step_limit=0),
+        tool_turn("run_test_group", "blocked", group_id="group_1"),
+        ("这条消息不应生成。", {}))
+    session_, tasks, *_ = session(tmp_path)
+    result = await run_agent(session_.scope, tasks, SimpleNamespace(max_total_tokens=0),
+                             max_model_calls=4, max_tool_calls=1, model=model)
+    schemas = {entry["function"]["name"]: entry["function"]["parameters"]
+               for entry in observed[0]["payload"]["tools"]}
+    assert schemas["read_test_report"]["properties"]["step_limit"]["minimum"] == 1
+    assert "run_id" in schemas["read_test_report"]["required"]
+    feedback = next(row for row in observed[1]["payload"]["messages"] if row["role"] == "tool")
+    assert feedback["tool_call_id"] == "invalid" and "run_id" in feedback["content"]
+    assert result.stop_reason == "TOOL_CALL_LIMIT"
+    assert tasks.calls == [] and len(observed) == 2
+
+
+@pytest.mark.asyncio
+@requires_deep_agents
+@pytest.mark.parametrize(("failure", "stop"), [("refusal", "MODEL_ERROR"),
+                                               ("defect", "RUNTIME_ERROR")])
+async def test_model_refusal_or_unexpected_failure_is_reported(tmp_path, failure, stop):
+    def reply(_request):
+        if failure == "defect":
+            raise RuntimeError("adapter defect")
+        return httpx.Response(200, json=dict(choices=[dict(message=dict(
+            role="assistant", content="", refusal="fixture refusal"))]))
+
+    settings = ModelSettings(model="ecnu-max", base_url="https://unit.invalid/v1",
+                             api_key="fixture-not-a-key", max_input_tokens=60000,
+                             max_total_tokens=100000)
+    session_, tasks, *_ = session(tmp_path)
+    result = await run_agent(session_.scope, tasks, settings, max_model_calls=4,
+                             transport=httpx.MockTransport(reply))
+    assert result.stop_reason == stop
+    assert result.model_totals["calls"] == 1
+    assert tasks.calls == [] and result.session.ledger.requests == 0
+
+
 @pytest.mark.asyncio
 @requires_deep_agents
 async def test_the_model_chooses_a_real_tool_and_the_run_is_auditable(tmp_path):
@@ -376,9 +532,7 @@ async def test_the_model_chooses_a_real_tool_and_the_run_is_auditable(tmp_path):
     assert completion["complete"] is False
     assert completion["flags"]["evidence_produced"] is False
     assert result.answer == "我还没看到真实证据。"
-    # the profile is re-proved on every run, and the model saw only the product tools
-    assert sorted(observed[0]["tool_names"]) == sorted(TOOL_NAMES)
-    assert len(observed[0]["tool_names"]) == 8
+    assert sorted(observed[0]["tool_names"]) == sorted([*TOOL_NAMES, "read_file"])
 
 
 @pytest.mark.asyncio
@@ -457,17 +611,23 @@ async def test_a_cancelled_task_sends_nothing_and_says_so(tmp_path):
 # ------------------------------------------------------------------ cost without losing facts
 
 
-def test_a_repeated_read_is_a_pointer_until_the_state_changes(tmp_path):
+def test_a_repeated_read_can_be_recovered_after_context_editing(tmp_path):
     session_, *_ = session(tmp_path)
     first = session_.read_view("get_contract", lambda: dict(operations=["createParcel"]))
     again = session_.read_view("get_contract", lambda: dict(operations=["createParcel"]))
     assert first == dict(operations=["createParcel"])
     assert again["repeated"] is True and again["unchanged_since_previous_call"] is True
     assert again["sha256"] and "note" in again
-    # Any state-changing action bumps the generation, so the next read is answered in full.
     session_.generation += 1
-    assert session_.read_view("get_contract", lambda: dict(operations=["createParcel"])) == {
-        "operations": ["createParcel"]}
+    assert session_.read_view("get_contract", lambda: pytest.fail("static view recomputed"))[
+        "repeated"]
+    assert session_.read_view("get_contract", lambda: first, refresh=True) == first
+    scope = session_.read_view("get_test_scope", lambda: dict(groups=[]))
+    assert scope == dict(groups=[])
+    assert session_.read_view("get_test_scope", lambda: pytest.fail("same revision"))["repeated"]
+    session_.generation += 1
+    assert session_.read_view("get_test_scope", lambda: dict(groups=["new"])) == {
+        "groups": ["new"]}
 
 
 def test_a_truncated_tool_result_keeps_the_error_and_the_repair_fields():

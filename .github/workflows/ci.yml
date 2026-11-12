@@ -88,3 +88,32 @@ jobs:
       - name: Full offline delivery demo
         if: matrix.profile == 'agent'
         run: '"${{ matrix.python }}" -m agenttest showcase --case all'
+
+  deepagents:
+    name: Deep Agents runtime / Python 3.11
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      LANGSMITH_TRACING: 'false'
+      LANGCHAIN_TRACING_V2: 'false'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            requirements-deepagents.lock
+      - name: Install the pinned product extra
+        run: |
+          python -m pip install -c requirements-deepagents.lock '.[dev,deepagents]'
+          python -m pip check
+          python -c 'import deepagents; from agenttest.deep_harness.skills import skill_files; assert len(skill_files()) == 3'
+      - name: Keyless runtime, policy and context integration
+        run: |
+          python -m pytest -q tests/test_product_agent.py tests/test_task_completion.py \
+            tests/test_planning_flow_instances.py tests/test_focus_order_ambiguity.py \
+            tests/test_mixed_planning_round3.py

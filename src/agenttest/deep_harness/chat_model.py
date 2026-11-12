@@ -61,6 +61,7 @@ MODEL_SECRET_OUTPUT = "MODEL_SECRET_OUTPUT"
 MODEL_INPUT_REJECTED = "MODEL_INPUT_REJECTED"
 MODEL_TOOL_CATALOG_INVALID = "MODEL_TOOL_CATALOG_INVALID"
 MODEL_CALL_BUDGET = "MODEL_CALL_BUDGET"
+MODEL_USAGE_UNKNOWN = "MODEL_USAGE_UNKNOWN"
 
 
 class ModelBudgetLimits(BaseModel):
@@ -230,6 +231,8 @@ class EcnuxChatModel(BaseChatModel):
     limits: ModelBudgetLimits | None = None
     call_trace: list = Field(default_factory=list)
     on_call: Any = Field(default=None, exclude=True)
+    on_payload: Any = Field(default=None, exclude=True)
+    before_call: Any = Field(default=None, exclude=True)
     transport: Any = None
     max_response_bytes: int = 200_000
 
@@ -288,11 +291,15 @@ class EcnuxChatModel(BaseChatModel):
         choice = normalize_tool_choice(tool_choice, tools)
         if choice is not None and tools:
             payload["tool_choice"] = choice
+        if self.on_payload is not None:
+            self.on_payload(payload)
         return payload
 
     def _encode(self, payload: dict) -> bytes:
         """Budget-check the exact request and refuse to send a body containing the key."""
         settings = self.settings
+        if self.before_call is not None:
+            self.before_call()
         if self.limits is not None:
             if (self.limits.max_calls is not None
                     and self.totals.calls >= self.limits.max_calls):

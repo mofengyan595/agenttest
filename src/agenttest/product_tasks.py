@@ -10,7 +10,7 @@ import httpx
 from pydantic import ValidationError
 
 from agenttest.credentials import CredentialVault, sensitive_field
-from agenttest.diagnostics import presentation_language
+from agenttest.diagnostics import ValidationFailure, presentation_language
 from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
@@ -509,14 +509,38 @@ class ProductTasks:
                         checkpoint()
                         selection = None
                         focus_started = time.perf_counter()
-                        try:
-                            selection = await select_focus(project, focus_model, context,
+                        order_feedback = None
+
+                        async def select(order_feedback=None):
+                            return await select_focus(project, focus_model, context,
                                 environ=svc.environ, notes=project_record.get("business_notes", ""),
                                 inventory=summary["inventory"],
                                 available_identity_aliases=[r["alias"] for r in
                                     project_record.get("generic", {}).get("roles", [])],
+                                order_feedback=order_feedback,
                                 timeout=getattr(getattr(raw_focus, "_settings", None),
                                                 "timeout", 90.0) + 1)
+
+                        try:
+                            try:
+                                selection = await select()
+                            except (PlannerFailure, ValidationFailure) as exc:
+                                diagnostic = exc.diagnostic
+                                order_code = "FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID"
+                                if diagnostic is None or diagnostic.code != order_code:
+                                    raise
+                                order_feedback = diagnostic.model_dump(mode="json")
+                                elapsed_ms = (time.perf_counter() - focus_started) * 1000
+                                focus_record.update(status="REJECTED", reason=order_code,
+                                    diagnostic=order_feedback,
+                                    elapsed_ms=round(elapsed_ms, 3),
+                                    model_call=focus_model.stats.model_dump(mode="json"))
+                                focus_record = dict(group_id="focus", status="PLANNING",
+                                                    order_repair=order_feedback)
+                                summary["design_records"].append(focus_record)
+                                checkpoint()
+                                focus_started = time.perf_counter()
+                                selection = await select(order_feedback)
                             summary["focus"] = selection.model_dump()
                             try:
                                 planning_ir = request_planning_ir(
@@ -670,6 +694,7 @@ class ProductTasks:
                             focus_record.update(status="SELECTED",
                                                 interpretation=selection.interpretation)
                         except (PlannerFailure, ValueError, TimeoutError) as exc:
+                            selection = None
                             if hasattr(exc, "requirement_ledger"):
                                 summary["requirement_ledger"] = exc.requirement_ledger
                             diagnostic = getattr(exc, 'diagnostic', None)
@@ -685,29 +710,6 @@ class ProductTasks:
                             focus_record["model_call"] = focus_model.stats.model_dump(mode="json")
                             focus_record['proposed_question_count'] = getattr(
                                 raw_focus, 'proposed_question_count', None)
-                            checkpoint()
-                        if selection is None and engine == AGENT_ENGINE:
-                            # The model could not confirm a narrow scope. The autonomous runtime
-                            # still runs, on the deterministic *approved* scope, and records why:
-                            # P0/P1 showed a Focus failure otherwise yields 0 requests and no
-                            # testing at all. Nothing is widened beyond approved policies.
-                            from agenttest.product_focus import FocusSelection
-
-                            code = getattr(getattr(focus_model, "stats", None),
-                                           "diagnostic", None)
-                            code = getattr(code, "code", None) or "FOCUS_NOT_VALIDATED"
-                            selection = FocusSelection(
-                                interpretation=("测试重点未能可靠确认；自主运行时按全部已批准"
-                                                "就绪接口执行确定性范围。"),
-                                mode="all_ready", operation_ids=[], question=None,
-                                pending_questions=[], not_covered=[],
-                                normal_operation_ids=list(project.target.allowed_operations))
-                            summary["focus_fallback"] = dict(code=code, mode="all_ready",
-                                operations=list(project.target.allowed_operations))
-                            summary["focus"] = selection.model_dump()
-                            summary["not_covered"].append(
-                                "测试重点未确认；已按全部已批准就绪接口执行，结论不覆盖未批准范围。")
-                            focus_record.update(status="FALLBACK", reason=code)
                             checkpoint()
                         if selection is None or selection.mode == "needs_information":
                             if selection:

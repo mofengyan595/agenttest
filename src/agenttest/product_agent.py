@@ -28,7 +28,6 @@ import time
 from dataclasses import dataclass
 
 from agenttest.deep_harness.loop import (
-    DENIED_DEFAULT_TOOLS,
     _final_answer,
     _turns,
     catalogue_of,
@@ -36,6 +35,7 @@ from agenttest.deep_harness.loop import (
     verify_enforcement,
 )
 from agenttest.deep_harness.product_tools import ProductSession
+from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
 from agenttest.product_obligations import executed_evidence, supervision_facts
 from agenttest.report import fingerprint
 from agenttest.task_completion import classify_task, evaluate, public_view, subject_scope
@@ -72,29 +72,15 @@ MAX_RESULT_BYTES = 6_000    # one tool result, re-sent on every following model 
 # reads on every later turn (~20 KB per request by turn 3). Eight thousand approximate tokens
 # leaves the recent four results untouched and only drops what has already been superseded.
 CONTEXT_CLEAR_TRIGGER_TOKENS = 8_000
+CLEARED_TOOL_RESULT = "[旧工具结果已清理；按 run_id 或 refresh=true 重新读取]"
 
-SYSTEM_PROMPT = """你是 AgentTest 的自主接口测试 Agent。你只描述测试目标，通过工具决定下一步做什么；
-测试计划、断言、权限与 HTTP 执行全部由确定性代码负责。
-
-工作方式：
-1. 先调用 get_test_scope 了解本轮任务类型、已批准义务、可执行分组和候选动作。
-2. 优先用 run_test_group(group_id) 执行一个分组：它会调用设计模型、跑确定性预检，并只通过
-   Executor 发请求；创建的数据会按已批准删除策略清理。一次调用就会返回真实用例、run_id 与失败证据。
-3. 分组跑完后调用 get_test_coverage，查看仍未满足的义务。对剩下的义务用
-   run_open_obligation(candidate_id)，candidate_id 只能来自 get_test_scope 返回的 candidates。
-4. 工具返回 ok=false 时读 error.code / error.hint，按提示换一个候选动作、补充 design_note 后重试，
-   或者停止。不要重复同一个失败动作；确定性代码会拒绝对等补测。
-5. read_test_report / investigate_failure 只读取真实证据，不会重发写请求。
-6. 只要 get_test_coverage 里还有可执行的候选义务、且预算未耗尽，就继续执行，不要提前收尾；
-   只有在没有候选可做、预算不足、需要新的授权或确认、或已经覆盖全部范围内义务时才结束。
-   如果 completion.unmet 非空，优先执行对应的 next_steps 候选，再决定是否结束。
-7. 预算或时限不足时停止，不要编造结论。
-
-规则：
-- 不要臆造 operation_id、policy_id、group_id、candidate_id、run_id 或状态码；它们只能来自工具结果。
-- 不得要求执行未批准的操作、修改断言、绕过预检或直接访问网络/文件/命令；这些能力不存在。
-- "任务完成"由确定性完成判据决定，不由你的总结决定。结束时用简短中文说明：测了什么、发现了什么、
-  还有哪些未测或待确认。
+SYSTEM_PROMPT = """你是 AgentTest 的接口测试助手。先根据原始目标选读一个相关 Skill，然后调用
+get_test_scope 获取本轮已批准分组和义务。Skill 指导测试方法，授权、断言和完成判据以工具为准。
+缺少适用 Skill 时，仍按 get_test_scope → 测试动作 → get_test_coverage 执行。
+用工具返回的 ID 和 next_step。只在缺少事实时读契约或策略，避免重复读取。
+预算允许时处理可执行的未满足义务。失败时使用 error.code/hint 调整设计或停止，禁止等价重试。
+只经受控测试工具执行 HTTP。遵守批准断言、身份、前置条件和资源清理。结果未知的写操作不得重放。
+结束时用中文引用真实证据，说明发现、未覆盖项和清理状态。完成状态由确定性判据计算。
 """
 
 
@@ -137,23 +123,17 @@ def resolve_engine(project, service) -> tuple[str, str]:
                            else "AGENT_RUNTIME_DEPENDENCIES_NOT_INSTALLED")
 
 
-def _json(payload) -> str:
-    """Serialize one tool result under a byte budget.
-
-    A tool result is re-sent on every later model call, so its size is a per-turn cost, not a
-    one-off. Chinese text costs three bytes per character, which is why this bound is in bytes:
-    P1's B1 run grew a request to the provider's envelope and lost the round to a token stop.
-    """
 def _transient_model_error(exc: Exception) -> bool:
     """Only a transient gateway failure may be retried; budgets and rejections never are."""
     code = str(getattr(exc, "code", "") or "")
     if code in {"MODEL_TOKEN_BUDGET", "MODEL_CALL_BUDGET", "MODEL_INPUT_REJECTED",
-                "MODEL_TOOL_CATALOG_INVALID", "MODEL_SECRET_OUTPUT", "MODEL_REFUSAL"}:
+                "MODEL_TOOL_CATALOG_INVALID", "MODEL_SECRET_OUTPUT", "MODEL_REFUSAL",
+                "MODEL_USAGE_UNKNOWN"}:
         return False
     text = f"{code} {exc}"
     return any(marker in text for marker in (
         "MODEL_SERVICE_ERROR", "MODEL_TIMEOUT", "MODEL_CONNECTION_ERROR",
-        "MODEL_USAGE_UNKNOWN", "concurrency", "429", "502", "503", "504", "timed out"))
+        "concurrency", "429", "502", "503", "504", "timed out"))
 
 
 def _json(payload, limit: int = MAX_RESULT_BYTES) -> str:
@@ -163,16 +143,16 @@ def _json(payload, limit: int = MAX_RESULT_BYTES) -> str:
     after a long case list lost exactly the code and detail the model needed to repair it.
     The essential keys are always kept in full; only the preview of the rest is truncated.
     """
-    text = json.dumps(payload, ensure_ascii=False, sort_keys=False, default=str)
+    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
     raw = text.encode("utf-8")
     if len(raw) <= limit:
         return text
     if isinstance(payload, dict):
-        head_keys = ("ok", "error", "design", "status", "group_id", "candidate_id",
-                     "executed", "requests", "budget", "next_step", "duplicates")
+        head_keys = ("ok", "error", "status", "group_id", "candidate_id", "run_id", "outcome",
+                     "executed", "requests", "budget", "next_step", "evidence_refs")
         head = {key: payload[key] for key in head_keys if key in payload}
         head["truncated"] = True
-        head["note"] = ("结果过大：错误/设计/预算字段完整保留，其余为前部预览；"
+        head["note"] = ("结果过大：保留错误和证据引用，其余为前部预览；"
                         "用更窄的参数读取完整证据（如 read_test_report(run_id)）。")
         head["preview"] = raw[:max(1024, limit // 2)].decode("utf-8", "ignore")
         return json.dumps(head, ensure_ascii=False, default=str)
@@ -218,6 +198,7 @@ class AgentSession:
         self.started = time.monotonic()
         self.max_seconds = float(getattr(self.scope, "max_seconds", 0) or 0)
         self.answer = ""
+        self.context_trace: list[dict] = []
         # Publish the runtime identity before the first action so a cancel/timeout still has
         # an auditable owner even when no tool ever ran.
         self.flush()
@@ -239,6 +220,7 @@ class AgentSession:
                     group_runs=dict(self.group_runs),
                     attempts=list(self.scope.state.get("attempts") or ()),
                     elapsed_ms=round((time.monotonic() - self.started) * 1000, 3),
+                    context_trace=list(self.context_trace),
                     answer=self.answer[:2000],
                     tools=list(TOOL_NAMES))
 
@@ -363,7 +345,7 @@ class AgentSession:
                     open_obligations=(facts.get("open_obligations") or [])[:10],
                     open_obligations_total=len(facts.get("open_obligations") or ()),
                     budget=self._budget_view(),
-                    completion=self._completion_preview(),
+                    completion=self._completion_preview(facts),
                     guidance=[
                         "先执行一个 runnable 的 group（若存在），一次获得多条义务的证据。",
                         "随后用 get_test_coverage 检查 open_obligations；对剩余义务使用 "
@@ -396,17 +378,18 @@ class AgentSession:
                      detail=(row.get("diagnostic") or {}).get("detail") or {})
                 for row in (self.summary.get("design_records") or ())[-4:]
                 if row.get("status") == "REJECTED"],
-            budget=self._budget_view(), completion=self._completion_preview(),
+            evidence_refs=self.evidence_refs(),
+            budget=self._budget_view(), completion=self._completion_preview(facts),
             duplicates=self.summary.get("duplicate_retests") or [])
         return base
 
-    def _completion_preview(self) -> dict:
+    def _completion_preview(self, facts: dict) -> dict:
         report = evaluate(self.project, self.summary, self.text,
                           stop=dict(reason=self.stop if self.stop != "RUNNING"
                                     else "NO_FURTHER_ACTION"))
         # The unmet criteria and the one deterministic action that can address each of them are
         # part of the guidance, so "stop early" is a visible choice rather than an accident.
-        candidates = {item["id"]: item for item in self._facts().get("candidates") or ()}
+        candidates = {item["id"]: item for item in facts.get("candidates") or ()}
         next_steps = []
         for criterion in report["criteria"]:
             if criterion["status"] != "UNMET":
@@ -437,6 +420,38 @@ class AgentSession:
                                              operations=[probe.get("operation_id")],
                                              outcome=probe.get("outcome"))
         return rows
+
+    def evidence_refs(self) -> list[dict]:
+        return [dict(run_id=key, outcome=row["outcome"])
+                for key, row in list(self.run_ids().items())[-8:]]
+
+    def record_context(self, payload: dict, paths: set[str]) -> None:
+        """Measure the actual adapter input without retaining raw message contents."""
+        messages = payload["messages"]
+        system = "\n".join(row["content"] for row in messages if row["role"] == "system")
+        calls = {call["id"]: call["function"] for row in messages
+                 for call in row.get("tool_calls", ())}
+        offered = sorted(path for path in paths if f"`{path}`" in system)
+        tool_bytes: dict[str, int] = {}
+        loaded = set()
+        cleared = 0
+        for row in messages:
+            if row["role"] != "tool":
+                continue
+            call = calls.get(row["tool_call_id"], {})
+            name = call.get("name", "unknown")
+            content = row["content"]
+            tool_bytes[name] = tool_bytes.get(name, 0) + len(content.encode("utf-8"))
+            cleared += content == CLEARED_TOOL_RESULT
+            if name == "read_file":
+                path = json.loads(call["arguments"]).get("file_path")
+                if path in paths and "description:" in content and "# " in content:
+                    loaded.add(path)
+        self.context_trace.append(dict(
+            turn=len(self.context_trace) + 1, skills_discovered=offered,
+            skills_in_context=sorted(loaded), tool_result_bytes=tool_bytes,
+            cleared_tool_results=cleared,
+            tool_names=[item["function"]["name"] for item in payload.get("tools", ())]))
 
     # ------------------------------------------------------------------ actions
     async def run_group(self, group_id: str, design_note: str = "") -> dict:
@@ -610,24 +625,24 @@ class AgentSession:
                     next_step=dict(tool="get_test_coverage", arguments={}))
 
     # ------------------------------------------------------------------ read-only evidence
-    def read_view(self, name: str, build) -> dict:
-        """A repeated read-only view is a pointer, not the same bytes a second time.
-
-        The transcript already holds the first answer, and the generation counter changes on
-        every state-changing action, so a read after new evidence is always answered in full.
-        """
-        payload = build()
+    def read_view(self, name: str, build, *, refresh: bool = False) -> dict:
+        """Return a pointer within a revision and allow explicit recovery after compaction."""
+        static = name in {"get_contract", "get_approved_policies"}
+        revision = 0 if static else self.generation
         previous = self.seen.get(name)
-        self.seen[name] = dict(generation=self.generation)
-        if previous is not None and previous["generation"] == self.generation:
-            body = json.dumps(payload, ensure_ascii=False, sort_keys=True)
-            return dict(ok=True, repeated=True, unchanged_since_previous_call=True,
-                        generation=self.generation,
-                        note="本轮状态没有变化；直接使用上文同名结果，不要再重复读取。",
-                        sha256=fingerprint(body))
+        if not refresh and previous is not None and previous["generation"] == revision:
+            pointer = dict(ok=True, repeated=True, unchanged_since_previous_call=True,
+                           **previous, note="复用上文。若旧结果已清理，传 refresh=true。",
+                           next_step=dict(tool=name, arguments={"refresh": True}))
+            if not static:
+                pointer.update(budget=self._budget_view(), evidence_refs=self.evidence_refs())
+            return pointer
+        payload = build()
+        self.seen[name] = dict(generation=revision, sha256=fingerprint(payload))
         return payload
 
-    def report_view(self, run_id: str) -> dict:
+    def report_view(self, run_id: str, *, step_offset: int = 0, step_limit: int | None = None,
+                    operation_id: str | None = None) -> dict:
         known = self.run_ids()
         if run_id not in known:
             return _refusal("UNKNOWN_RUN_ID", f"没有本轮运行 {run_id!r} 的报告。",
@@ -639,8 +654,15 @@ class AgentSession:
             # A case without a readable report is a real defect to report, never a success.
             return _refusal("REPORT_UNAVAILABLE", "该运行没有可读取的报告。", retryable=False,
                             hint="保留已有证据；报告缺失本身就是需要报告的异常。")
+        steps = [step for step in report.steps
+                 if operation_id is None or step.operation_id == operation_id]
+        end = step_offset + step_limit if step_limit is not None else len(steps)
+        next_step = (dict(tool="read_test_report", arguments=dict(
+            run_id=run_id, step_offset=end, step_limit=step_limit, operation_id=operation_id))
+            if end < len(steps) else None)
         return dict(ok=True, run_id=run_id, outcome=report.outcome.value,
                     completed=report.completed, cleanup=report.cleanup,
+                    steps_total=len(steps), step_offset=step_offset, next_step=next_step,
                     resource_lifecycle=report.resource_lifecycle,
                     created_resources=report.created_resources,
                     failure_explanation=report.failure_explanation,
@@ -651,7 +673,7 @@ class AgentSession:
                                              expected=check.expected, actual=check.actual,
                                              passed=check.passed)
                                         for check in step.checks])
-                           for step in report.steps])
+                           for step in steps[step_offset:end]])
 
     def investigate(self, run_id: str, operation_id: str | None = None) -> dict:
         view = self.report_view(run_id)
@@ -768,6 +790,9 @@ def build_tools(session: AgentSession) -> list:
 
     class RunIdArgs(BaseModel):
         run_id: str = Field(description="运行 id，必须来自工具结果 cases[].run_id。")
+        operation_id: str | None = Field(default=None, description="只查看此接口的步骤。")
+        step_offset: int = Field(default=0, ge=0)
+        step_limit: int = Field(default=3, ge=1, le=5)
 
     class InvestigateArgs(BaseModel):
         run_id: str = Field(description="运行 id，必须来自 read_test_report 或用例结果。")
@@ -777,27 +802,27 @@ def build_tools(session: AgentSession) -> list:
     def result(payload) -> str:
         return _json(payload)
 
-    async def contract() -> str:
-        session.record("get_contract")
-        return result(session.read_view("get_contract", session.facts.contract_view))
+    def view(name, build, refresh):
+        payload = session.read_view(name, build, refresh=refresh)
+        session.record(name, repeated=bool(payload.get("repeated")), refresh=refresh)
+        return result(payload)
 
-    async def policies() -> str:
-        session.record("get_approved_policies")
+    async def contract(refresh: bool = False) -> str:
+        return view("get_contract", session.facts.contract_view, refresh)
 
+    async def policies(refresh: bool = False) -> str:
         def build():
             view = session.facts.policy_view()
             view["absence_approvals"] = _absence_approvals(session.project)
             return view
 
-        return result(session.read_view("get_approved_policies", build))
+        return view("get_approved_policies", build, refresh)
 
-    async def scope() -> str:
-        session.record("get_test_scope")
-        return result(session.read_view("get_test_scope", session.scope_view))
+    async def scope(refresh: bool = False) -> str:
+        return view("get_test_scope", session.scope_view, refresh)
 
-    async def coverage() -> str:
-        session.record("get_test_coverage")
-        return result(session.read_view("get_test_coverage", session.coverage_view))
+    async def coverage(refresh: bool = False) -> str:
+        return view("get_test_coverage", session.coverage_view, refresh)
 
     async def group(group_id: str, design_note: str = "") -> str:
         return result(await session.run_group(group_id, design_note))
@@ -805,9 +830,11 @@ def build_tools(session: AgentSession) -> list:
     async def obligation(candidate_id: str, design_note: str = "") -> str:
         return result(await session.run_obligation(candidate_id, design_note))
 
-    async def report(run_id: str) -> str:
+    async def report(run_id: str, operation_id: str | None = None, step_offset: int = 0,
+                     step_limit: int = 3) -> str:
         session.record("read_test_report", run_id=run_id)
-        return result(session.report_view(run_id))
+        return result(session.report_view(run_id, step_offset=step_offset, step_limit=step_limit,
+                                          operation_id=operation_id))
 
     async def investigate(run_id: str, operation_id: str | None = None) -> str:
         session.record("investigate_failure", run_id=run_id, operation_id=operation_id)
@@ -842,25 +869,16 @@ def build_tools(session: AgentSession) -> list:
     ]
 
 
-def verify_catalogue(agent, expected=TOOL_NAMES) -> dict:
-    """Read the bound catalogue and split the product tools from executor-only defaults.
-
-    P1 measured that a harness profile filters the **model view** while the executor keeps the
-    denied filesystem/shell tools registered. A check that demanded their absence would fail on
-    every real agent and, worse, invite "fixing" it by loosening the profile. So the catalogue
-    is read for three facts: every product tool is bound, no unknown tool crept in, and any
-    default tool present is exactly one of the denied ones -- which ``verify_enforcement``
-    separately proves is neither advertised to the model nor executable.
-    """
+def verify_catalogue(agent, expected=(*TOOL_NAMES, "read_file")) -> dict:
+    """Check actual dispatcher registration as well as the separate model-view probe."""
     names = catalogue_of(agent)
     missing = sorted(set(expected) - set(names))
-    unexpected = sorted(set(names) - set(expected) - set(DENIED_DEFAULT_TOOLS))
-    executor_only = sorted(set(names) & set(DENIED_DEFAULT_TOOLS))
+    unexpected = sorted(set(names) - set(expected))
     if not names or missing or unexpected:
         raise AgentRuntimeUnavailable("TOOL_CATALOGUE_NOT_NARROWED:" + json.dumps(
             dict(missing=missing, unexpected=unexpected), ensure_ascii=False))
     return dict(bound_tools=names, expected=list(expected), missing=missing,
-                unexpected=unexpected, executor_only=executor_only)
+                unexpected=unexpected, executor_only=[])
 
 
 @dataclass
@@ -879,14 +897,17 @@ class RuntimeResult:
 
 async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     max_tool_calls: int = 24, max_model_calls: int = 8,
-                    transport=None, model=None) -> RuntimeResult:
+                    transport=None, model=None, enable_skills: bool = True) -> RuntimeResult:
     """Run one product goal through Deep Agents; deterministic code still owns every verdict.
 
     ``model`` exists for offline tests and for a deployment that wants to hand in its own
     configured adapter; the default is the same ``EcnuxChatModel`` every other model call uses.
     """
     from deepagents import create_deep_agent
+    from deepagents.backends import StateBackend
     from langchain.agents.middleware import (
+        ClearToolUsesEdit,
+        ContextEditingMiddleware,
         ModelCallLimitMiddleware,
         ModelRetryMiddleware,
         ToolCallLimitMiddleware,
@@ -895,6 +916,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     from langgraph.errors import GraphRecursionError
 
     from agenttest.deep_harness.chat_model import (
+        MODEL_CALL_BUDGET,
+        MODEL_TOKEN_BUDGET,
+        MODEL_USAGE_UNKNOWN,
         EcnuxChatModel,
         ModelBudgetLimits,
         ModelHarnessError,
@@ -919,9 +943,29 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
             elif stats.total_tokens is not None:
                 ledger.known_tokens += stats.total_tokens
 
+    def check_model_budget() -> None:
+        ledger = scope.ledger
+        if ledger.usage_unknown:
+            raise ModelHarnessError(MODEL_USAGE_UNKNOWN)
+        if ledger.model_calls >= ledger.max_model_calls:
+            raise ModelHarnessError(MODEL_CALL_BUDGET)
+        if ledger.known_tokens >= ledger.max_total_tokens:
+            raise ModelHarnessError(MODEL_TOKEN_BUDGET)
+
     model.on_call = charge
+    model.before_call = check_model_budget
+    files = skill_files() if enable_skills else {}
+    model.on_payload = lambda payload: session.record_context(payload, set(files))
+
+    def build_agent(agent_model, tools, middleware=()):
+        backend = StateBackend()
+        return create_deep_agent(
+            model=agent_model, tools=tools, backend=backend,
+            skills=[SKILL_ROOT] if files else None, system_prompt=SYSTEM_PROMPT,
+            middleware=[skill_filesystem(backend, files), *middleware])
+
     install_narrow_profile(model)
-    enforcement = await verify_enforcement(model)
+    enforcement = await verify_enforcement(model, build_agent=build_agent, files=files)
     tools = build_tools(session)
     middleware = [
         # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
@@ -937,25 +981,12 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                                 exit_behavior="continue"),
         ToolCallLimitMiddleware(tool_name="get_test_scope", run_limit=4,
                                 exit_behavior="continue"),
-    ]
-    # Context editing is LangChain's own facility, not a second context manager: once the
-    # transcript passes the trigger, the oldest tool outputs become a placeholder. The newest
-    # results (including a rejection's error/detail) stay intact, and every repair fact is also
-    # repeated by get_test_coverage, so trimming cannot remove the evidence a decision needs.
-    try:
-        from langchain.agents.middleware import (
-            ClearToolUsesEdit,
-            ContextEditingMiddleware,
-        )
-
-        middleware.append(ContextEditingMiddleware(edits=[
+        ContextEditingMiddleware(edits=[
             ClearToolUsesEdit(trigger=CONTEXT_CLEAR_TRIGGER_TOKENS, keep=4,
-                              clear_tool_inputs=True,
-                              placeholder="[已清理的旧工具结果；需要时按 run_id 重新读取]")]))
-    except ImportError:  # an older LangChain keeps the untrimmed transcript; no behaviour loss
-        pass
-    agent = create_deep_agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT,
-                              middleware=middleware)
+                              clear_tool_inputs=True, exclude_tools=["read_file"],
+                              placeholder=CLEARED_TOOL_RESULT)]),
+    ]
+    agent = build_agent(model, tools, middleware)
     catalogue = verify_catalogue(agent)
     stop_reason, error, messages = STOP_ANSWER, None, []
     try:
@@ -963,9 +994,10 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         # middleware is a node, so a small multiple of the turn budget ends a healthy run
         # early. The product budgets are enforced by the model/tool-call middleware and the
         # session gate; this is only the framework's hard stop.
-        outcome = await agent.ainvoke({"messages": [HumanMessage(content=scope.text)]},
-                                      config={"recursion_limit": max(64, 40 * max_turns)})
-        messages = outcome.get("messages") or []
+        async for outcome in agent.astream(
+                {"messages": [HumanMessage(content=scope.text)], "files": files},
+                config={"recursion_limit": max(64, 40 * max_turns)}, stream_mode="values"):
+            messages = outcome.get("messages") or []
     except (ModelHarnessError, GraphRecursionError) as exc:
         if isinstance(exc, GraphRecursionError):
             stop_reason = STOP_TURN_LIMIT
@@ -982,7 +1014,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     if stop_reason == STOP_ANSWER:
         if model.totals.calls >= max_model_calls:
             stop_reason = STOP_MODEL_CALL_LIMIT
-        elif len(session.tool_calls) >= max_tool_calls:
+        elif any(msg.type == "tool" and msg.status == "error"
+                 and msg.content == "Tool call limit exceeded. Do not make additional tool calls."
+                 for msg in messages):
             stop_reason = STOP_TOOL_CALL_LIMIT
     if session.stop != "RUNNING" and stop_reason == STOP_ANSWER:
         stop_reason = session.stop
@@ -1006,6 +1040,7 @@ def report_payload(result: RuntimeResult, *, completion: dict, budget: dict) -> 
         stop_reason=result.stop_reason, error=result.error,
         elapsed_ms=result.elapsed_ms,
         model=result.model_totals, call_trace=result.call_trace,
+        context_trace=list(session.context_trace),
         budget=budget, tool_calls=list(session.tool_calls),
         catalogue=result.catalogue, enforcement=result.enforcement,
         transcript=result.transcript, answer=result.answer,

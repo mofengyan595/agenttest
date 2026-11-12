@@ -166,11 +166,23 @@ def construct_plan(plan, context):
                                   edge_reason='TEXT_ORDER')
         raise error
 
-    from agenttest.request_requirements import order_instances
+    from agenttest.request_requirements import explicit_read_repetitions, order_instances
 
+    read_operations = {operation['id'] for operation in context.get('operations', [])
+                       if operation.get('method') in {'GET', 'HEAD', 'OPTIONS'}}
     for requirement in context.get('request_requirements', []):
         if requirement['disposition'] != 'required':
             continue
+        repetitions = explicit_read_repetitions(requirement, read_operations)
+        if repetitions:
+            action = requirement['actions'][0]
+            observations = [key for key, node in nodes.items()
+                            if node['operation_id'] == action['operation_id']
+                            and node['role'] == action['role']]
+            if len(observations) == repetitions and all(
+                    _same_request(nodes[observations[0]], nodes[key]) for key in observations[1:]):
+                for previous, current in zip(observations, observations[1:]):
+                    depend(current, previous, 'REPLAY_GROUP')
         for order in requirement['before']:
             earlier_instances, later_instances = order_instances(
                 order, context.get('request_requirements', []),

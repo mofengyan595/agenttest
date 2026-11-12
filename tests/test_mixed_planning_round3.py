@@ -550,10 +550,47 @@ async def test_pending_permission_does_not_block_independent_legal_reads(tmp_pat
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail(strict=True, reason=(
-    "P2.1 已知缺口：同一子句的两次相同匿名读取在归一化编译器里只落到一个实例，"
-    "第二个 /build 请求没有被发送。安全性未受影响（无越权、无未批准数据），"
-    "但覆盖不完整；修复前先在这里留痕，见 docs/deepagents-reliability-p21.md。"))
+@pytest.mark.parametrize("can_repair", [True, False])
+async def test_focus_order_correction_is_structured_and_used_at_most_once(
+        tmp_path, monkeypatch, can_repair):
+    text = '先匿名读取构建信息；然后匿名读取标签'
+    feedback = []
+
+    def focus(context):
+        previous = context.get('previous_order_error')
+        feedback.append(previous)
+        correct = previous is not None and can_repair
+        return wire(dict(readBuild=bundle(test_normal=True), readTags=bundle(test_normal=True)),
+            dict(request_1=clause('readBuild'), request_2=clause('readTags', before=[dict(
+                earlier='readBuild', later='readTags',
+                earlier_source_id='request_1' if correct else 'request_2', earlier_index=0,
+                later_source_id='request_2', later_index=0)])))
+
+    def designer(context):
+        return dict(interpretation='依序读取', relevant=True, questions=[], not_covered=[],
+            cases=[case('构建及标签', [step(context, 'build', 'readBuild', None),
+                                      step(context, 'tags', 'readTags', None)])])
+
+    done, sent, _ = await run_task(tmp_path, monkeypatch, text, focus, designer)
+    first, correction = feedback
+    assert first is None
+    assert correction['code'] == 'FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID'
+    assert correction['detail']['order']['earlier_source_id'] == 'request_2'
+    assert correction['detail']['available']['earlier'] == [
+        dict(source_id='request_1', action_index=0)]
+    assert '*_source_id' in correction['detail']['hint']
+    records = [r for r in done['summary']['design_records'] if r['group_id'] == 'focus']
+    assert [r['model_call']['calls'] for r in records] == [1, 1]
+    assert [r['status'] for r in records] == ['REJECTED', 'SELECTED' if can_repair else 'REJECTED']
+    if can_repair:
+        assert_finished(done)
+        assert sent == ['/build', '/tags']
+    else:
+        assert done['status'] == 'NEEDS_REVIEW'
+        assert sent == []
+
+
+@pytest.mark.asyncio
 async def test_required_order_across_independent_cases_still_executes_in_order(
         tmp_path, monkeypatch):
     text = ('先确认 reviewer 查看构建信息的拒绝规则；构建接口另以匿名身份连续读取两次；'

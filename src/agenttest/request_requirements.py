@@ -218,7 +218,7 @@ def explicit_response_gap(entries, action, catalog):
                and not approved_response_predicate(entry, action, catalog) for entry in entries)
 
 
-_REPEAT_READ = re.compile(r'^(?:请\s*)?(?:连续|重复)\s*(?:读取|查询|请求|调用)'
+_REPEAT_READ = re.compile(r'(?:连续|重复)\s*(?:读取|查询|请求|调用)'
                           r'[^，,；;。\d]{0,20}?'
                           r'([2-9]|[1-9][0-9]+|[二两三四五六七八九十])\s*次')
 
@@ -231,7 +231,13 @@ def explicit_read_repetitions(item, read_operations):
             or actions[0]['operation_id'] not in read_operations):
         return None
     quote = item.get('source_quote') or ''
-    match = _REPEAT_READ.match(quote)
+    matches = list(_REPEAT_READ.finditer(quote))
+    if len(matches) != 1:
+        return None
+    match = matches[0]
+    if re.search(r'不(?:要|必|再|得|用|需)|无需|无须|禁止|避免|不得|如果|是否',
+                 quote[:match.start()]):
+        return None
     if match is None or re.match(r'\s*(?:或|以上|以下|到|至|[~～])', quote[match.end():]):
         return None
     number = match[1]
@@ -670,13 +676,6 @@ def _clause_candidates(operation, requirements):
     return found
 
 
-def _invalid_order(message_code='FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID', fields=None):
-    error = ValidationFailure(Layer.MODEL, message_code)
-    if fields:
-        error.diagnostic.fields = fields
-    return error
-
-
 def order_instances(order, requirements, atoms):
     """Resolve one order pair to the clause instances of each side, never to an array slot.
 
@@ -690,6 +689,21 @@ def order_instances(order, requirements, atoms):
     """
     order = order if isinstance(order, dict) else order.model_dump()
     requirements = [_requirement_dict(item) for item in requirements]
+
+    def invalid(field):
+        error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID')
+        error.diagnostic.fields = [field]
+        error.diagnostic.detail = dict(
+            order={key: order.get(key) for key in (
+                'earlier', 'later', 'earlier_source_id', 'earlier_index',
+                'later_source_id', 'later_index')},
+            available={side: [dict(source_id=source, action_index=index)
+                              for source, index in candidates(side)[:20]]
+                       for side in ('earlier', 'later')},
+            hint=("在 requirement_map 对应子句的 before 中提供 earlier/later；"
+                  "定位实例时，每侧同时填写 *_source_id 与从 0 开始的 *_index，"
+                  "指向对应子句 actions 中的同名操作。保持原始需求和批准范围。"))
+        return error
 
     def explicit(side):
         source, index = order.get(f'{side}_source_id'), order.get(f'{side}_index')
@@ -707,7 +721,7 @@ def order_instances(order, requirements, atoms):
             # operation occurs exactly once there, its position is the only identity evidence;
             # repeated occurrences still require an explicit index.
             if item is None or len(matches) != 1:
-                raise _invalid_order(fields=[f'requirement_map.{source}.{side}'])
+                raise invalid(f'requirement_map.{source}.{side}')
             index = matches[0]
         return [(source, index)]
 
@@ -739,7 +753,7 @@ def order_instances(order, requirements, atoms):
             known = (earlier_explicit or later_explicit)[0]
             rest = [candidate for candidate in candidates('earlier') if candidate != known]
             if len(rest) != 1:
-                raise _invalid_order(fields=[f'requirement_map.{known[0]}.before'])
+                raise invalid(f'requirement_map.{known[0]}.before')
             return (earlier_explicit, rest) if earlier_explicit is not None else (rest,
                                                                                 later_explicit)
         if len(earlier) == 1 and later == earlier:
@@ -748,7 +762,7 @@ def order_instances(order, requirements, atoms):
             operations = {action['operation_id'] for action in _clause_actions(item or {})}
             count = explicit_read_repetitions(item, operations) if item is not None else None
             if count is None or count < 2:
-                raise _invalid_order(fields=[f'requirement_map.{later[0][0]}.before'])
+                raise invalid(f'requirement_map.{later[0][0]}.before')
             return earlier, later
         # Two distinct occurrences of one operation: which is which comes from the written
         # clause order (source text rank, never a proposal or array position).
@@ -761,7 +775,7 @@ def order_instances(order, requirements, atoms):
             ordered = sorted(earlier, key=lambda candidate: rank.get(candidate[0], 0))
         if len(ordered) > 1:
             return [ordered[0]], [ordered[-1]]
-        raise _invalid_order(fields=[f'requirement_map.{later[0][0]}.before'])
+        raise invalid(f'requirement_map.{later[0][0]}.before')
     # A side with no clause occurrence (for example a trusted login) stays unresolved and is
     # bound at plan time only when its operation occurs exactly once.
     return earlier or [(None, None)], later or [(None, None)]
