@@ -8,6 +8,7 @@ genuinely new, and that completion/budget/authority are decided by code rather t
 
 import json
 from dataclasses import replace
+from importlib.util import find_spec
 from types import SimpleNamespace
 
 import pytest
@@ -29,6 +30,11 @@ from agenttest.report import ReportStore
 from agenttest.task_completion import evaluate
 
 FUNCTIONAL_GOAL = "帮我测一下包裹管理功能。"
+# The five runtime tests below drive a real create_deep_agent; a profile without the Deep
+# Agents extra (the CI "agent" profile installs the Fake-LLM workflow only) must skip them
+# instead of failing on an import. Everything else in this file is harness-independent.
+requires_deep_agents = pytest.mark.skipif(find_spec("deepagents") is None,
+                                          reason="Deep Agents extra is not installed")
 
 
 def budget_project(**budget):
@@ -349,6 +355,7 @@ def scripted(*messages):
 
 
 @pytest.mark.asyncio
+@requires_deep_agents
 async def test_the_model_chooses_a_real_tool_and_the_run_is_auditable(tmp_path):
     model, observed = scripted(("", dict(tool_calls=[dict(
         name="get_test_scope", args={}, id="call-1")])), ("我还没看到真实证据。", {}))
@@ -375,6 +382,7 @@ async def test_the_model_chooses_a_real_tool_and_the_run_is_auditable(tmp_path):
 
 
 @pytest.mark.asyncio
+@requires_deep_agents
 async def test_an_invented_identifier_becomes_a_structured_tool_error(tmp_path):
     model, observed = scripted(("", dict(tool_calls=[dict(
         name="run_test_group", args={"group_id": "group-99"}, id="call-1")])),
@@ -389,6 +397,7 @@ async def test_an_invented_identifier_becomes_a_structured_tool_error(tmp_path):
 
 
 @pytest.mark.asyncio
+@requires_deep_agents
 async def test_a_model_that_never_calls_a_tool_produces_no_evidence_and_completes_nothing(
         tmp_path):
     model, _ = scripted(("我先解释一下计划。", {}), ("结束。", {}))
@@ -408,6 +417,7 @@ async def test_a_model_that_never_calls_a_tool_produces_no_evidence_and_complete
 
 
 @pytest.mark.asyncio
+@requires_deep_agents
 async def test_the_model_call_limit_ends_the_run_with_the_evidence_it_already_has(tmp_path):
     model, _ = scripted(("", dict(tool_calls=[dict(
         name="get_test_scope", args={}, id="call-1")])),
@@ -425,6 +435,7 @@ async def test_the_model_call_limit_ends_the_run_with_the_evidence_it_already_ha
 
 
 @pytest.mark.asyncio
+@requires_deep_agents
 async def test_a_cancelled_task_sends_nothing_and_says_so(tmp_path):
     model, _ = scripted(("", dict(tool_calls=[dict(
         name="run_test_group", args={"group_id": "group_1"}, id="call-1")])),
