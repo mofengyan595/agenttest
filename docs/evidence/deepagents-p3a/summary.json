@@ -1,0 +1,4107 @@
+{
+  "implementation_sha": "57b4fd7b96af73129f077fcd0069004a0d48cf14",
+  "source_sha256": "6508a0444048228ced38cbdb40c7c2357c4c55af14a62aa23542438dc9a5bd48",
+  "p21": {
+    "functional": {
+      "attempt": "p21-functional-06",
+      "base_head": "81991874fc378858133ba43aa829bc906662c203",
+      "goal": "帮我测一下包裹管理功能。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": true,
+      "checks_passed": false,
+      "coverage": {
+        "obligations": 7,
+        "measured": 7,
+        "missing": 0,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [],
+      "total_usage": {
+        "requests": 9,
+        "model_calls": 12,
+        "known_tokens": 90290,
+        "total_tokens": 90290,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 8,
+        "input_tokens": 54124,
+        "output_tokens": 1033,
+        "total_tokens": 55157,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 200735,
+        "response_bytes": 8203,
+        "elapsed_ms": 20858.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 5459,
+          "total_tokens": 1469,
+          "input_tokens": 1406,
+          "output_tokens": 63,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope"
+          ],
+          "request_sha256": "9ecf77fce86542e0efef01d5929eb03a8f79e1d3b186e10250e7b44d82ac1f63"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 15943,
+          "total_tokens": 4256,
+          "input_tokens": 4195,
+          "output_tokens": 61,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "efed36a0d40ecd9cbddb9ba041ee97881e2aedfd42f00aedae3dc66b5cb2e6a8"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 17282,
+          "total_tokens": 4690,
+          "input_tokens": 4540,
+          "output_tokens": 150,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group",
+            "get_test_coverage"
+          ],
+          "request_sha256": "206a26e6506bc621dcef74aba856de563d9a5d4d0c7da5b8d6feb11bc6da3c15"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 26204,
+          "total_tokens": 7175,
+          "input_tokens": 7079,
+          "output_tokens": 96,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "70f0c2bd6713e2eb399e90a6d9c6b4f942ab1cd20b9373e0917091a9d06e5eaf"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 27276,
+          "total_tokens": 7437,
+          "input_tokens": 7370,
+          "output_tokens": 67,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "5c15ef2c72da0a110a64ee13a13d0a7613e6f6bfbece905d160c083b383d7918"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 27981,
+          "total_tokens": 7588,
+          "input_tokens": 7536,
+          "output_tokens": 52,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope",
+            "get_test_coverage"
+          ],
+          "request_sha256": "cafc8a6e47975b0ffcd4af5addc47bf79d8986dbaec56581526af51c5b6d1a95"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 39485,
+          "total_tokens": 10888,
+          "input_tokens": 10793,
+          "output_tokens": 95,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "investigate_failure"
+          ],
+          "request_sha256": "af3beb27e938ce370e09babeaa29ff12785d4878be295bfe949945c480a47029"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 41105,
+          "total_tokens": 11654,
+          "input_tokens": 11205,
+          "output_tokens": 449,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "133eff55d6620e0d8a5a87252d63d1a992b68b14f7d3973ad1e124ffd285613d"
+        }
+      ],
+      "context_trace": [],
+      "tool_calls": 11,
+      "tool_counts": {
+        "get_contract": 1,
+        "get_approved_policies": 1,
+        "get_test_scope": 2,
+        "run_test_group": 2,
+        "get_test_coverage": 2,
+        "run_open_obligation": 2,
+        "investigate_failure": 1
+      },
+      "recurring_reads": 2,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "get_contract",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_approved_policies",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "请严格输出单行合法 JSON：每个用例只含必要字段，先做 readAvailability 确认服务就绪，再依次覆盖 create->read->change->replace->delete 主流程与已批准负向断言，避免超长或注释。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "investigate_failure",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 9,
+        "POST": 1,
+        "PATCH": 1,
+        "PUT": 1,
+        "DELETE": 1
+      },
+      "outcomes": {
+        "ASSERTION_FAILED": 1,
+        "PASS": 1,
+        "SKIPPED_DUPLICATE": 1
+      },
+      "cleaned_resources": {
+        "CLEANED": 1
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 1,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 11777
+        }
+      ],
+      "other_design_diagnostics": [
+        "JSON_SYNTAX"
+      ]
+    },
+    "regression": {
+      "attempt": "p21-regression-07",
+      "base_head": "81991874fc378858133ba43aa829bc906662c203",
+      "goal": "删除功能刚改过，帮我回归一下。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": true,
+      "checks_passed": true,
+      "coverage": {
+        "obligations": 4,
+        "measured": 4,
+        "missing": 0,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [],
+      "total_usage": {
+        "requests": 4,
+        "model_calls": 8,
+        "known_tokens": 50322,
+        "total_tokens": 50322,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 5,
+        "input_tokens": 21392,
+        "output_tokens": 692,
+        "total_tokens": 22084,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 81796,
+        "response_bytes": 5360,
+        "elapsed_ms": 13968.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 5468,
+          "total_tokens": 1472,
+          "input_tokens": 1409,
+          "output_tokens": 63,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope",
+            "get_contract",
+            "get_approved_policies"
+          ],
+          "request_sha256": "cacaf4841b9c25b065733090ccba7827340405896ac837d7e98cb7c97f7771c2"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 15972,
+          "total_tokens": 4197,
+          "input_tokens": 4145,
+          "output_tokens": 52,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "25c4dd97f68d2fa540eec63a693ea2b777d45fac41b8fa29637e6f5e45397ff2"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 17337,
+          "total_tokens": 4642,
+          "input_tokens": 4496,
+          "output_tokens": 146,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "9d470c7cb37aa7d06615eb772dbd9492b2aaa42d5b6b9c6a40d7a5c45b9d644a"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 19044,
+          "total_tokens": 5012,
+          "input_tokens": 4974,
+          "output_tokens": 38,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "27653f13fed1a3fb9450be01863ce5afb299cb3c0263d78c237ed3c73971ffd2"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 23975,
+          "total_tokens": 6761,
+          "input_tokens": 6368,
+          "output_tokens": 393,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "d33abb6c89eea6e7ce9a25a8037945a9bbee269ec9de4683d0e23cec092ca295"
+        }
+      ],
+      "context_trace": [],
+      "tool_calls": 6,
+      "tool_counts": {
+        "get_test_scope": 1,
+        "get_contract": 1,
+        "get_approved_policies": 1,
+        "run_test_group": 2,
+        "get_test_coverage": 1
+      },
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_contract",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_approved_policies",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "严格按 createParcel -> readParcel(200) -> deleteParcel(204) -> readParcel(404) 的顺序构造；每个 readParcel/deleteParcel 步骤的 parcelId 必须绑定到同一实例的前置 createParcel 步骤（requirement_source_id 指向创建步骤），不得引用其他实例。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 6,
+        "POST": 1,
+        "DELETE": 1
+      },
+      "outcomes": {
+        "PASS": 1
+      },
+      "cleaned_resources": {
+        "CLEANED": 1
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12071
+        }
+      ],
+      "other_design_diagnostics": [
+        "CONSTRUCTION_ORDER_INSTANCE_CONFLICT"
+      ]
+    },
+    "investigation": {
+      "attempt": "p21-investigation-04",
+      "base_head": "81991874fc378858133ba43aa829bc906662c203",
+      "goal": "包裹接口偶尔报错，帮我看看。",
+      "status": "INTERRUPTED",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": "NameError",
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 12061,
+        "total_tokens": 12061,
+        "usage_known": true
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 4
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "FALLBACK",
+          "reason": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+          "code": "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE",
+          "tokens": 12061
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "prerelease": {
+      "attempt": "p21-prerelease-04",
+      "base_head": "81991874fc378858133ba43aa829bc906662c203",
+      "goal": "这个服务准备上线了，帮我测一轮。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": true,
+      "coverage": {
+        "obligations": 7,
+        "measured": 5,
+        "missing": 2,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [
+        "ALL_OBLIGATIONS_MEASURED",
+        "ALL_GROUPS_DECIDED"
+      ],
+      "total_usage": {
+        "requests": 10,
+        "model_calls": 19,
+        "known_tokens": 131741,
+        "total_tokens": 131741,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 13,
+        "input_tokens": 72631,
+        "output_tokens": 1365,
+        "total_tokens": 73996,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 275589,
+        "response_bytes": 11566,
+        "elapsed_ms": 26327.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 5471,
+          "total_tokens": 1456,
+          "input_tokens": 1409,
+          "output_tokens": 47,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope",
+            "get_contract"
+          ],
+          "request_sha256": "73e94290af102fcb818af2b287cf6b339dd6e385757beebaeac9b41435fbcb8c"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 11594,
+          "total_tokens": 3007,
+          "input_tokens": 2945,
+          "output_tokens": 62,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "1e6be4ab336c447ff260f1b0a79fc443414335641de33602778ea445cd690f90"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 12930,
+          "total_tokens": 3408,
+          "input_tokens": 3290,
+          "output_tokens": 118,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "e0a26853ca8534a69f9e956c94a40213d7be047768926b492d6e39e678b15824"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 14668,
+          "total_tokens": 3797,
+          "input_tokens": 3746,
+          "output_tokens": 51,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "0f43037354cebf2f27db9b1109aefcea654e762f0ab9443e2229399989eb40f6"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 20531,
+          "total_tokens": 5475,
+          "input_tokens": 5402,
+          "output_tokens": 73,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "eda0ed13d008fe3c1353be9417ed790fcc617b6aa1e72dc8d5887cdef42a531e"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 21489,
+          "total_tokens": 5735,
+          "input_tokens": 5667,
+          "output_tokens": 68,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report"
+          ],
+          "request_sha256": "126ae3c131ed46ab5faa457fb78e7f0bd7850d5990dcf1bf52fa3b2743a67e0b"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 22732,
+          "total_tokens": 6078,
+          "input_tokens": 5986,
+          "output_tokens": 92,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "13f8f32a24921496995c612042b59687d53403c0ebead7456c9fdde531d6c459"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 24122,
+          "total_tokens": 6444,
+          "input_tokens": 6379,
+          "output_tokens": 65,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "1e5b392f9e0b71ed5e1f503cb1d4a790375e22cd530b9e36b0a51ca3b9317382"
+        },
+        {
+          "index": 9,
+          "calls": 1,
+          "request_bytes": 24931,
+          "total_tokens": 6644,
+          "input_tokens": 6583,
+          "output_tokens": 61,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "a803d74a947a731397bc5464d139d43241e4dae85d7adf370d55b8f8888f0503"
+        },
+        {
+          "index": 10,
+          "calls": 1,
+          "request_bytes": 26374,
+          "total_tokens": 7069,
+          "input_tokens": 6995,
+          "output_tokens": 74,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "117e129a4aa3a14c652d35b3d8f7eddaaea8c1775ba371fde15a513cc02d1efd"
+        },
+        {
+          "index": 11,
+          "calls": 1,
+          "request_bytes": 27758,
+          "total_tokens": 7459,
+          "input_tokens": 7388,
+          "output_tokens": 71,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "a65a790461ff6ea53a9b7977fef51e0bb466a0991cd12c74978d3fb1a2326707"
+        },
+        {
+          "index": 12,
+          "calls": 1,
+          "request_bytes": 28369,
+          "total_tokens": 7561,
+          "input_tokens": 7524,
+          "output_tokens": 37,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "8f21573cf0de46e292a6df08e98fed220aa617b4eb4813d42ae1d5241f62ee7d"
+        },
+        {
+          "index": 13,
+          "calls": 1,
+          "request_bytes": 34620,
+          "total_tokens": 9863,
+          "input_tokens": 9317,
+          "output_tokens": 546,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "5d691120bf87353baee6c10a28b6fa1258ebc712c5f7d4cf6a065521f2f3260c"
+        }
+      ],
+      "context_trace": [],
+      "tool_calls": 13,
+      "tool_counts": {
+        "get_test_scope": 1,
+        "get_contract": 1,
+        "run_test_group": 2,
+        "get_test_coverage": 2,
+        "run_open_obligation": 6,
+        "read_test_report": 1
+      },
+      "recurring_reads": 1,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_contract",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "设计输出必须为严格合法的 JSON（无注释、无尾逗号、字符串双引号），每个用例只含一个断言组，先跑正向基线再跑各负向用例。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 6,
+        "POST": 3,
+        "DELETE": 3,
+        "PATCH": 1
+      },
+      "outcomes": {
+        "PASS": 3
+      },
+      "cleaned_resources": {
+        "CLEANED": 3
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12371
+        }
+      ],
+      "other_design_diagnostics": [
+        "JSON_SYNTAX",
+        "DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT"
+      ]
+    }
+  },
+  "acceptance": {
+    "functional": {
+      "attempt": "p3a-functional",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "帮我测一下包裹管理功能。",
+      "status": "INTERRUPTED",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": "ImportError",
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 11595,
+        "total_tokens": 11595,
+        "usage_known": true
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 11595
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "regression": {
+      "attempt": "p3a-regression",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "删除功能刚改过，帮我回归一下。",
+      "status": "INTERRUPTED",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": "NameError",
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 11891,
+        "total_tokens": 11891,
+        "usage_known": true
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "FALLBACK",
+          "reason": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+          "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+          "tokens": 11891
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "investigation": {
+      "attempt": "p3a-investigation",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "包裹接口偶尔报错，帮我看看。",
+      "status": "INTERRUPTED",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": "NameError",
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 0,
+        "total_tokens": null,
+        "usage_known": false
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "FALLBACK",
+          "reason": "FOCUS_NOT_VALIDATED",
+          "code": "MODEL_CONNECTION_ERROR",
+          "tokens": null
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "prerelease": {
+      "attempt": "p3a-prerelease",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "这个服务准备上线了，帮我测一轮。",
+      "status": "INTERRUPTED",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": "NameError",
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 0,
+        "total_tokens": null,
+        "usage_known": false
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "FALLBACK",
+          "reason": "FOCUS_NOT_VALIDATED",
+          "code": "MODEL_TIMEOUT",
+          "tokens": null
+        }
+      ],
+      "other_design_diagnostics": []
+    }
+  },
+  "acceptance-v2": {
+    "functional": {
+      "attempt": "p3a-v2-functional",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "帮我测一下包裹管理功能。",
+      "status": "FINISHED",
+      "runtime_stop": "MODEL_ERROR",
+      "runtime_error": "MODEL_USAGE_UNKNOWN",
+      "setup_failure_type": null,
+      "strict_complete": true,
+      "checks_passed": false,
+      "coverage": {
+        "obligations": 7,
+        "measured": 7,
+        "missing": 0,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [],
+      "total_usage": {
+        "requests": 8,
+        "model_calls": 7,
+        "known_tokens": 35069,
+        "total_tokens": null,
+        "usage_known": false
+      },
+      "harness_usage": {
+        "calls": 4,
+        "input_tokens": 10633,
+        "output_tokens": 254,
+        "total_tokens": 10887,
+        "unknown_usage_calls": 1,
+        "failed_calls": 2,
+        "request_bytes": 64017,
+        "response_bytes": 2777,
+        "elapsed_ms": 56968.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8086,
+          "total_tokens": 2087,
+          "input_tokens": 1995,
+          "output_tokens": 92,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_file",
+            "get_test_scope"
+          ],
+          "request_sha256": "4fee50245d6e8bd7470d64002394c22039ded78dffc45e8942e6c67f475d9717"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 14080,
+          "total_tokens": 3637,
+          "input_tokens": 3604,
+          "output_tokens": 33,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "5ee2481a0c1ca274698b6e7eb77c034a45020d0e02d00ff1351caade1bef8096"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 19715,
+          "total_tokens": 5163,
+          "input_tokens": 5034,
+          "output_tokens": 129,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "fb4eae7e65f9594866de8b4f008098a588edefeeb0abc8b90e0b2d4b97a12707"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 22136,
+          "total_tokens": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "http_status": null,
+          "error": "MODEL_TIMEOUT",
+          "tool_names": [],
+          "request_sha256": "ae71c83c581b721ed39398d53ef88086ac7edb574d9d8f0ffc8f1586037aaece"
+        },
+        {
+          "index": 5,
+          "calls": 0,
+          "request_bytes": 0,
+          "total_tokens": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "http_status": null,
+          "error": "MODEL_USAGE_UNKNOWN",
+          "tool_names": [],
+          "request_sha256": null
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3664
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3664,
+            "get_test_coverage": 4797
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3664,
+            "get_test_coverage": 4797,
+            "run_test_group": 1559
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3664,
+            "get_test_coverage": 4797,
+            "run_test_group": 1559
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 4,
+      "tool_counts": {
+        "read_file": 1,
+        "get_test_scope": 1,
+        "get_test_coverage": 1,
+        "run_test_group": 1
+      },
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 6,
+        "POST": 1,
+        "PATCH": 1,
+        "PUT": 1,
+        "DELETE": 1
+      },
+      "outcomes": {
+        "ASSERTION_FAILED": 1,
+        "PASS": 1
+      },
+      "cleaned_resources": {
+        "CLEANED": 1
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 11773
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "regression": {
+      "attempt": "p3a-v2-regression",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "删除功能刚改过，帮我回归一下。",
+      "status": "NEEDS_REVIEW",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 12149,
+        "total_tokens": 12149,
+        "usage_known": true
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "FOCUS_REQUIREMENT_WITNESS_MISSING",
+          "tokens": 12149
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "investigation": {
+      "attempt": "p3a-v2-investigation",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "包裹接口偶尔报错，帮我看看。",
+      "status": "NEEDS_REVIEW",
+      "runtime_stop": null,
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": null,
+      "coverage": null,
+      "unmet": null,
+      "total_usage": {
+        "requests": 0,
+        "model_calls": 1,
+        "known_tokens": 11738,
+        "total_tokens": 11738,
+        "usage_known": true
+      },
+      "harness_usage": null,
+      "model_calls": [],
+      "context_trace": [],
+      "tool_calls": 0,
+      "tool_counts": {},
+      "recurring_reads": 0,
+      "pointer_responses": 0,
+      "decisions": [],
+      "http_methods": {
+        "GET": 2
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "REJECTED",
+          "reason": "MODEL_INVALID_RESPONSE",
+          "code": "MODEL_SCHEMA_VALIDATOR_REJECTED",
+          "tokens": 11738
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "prerelease": {
+      "attempt": "p3a-v2-prerelease",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "这个服务准备上线了，帮我测一轮。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": false,
+      "coverage": {
+        "obligations": 7,
+        "measured": 0,
+        "missing": 7,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [
+        "EVIDENCE_PRODUCED",
+        "ALL_OBLIGATIONS_MEASURED",
+        "ALL_GROUPS_DECIDED"
+      ],
+      "total_usage": {
+        "requests": 1,
+        "model_calls": 12,
+        "known_tokens": 85260,
+        "total_tokens": 85260,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 9,
+        "input_tokens": 48048,
+        "output_tokens": 1585,
+        "total_tokens": 49633,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 194107,
+        "response_bytes": 10532,
+        "elapsed_ms": 24266.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8098,
+          "total_tokens": 2089,
+          "input_tokens": 1998,
+          "output_tokens": 91,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope",
+            "read_file"
+          ],
+          "request_sha256": "67ede271bb42d479bc6d8b8908f9053cd24cee523a7bf4876e3fd1067fe2d7e2"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 14170,
+          "total_tokens": 3672,
+          "input_tokens": 3537,
+          "output_tokens": 135,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "ccea6a4ce7fb2703a9f31183aa214b87c440e1db428e9385762439cce20706a4"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 16069,
+          "total_tokens": 4056,
+          "input_tokens": 3993,
+          "output_tokens": 63,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "abe0fa3ba60e6c733d14f9468980e64c22e12bc44ef0d4b9fef7efd2f236f19c"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 21685,
+          "total_tokens": 5552,
+          "input_tokens": 5383,
+          "output_tokens": 169,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "b51fe0ec81de1433b63dda63468d3ed32e7df63709af56f545534b466d3bef7b"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 23424,
+          "total_tokens": 5941,
+          "input_tokens": 5796,
+          "output_tokens": 145,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "2063c32d96c39e161a8c4536b15c37e3cb49e4870079b52bd9abcb380f77f12e"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 24292,
+          "total_tokens": 6083,
+          "input_tokens": 6000,
+          "output_tokens": 83,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "987a0e22bf83ce4ddcdc2c9c88b42bac3d52e68a352cf4bf42e49e9632539f09"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 25247,
+          "total_tokens": 6382,
+          "input_tokens": 6242,
+          "output_tokens": 140,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report",
+            "investigate_failure"
+          ],
+          "request_sha256": "f4b93a786bee328457558970c87c819f3385c64794a541a1c4edf87567aac48e"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 27757,
+          "total_tokens": 6868,
+          "input_tokens": 6845,
+          "output_tokens": 23,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "95a7df7d52d74c9aabd06e3f63fc33f29c93cabba9c508e8a593dcbbccb5e1be"
+        },
+        {
+          "index": 9,
+          "calls": 1,
+          "request_bytes": 33365,
+          "total_tokens": 8990,
+          "input_tokens": 8254,
+          "output_tokens": 736,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "cd2d18fc59546bbe65abbf825ac0be692319bbebbaf5a839410f5f9b61d4b7a2"
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 1133
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 1133,
+            "get_test_coverage": 4622
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 1962,
+            "get_test_coverage": 4622
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 2119,
+            "get_test_coverage": 4622
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 2119,
+            "get_test_coverage": 4622,
+            "run_open_obligation": 443
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 2119,
+            "get_test_coverage": 4622,
+            "run_open_obligation": 443,
+            "read_test_report": 762,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3686,
+            "read_file": 1005,
+            "run_test_group": 2119,
+            "get_test_coverage": 9401,
+            "run_open_obligation": 443,
+            "read_test_report": 762,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 10,
+      "tool_counts": {
+        "get_test_scope": 1,
+        "read_file": 1,
+        "run_test_group": 3,
+        "get_test_coverage": 2,
+        "run_open_obligation": 1,
+        "read_test_report": 1,
+        "investigate_failure": 1
+      },
+      "recurring_reads": 1,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_file",
+          "design_note": null,
+          "selection": "/skills/api-functional-testing/SKILL.md"
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "对同一 parcel 走完整生命周期：createParcel 创建后用返回的 id 做 readParcel 读取，再 changeParcel 更新并读取确认，再 replaceParcel 整体替换并读取确认，最后 deleteParcel 清理并按要求回读验证删除；仅在批准策略要求时做删除后回读。全部断言以已批准策略为准。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "每个 operation 只规划一次，不重复任何操作：readAvailability 一次；createParcel 一次（含全部已批准负例参数校验）；readParcel 一次（读取刚创建的 id）；changeParcel 一次；replaceParcel 一次（替换同一 id）；deleteParcel 一次清理该资源。",
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "顺序执行同一 parcel 的生命周期，每个 operation 仅一次：createParcel 建资源并以返回 id 绑定后续步骤，readParcel 用该 id 读取，changeParcel 更新该 id，replaceParcel 替换该 id，deleteParcel 删除该 id 完成清理。",
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "investigate_failure",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 3
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12133
+        }
+      ],
+      "other_design_diagnostics": [
+        "PLANNING_INSTANCE_UNBOUND",
+        "JSON_SYNTAX"
+      ]
+    }
+  },
+  "final": {
+    "functional": {
+      "attempt": "p3a-final-functional",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "帮我测一下包裹管理功能。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": true,
+      "coverage": {
+        "obligations": 7,
+        "measured": 2,
+        "missing": 5,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [
+        "SCOPE_OBLIGATIONS_MEASURED",
+        "SCOPE_OPERATIONS_EXERCISED"
+      ],
+      "total_usage": {
+        "requests": 3,
+        "model_calls": 16,
+        "known_tokens": 119422,
+        "total_tokens": 119422,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 12,
+        "input_tokens": 75386,
+        "output_tokens": 2014,
+        "total_tokens": 77400,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 298977,
+        "response_bytes": 13353,
+        "elapsed_ms": 51718.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8086,
+          "total_tokens": 2084,
+          "input_tokens": 1995,
+          "output_tokens": 89,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope",
+            "read_file"
+          ],
+          "request_sha256": "4fee50245d6e8bd7470d64002394c22039ded78dffc45e8942e6c67f475d9717"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 14080,
+          "total_tokens": 3644,
+          "input_tokens": 3603,
+          "output_tokens": 41,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "067e33fb2a7ec59f59dc35eca615f0adff67b01eb2fa5e179d8c7fda3c15380d"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 19756,
+          "total_tokens": 5225,
+          "input_tokens": 5043,
+          "output_tokens": 182,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "b853d7b2f82a2e0464170a30f931b0fb46190dce001a3da30a2abbaf6ab52368"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 21553,
+          "total_tokens": 5617,
+          "input_tokens": 5470,
+          "output_tokens": 147,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "fa96847b2ee05e064d417a7bed6cfcc5cac05300de9e25e39b53de221e41ec13"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 23499,
+          "total_tokens": 6085,
+          "input_tokens": 5937,
+          "output_tokens": 148,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "55dc59b95e948aea3b22878ca9779a0b6bd7e24b2b0e23f01e2cac7db91da56e"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 24391,
+          "total_tokens": 6214,
+          "input_tokens": 6144,
+          "output_tokens": 70,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "cec2d0b19bb7ca8113aea68c743c8f6a7a53b33ab53f48b769380b2497a31b44"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 25297,
+          "total_tokens": 6461,
+          "input_tokens": 6375,
+          "output_tokens": 86,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report"
+          ],
+          "request_sha256": "84a28192cfdfb833b8ced89321803ea5be6c9a96b595b09d0dfb470699254f51"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 26567,
+          "total_tokens": 6788,
+          "input_tokens": 6685,
+          "output_tokens": 103,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "investigate_failure"
+          ],
+          "request_sha256": "8e919a7ed4336cb9b3590f46aa015c52b59fe63d2be861a5d91fe24c10de07d7"
+        },
+        {
+          "index": 9,
+          "calls": 1,
+          "request_bytes": 28039,
+          "total_tokens": 7068,
+          "input_tokens": 7027,
+          "output_tokens": 41,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "3955ddafd9ef0b4c275ca1e547753ec7ba255d0d419f91e6d56a621b444eb00b"
+        },
+        {
+          "index": 10,
+          "calls": 1,
+          "request_bytes": 34207,
+          "total_tokens": 8732,
+          "input_tokens": 8594,
+          "output_tokens": 138,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "e5839dc7a07bb857ecf24d87ab4de3b7588861e9ac588e2bbfc031eda467eaa1"
+        },
+        {
+          "index": 11,
+          "calls": 1,
+          "request_bytes": 35723,
+          "total_tokens": 9072,
+          "input_tokens": 8984,
+          "output_tokens": 88,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report"
+          ],
+          "request_sha256": "40d179a0701bb3f7fa9febd7c60a05f322f9021306ceeb0acbcae67b51516a5a"
+        },
+        {
+          "index": 12,
+          "calls": 1,
+          "request_bytes": 37779,
+          "total_tokens": 10410,
+          "input_tokens": 9529,
+          "output_tokens": 881,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "aad7200542bcbcbf5509931fb882d9af71e9e70a7926e5412fa09c6b8f5a2597"
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 830
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 1962
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 2119
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 2119,
+            "run_open_obligation": 456
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 2119,
+            "run_open_obligation": 456,
+            "read_test_report": 762
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 4799,
+            "run_test_group": 2119,
+            "run_open_obligation": 456,
+            "read_test_report": 762,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 10,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 10029,
+            "run_test_group": 2119,
+            "run_open_obligation": 456,
+            "read_test_report": 762,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 11,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 10029,
+            "run_test_group": 2119,
+            "run_open_obligation": 1211,
+            "read_test_report": 762,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 12,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "get_test_scope": 3666,
+            "read_file": 1005,
+            "get_test_coverage": 10029,
+            "run_test_group": 2119,
+            "run_open_obligation": 1211,
+            "read_test_report": 2207,
+            "investigate_failure": 898
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 12,
+      "tool_counts": {
+        "get_test_scope": 1,
+        "read_file": 1,
+        "get_test_coverage": 2,
+        "run_test_group": 3,
+        "run_open_obligation": 2,
+        "read_test_report": 2,
+        "investigate_failure": 1
+      },
+      "recurring_reads": 1,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_file",
+          "design_note": null,
+          "selection": "/skills/api-functional-testing/SKILL.md"
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "同一包裹资源：先读可用性(readAvailability)取得合法创建输入，再 createParcel 创建单件包裹并记录其 identity，随后 readParcel 用同一 identity 回读验证，changeParcel 做批准的部分更新后用同一 identity 复查，replaceParcel 用批准的整体替换后再次回读，最后 deleteParcel 删除该同一 identity 并按批准策略做删除后回读（仅当策略提供）；负向用例仅在 createParcel 侧使用非法载荷，不产生资源。",
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "单条包裹生命周期：createParcel 创建一件包裹，记录返回 identity；readParcel 用该 identity 回读；changeParcel 部分更新后同 identity 复查；replaceParcel 整体替换后再回读；最后 deleteParcel 按批准策略清理该 identity。",
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "每个操作仅一个实例：createParcel 创建包裹并记录 identity，readParcel 用该 identity 回读，changeParcel 部分更新，replaceParcel 整体替换，deleteParcel 清理该 identity；不额外添加重复读取步骤。",
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "investigate_failure",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "单资源单次创建：仅用批准合法载荷调用一次 createParcel 断言 201，记录返回 identity 供后续读取与该资源清理使用；不复用额外步骤。",
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 3,
+        "POST": 1,
+        "DELETE": 1
+      },
+      "outcomes": {
+        "PASS": 1
+      },
+      "cleaned_resources": {
+        "CLEANED": 1
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 11482
+        }
+      ],
+      "other_design_diagnostics": [
+        "JSON_SYNTAX",
+        "PLANNING_INSTANCE_UNBOUND"
+      ]
+    },
+    "regression": {
+      "attempt": "p3a-final-regression",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "删除功能刚改过，帮我回归一下。",
+      "status": "FINISHED",
+      "runtime_stop": "MODEL_CALL_LIMIT",
+      "runtime_error": "MODEL_CALL_BUDGET",
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": true,
+      "coverage": {
+        "obligations": 4,
+        "measured": 3,
+        "missing": 1,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [
+        "SUBJECT_OBLIGATIONS_MEASURED"
+      ],
+      "total_usage": {
+        "requests": 5,
+        "model_calls": 16,
+        "known_tokens": 112714,
+        "total_tokens": 112714,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 10,
+        "input_tokens": 61567,
+        "output_tokens": 1125,
+        "total_tokens": 62692,
+        "unknown_usage_calls": 0,
+        "failed_calls": 1,
+        "request_bytes": 249819,
+        "response_bytes": 9427,
+        "elapsed_ms": 20594.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8095,
+          "total_tokens": 2090,
+          "input_tokens": 1998,
+          "output_tokens": 92,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_file",
+            "get_test_scope"
+          ],
+          "request_sha256": "bb55c3ca96d1472e30b32856bf4dec936cbe531f90d36c0b8e0249a003432ab0"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 14006,
+          "total_tokens": 3602,
+          "input_tokens": 3544,
+          "output_tokens": 58,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_approved_policies",
+            "get_contract"
+          ],
+          "request_sha256": "1820be854d1028e9ca31f1829444cfaaf45f3de358fc475700d9d7ab75d8d21a"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 19631,
+          "total_tokens": 4942,
+          "input_tokens": 4797,
+          "output_tokens": 145,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "84e739b78f39ee119f9e1760aa175079d23099bdc6f46c81daa7b255fe24631b"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 21503,
+          "total_tokens": 5423,
+          "input_tokens": 5252,
+          "output_tokens": 171,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "de3959839cbf64f06da53139359b8bf7961f59e3f16fe13824137e71548af60c"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 23433,
+          "total_tokens": 5788,
+          "input_tokens": 5732,
+          "output_tokens": 56,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "3a4dc914cd437d87cf82ae876a8ae65eb94b390e74caaa4d2435c7a968023d8e"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 29578,
+          "total_tokens": 7372,
+          "input_tokens": 7252,
+          "output_tokens": 120,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "27e6ef0f68265e5a8f295b1758dce8ab55906db98af8a7f466bff0388f3b382a"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 31003,
+          "total_tokens": 7731,
+          "input_tokens": 7624,
+          "output_tokens": 107,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "3d803f2dd8bf6640ee275db7be458eb71c5588eee8e11f0d96f1bfca3acff243"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 31876,
+          "total_tokens": 7983,
+          "input_tokens": 7842,
+          "output_tokens": 141,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "c24ccdebd775e8e2a88800703d20a14a8d9cc2f2cc43d03ac297e6343b40de90"
+        },
+        {
+          "index": 9,
+          "calls": 1,
+          "request_bytes": 33431,
+          "total_tokens": 8456,
+          "input_tokens": 8262,
+          "output_tokens": 194,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report",
+            "run_open_obligation"
+          ],
+          "request_sha256": "9bb5c882f3daf10efc54d6e41feb959bd010102f1ee89e69c84956d25092d204"
+        },
+        {
+          "index": 10,
+          "calls": 1,
+          "request_bytes": 37263,
+          "total_tokens": 9305,
+          "input_tokens": 9264,
+          "output_tokens": 41,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "a706144b0148d8801248f1820ea2bce7f88ff54d7d782f4a89935412a0899127"
+        },
+        {
+          "index": 11,
+          "calls": 0,
+          "request_bytes": 0,
+          "total_tokens": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "http_status": null,
+          "error": "MODEL_CALL_BUDGET",
+          "tool_names": [],
+          "request_sha256": null
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 1083
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 5152
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 5152,
+            "run_open_obligation": 756
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 5152,
+            "run_open_obligation": 1088
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 5152,
+            "run_open_obligation": 1926
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 10,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 5152,
+            "run_open_obligation": 2876,
+            "read_test_report": 1678
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 11,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3678,
+            "get_approved_policies": 3406,
+            "get_contract": 1005,
+            "run_test_group": 2164,
+            "get_test_coverage": 9920,
+            "run_open_obligation": 2876,
+            "read_test_report": 1678
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 13,
+      "tool_counts": {
+        "read_file": 1,
+        "get_test_scope": 1,
+        "get_approved_policies": 1,
+        "get_contract": 1,
+        "run_test_group": 2,
+        "get_test_coverage": 2,
+        "run_open_obligation": 4,
+        "read_test_report": 1
+      },
+      "recurring_reads": 1,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "read_file",
+          "design_note": null,
+          "selection": "/skills/api-regression-testing/SKILL.md"
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_approved_policies",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_contract",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "删除回归：用 createParcel 创建资源并绑定同一 parcelId 身份，先 readParcel 验证存在（200），再按 deleteParcel 删除（204），删除后用同一 parcelId 回读，依 web_rule_4_expectation_1 期望 404 证明确实消失。",
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "每个操作只用一个已批准实例：createParcel(201) → readParcel 存在性检查(web_rule_4, 200) → deleteParcel(204) → readParcel 同 parcelId 回读(web_rule_4_expectation_1, 404)。不要再插入额外的 readParcel 或重复步骤。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "仅创建：POST /parcels 期望 201 并回读 id；创建的资源随后按 web_rule_3 清理。",
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "创建后用同一 parcelId 删除，期望 204；保持单删除步骤，不额外插入回读。",
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "创建→删除→用同一 parcelId 回读，期望 404，证明删除后资源确实消失。",
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "仅验证删除前存在性：创建后立即 GET 同一 parcelId，期望 200 且 id/name/quantity/meta 存在。",
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 3,
+        "POST": 2,
+        "DELETE": 2
+      },
+      "outcomes": {
+        "PASS": 2
+      },
+      "cleaned_resources": {
+        "CLEANED": 2
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12012
+        }
+      ],
+      "other_design_diagnostics": [
+        "PLANNING_INSTANCE_UNBOUND",
+        "PLANNING_INSTANCE_UNBOUND",
+        "PLANNING_INSTANCE_UNBOUND"
+      ]
+    },
+    "investigation": {
+      "attempt": "p3a-final-investigation",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "包裹接口偶尔报错，帮我看看。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": true,
+      "checks_passed": false,
+      "coverage": {
+        "obligations": 30,
+        "measured": 6,
+        "missing": 24,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [],
+      "total_usage": {
+        "requests": 8,
+        "model_calls": 9,
+        "known_tokens": 59392,
+        "total_tokens": 59392,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 6,
+        "input_tokens": 33910,
+        "output_tokens": 1250,
+        "total_tokens": 35160,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 135998,
+        "response_bytes": 7653,
+        "elapsed_ms": 17719.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8092,
+          "total_tokens": 2091,
+          "input_tokens": 1997,
+          "output_tokens": 94,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_file",
+            "get_test_scope"
+          ],
+          "request_sha256": "c5b0660eadb5efdb857025428a79586a13a733f3a9ff6bc4e917e21d969462ca"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 13944,
+          "total_tokens": 3636,
+          "input_tokens": 3584,
+          "output_tokens": 52,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage",
+            "get_approved_policies"
+          ],
+          "request_sha256": "860957c24102d817bd5d876595aa7a78d31260f79de8f0063827f6f7beee783e"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 23587,
+          "total_tokens": 5984,
+          "input_tokens": 5873,
+          "output_tokens": 111,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "cd07326f96492a730a57645e451091dddefb6d582c2c888c32dac7bc00ce4d58"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 25928,
+          "total_tokens": 6616,
+          "input_tokens": 6463,
+          "output_tokens": 153,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "investigate_failure",
+            "read_test_report"
+          ],
+          "request_sha256": "1d72ca5c19c67f58f6ab736f624a5d7ebb523e3ad17728cb9520d7c66dd2313d"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 29268,
+          "total_tokens": 7278,
+          "input_tokens": 7255,
+          "output_tokens": 23,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_coverage"
+          ],
+          "request_sha256": "0f9d383d2a70c199561148bbfc81e720848fd6867f1c57d0caa0aa194347c01e"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 35179,
+          "total_tokens": 9555,
+          "input_tokens": 8738,
+          "output_tokens": 817,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "fd86dab37788445eb92f900a27cda7a6fecfe852e9e9258d5d1247fdb2e653c4"
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3663
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3663,
+            "get_test_coverage": 4667,
+            "get_approved_policies": 3406
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3663,
+            "get_test_coverage": 4667,
+            "get_approved_policies": 3406,
+            "run_test_group": 1558
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3663,
+            "get_test_coverage": 4667,
+            "get_approved_policies": 3406,
+            "run_test_group": 1558,
+            "investigate_failure": 1019,
+            "read_test_report": 1357
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3663,
+            "get_test_coverage": 9667,
+            "get_approved_policies": 3406,
+            "run_test_group": 1558,
+            "investigate_failure": 1019,
+            "read_test_report": 1357
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 8,
+      "tool_counts": {
+        "read_file": 1,
+        "get_test_scope": 1,
+        "get_test_coverage": 2,
+        "get_approved_policies": 1,
+        "run_test_group": 1,
+        "investigate_failure": 1,
+        "read_test_report": 1
+      },
+      "recurring_reads": 1,
+      "pointer_responses": 0,
+      "decisions": [
+        {
+          "tool": "read_file",
+          "design_note": null,
+          "selection": "/skills/api-failure-investigation/SKILL.md"
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_approved_policies",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "对该包裹资源执行一次完整生命周期（创建→读取→修改→替换→删除→删除后读取404），以取得真实执行证据排查偶发报错。",
+          "selection": null
+        },
+        {
+          "tool": "investigate_failure",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 6,
+        "POST": 1,
+        "PATCH": 1,
+        "PUT": 1,
+        "DELETE": 1
+      },
+      "outcomes": {
+        "ASSERTION_FAILED": 1,
+        "PASS": 1
+      },
+      "cleaned_resources": {
+        "CLEANED": 1
+      },
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12080
+        }
+      ],
+      "other_design_diagnostics": []
+    },
+    "prerelease": {
+      "attempt": "p3a-final-prerelease",
+      "base_head": "8ff8457544fe190535a2d4c26d9e26028e7950db",
+      "goal": "这个服务准备上线了，帮我测一轮。",
+      "status": "FINISHED",
+      "runtime_stop": "ANSWER",
+      "runtime_error": null,
+      "setup_failure_type": null,
+      "strict_complete": false,
+      "checks_passed": false,
+      "coverage": {
+        "obligations": 31,
+        "measured": 0,
+        "missing": 31,
+        "blocked": 0,
+        "operations": [
+          "changeParcel",
+          "createParcel",
+          "deleteParcel",
+          "readAvailability",
+          "readParcel",
+          "replaceParcel"
+        ]
+      },
+      "unmet": [
+        "EVIDENCE_PRODUCED",
+        "ALL_OBLIGATIONS_MEASURED",
+        "ALL_GROUPS_DECIDED"
+      ],
+      "total_usage": {
+        "requests": 1,
+        "model_calls": 10,
+        "known_tokens": 58926,
+        "total_tokens": 58926,
+        "usage_known": true
+      },
+      "harness_usage": {
+        "calls": 9,
+        "input_tokens": 45555,
+        "output_tokens": 1332,
+        "total_tokens": 46887,
+        "unknown_usage_calls": 0,
+        "failed_calls": 0,
+        "request_bytes": 181036,
+        "response_bytes": 9435,
+        "elapsed_ms": 26533.0
+      },
+      "model_calls": [
+        {
+          "index": 1,
+          "calls": 1,
+          "request_bytes": 8098,
+          "total_tokens": 2085,
+          "input_tokens": 1998,
+          "output_tokens": 87,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_file",
+            "get_test_scope"
+          ],
+          "request_sha256": "67ede271bb42d479bc6d8b8908f9053cd24cee523a7bf4876e3fd1067fe2d7e2"
+        },
+        {
+          "index": 2,
+          "calls": 1,
+          "request_bytes": 14147,
+          "total_tokens": 3572,
+          "input_tokens": 3533,
+          "output_tokens": 39,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope"
+          ],
+          "request_sha256": "01eaf78a5b9b90d91eb04ef7b37ee8a334dbc4606cb1a29005e653b2c8d893ae"
+        },
+        {
+          "index": 3,
+          "calls": 1,
+          "request_bytes": 14900,
+          "total_tokens": 3767,
+          "input_tokens": 3727,
+          "output_tokens": 40,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "get_test_scope"
+          ],
+          "request_sha256": "3ec47d04ef34bc994bbb0c66644e5943c37a33475bb9756d80d6a30faf74ae2b"
+        },
+        {
+          "index": 4,
+          "calls": 1,
+          "request_bytes": 19616,
+          "total_tokens": 5102,
+          "input_tokens": 4980,
+          "output_tokens": 122,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "531f2479309d41feb9c0ee165c0b4deb2ae11c6e59feb6ffe7bc67e7bb754242"
+        },
+        {
+          "index": 5,
+          "calls": 1,
+          "request_bytes": 21161,
+          "total_tokens": 5466,
+          "input_tokens": 5348,
+          "output_tokens": 118,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_test_group"
+          ],
+          "request_sha256": "167a6056d0b4dc1cc072a945435bbf00d0a19c01f3f90230fd7d2dae2b094bbf"
+        },
+        {
+          "index": 6,
+          "calls": 1,
+          "request_bytes": 22679,
+          "total_tokens": 5816,
+          "input_tokens": 5711,
+          "output_tokens": 105,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "run_open_obligation"
+          ],
+          "request_sha256": "5483ddf59bee42e43be37bb1f37a40bd1098cf320b41b25cbaca2e174c1b1b69"
+        },
+        {
+          "index": 7,
+          "calls": 1,
+          "request_bytes": 23702,
+          "total_tokens": 6046,
+          "input_tokens": 5975,
+          "output_tokens": 71,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "read_test_report"
+          ],
+          "request_sha256": "7e851dabdc7b725e5dc7b84ac6ce0a6d09dfbc80aa7518c549d1dbc0f9eccb47"
+        },
+        {
+          "index": 8,
+          "calls": 1,
+          "request_bytes": 24899,
+          "total_tokens": 6356,
+          "input_tokens": 6269,
+          "output_tokens": 87,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [
+            "investigate_failure",
+            "get_test_coverage"
+          ],
+          "request_sha256": "1a7af8139340588ff61320c7cad6cf13369e6211e7ff8bf27bf775f82a6d43fe"
+        },
+        {
+          "index": 9,
+          "calls": 1,
+          "request_bytes": 31834,
+          "total_tokens": 8677,
+          "input_tokens": 8014,
+          "output_tokens": 663,
+          "http_status": 200,
+          "error": null,
+          "tool_names": [],
+          "request_sha256": "a028f0c735db3a3cd526a9c24353b9791d00e90ff2499036ad67fc0d5fcc03a0"
+        }
+      ],
+      "context_trace": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "tool_result_bytes": {},
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3686
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 4117
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804,
+            "run_test_group": 841
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804,
+            "run_test_group": 1681
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804,
+            "run_test_group": 1681,
+            "run_open_obligation": 454
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804,
+            "run_test_group": 1681,
+            "run_open_obligation": 454,
+            "read_test_report": 762
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 7804,
+            "run_test_group": 1681,
+            "run_open_obligation": 454,
+            "read_test_report": 762,
+            "investigate_failure": 898,
+            "get_test_coverage": 4831
+          },
+          "cleared_tool_results": 0,
+          "tool_names": [
+            "read_file",
+            "get_contract",
+            "get_approved_policies",
+            "get_test_scope",
+            "get_test_coverage",
+            "run_test_group",
+            "run_open_obligation",
+            "read_test_report",
+            "investigate_failure"
+          ]
+        }
+      ],
+      "tool_calls": 10,
+      "tool_counts": {
+        "read_file": 1,
+        "get_test_scope": 3,
+        "run_test_group": 2,
+        "run_open_obligation": 1,
+        "read_test_report": 1,
+        "investigate_failure": 1,
+        "get_test_coverage": 1
+      },
+      "recurring_reads": 2,
+      "pointer_responses": 1,
+      "decisions": [
+        {
+          "tool": "read_file",
+          "design_note": null,
+          "selection": "/skills/api-functional-testing/SKILL.md"
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_scope",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "上线前功能覆盖：先只读 readAvailability 确认服务可用性，再创建包裹并回读同一资源，按批准规则更新/替换同一包裹，最后按删除策略清理；创建与更新须同时覆盖已批准的正向与负向参数断言，负向用例不得改变合法资源状态。",
+          "selection": null
+        },
+        {
+          "tool": "run_test_group",
+          "design_note": "精简方案：单一包裹资源走完创建→回读→更新→替换→删除全生命周期，负向参数断言只针对同一资源做拒绝校验，不做额外资源扩展。",
+          "selection": null
+        },
+        {
+          "tool": "run_open_obligation",
+          "design_note": "先以最小只读探测确认服务可用性状态，不创建任何资源。",
+          "selection": null
+        },
+        {
+          "tool": "read_test_report",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "investigate_failure",
+          "design_note": null,
+          "selection": null
+        },
+        {
+          "tool": "get_test_coverage",
+          "design_note": null,
+          "selection": null
+        }
+      ],
+      "http_methods": {
+        "GET": 3
+      },
+      "outcomes": {},
+      "cleaned_resources": {},
+      "remaining_records": 0,
+      "duplicates_suppressed": 0,
+      "focus": [
+        {
+          "status": "SELECTED",
+          "reason": null,
+          "code": null,
+          "tokens": 12039
+        }
+      ],
+      "other_design_diagnostics": [
+        "MODEL_TOKEN_BUDGET",
+        "MODEL_TOKEN_BUDGET"
+      ]
+    }
+  }
+}
