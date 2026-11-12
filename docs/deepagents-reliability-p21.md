@@ -131,7 +131,11 @@ functional-04 的原始输出里同时有两件事：
   `tests/test_development_ab.py`、`tests/test_generic_references.py`、
   `tests/test_reference_diagnostics.py`、`tests/test_root_response_planning.py` 合计
   **146 passed**。
-- 修复后的最终全量运行结果以交付说明为准(运行中/已完成两种状态都会如实标注，不预填)。
+- 修复后完整运行：**2761 passed / 15 skipped / 2 xfailed**，其中 7 个失败全部是
+  "运行期间执行 `git commit` 改变了 HEAD"导致的授权/评测用例
+  (`RUN_AUTHORIZATION_HEAD_MISMATCH:558181d…`)；HEAD 稳定后单独复跑
+  `tests/test_eval_v2_runner.py` + `tests/test_rw_acceptance_authorization.py`：
+  **32 passed**。这条经验也写进交付说明：全量回归期间不要提交。
 - `ruff check src tests scripts`：All checks passed。
 
 ## 6. 真实 ecnu-max 验收方法
