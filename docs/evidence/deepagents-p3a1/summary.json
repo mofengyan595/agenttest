@@ -1,0 +1,1896 @@
+{
+  "baseline": "9cb871507afb88e0039bf64b3f85d26b34cc0ed8",
+  "baseline_source_archive_sha256": "d3ffb8e4e39abdf0d69ab09f0cc802257cfc43c6b78b4c0133d5940f11830bee",
+  "ablation": {
+    "functional-A": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 6,
+      "total": 6,
+      "requests": 6,
+      "model_calls": 9,
+      "tokens": 60638,
+      "input": 58444,
+      "output": 2194,
+      "usage_matches": true,
+      "tools": 7,
+      "repeats": 1,
+      "names": [
+        "get_test_scope",
+        "get_contract",
+        "get_approved_policies",
+        "get_test_coverage",
+        "run_test_group",
+        "get_test_coverage",
+        "read_test_report"
+      ],
+      "first": 5381,
+      "peak": 33846,
+      "loaded": [],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          37762,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": []
+    },
+    "functional-B": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 7,
+      "total": 7,
+      "requests": 8,
+      "model_calls": 8,
+      "tokens": 49232,
+      "input": 46463,
+      "output": 2256,
+      "usage_matches": false,
+      "tools": 7,
+      "repeats": 0,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "get_contract",
+        "get_approved_policies",
+        "run_test_group",
+        "get_test_coverage",
+        "investigate_failure"
+      ],
+      "first": 8086,
+      "peak": 30480,
+      "loaded": [
+        "/skills/api-functional-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          42623,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS",
+        "ASSERTION_FAILED"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": []
+    },
+    "functional-C": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 7,
+      "total": 7,
+      "requests": 8,
+      "model_calls": 10,
+      "tokens": 51117,
+      "input": 48209,
+      "output": 2313,
+      "usage_matches": false,
+      "tools": 6,
+      "repeats": 1,
+      "names": [
+        "get_test_scope",
+        "get_test_scope",
+        "get_approved_policies",
+        "run_test_group",
+        "get_test_coverage",
+        "read_test_report"
+      ],
+      "first": 5381,
+      "peak": 25012,
+      "loaded": [],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          38955,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "ASSERTION_FAILED",
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": []
+    },
+    "functional-D": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 6,
+      "total": 6,
+      "requests": 6,
+      "model_calls": 8,
+      "tokens": 54608,
+      "input": 51972,
+      "output": 2636,
+      "usage_matches": true,
+      "tools": 6,
+      "repeats": 1,
+      "names": [
+        "get_test_scope",
+        "read_file",
+        "get_test_coverage",
+        "run_test_group",
+        "get_test_coverage",
+        "read_test_report"
+      ],
+      "first": 8086,
+      "peak": 31115,
+      "loaded": [
+        "/skills/api-functional-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          41615,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": []
+    },
+    "regression-A-recapture2": {
+      "status": "FINISHED",
+      "complete": false,
+      "measured": 2,
+      "total": 4,
+      "requests": 2,
+      "model_calls": 13,
+      "tokens": 89883,
+      "input": 86916,
+      "output": 2967,
+      "usage_matches": true,
+      "tools": 9,
+      "repeats": 2,
+      "names": [
+        "get_test_scope",
+        "run_test_group",
+        "get_approved_policies",
+        "get_test_coverage",
+        "run_open_obligation",
+        "get_test_coverage",
+        "run_open_obligation",
+        "read_test_report",
+        "get_test_coverage"
+      ],
+      "first": 5394,
+      "peak": 38821,
+      "loaded": [],
+      "codes": [
+        "PLANNING_INSTANCE_UNBOUND",
+        "PLANNING_INSTANCE_UNBOUND"
+      ],
+      "design": [
+        [
+          "PROPOSED",
+          26509,
+          false
+        ],
+        [
+          "REJECTED",
+          30207,
+          false
+        ],
+        [
+          "REJECTED",
+          30477,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [
+        "web_rule_4",
+        "web_rule_4_expectation_1"
+      ],
+      "stop": "ANSWER",
+      "unmet": [
+        "SUBJECT_OBLIGATIONS_MEASURED",
+        "POST_DELETE_ABSENCE_VERIFIED"
+      ]
+    },
+    "regression-B": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 4,
+      "total": 4,
+      "requests": 4,
+      "model_calls": 7,
+      "tokens": 44362,
+      "input": 42268,
+      "output": 2094,
+      "usage_matches": true,
+      "tools": 6,
+      "repeats": 0,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "get_approved_policies",
+        "run_test_group",
+        "read_test_report",
+        "get_test_coverage"
+      ],
+      "first": 8095,
+      "peak": 28250,
+      "loaded": [
+        "/skills/api-regression-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          32018,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": []
+    },
+    "regression-C": {
+      "status": "NEEDS_REVIEW",
+      "complete": false,
+      "measured": null,
+      "total": null,
+      "requests": 0,
+      "model_calls": 1,
+      "tokens": 11875,
+      "input": 11562,
+      "output": 313,
+      "usage_matches": true,
+      "tools": 0,
+      "repeats": 0,
+      "names": [],
+      "first": null,
+      "peak": 0,
+      "loaded": [],
+      "codes": [
+        "FOCUS_REQUIREMENT_RESPONSE_INVALID"
+      ],
+      "design": [],
+      "remaining": 0,
+      "receipts": [],
+      "outcomes": []
+    },
+    "regression-D": {
+      "status": "NEEDS_REVIEW",
+      "complete": false,
+      "measured": null,
+      "total": null,
+      "requests": 0,
+      "model_calls": 1,
+      "tokens": 12089,
+      "input": 11562,
+      "output": 527,
+      "usage_matches": true,
+      "tools": 0,
+      "repeats": 0,
+      "names": [],
+      "first": null,
+      "peak": 0,
+      "loaded": [],
+      "codes": [
+        "FOCUS_REQUIREMENT_WITNESS_MISSING"
+      ],
+      "design": [],
+      "remaining": 0,
+      "receipts": [],
+      "outcomes": []
+    }
+  },
+  "interrupted_ablation": {
+    "original": "regression-A",
+    "known_stages": [
+      "focus",
+      "design"
+    ],
+    "final_status": "UNKNOWN",
+    "startup_failure": "regression-A-recapture",
+    "replacement": "regression-A-recapture2"
+  },
+  "development": {
+    "functional": {
+      "status": "FINISHED",
+      "complete": false,
+      "measured": 0,
+      "total": 6,
+      "requests": 0,
+      "model_calls": 9,
+      "tokens": 43301,
+      "input": 41438,
+      "output": 1863,
+      "usage_matches": true,
+      "tools": 6,
+      "repeats": 0,
+      "names": [
+        "get_test_scope",
+        "read_file",
+        "run_test_group",
+        "get_contract",
+        "get_approved_policies",
+        "get_test_coverage"
+      ],
+      "first": 8086,
+      "peak": 26894,
+      "loaded": [
+        "/skills/api-functional-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          4373,
+          true
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [],
+      "outcomes": [
+        "REJECTED"
+      ],
+      "missing": [
+        "web_rule_2",
+        "web_rule_3",
+        "web_rule_4",
+        "web_rule_4_expectation_1",
+        "web_rule_5",
+        "web_rule_6"
+      ],
+      "stop": "ANSWER",
+      "unmet": [
+        "EVIDENCE_PRODUCED",
+        "SCOPE_OBLIGATIONS_MEASURED",
+        "SCOPE_OPERATIONS_EXERCISED",
+        "WRITE_LIFECYCLE_EXERCISED"
+      ]
+    },
+    "regression": {
+      "status": "FINISHED",
+      "complete": false,
+      "measured": 1,
+      "total": 1,
+      "requests": 2,
+      "model_calls": 8,
+      "tokens": 45192,
+      "input": 43401,
+      "output": 1791,
+      "usage_matches": true,
+      "tools": 7,
+      "repeats": 0,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "get_approved_policies",
+        "run_test_group",
+        "get_test_coverage",
+        "read_test_report",
+        "get_contract"
+      ],
+      "first": 8095,
+      "peak": 24618,
+      "loaded": [
+        "/skills/api-regression-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          28391,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": [
+        "POST_DELETE_ABSENCE_VERIFIED"
+      ]
+    }
+  },
+  "final": {
+    "functional": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 6,
+      "total": 6,
+      "requests": 6,
+      "model_calls": 8,
+      "tokens": 44642,
+      "input": 42673,
+      "output": 1969,
+      "usage_matches": true,
+      "tools": 7,
+      "repeats": 0,
+      "names": [
+        "get_test_scope",
+        "read_file",
+        "get_approved_policies",
+        "run_test_group",
+        "get_test_coverage",
+        "read_test_report",
+        "read_test_report"
+      ],
+      "first": 8086,
+      "peak": 31198,
+      "loaded": [
+        "/skills/api-functional-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          3366,
+          true
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "ANSWER",
+      "unmet": [],
+      "focus": [
+        "createParcel",
+        "deleteParcel",
+        "readParcel",
+        "changeParcel",
+        "replaceParcel"
+      ],
+      "focusMode": "selected",
+      "clean": {
+        "created": 1,
+        "pending": 0,
+        "lifecycle": 1,
+        "unproven": 0
+      },
+      "diagnostics": [
+        {
+          "status": "SELECTED",
+          "group": "focus",
+          "code": null,
+          "engine": null,
+          "stats": {
+            "calls": 1,
+            "request_bytes": 40524,
+            "input_tokens": 10899,
+            "output_tokens": 628,
+            "total_tokens": 11527
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "group_1",
+          "code": null,
+          "engine": "IR_SELECTED",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 3366,
+            "input_tokens": 984,
+            "output_tokens": 96,
+            "total_tokens": 1080
+          }
+        }
+      ],
+      "cases": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "changeParcel",
+              "policy": "web_rule_5",
+              "method": "PATCH",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "replaceParcel",
+              "policy": "web_rule_6",
+              "method": "PUT",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4_expectation_1",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 404
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        }
+      ],
+      "context": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {}
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "get_test_scope": 3682,
+            "read_file": 1005
+          }
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "get_test_scope": 3682,
+            "read_file": 1005,
+            "get_approved_policies": 3406
+          }
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "get_test_scope": 3682,
+            "read_file": 1005,
+            "get_approved_policies": 3406,
+            "run_test_group": 980
+          }
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "get_test_scope": 3682,
+            "read_file": 1005,
+            "get_approved_policies": 3406,
+            "run_test_group": 980,
+            "get_test_coverage": 4353,
+            "read_test_report": 3396
+          }
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "get_test_scope": 3682,
+            "read_file": 1005,
+            "get_approved_policies": 3406,
+            "run_test_group": 980,
+            "get_test_coverage": 4353,
+            "read_test_report": 4288
+          }
+        }
+      ]
+    },
+    "regression": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 4,
+      "total": 4,
+      "requests": 6,
+      "model_calls": 16,
+      "tokens": 110410,
+      "input": 106178,
+      "output": 4232,
+      "usage_matches": true,
+      "tools": 12,
+      "repeats": 1,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "get_approved_policies",
+        "run_test_group",
+        "run_test_group",
+        "run_test_group",
+        "run_test_group",
+        "get_test_coverage",
+        "get_test_scope",
+        "run_open_obligation",
+        "read_test_report",
+        "run_open_obligation"
+      ],
+      "first": 8095,
+      "peak": 37510,
+      "loaded": [
+        "/skills/api-regression-testing/SKILL.md"
+      ],
+      "codes": [
+        "DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT"
+      ],
+      "design": [
+        [
+          "REJECTED",
+          32210,
+          false
+        ],
+        [
+          "PROPOSED",
+          32210,
+          false
+        ],
+        [
+          "PROPOSED",
+          27648,
+          false
+        ],
+        [
+          "PROPOSED",
+          30685,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED",
+        "CLEANED"
+      ],
+      "outcomes": [
+        "REJECTED",
+        "PASS",
+        "PASS"
+      ],
+      "missing": [],
+      "stop": "MODEL_CALL_LIMIT",
+      "unmet": [],
+      "focus": [
+        "createParcel",
+        "deleteParcel",
+        "readParcel"
+      ],
+      "focusMode": "selected",
+      "clean": {
+        "created": 2,
+        "pending": 0,
+        "lifecycle": 2,
+        "unproven": 0
+      },
+      "diagnostics": [
+        {
+          "status": "SELECTED",
+          "group": "focus",
+          "code": null,
+          "engine": null,
+          "stats": {
+            "calls": 1,
+            "request_bytes": 42180,
+            "input_tokens": 11475,
+            "output_tokens": 608,
+            "total_tokens": 12083
+          }
+        },
+        {
+          "status": "REJECTED",
+          "group": "group_1",
+          "code": "DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT",
+          "engine": "UNRESOLVED_REQUEST_CLAUSES",
+          "error": "DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 32210,
+            "input_tokens": 7419,
+            "output_tokens": 1013,
+            "total_tokens": 8432
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "group_1",
+          "code": null,
+          "engine": "UNRESOLVED_REQUEST_CLAUSES",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 32210,
+            "input_tokens": 7419,
+            "output_tokens": 557,
+            "total_tokens": 7976
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "supervision_3_group_1",
+          "code": null,
+          "engine": "IR_SELECTED",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 27648,
+            "input_tokens": 6223,
+            "output_tokens": 459,
+            "total_tokens": 6682
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "supervision_4_group_1",
+          "code": null,
+          "engine": "IR_SELECTED",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 30685,
+            "input_tokens": 7073,
+            "output_tokens": 489,
+            "total_tokens": 7562
+          }
+        }
+      ],
+      "cases": [
+        {
+          "status": "REJECTED",
+          "reason": "DESIGN_ABSENCE_PRECONDITION_MISSING",
+          "steps": []
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4_expectation_1",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 404
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        }
+      ],
+      "context": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {}
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686
+          }
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406
+          }
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406,
+            "run_test_group": 930
+          }
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406,
+            "run_test_group": 1669
+          }
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406,
+            "run_test_group": 2556
+          }
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713
+          }
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 3686,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713,
+            "get_test_coverage": 4933
+          }
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 7361,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713,
+            "get_test_coverage": 4933
+          }
+        },
+        {
+          "turn": 10,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 7361,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713,
+            "get_test_coverage": 4933,
+            "run_open_obligation": 755
+          }
+        },
+        {
+          "turn": 11,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 7361,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713,
+            "get_test_coverage": 4933,
+            "run_open_obligation": 755,
+            "read_test_report": 1469
+          }
+        },
+        {
+          "turn": 12,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 878,
+            "get_test_scope": 7361,
+            "get_approved_policies": 3406,
+            "run_test_group": 2713,
+            "get_test_coverage": 4933,
+            "run_open_obligation": 1652,
+            "read_test_report": 1469
+          }
+        }
+      ]
+    },
+    "investigation": {
+      "status": "FINISHED",
+      "complete": true,
+      "measured": 6,
+      "total": 30,
+      "requests": 6,
+      "model_calls": 6,
+      "tokens": 29345,
+      "input": 27445,
+      "output": 1900,
+      "usage_matches": true,
+      "tools": 4,
+      "repeats": 0,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "run_test_group",
+        "get_test_coverage"
+      ],
+      "first": 8092,
+      "peak": 21048,
+      "loaded": [
+        "/skills/api-failure-investigation/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          3152,
+          true
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED"
+      ],
+      "outcomes": [
+        "PASS"
+      ],
+      "missing": [
+        "web_rule_2_negative_1",
+        "web_rule_2_negative_10",
+        "web_rule_2_negative_2",
+        "web_rule_2_negative_3",
+        "web_rule_2_negative_4",
+        "web_rule_2_negative_5",
+        "web_rule_2_negative_6",
+        "web_rule_2_negative_7",
+        "web_rule_2_negative_8",
+        "web_rule_2_negative_9",
+        "web_rule_5_negative_1",
+        "web_rule_5_negative_2",
+        "web_rule_5_negative_3",
+        "web_rule_5_negative_4",
+        "web_rule_6_negative_1",
+        "web_rule_6_negative_10",
+        "web_rule_6_negative_2",
+        "web_rule_6_negative_3",
+        "web_rule_6_negative_4",
+        "web_rule_6_negative_5"
+      ],
+      "stop": "ANSWER",
+      "unmet": [],
+      "focus": [
+        "createParcel",
+        "deleteParcel",
+        "readParcel",
+        "changeParcel",
+        "replaceParcel"
+      ],
+      "focusMode": "selected",
+      "clean": {
+        "created": 1,
+        "pending": 0,
+        "lifecycle": 1,
+        "unproven": 0
+      },
+      "diagnostics": [
+        {
+          "status": "SELECTED",
+          "group": "focus",
+          "code": null,
+          "engine": null,
+          "stats": {
+            "calls": 1,
+            "request_bytes": 42168,
+            "input_tokens": 11471,
+            "output_tokens": 907,
+            "total_tokens": 12378
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "group_1",
+          "code": null,
+          "engine": "IR_SELECTED",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 3152,
+            "input_tokens": 921,
+            "output_tokens": 92,
+            "total_tokens": 1013
+          }
+        }
+      ],
+      "cases": [
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "changeParcel",
+              "policy": "web_rule_5",
+              "method": "PATCH",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "replaceParcel",
+              "policy": "web_rule_6",
+              "method": "PUT",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4_expectation_1",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 404
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        }
+      ],
+      "context": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {}
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3680
+          }
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3680,
+            "run_test_group": 991
+          }
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-failure-investigation/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 874,
+            "get_test_scope": 3680,
+            "run_test_group": 991,
+            "get_test_coverage": 4377
+          }
+        }
+      ]
+    },
+    "prerelease": {
+      "status": "FINISHED",
+      "complete": false,
+      "measured": 9,
+      "total": 31,
+      "requests": 15,
+      "model_calls": 16,
+      "tokens": 105982,
+      "input": 101769,
+      "output": 3699,
+      "usage_matches": false,
+      "tools": 11,
+      "repeats": 2,
+      "names": [
+        "read_file",
+        "get_test_scope",
+        "get_test_coverage",
+        "run_test_group",
+        "read_test_report",
+        "get_test_coverage",
+        "run_open_obligation",
+        "run_open_obligation",
+        "run_open_obligation",
+        "investigate_failure",
+        "get_test_coverage"
+      ],
+      "first": 8098,
+      "peak": 41526,
+      "loaded": [
+        "/skills/api-functional-testing/SKILL.md"
+      ],
+      "codes": [],
+      "design": [
+        [
+          "PROPOSED",
+          3474,
+          true
+        ],
+        [
+          "PROPOSED",
+          28721,
+          false
+        ],
+        [
+          "PROPOSED",
+          31593,
+          false
+        ]
+      ],
+      "remaining": 0,
+      "receipts": [
+        "CLEANED",
+        "CLEANED",
+        "CLEANED"
+      ],
+      "outcomes": [
+        "ASSERTION_FAILED",
+        "PASS",
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "missing": [
+        "web_rule_2_negative_10",
+        "web_rule_2_negative_2",
+        "web_rule_2_negative_3",
+        "web_rule_2_negative_4",
+        "web_rule_2_negative_5",
+        "web_rule_2_negative_6",
+        "web_rule_2_negative_7",
+        "web_rule_2_negative_8",
+        "web_rule_2_negative_9",
+        "web_rule_5_negative_2",
+        "web_rule_5_negative_3",
+        "web_rule_5_negative_4",
+        "web_rule_6_negative_1",
+        "web_rule_6_negative_10",
+        "web_rule_6_negative_2",
+        "web_rule_6_negative_3",
+        "web_rule_6_negative_4",
+        "web_rule_6_negative_5",
+        "web_rule_6_negative_6",
+        "web_rule_6_negative_7"
+      ],
+      "stop": "ANSWER",
+      "unmet": [
+        "RESOURCES_RESOLVED",
+        "ALL_OBLIGATIONS_MEASURED"
+      ],
+      "focus": [
+        "readAvailability",
+        "createParcel",
+        "deleteParcel",
+        "readParcel",
+        "changeParcel",
+        "replaceParcel"
+      ],
+      "focusMode": "selected",
+      "clean": {
+        "created": 4,
+        "pending": 1,
+        "lifecycle": 3,
+        "unproven": 1
+      },
+      "diagnostics": [
+        {
+          "status": "SELECTED",
+          "group": "focus",
+          "code": null,
+          "engine": null,
+          "stats": {
+            "calls": 1,
+            "request_bytes": 42193,
+            "input_tokens": 11475,
+            "output_tokens": 991,
+            "total_tokens": 12466
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "group_1",
+          "code": null,
+          "engine": "IR_SELECTED",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 3474,
+            "input_tokens": 1007,
+            "output_tokens": 97,
+            "total_tokens": 1104
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "supervision_2_group_1",
+          "code": null,
+          "engine": "NO_PLANNING_IR",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 28721,
+            "input_tokens": 6607,
+            "output_tokens": 493,
+            "total_tokens": 7100
+          }
+        },
+        {
+          "status": "PROPOSED",
+          "group": "supervision_3_group_1",
+          "code": null,
+          "engine": "NO_PLANNING_IR",
+          "stats": {
+            "calls": 1,
+            "request_bytes": 31593,
+            "input_tokens": 7459,
+            "output_tokens": 431,
+            "total_tokens": 7890
+          }
+        }
+      ],
+      "cases": [
+        {
+          "status": "FINISHED",
+          "outcome": "ASSERTION_FAILED",
+          "reason": "响应不符合已确认的预期。",
+          "steps": [
+            {
+              "operation": "readAvailability",
+              "policy": "web_rule_1",
+              "method": "GET",
+              "outcome": "ASSERTION_FAILED",
+              "status": 503
+            }
+          ],
+          "cleanup": []
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "changeParcel",
+              "policy": "web_rule_5",
+              "method": "PATCH",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "replaceParcel",
+              "policy": "web_rule_6",
+              "method": "PUT",
+              "outcome": "PASS",
+              "status": 200
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            },
+            {
+              "operation": "readParcel",
+              "policy": "web_rule_4_expectation_1",
+              "method": "GET",
+              "outcome": "PASS",
+              "status": 404
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2_negative_1",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 422
+            }
+          ],
+          "cleanup": []
+        },
+        {
+          "status": "FINISHED",
+          "outcome": "PASS",
+          "steps": [
+            {
+              "operation": "createParcel",
+              "policy": "web_rule_2",
+              "method": "POST",
+              "outcome": "PASS",
+              "status": 201
+            },
+            {
+              "operation": "changeParcel",
+              "policy": "web_rule_5_negative_1",
+              "method": "PATCH",
+              "outcome": "PASS",
+              "status": 422
+            },
+            {
+              "operation": "deleteParcel",
+              "policy": "web_rule_3",
+              "method": "DELETE",
+              "outcome": "PASS",
+              "status": 204
+            }
+          ],
+          "cleanup": [
+            "CLEANED"
+          ]
+        }
+      ],
+      "context": [
+        {
+          "turn": 1,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {}
+        },
+        {
+          "turn": 2,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707
+          }
+        },
+        {
+          "turn": 3,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 4548
+          }
+        },
+        {
+          "turn": 4,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 4548,
+            "run_test_group": 1559
+          }
+        },
+        {
+          "turn": 5,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 4548,
+            "run_test_group": 1559,
+            "read_test_report": 1347
+          }
+        },
+        {
+          "turn": 6,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 10050,
+            "run_test_group": 1559,
+            "read_test_report": 1347
+          }
+        },
+        {
+          "turn": 7,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 10050,
+            "run_test_group": 1559,
+            "read_test_report": 1347,
+            "run_open_obligation": 1114
+          }
+        },
+        {
+          "turn": 8,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 10050,
+            "run_test_group": 1559,
+            "read_test_report": 1347,
+            "run_open_obligation": 1906
+          }
+        },
+        {
+          "turn": 9,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 10050,
+            "run_test_group": 1559,
+            "read_test_report": 1347,
+            "run_open_obligation": 2350
+          }
+        },
+        {
+          "turn": 10,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 10050,
+            "run_test_group": 1559,
+            "read_test_report": 1347,
+            "run_open_obligation": 2350,
+            "investigate_failure": 898
+          }
+        },
+        {
+          "turn": 11,
+          "skills_discovered": [
+            "/skills/api-failure-investigation/SKILL.md",
+            "/skills/api-functional-testing/SKILL.md",
+            "/skills/api-regression-testing/SKILL.md"
+          ],
+          "skills_in_context": [
+            "/skills/api-functional-testing/SKILL.md"
+          ],
+          "cleared_tool_results": 0,
+          "tool_result_bytes": {
+            "read_file": 1005,
+            "get_test_scope": 3707,
+            "get_test_coverage": 14205,
+            "run_test_group": 1559,
+            "read_test_report": 1347,
+            "run_open_obligation": 2350,
+            "investigate_failure": 898
+          }
+        }
+      ]
+    }
+  },
+  "source": {
+    "source_sha256": "3fd7193ad279b7114bfb87c0f26a6dc8e968392d1b7c85a2ba8ecca105a543a8",
+    "archive_sha256": "9c14b2a6a7f160ee982b9d7291af1b1de7e99fb6391322d179adf2dc86904b22"
+  },
+  "implementation": "52779c9652f76a65981256e38e6e04de5783ed23",
+  "offline": {
+    "classification": "FULL_OFFLINE_ALL_COLLECTED_TESTS",
+    "source_unchanged": true,
+    "source_sha256": "3fd7193ad279b7114bfb87c0f26a6dc8e968392d1b7c85a2ba8ecca105a543a8",
+    "exact_test_id_coverage": true,
+    "collected": 2794,
+    "executed": 2794,
+    "missing": [],
+    "unexpected": [],
+    "audit_errors": [],
+    "tests": 2794,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 16,
+    "process_exit_codes": {
+      "batch-2": 0,
+      "batch-4": 0,
+      "batch-3": 0,
+      "batch-1": 0
+    },
+    "passed": 2778,
+    "wall_seconds": 1169.672,
+    "suite_seconds_sum": 4157.6939999999995,
+    "complete": true,
+    "successful": true
+  }
+}
