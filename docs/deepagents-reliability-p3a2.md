@@ -8,9 +8,9 @@
 
 ### 1.1 Focus 与范围不可比
 
-- `.eduwork/runs/p3a1/final-v2/functional/run.json` 报“范围 6/6 义务全部有执行证据”，同一份报告里 Focus 把 `readAvailability` 排除在外，而项目已批准义务是 31 项。分母随 Focus 收缩而收缩，于是“测了 6 项”和“测了 6/31 项”在报告上长得一样。
-- 删除回归 Focus 只映射了删除，创建前置缺失，报告仍以 1/1 呈现“范围完成”。
-- 上线前把 24 项批准负向义务排除在完成判据外，报告没有说明这 24 项去了哪里。
+- `.eduwork/runs/p3a1/final-v2/functional/run.json` 的判据 `SCOPE_OBLIGATIONS_MEASURED` 记为 `MET`，细节是“范围内 6 项义务全部有执行证据”，`coverage.operations` 里还列着 `readAvailability`；而同一份报告的 `focus.operation_ids` 只有 5 项，不含 `readAvailability`。同一靶场同一工程的已批准义务是 31 项。分母随 Focus 收缩而收缩，于是“测了 6 项”和“测了 6/31 项”在报告上长得一样。
+- 同一工程的批准范围在四次运行里被切成不同分母：功能 6/6、调查 6/30、上线前 9/31、回归 4/4。报告没有任何一处说明这些分母之间的关系，也没有说明哪一部分批准义务从未进入任何一轮。
+- 上线前把 24 项批准负向义务标成 `EXEMPT`（`NEGATIVES_OUT_OF_SCOPE`，细节只列了 `web_rule_2_negative_1` 之类的规则名），报告没有说明这 24 项去了哪里、什么时候覆盖。
 
 根因不是某一行代码算错，而是**只有一个覆盖数字**：请求范围、批准范围、Focus 选中范围、实际执行范围从来没有分开记录，所以任何一次分母收缩都只能是隐形的。
 
@@ -48,6 +48,8 @@ P3-A.1 的每任务上限是 16 次模型调用、30 次业务 HTTP、420 秒，
 | 写副作用 | “执行过的 POST 就是资源” | 六态判定：已创建已清理 / 证明无副作用 / 创建未证实 / 创建但清理失败 / 清理未证实 / 写入结果未知 | `src/agenttest/write_effects.py` |
 | Focus 纠错 | 一次拒绝即中断或静默改范围 | 有界纠错：把结构化错误喂回一次（含解码失败），仍不合法则 `NEEDS_REVIEW`；授权冲突类错误不重试 | `product_tasks.py`、`request_requirements.py`、`product_focus.py` |
 | 用例标识 | 同一组重复执行会写两条同名记录 | `unique_case_id()`：重试的组获得独立用例号，资源账本按行计数 | `product_tasks.py` |
+
+有界纠错在本轮真实触发 5 次（`focus_corrections` 非空的轮次）：删除回归 r1/r2（`FOCUS_REQUIREMENT_WITNESS_MISSING`）、模糊语言 r3（`FOCUS_SELECTED_ACTION_WITHOUT_SOURCE`）、故障调查 r1（`FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE`）、Batch A 删除回归（`FOCUS_REQUIREMENT_WITNESS_MISSING`）。其中 2 次在 Focus 阶段救回（Batch A 删除回归随后严格完成；故障调查 r1 重试后选中 76 项），3 次重试仍不合法并进入复核。`FOCUS_INPUT_TEXT_CHANGED`（边界 r1/r2）按设计只调用一次、不重试。
 
 同时修正了四处“源常量式”限制：
 
@@ -163,11 +165,11 @@ Batch B 合计：3/18 完成、138 次调用、1,130,541 Token、62 次 HTTP、1
 逐目标读数：
 
 - **CRUD 功能 3/3 完成**：三轮都覆盖 7/7 选中义务、2 个资源已建已清、无未解决项。这是本轮唯一稳定复现的目标。
-- **删除后状态**：r1/r2 在 Focus 阶段被拒两次（`FOCUS_REQUIREMENT_WITNESS_MISSING`，一次后重试仍被拒，第二次是 schema 解码失败），零请求；r3 Focus 通过、4/4 选中义务全部有证据、1 个资源已建已清，但 `REQUESTED_SCOPE_SELECTED` 未满足（原文点名 6 项，2 项未被选中且无理由）。**这正是新口径要抓的形态：范围账本把“看起来完成了”的一轮判成未完成，并给出原因。**
+- **删除后状态**：r1/r2 在 Focus 阶段被拒：r1 先 `FOCUS_REQUIREMENT_WITNESS_MISSING`、重试后被 schema 解码拒绝（`MODEL_SCHEMA_VALIDATOR_REJECTED`），r2 两次都是 `FOCUS_REQUIREMENT_WITNESS_MISSING`，两轮零请求；r3 Focus 通过、4/4 选中义务全部有证据、1 个资源已建已清，但 `REQUESTED_SCOPE_SELECTED` 未满足（原文点名 6 项，2 项未被选中且无理由）。**这正是新口径要抓的形态：范围账本把“看起来完成了”的一轮判成未完成，并给出原因。**
 - **接口故障调查 0/3**：三轮都零请求。r1 的 Focus 先被 `FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE` 拒绝、重试后选中 76 项；r2/r3 选中 1 项后 Agent 循环在没有发出任何请求的情况下结束。报告的批准分母是 225（目录靶场 44 个 section × 每段多条策略），选中分母是 1 或 76——两者同时公开，`EVIDENCE_PRODUCED` 与 `SUBJECT_REPRODUCED` 都未满足。
 - **上线前 0/3**：最好的一轮 8/31（7 项正常 + 1 项负向），r1 覆盖 7/31 且 5 个资源已建已清；r2 因 `CONSTRUCTION_ORDER_INSTANCE_CONFLICT` 与设计冲突零证据并触发 `NO_PROGRESS`；三轮都因 `SUBJECT_RESOLVED` 未满足而不算完成——原文“这批改动下周上线”没有点名资源，主体解析按规则判为未解析。
 - **参数边界/负向 0/3**：r1/r2 在 Focus 被 `FOCUS_INPUT_TEXT_CHANGED` 拒绝（模型改写了批准的取值），按设计不重试、直接进复核；r3 跑了 21 次调用、14 次请求，选中 2/4、批准 6/31，出现 12 条 `CREATION_UNPROVEN`（被拒集合 POST 无批准回读）与 26 条“原文点名却未选中”。
-- **真正模糊的自然语言 0/3**：三轮都返回 `needs_information` 并给出具体问题（哪个接口、什么现象），没有发出任何请求。这是**正确行为**，不是失败：任务确实需要澄清，报告把它记为“等待确认”，而不是判成“测过了”。
+- **真正模糊的自然语言 0/3**：r1/r2 返回 `needs_information` 并给出具体问题（哪个接口、什么现象），没有发出任何请求——这是**正确行为**，报告把它记为“等待确认”，而不是判成“测过了”；r3 的 Focus 先给出 `FOCUS_SELECTED_ACTION_WITHOUT_SOURCE`，有界纠错重试一次后仍不合法（`MODEL_INVALID_RESPONSE`），进入复核。两者都不是静默收窄。
 
 ## 7. 与 P3-A.1 同口径对比
 
@@ -191,8 +193,8 @@ P3-A.1 的最终批是 4 条原始目标、每任务 16 次模型 / 30 次 HTTP 
 ## 8. Token、HTTP、时间与严格完成
 
 - **总量**：26 轮、8 轮严格完成（31%）。模型调用 217 次、Token 1,675,573、业务 HTTP 96 次、工具调用 190 次、墙钟 1,203.5 秒。用量未知 0 轮。
-- **成本分布**：Batch A 两臂合计 244 次调用中的 79 次（32%），Token 占 32.5%；Batch B 18 轮占 68% 的调用与 67.5% 的 Token。最贵的一轮是 Batch B 的上线前 r1（19 次调用、150,333 Token、132.8 秒），它覆盖 7/31。
-- **HTTP 与调用不成比例**：若干轮在 8–14 次调用后仍然 0 次请求（调查 r2/r3、上线前 r2、边界 r1/r2）。原因是设计/构造阶段被拒或 Agent 循环自己收尾，不是 HTTP 授权不足——这些轮次的 `max_requests` 是 120。
+- **成本分布**：Batch A 两臂合计 79 次调用（占 36%）与 545,032 Token（占 32.5%）；Batch B 18 轮占 64% 的调用与 67.5% 的 Token。最贵的一轮是 Batch B 的上线前 r1（19 次调用、150,333 Token、132.8 秒），它覆盖 7/31。
+- **HTTP 与调用不成比例**：26 轮里有 13 轮完全没有发出业务请求（调查 r1–r3、上线前 r2、边界 r1/r2、删除后状态 r1/r2、模糊语言 r1–r3、Batch A 的调查 ADAPTIVE 与上线前 FIXED）。原因是设计/构造阶段被拒或 Agent 循环自己收尾，不是 HTTP 授权不足——这些轮次的 `max_requests` 是 120。
 - **自适应用得更多，但没有换来完成率**：ADAPTIVE 臂平均每轮 11.25 次调用 / 83,725 Token，FIXED 臂 8.5 次 / 52,533 Token；完成数 2 对 3。增长的触发是“有新证据”，而不是“未闭合义务在减少”，调查/上线前这类目标很容易“每次都有新证据、但离完成更远”。
 - **停止理由**：`ANSWER` 17 轮、`NO_PROGRESS` 2 轮、Focus/范围复核 5 轮（其中 3 轮“模型未能给出可校验范围”、2 轮“未能理解需求原文”）。没有任何一轮因为触及绝对上限（96 次调用 / 400 次请求 / 3,600 秒）而被截断；`MODEL_CALL_LIMIT` 只出现在 FIXED 臂的一个历史轮次（上一版源码）。
 - **严格完成 != 有证据**：8 轮完成之外，还有 5 轮“有真实执行证据但判据未满足”（例如删除后状态 r3 覆盖 4/4 但原文点名范围未齐、上线前 r1 覆盖 7/31 且资源已清）。这些轮次在报告里保留为未完成，并写明未满足项，不做四舍五入。
@@ -203,7 +205,7 @@ P3-A.1 的最终批是 4 条原始目标、每任务 16 次模型 / 30 次 HTTP 
 
 - `CREATED_AND_CLEANED` 23 个资源；`CREATION_UNPROVEN` 12 个（全部是被拒集合 POST、没有批准回读）；`CLEANUP_UNPROVEN` 5 个（删除回执但没有该用例的回读）；`CREATED_CLEANUP_FAILED` 0 个；`WRITE_OUTCOME_UNKNOWN` 0 个。
 - **未知写重放 0 次**；没有任何一轮发出未批准的业务请求；目录靶场（`allow_mutations=False`）的写操作没有产生任何 HTTP 记录。
-- 误报 5 轮（把靶场常态 503 之外的现象判成异常），漏报 23 轮——绝大多数漏报是那些零请求的轮次：没有观测就没有异常判定，报告如实记为未覆盖，而不是“未发现异常”。
+- 误报 5 轮（全部是 `HTTP_None`：靶场没有注入故障，模型把常态现象判成异常）；漏报 23 轮（20 轮漏掉靶场常态的 `/availability` 503，3 轮漏掉 `DELETE_NOOP`）——绝大多数漏报是那些零请求的轮次：没有观测就没有异常判定，报告如实记为未覆盖，而不是“未发现异常”。本轮共判出 5 条异常记录。
 
 安全边界逐项：
 
@@ -242,12 +244,14 @@ P3-A.1 的最终批是 4 条原始目标、每任务 16 次模型 / 30 次 HTTP 
 
 CI 见提交记录之后的 workflow 结果（本文件在推送后回填结论）。
 
+CI（GitHub Actions，提交 `efedf96`）：**Keyless Python checks 通过**（ubuntu-latest / windows-latest × base / agent 四格，含 `--workflow` 冒烟）、**Web Console checks 通过**，两者均在 2026-11-14 18:46 +08:00 前完成，无失败、无取消。仓库公开 API 的原始结论为 `conclusion: success`，不使用“进行中”作为通过。
+
 ## 11. 未解决问题
 
 1. **422 的副作用在冻结靶场里仍无法证明。** 靶场没有集合列表读，也没有为“被拒集合 POST”批准缺失读，按本轮规则只能保留 `CREATION_UNPROVEN`（边界目标 r3 的 12 条即此形态）。要变成 `NO_SIDE_EFFECT_PROVEN`，必须在批准目录里补一条针对该资源的读。
 2. **上线前 31 项义务仍难以在单轮内测完。** 最好的一轮 8/31，ADAPTIVE 在更早的诊断运行里到过 20/31 但耗费 68 次调用、51 次请求、560k Token，并留下 22 个只有删除回执的资源。瓶颈是“一轮承担 31 项义务”的计划粒度，不是预算数字。
 3. **清理收尾缺少跨用例凭据规则。** 5 个 `CLEANUP_UNPROVEN` 都是“删除确实执行过、但该用例没有批准回读”。是否允许把同一资源的其他用例回读作为清理凭据，是策略决定，本轮保守判为未证明。
-4. **零请求轮次仍占多数**（26 轮中 11 轮 0 次业务请求）。原因分散在：Focus 授权冲突类拒绝（不重试）、构造阶段 `CONSTRUCTION_ORDER_INSTANCE_CONFLICT`、Agent 循环自行收尾、真正需要澄清。范围账本与停止理由都能定位到具体原因，但没有一条能把“零请求”直接变成“有证据”。
+4. **零请求轮次仍占多数**（26 轮中 13 轮 0 次业务请求）。原因分散在：Focus 授权冲突类拒绝（不重试）、构造阶段 `CONSTRUCTION_ORDER_INSTANCE_CONFLICT`、Agent 循环自行收尾、真正需要澄清。范围账本与停止理由都能定位到具体原因，但没有一条能把“零请求”直接变成“有证据”。
 5. **预算分两层。** 运行级 `ExecutionBudget` 与项目级 `SuiteLedger` 各自记账；ADAPTIVE 只增长前者，所以出现过“运行级还有余量、被 `SUITE_MODEL_BUDGET_EXHAUSTED` 拒绝”的轮次（较早诊断源码）。两者需要统一口径或由操作员一次批准同时抬高。
 6. **增长判据偏宽。** “新证据”不等于“接近完成”，调查/上线前目标会持续增长；应改为“未闭合义务减少”或“阻塞解除/清理完成”。
 7. **FIXED 臂的严格完成不稳定**（同一文本 2/4–3/4 之间跳动），单轮 A/B 不足以做机制归因；Batch A 应至少 3 次重复。

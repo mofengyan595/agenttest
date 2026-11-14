@@ -32,8 +32,10 @@
   （删除回执无回读）、0 条写入结果未知、0 次重放、0 次未批准请求；`NO_PROGRESS` 真实触发 2 次，
   无一轮触及绝对上限。
 - 全量离线 2,827 收集 / 2,811 通过 / 16 跳过 / 0 失败，`source_unchanged: true`、
-  `exact_test_id_coverage: true`；`ruff` 全绿。新增 `test_execution_budget.py`（13）、
-  `test_scope_ledger.py`（6）、`test_write_effects.py`（9）并改写完成判据、需求映射与产品任务用例。
+  `exact_test_id_coverage: true`；`ruff` 全绿。GitHub Actions 对提交 `efedf96` 的
+  Keyless Python checks（ubuntu/windows × base/agent）与 Web Console checks 均通过。
+  新增 `test_execution_budget.py`（13）、`test_scope_ledger.py`（6）、`test_write_effects.py`（9），
+  并改写完成判据、需求映射与产品任务用例。
 - [本轮详细报告](deepagents-reliability-p3a2.md)。未解决：422 副作用在冻结靶场仍不可证明；上线前
   31 项义务的单轮粒度；跨用例清理凭据规则；零请求轮次仍占多数；运行级与项目级预算双账本；增长
   判据偏宽（新证据 ≠ 接近完成）。
