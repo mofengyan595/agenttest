@@ -79,6 +79,9 @@ _METHOD_CUES = (
      {"PATCH", "PUT"}),
     (re.compile(r"读取|查询|详情|获取|read|get|fetch|lookup", re.IGNORECASE), {"GET", "HEAD"}),
 )
+# The same deterministic cue table is used to recognise a *subject* clause that names an
+# interface without asking for an action of its own (see request_requirements).
+METHOD_CUES = _METHOD_CUES
 
 
 def classify_task(text: str) -> dict:
@@ -251,27 +254,50 @@ def _executed_cases(summary):
 
 
 def _created_resources(summary):
-    """Counts every resource the run really created, not only the ones with a lifecycle rule.
+    """What the round's writes really did, from receipts instead of from request counts.
 
-    A case that sends an approved POST without a lifecycle receipt still created a resource on
-    the isolated target; reporting "0 created" hid ten leaked parcels in the pre-release round.
-    Identity-level cleanup is only provable through a lifecycle receipt, so an executed POST
-    without one is *pending* (never silently clean). The detail names the operations so the
-    report can show which creations have no auditable cleanup.
+    P3-A.1 counted every executed POST that carried request evidence as a resource, so an
+    approved negative check answered with 422 was booked as an unproven creation. The states
+    now come from :mod:`agenttest.write_effects`: a rejected POST without an approved
+    read-back is ``CREATION_UNPROVEN`` (a write whose side effect is unknown), not a leaked
+    resource; a created resource whose approved delete returned 204 but was never read back
+    is ``CLEANUP_UNPROVEN``. Neither is silently clean.
     """
-    rows = [item for case in summary.get("cases") or ()
-            for item in case.get("resource_lifecycle") or ()]
-    pending = [row for row in rows
-               if row.get("status") in {"OWNED", "CLEANUP_PENDING", "CLEANUP_OUTCOME_UNKNOWN"}]
-    posts = [step for case in summary.get("cases") or ()
-             for step in case.get("evidence") or ()
-             if (step.get("method") or "").upper() == "POST" and step.get("request")]
-    unproven = max(0, len(posts) - len(rows))
-    pending.extend(dict(operation_id=step.get("operation_id"), status="CLEANUP_UNPROVEN",
-                        basis="EXECUTED_CREATE_WITHOUT_CLEANUP")
-                   for step in posts[len(rows):])
-    return dict(total=len(rows) + unproven, pending=pending,
-                lifecycle=len(rows), posts=len(posts), unproven=unproven)
+    from agenttest.write_effects import (
+        CLEANUP_UNPROVEN,
+        CREATED_AND_CLEANED,
+        CREATED_CLEANUP_FAILED,
+        CREATION_UNPROVEN,
+        NO_SIDE_EFFECT_PROVEN,
+        RESOURCE_PENDING,
+        WRITE_OUTCOME_UNKNOWN,
+        analyse,
+    )
+
+    # Rebuilt from the cases, never read back from a previously published view: the agent may
+    # have seen an earlier evaluation of this same round.
+    effects = analyse(summary.get("cases") or ())
+    counts = effects.get("counts") or {}
+    pending = list(effects.get("pending") or ())
+    unresolved = list(effects.get("unresolved") or ())
+    return dict(
+        total=effects.get("created") or 0,
+        pending=pending,
+        unresolved=unresolved,
+        lifecycle=len([case for case in summary.get("cases") or ()
+                       for _ in case.get("resource_lifecycle") or ()]),
+        writes=effects.get("requests") or 0,
+        unproven=len(unresolved),
+        cleaned=counts.get(CREATED_AND_CLEANED, 0),
+        no_side_effect=counts.get(NO_SIDE_EFFECT_PROVEN, 0),
+        cleanup_failed=counts.get(CREATED_CLEANUP_FAILED, 0),
+        cleanup_unproven=counts.get(CLEANUP_UNPROVEN, 0),
+        unknown=counts.get(WRITE_OUTCOME_UNKNOWN, 0),
+        states=counts,
+        cleanup_pending=len([row for row in pending if row.get("status") in RESOURCE_PENDING]),
+        creation_unproven=len([row for row in unresolved
+                               if row.get("status") == CREATION_UNPROVEN]),
+    )
 
 
 def _write_lifecycle(summary):
@@ -286,6 +312,13 @@ def _write_lifecycle(summary):
         if cleaned and case.get("outcome") in {"PASS", "ASSERTION_FAILED"}:
             return case
     return None
+
+
+def write_effects_view(summary) -> dict:
+    """The write-effect states for the completion report (never a secret or a model claim)."""
+    from agenttest.write_effects import analyse, public_view
+
+    return public_view(analyse(summary.get("cases") or ()))
 
 
 def _questions_in_scope(summary, kind, subject):
@@ -338,13 +371,18 @@ def _common_criteria(summary):
                    f"已执行 {len(executed)} 个用例、{len(checks)} 项检查。"
                    if executed else "没有任何完成的执行用例，无法据此判定任务。",
                    dict(executed_cases=len(executed), checks=len(checks))),
-        _criterion("RESOURCES_RESOLVED", "已创建资源具备可审计清理结果",
-                   MET if not resources["pending"] else UNMET,
-                   f"创建 {resources['total']} 个资源，待清理 {len(resources['pending'])} 个。"
-                   + (f"其中 {resources['unproven']} 个只有执行记录、没有清理凭据。"
-                      if resources.get("unproven") else ""),
+        _criterion("RESOURCES_RESOLVED", "写入的资源要么被证明清理，要么无需清理",
+                   MET if not resources["pending"] and not resources["unresolved"] else UNMET,
+                   (f"写入 {resources['writes']} 次：创建并证明清理 {resources['cleaned']} 个，"
+                    f"无需清理 {resources['no_side_effect']} 次，"
+                    f"待清理/清理未证明 {len(resources['pending'])} 个，"
+                    f"没有创建凭据 {resources['creation_unproven']} 次，"
+                    f"结果未知 {resources['unknown']} 次。")
+                   if resources["writes"] else "本轮没有写操作，无需清理。",
                    dict(created=resources["total"], pending=len(resources["pending"]),
+                        unresolved=len(resources["unresolved"]),
                         lifecycle=resources.get("lifecycle"),
+                        states=resources.get("states"),
                         unproven=resources.get("unproven"))),
         _criterion("ANOMALIES_EVIDENCED", "异常结论都有期望值与实测值",
                    MET if all(item.get("failed") for item in confirmed) else UNMET,
@@ -586,6 +624,20 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
             "没有待确认事项。" if not questions else
             f"仍有 {len(questions)} 项待确认事项，相关接口没有完成测试。",
             dict(questions=len(questions)))]
+    # The four-scope ledger is published next to the criteria. Its coverage row never blocks
+    # (a narrowed round is legitimate); a requested obligation that vanished from the selected
+    # scope without a recorded reason does, because that is a narrowed denominator. The ledger
+    # is always rebuilt: an earlier evaluation of the same round (the agent sees the initial
+    # completion state) must not leave a stale, empty coverage behind.
+    from agenttest.scope_ledger import build as build_ledger
+    from agenttest.scope_ledger import completion_rows, with_producers
+    from agenttest.scope_ledger import public_view as public_ledger
+
+    ledger = build_ledger(project, summary, text, selected_policies=with_producers(
+        project, [row.get("policy_id") for row in scope_rows["scope"]
+                  if row.get("policy_id")]))
+    summary["scope_ledger"] = ledger
+    specific = specific + completion_rows(ledger)
     criteria = common + specific
     required = [row for row in criteria if row["status"] != EXEMPT]
     unmet = [row for row in required if row["status"] != MET]
@@ -602,9 +654,12 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
                     operation_id=question.get("operation_id")) for question in questions]
     pending.extend(dict(item="obligation", detail=item["policy_id"],
                         operation_id=item["operation_id"]) for item in scope_rows["missing"])
-    pending.extend(dict(item="resource", detail=row.get("create_step"),
-                        operation_id=None) for row in
-                   _created_resources(summary)["pending"])
+    pending.extend(dict(item="resource", detail=row.get("create_step")
+                        or row.get("step_id"), operation_id=row.get("operation_id"))
+                   for row in _created_resources(summary)["pending"])
+    pending.extend(dict(item="write", detail=row.get("detail"),
+                        operation_id=row.get("operation_id"))
+                   for row in _created_resources(summary)["unresolved"])
     ended = stop.get("reason") or "UNKNOWN"
     flags = dict(
         agent_terminated=ended in {"ANSWER", "MODEL_CALL_LIMIT", "TURN_LIMIT",
@@ -624,11 +679,14 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
         flags=flags,
         anomalies=dict(confirmed=confirmed, unconfirmed=unproven),
         pending=pending[:20],
+        write_effects=write_effects_view(summary),
+        scope_ledger=public_ledger(ledger),
         coverage=dict(obligations=len(scope_rows["scope"]),
                       measured=len(scope_rows["measured"]),
                       missing=len(scope_rows["missing"]),
                       blocked=len(scope_rows["blocked"]),
-                      operations=sorted(_ready_operations(summary))),
+                      operations=sorted(_ready_operations(summary)),
+                      scopes=ledger.get("coverage")),
         notes=[row["detail"] for row in criteria if row["status"] != MET][:8],
     )
 
@@ -643,4 +701,6 @@ def public_view(report: dict) -> dict:
                 criteria=[dict(id=row["id"], status=row["status"], detail=row["detail"])
                           for row in report.get("criteria") or ()],
                 coverage=report.get("coverage"), pending=report.get("pending"),
+                writes=report.get("write_effects"),
+                scope=report.get("scope_ledger"),
                 anomalies=report.get("anomalies"), notes=report.get("notes"))

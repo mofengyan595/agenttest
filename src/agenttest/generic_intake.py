@@ -175,7 +175,7 @@ class GenericSetup(StrictModel):
     isolated_confirmed: bool = False
     allow_mutations: bool = False
     max_requests: int = Field(default=40, ge=1, le=64)
-    run_timeout: float = Field(default=60.0, gt=0, le=300)
+    run_timeout: float = Field(default=60.0, gt=0, le=3_600)
     read_timeout: float = Field(default=5.0, gt=0, le=30)
     roles: list[IntakeRole] = Field(default_factory=list, max_length=8)
     operations: list[IntakeOperation] = Field(min_length=1, max_length=1000)

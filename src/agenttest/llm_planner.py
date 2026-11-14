@@ -78,9 +78,13 @@ class ModelSettings(StrictModel):
     api_key: SecretStr = Field(repr=False)
     protocol: Literal["openai_compatible", "chatecnu"] = "openai_compatible"
     timeout: float = Field(default=30.0, gt=0, le=120)
-    max_input_tokens: int = Field(default=20_000, ge=1, le=100_000)
+    # A per-call window and a per-run transport total. The *authority* to spend is the
+    # project's ExecutionBudget; these bounds only keep a request inside a real model context
+    # and a sane run. P3-A.1's 100k/120k ceilings refused a legitimate pre-release design
+    # before dispatch, so a deployment no longer has to edit source to run a legal task.
+    max_input_tokens: int = Field(default=20_000, ge=1, le=200_000)
     max_output_tokens: int = Field(default=4096, ge=1, le=16_000)
-    max_total_tokens: int = Field(default=25_000, ge=1, le=120_000)
+    max_total_tokens: int = Field(default=25_000, ge=1, le=1_000_000)
     max_response_bytes: int = Field(default=200_000, ge=1, le=1_000_000)
 
     @field_validator("base_url")

@@ -9,6 +9,7 @@ from pydantic import Field, field_validator, model_serializer, model_validator
 from agenttest.contracts import ContractSummary, load_openapi
 from agenttest.credentials import CredentialVault
 from agenttest.discovery import trusted
+from agenttest.execution_budget import ExecutionBudget
 from agenttest.investigation import ReadOnlyCapabilityRegistry
 from agenttest.planner_input import validate_user_task
 from agenttest.policies import PolicyRegistry
@@ -54,15 +55,18 @@ class GoalCatalog(StrictModel):
 
 
 class ProjectBudget(StrictModel):
-    # Four calls remain the safe product default. A development runner may
-    # explicitly raise this per-task loop guard without lifting production limits.
-    max_model_calls: int = Field(default=4, ge=1, le=20)
+    # These per-task numbers are *inputs* to the execution budget, not a product ceiling:
+    # ``execution`` (below) decides whether they are used verbatim (FIXED) or as the
+    # starting point of an estimate that may grow while a round keeps making progress
+    # (ADAPTIVE). The field bounds are wide enough that a deployment never has to edit
+    # a source constant to run a legal task to completion.
+    max_model_calls: int = Field(default=4, ge=1, le=96)
     max_readonly_investigations: int = Field(default=2, ge=0, le=2)
-    max_input_tokens: int = Field(default=20_000, ge=1, le=100_000)
+    max_input_tokens: int = Field(default=20_000, ge=1, le=200_000)
     max_output_tokens: int = Field(default=4096, ge=1, le=16_000)
-    max_total_tokens: int = Field(default=25_000, ge=1, le=120_000)
-    suite_max_model_calls: int = Field(default=8, ge=1, le=20)
-    suite_max_total_tokens: int = Field(default=100_000, ge=1, le=500_000)
+    max_total_tokens: int = Field(default=25_000, ge=1, le=1_000_000)
+    suite_max_model_calls: int = Field(default=8, ge=1, le=96)
+    suite_max_total_tokens: int = Field(default=100_000, ge=1, le=2_000_000)
     # The round supervisor is off by default so every existing project keeps its exact
     # behaviour; a project (or an isolated development runner) opts in explicitly.
     supervisor_max_rounds: int = Field(default=0, ge=0, le=4)
@@ -70,10 +74,21 @@ class ProjectBudget(StrictModel):
     # configured a harness model and the optional dependencies are installed, otherwise the
     # deterministic round (with the resolved reason recorded on the task).
     loop_engine: Literal["AUTO", "DEEP_AGENTS", "LEGACY_SUPERVISOR", "DETERMINISTIC"] = "AUTO"
-    agent_max_turns: int = Field(default=16, ge=1, le=40)
-    agent_max_tool_calls: int = Field(default=24, ge=1, le=60)
+    agent_max_turns: int = Field(default=16, ge=1, le=80)
+    agent_max_tool_calls: int = Field(default=24, ge=1, le=200)
     # 0 = use whatever task budget remains after the deterministic focus/design calls.
-    agent_max_model_calls: int = Field(default=0, ge=0, le=20)
+    agent_max_model_calls: int = Field(default=0, ge=0, le=96)
+    # Adaptive Execution Budget: mode, ceilings, growth and the no-progress stop. The
+    # defaults preserve every number a project already had while allowing a genuinely
+    # progressing round to continue instead of abandoning a legal task at turn 16.
+    execution: ExecutionBudget = Field(default_factory=ExecutionBudget)
+
+    @model_serializer(mode="wrap")
+    def compatible_execution_block(self, handler):
+        data = handler(self)
+        if self.execution == ExecutionBudget():
+            data.pop("execution", None)  # legacy registered projects stay byte-identical
+        return data
 
 
 class RegisteredProject(StrictModel):

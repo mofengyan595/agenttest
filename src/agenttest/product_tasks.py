@@ -100,6 +100,62 @@ def task_max_seconds(service):
     return float(getattr(service, "dev_max_seconds", DEFAULT_TASK_SECONDS))
 
 
+# Focus rejections that must NOT be retried: they mean the proposal contradicts an approved
+# value or leaks a credential. Asking the model again would invite it to guess the approved
+# value, which is exactly what the authority guards forbid.
+NON_REPAIRABLE_FOCUS = frozenset({
+    "FOCUS_CONTEXT_CONTAINS_CREDENTIAL",
+    "FOCUS_INPUT_FIELD_CHANGED",
+    "FOCUS_INPUT_NUMBER_CHANGED",
+    "FOCUS_INPUT_TEXT_CHANGED",
+    "FOCUS_INPUT_VALUE_UNAPPROVED",
+    "FOCUS_NOT_VALIDATED",
+    "FOCUS_OPERATION_NOT_APPROVED",
+    "FOCUS_OUTPUT_CONTAINS_CREDENTIAL",
+    "FOCUS_RUNTIME_VALUE_NOT_LITERAL",
+})
+
+
+def focus_repair_payload(project, diagnostic, *, atoms=()):
+    """The one structured correction a rejected Focus proposal is allowed to receive.
+
+    A structural ``FOCUS_*`` rejection is worth one retry, but several validators raise it
+    without naming a field. The payload therefore always carries the approved operation
+    vocabulary and the requirement keys the model must fill, so a terse code is still
+    repairable and never costs the whole round.
+    """
+    payload = diagnostic.model_dump(mode="json")
+    if not payload.get("fields"):
+        payload["fields"] = []
+    detail = payload.get("detail")
+    if not isinstance(detail, dict) or not detail:
+        payload["detail"] = dict(
+            schema="agenttest.focus-repair.v1",
+            code=payload.get("code"),
+            allowed_operations=sorted(getattr(project.target, "allowed_operations", ()))[:16],
+            requirement_keys=sorted({str(atom.get("source_id")) for atom in atoms
+                                     if atom.get("source_id")})[:12],
+            hint=("请严格按错误码重写这次提案：scope.operations 只能用 allowed_operations "
+                  "里的接口，requirement_map 必须为每条原文子句各给一项；"
+                  "不要扩大范围，也不要重复同一个被拒的值。"))
+    return payload
+
+
+def unique_case_id(summary, base_id):
+    """A case id that no earlier evidence record in this round already holds.
+
+    A group can legitimately execute twice under the same group id (a retry of the same
+    supervision attempt). The write-effect and cleanup accounting reads one resource per case
+    row, so two rows sharing an id would double-count a creation and could hide a pending one.
+    """
+    taken = {row.get("case_id") for row in summary.get("cases") or ()}
+    case_id, repeat = base_id, 2
+    while case_id in taken:
+        case_id = f"{base_id}_{repeat}"
+        repeat += 1
+    return case_id
+
+
 def unresolved_ir_clauses(planning_ir, focus_requirements):
     """Clauses where normalization hid a request the Design path would still have to hold.
 
@@ -537,15 +593,32 @@ class ProductTasks:
                                 selection = await select()
                             except (PlannerFailure, ValidationFailure) as exc:
                                 diagnostic = exc.diagnostic
-                                order_code = "FOCUS_REQUIREMENT_ORDER_INSTANCE_INVALID"
-                                if diagnostic is None or diagnostic.code != order_code:
+                                # One bounded correction, never a model-driven repair loop: the
+                                # model gets the exact field path and the allowed ids/actions
+                                # once, then a second rejection is a review item.
+                                order_code = str(getattr(diagnostic, "code", "") or "")
+                                # One repair round for a structural Focus rejection: a legitimate
+                                # request must not die on a wire mistake, and a decode failure
+                                # (invalid JSON shape) is a wire mistake too. Authority violations
+                                # are never retried, because a second answer would have to guess an
+                                # approved value.
+                                repairable = (order_code.startswith("FOCUS_")
+                                              or order_code.startswith("MODEL_SCHEMA_"))
+                                if not repairable or order_code in NON_REPAIRABLE_FOCUS:
                                     raise
-                                order_feedback = diagnostic.model_dump(mode="json")
+                                order_feedback = focus_repair_payload(
+                                    project, diagnostic,
+                                    atoms=(summary.get("request_atoms")
+                                          or (context.get("request_atoms") or ())))
                                 elapsed_ms = (time.perf_counter() - focus_started) * 1000
                                 focus_record.update(status="REJECTED", reason=order_code,
                                     diagnostic=order_feedback,
                                     elapsed_ms=round(elapsed_ms, 3),
                                     model_call=focus_model.stats.model_dump(mode="json"))
+                                summary["focus_corrections"] = [
+                                    *(summary.get("focus_corrections") or ()),
+                                    dict(code=order_code, fields=order_feedback.get("fields"),
+                                         detail=order_feedback.get("detail"))]
                                 focus_record = dict(group_id="focus", status="PLANNING",
                                                     order_repair=order_feedback)
                                 summary["design_records"].append(focus_record)
@@ -1195,7 +1268,11 @@ class ProductTasks:
             except ValueError as exc:
                 preflight.append(exc)
         for index, case in enumerate(ordered_cases):
-            case_row = dict(case_id=f"{group['id']}_case_{index + 1}",
+            # A group can be executed again under the same group id (a retry of the same
+            # supervision attempt). Two evidence records may never share a case id: the write
+            # and cleanup accounting reads one resource per case row.
+            case_row = dict(case_id=unique_case_id(
+                summary, f"{group['id']}_case_{index + 1}"),
                 title=case.title, kinds=[case.kind], operation_id=None,
                 planned_operations=list(dict.fromkeys(
                     s.operation_id for s in case.plan.steps)),
@@ -1394,6 +1471,13 @@ class ProductTasks:
                 # Evidence, not a verdict: which absence expectations this case carried and
                 # whether an approved deletion established each one.
                 case_row["absence_expectations"] = precondition_audit["rows"]
+            # What each creating write actually did, from the create/cleanup receipts and the
+            # approved read-back — never from a bare status code. Computed after the absence
+            # rows are attached, because that read-back is what proves a cleanup.
+            from agenttest.write_effects import for_case
+
+            case_row["write_effects"] = for_case(
+                case_row, {p.id: p for p in project.registry.definitions()})
             record_requirement_evidence(summary, case_row, report)
             if report.outcome != Outcome.PASS:
                 case_row["reason"] = {
@@ -1432,24 +1516,77 @@ class ProductTasks:
         authority and HTTP. Completion is published from measured evidence by
         :mod:`agenttest.task_completion`, never from the model's closing prose.
         """
+        from agenttest.execution_budget import (
+            ADAPTIVE,
+            ExecutionBudget,
+            ExecutionState,
+            estimate_round,
+            resolve_fallback,
+            resolve_plan,
+        )
         from agenttest.product_agent import report_payload, run_agent
         from agenttest.task_completion import evaluate, public_view
 
         svc, summary, ledger = scope.svc, scope.summary, scope.ledger
         budget = scope.project.registration.budget
-        remaining_calls = max(1, ledger.max_model_calls - ledger.model_calls)
+        execution = getattr(budget, "execution", None) or ExecutionBudget()
+        fallback = resolve_fallback(scope.project, summary)
+        from agenttest.scope_ledger import wants_negative_variants
+        from agenttest.task_completion import classify_task as _classify
+
+        goal_kind = _classify(str(summary.get("user_task") or ""))["kind"]
+        estimate = (estimate_round(project=scope.project, summary=summary,
+                                   group_operations=[operation for group in
+                                                     summary.get("groups") or ()
+                                                     for operation in group.get("primary") or ()],
+                                   executable_checks=scope.executable_checks,
+                                   requirements=scope.requirements,
+                                   negative_variants=wants_negative_variants(
+                                       goal_kind, str(summary.get("user_task") or "")))
+                    if execution.mode == ADAPTIVE else None)
+        plan = resolve_plan(budget=execution, target=scope.project.target,
+                            fallback=fallback, estimate=estimate)
+        state = ExecutionState(plan, budget=execution)
         requested_calls = int(getattr(budget, "agent_max_model_calls", 0) or 0)
-        max_calls = min(remaining_calls, requested_calls) if requested_calls else remaining_calls
-        max_turns = int(getattr(budget, "agent_max_turns", 16) or 16)
-        max_tools = int(getattr(budget, "agent_max_tool_calls", 24) or 24)
+        if execution.mode == ADAPTIVE:
+            # The shared ledger is the single budget every planner/transport reads, so the
+            # resolved grant (never a source constant) is what the agent loop may spend.
+            ledger.max_model_calls = max(ledger.model_calls + 1,
+                                         int(plan.limit("model_calls")))
+            ledger.max_total_tokens = max(ledger.max_total_tokens,
+                                          int(plan.limit("total_tokens") or 0))
+        else:
+            remaining_calls = max(1, ledger.max_model_calls - ledger.model_calls)
+            ledger.max_model_calls = max(ledger.max_model_calls,
+                                         ledger.model_calls + (
+                                             min(remaining_calls, requested_calls)
+                                             if requested_calls else remaining_calls))
+        max_calls = max(1, ledger.max_model_calls - ledger.model_calls)
+        max_calls_ceiling = max(max_calls, int(
+            plan.grants["model_calls"].ceiling - ledger.model_calls))
+        max_turns = int(plan.limit("agent_turns") or fallback["agent_turns"])
+        max_tools = int(plan.limit("agent_tool_calls") or fallback["agent_tool_calls"])
+        max_tools_ceiling = max(max_tools, int(plan.grants["agent_tool_calls"].ceiling))
         settings = svc.agent_model_factory(scope.project)
-        scope.max_seconds = float(summary["budget"]["max_seconds"])
+        scope.max_seconds = float(min(summary["budget"]["max_seconds"],
+                                      float(plan.limit("seconds")
+                                            or summary["budget"]["max_seconds"])))
+        summary["execution_budget"] = state.public()
+        if plan.authority:
+            # A legal task that the *approval* cannot fund is disclosed, not silently narrowed.
+            summary["budget_diagnostic"] = dict(plan.authority)
         # The store's phase vocabulary is fixed; the runtime's own detail lives on the summary,
         # where a reader can audit it without a schema change.
         svc.db.event(scope.task_id, "SUPERVISING", requests=ledger.requests)
         try:
             result = await run_agent(scope, self, settings, max_turns=max_turns,
-                                     max_tool_calls=max_tools, max_model_calls=max_calls)
+                                     max_tool_calls=max_tools, max_model_calls=max_calls,
+                                     model_calls_ceiling=max_calls_ceiling,
+                                     tool_calls_ceiling=max_tools_ceiling,
+                                     total_tokens_ceiling=int(
+                                         plan.grants["total_tokens"].ceiling
+                                         - ledger.known_tokens),
+                                     execution=state)
         except asyncio.CancelledError:
             summary["agent_runtime"] = {**summary.get("agent_runtime", {}),
                                         "engine": AGENT_ENGINE, "stop_reason": "CANCELLED"}
@@ -1462,6 +1599,7 @@ class ProductTasks:
         payload["reason"] = resolution.get("reason")
         payload["task_completion"] = public_view(completion)
         summary["agent_runtime"] = payload
+        summary["execution_budget"] = state.public()
         summary["task_completion"] = completion
         summary["complete"] = completion["complete"]
         summary["checks_passed"] = completion["checks_passed"]
@@ -1469,6 +1607,9 @@ class ProductTasks:
             "MODEL_CALL_LIMIT": "模型调用预算已用尽；已按已获得证据生成确定性任务报告。",
             "TOOL_CALL_LIMIT": "工具调用预算已用尽；已按已获得证据生成确定性任务报告。",
             "TURN_LIMIT": "Agent 轮次预算已用尽；已按已获得证据生成确定性任务报告。",
+            "NO_PROGRESS": "连续多次动作没有产生新的规划或可信证据，已按无进展规则停止。",
+            "CLEANUP_RESERVE_REACHED": "剩余请求需要留给仍未清理的资源；已停止开新测试。",
+            "DEADLINE": "达到本轮时间上限；已按已获得证据生成确定性任务报告。",
             "MODEL_ERROR": "模型调用失败；已保留已发生的证据并生成确定性任务报告。",
             "RUNTIME_ERROR": "自主运行时异常终止；已保留已发生的证据并生成确定性任务报告。",
             "AUTHORITY_CHANGED": "项目授权在任务执行期间发生变化；已停止后续动作。",
@@ -1746,6 +1887,9 @@ class ProductTasks:
     @staticmethod
     def coverage(summary):
         cases = summary["cases"]
+        from agenttest.write_effects import analyse as analyse_write_effects
+
+        summary["write_effects"] = analyse_write_effects(cases)
         executed = {o for c in cases for o in c.get("executed_operations", [])}
         summary["coverage"] = dict(operation_denominator=summary["inventory"]["total"],
             scenario_denominator=len(cases), executed_operations=len(executed),

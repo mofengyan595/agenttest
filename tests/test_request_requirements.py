@@ -656,3 +656,78 @@ def test_source_backed_content_and_necessary_login_are_not_unrequested_test_expa
     with pytest.raises(ValidationFailure) as error:
         validate_requirement_links(facts, context, current)
     assert error.value.diagnostic.fields == ['delete']
+
+def test_a_subject_clause_naming_a_selected_interface_needs_no_action_of_its_own():
+    """``删除功能刚改过`` names the subject; requiring its own action lost the P3-A.1 round."""
+    text = '删除功能刚改过。帮我把删除回归一遍。'
+    context = ctx(text)
+    context['grouped_index'] = [dict(operations=[dict(id='delete', method='DELETE'),
+                                                 dict(id='read', method='GET')])]
+    subject, action = context['request_atoms']
+    chosen = selection([link(subject, actions=[]),
+                        link(action, actions=[dict(operation_id='delete', role='owner')])])
+    validate_requirement_links(chosen.requirements, context, chosen)
+    assert chosen.requirements[0].actions == []
+
+
+def test_a_subject_clause_about_an_unselected_interface_still_needs_a_witness():
+    text = '删除功能刚改过。帮我把查询回归一遍。'
+    context = ctx(text)
+    context['grouped_index'] = [dict(operations=[dict(id='delete', method='DELETE'),
+                                                 dict(id='read', method='GET')])]
+    subject, action = context['request_atoms']
+    chosen = selection([link(subject, actions=[]),
+                        link(action, actions=[dict(operation_id='read', role='owner')])])
+    with pytest.raises(ValidationFailure) as error:
+        validate_requirement_links(chosen.requirements, context, chosen)
+    assert error.value.diagnostic.code == 'FOCUS_REQUIREMENT_WITNESS_MISSING'
+    assert error.value.diagnostic.fields == ['requirement_map.request_1.actions']
+    # The repair facts are the structured way out of the one bounded correction.
+    detail = error.value.diagnostic.detail
+    assert detail['schema'] == 'agenttest.focus-repair.v1'
+    assert detail['allowed_actions']
+
+
+def test_an_unsourced_selected_action_gets_a_repair_path_instead_of_a_dead_round():
+    """Selection without a source must be repairable once, not a zero-request round."""
+    text = '目录服务有个接口状态不对劲，帮我查清楚原因。'
+    context = ctx(text)
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET'),
+                                                 dict(id='readSection5', method='GET'),
+                                                 dict(id='readSection6', method='GET')])]
+    context['approved_ids'] = ['read', 'readSection5', 'readSection6', 'deleteItem']
+    first, second = context['request_atoms']
+    chosen = selection([link(first, actions=[dict(operation_id='readSection5', role=None)]),
+                        link(second, actions=[dict(operation_id='read', role=None)])])
+    chosen.operation_ids = ['readSection5', 'readSection6', 'read']
+    with pytest.raises(ValidationFailure) as error:
+        validate_requirement_links(chosen.requirements, context, chosen)
+    diagnostic = error.value.diagnostic
+    assert diagnostic.code == 'FOCUS_SELECTED_ACTION_WITHOUT_SOURCE'
+    assert diagnostic.fields == ['readSection6']
+    detail = diagnostic.detail
+    assert detail['schema'] == 'agenttest.focus-repair.v1'
+    assert detail['unsourced'] == ['readSection6']
+    assert detail['approved_actions'] == ['deleteItem']
+    assert 'requirement_map' in detail['hint']
+
+
+def test_a_cross_operation_response_check_reports_its_allowed_refs():
+    text = '读取批次23，并核对成功条数是一条。'
+    context = ctx(text)
+    context['grouped_index'] = [dict(operations=[dict(id='read', method='GET')])]
+    context['response_expectations'] = dict(
+        count=dict(operation_id='read', policy_id='read', roles=['owner'],
+                   select='$.successCount', operator='equals', expected=1),
+        other=dict(operation_id='delete', policy_id='delete', roles=['owner'],
+                   select='$.ok', operator='equals', expected=True))
+    first, second = context['request_atoms']
+    chosen = selection([link(first, response_checks=['other']),
+                        link(second, actions=[], response_checks=['count'])])
+    with pytest.raises(ValidationFailure) as error:
+        validate_requirement_links(chosen.requirements, context, chosen)
+    assert error.value.diagnostic.code == 'FOCUS_REQUIREMENT_RESPONSE_INVALID'
+    assert error.value.diagnostic.fields == ['requirement_map.request_1.response_checks']
+    row = error.value.diagnostic.detail['operations'][0]
+    assert row['check_operation'] == 'delete'
+    assert row['allowed_refs'] == ['count']

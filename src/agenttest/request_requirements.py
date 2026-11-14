@@ -886,6 +886,48 @@ def evidence_fragment(atom):
             and not re.search(r'核对|校验|断言|条数|字段|等于|一致|不变|相同', text))
 
 
+def subject_clause_witness(atom, item, selection, context):
+    """A clause that names an interface as its *subject*, without asking for an action.
+
+    ``删除功能刚改过`` (a regression note) names the delete interface but requests no action of
+    its own; the action it implies is requested by the neighbouring clause. P3-A.1 rejected
+    such a clause with ``FOCUS_REQUIREMENT_WITNESS_MISSING`` and lost the whole round.
+
+    Accepting it is only sound when the interface it names is really selected and the clause
+    carries no requirement of its own (no approved check, no resource link, no order edge, no
+    status expectation). Those clauses still need an action witness, so a real execution
+    requirement cannot disappear this way.
+    """
+    if item.actions or item.response_checks or item.same_resource or item.before:
+        return False
+    if item.existing_resources or atom.get('same_resource') or atom.get('ordered'):
+        return False
+    if atom.get('future_only') or atom.get('constraint'):
+        return False
+    if re.search(r'(?<!\d)[1-5]\d{2}(?!\d)', atom['text']):
+        return False
+    # A clause that cites a concrete value, a comparison or a boundary is a real test
+    # requirement, not a note about which interface changed: it must keep its own witness.
+    if re.search(r'[=<>≤≥]\s*-?\d', atom['text']) or re.search(
+            r'上界|下界|边界|上限|下限|最大值|最小值|limit', atom['text'], re.IGNORECASE):
+        return False
+    from agenttest.task_completion import METHOD_CUES
+
+    wanted = set()
+    for pattern, methods in METHOD_CUES:
+        if pattern.search(atom['text']):
+            wanted |= methods
+    if not wanted:
+        return False
+    index = {operation['id']: operation
+             for group in context.get('grouped_index') or ()
+             for operation in group.get('operations') or ()}
+    selected = set(selection.operation_ids if selection.mode == 'selected'
+                   else context.get('approved_ids') or ())
+    return any((index.get(operation_id) or {}).get('method') in wanted
+               for operation_id in selected)
+
+
 def validate_requirement_links(requirements, context, selection):
     """Validate source ownership and concrete obligation links, not semantic self-assessment."""
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
@@ -970,7 +1012,8 @@ def validate_requirement_links(requirements, context, selection):
             interface_reference = same_interface_question_reference(item, atom, requirements,
                 selection.expectation_questions, context)
             missing_witnesses = [field for field, missing in (
-                ('actions', not item.actions and not pending_inquiry and not evidence),
+                ('actions', not item.actions and not pending_inquiry and not evidence
+                 and not subject_clause_witness(atom, item, selection, context)),
                 ('same_resource', atom['same_resource'] and not evidence and not (
                     item.same_resource or item.existing_resources or interface_reference)),
                 ('before', atom['ordered'] and not item.before and not evidence),
@@ -979,6 +1022,20 @@ def validate_requirement_links(requirements, context, selection):
                 error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_WITNESS_MISSING')
                 error.diagnostic.fields = [f'requirement_map.{atom["source_id"]}.{field}'
                                            for field in missing_witnesses]
+                # A structured way out: which selected actions could witness this clause.
+                actions = [dict(operation_id=action.operation_id, role=action.role)
+                           for other in requirements for action in other.actions][:8]
+                if not actions:
+                    actions = [dict(operation_id=operation_id) for operation_id in sorted(
+                        selection.operation_ids if selection.mode == 'selected'
+                        else context.get('approved_ids') or ())[:8]]
+                error.diagnostic.detail = dict(
+                    schema="agenttest.focus-repair.v1",
+                    quote=atom['text'][:120],
+                    allowed_actions=actions,
+                    hint=("该子句没有自己的动作；如果它只是说明被改动的功能，"
+                          "请把它表述为对已选中接口的约束（disposition=constraint），"
+                          "或让它引用相邻动作的同一接口。"))
                 raise error
     mapped = {action.operation_id for item in requirements
               if item.disposition in {'required', 'needs_review'} for action in item.actions}
@@ -1010,6 +1067,18 @@ def validate_requirement_links(requirements, context, selection):
     if missing:
         error = ValidationFailure(Layer.MODEL, 'FOCUS_SELECTED_ACTION_WITHOUT_SOURCE')
         error.diagnostic.fields = sorted(missing)
+        # One structured way out: the model may name the requirement it acts on, or drop the
+        # action. Without this the round dies at zero requests on a legitimate vague request.
+        approved = [operation_id for operation_id in (context.get('approved_ids') or ())
+                    if operation_id not in set(selection.operation_ids)]
+        error.diagnostic.detail = dict(
+            schema="agenttest.focus-repair.v1",
+            selected=sorted(selection.operation_ids),
+            unsourced=sorted(missing),
+            approved_actions=approved[:8],
+            hint=("选中的每个接口都需要 requirement_map 里一条照抄原文的需求子句，"
+                  "或由另一条已选中的动作提供来源。请给这些接口补上需求子句，"
+                  "或者把它们从选择里去掉，只保留原文点名且已批准的接口。"))
         raise error
     selection.operation_sources = {operation: 'USER_REQUIREMENT' if operation in mapped
         else 'PENDING_PERMISSION' if operation in pending_operations
@@ -1097,12 +1166,34 @@ def validate_requirement_links(requirements, context, selection):
                     f'requirement_map.{item.source_id}.existing_resources.{index}']
                 raise error
         if any(ref not in catalog for ref in item.response_checks):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
+            error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
+            error.diagnostic.fields = [f'requirement_map.{item.source_id}.response_checks']
+            error.diagnostic.detail = dict(
+                unknown_refs=[ref for ref in item.response_checks if ref not in catalog][:8],
+                allowed_refs=[ref for ref, entry in list(catalog.items())[:12]])
+            raise error
         if item.disposition == 'required' and any(not any(
                 a.operation_id == catalog[ref]['operation_id']
                 and a.role in catalog[ref]['roles'] for a in item.actions)
                 for ref in item.response_checks):
-            raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
+            error = ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_RESPONSE_INVALID')
+            cross = [dict(ref=ref, check_operation=catalog[ref]['operation_id'],
+                          action_operations=[a.operation_id for a in item.actions],
+                          allowed_refs=[other for other, entry in catalog.items()
+                                        if any(a.operation_id == entry['operation_id']
+                                               and a.role in entry['roles']
+                                               for a in item.actions)][:8])
+                     for ref in item.response_checks
+                     if not any(a.operation_id == catalog[ref]['operation_id']
+                                and a.role in catalog[ref]['roles'] for a in item.actions)]
+            # The repair fields are the structured way out of this rejection: cite a check of
+            # the action's own operation, or drop the citation and let the approved policy stand.
+            error.diagnostic.fields = [
+                f'requirement_map.{item.source_id}.response_checks']
+            error.diagnostic.detail = dict(schema="agenttest.focus-repair.v1",
+                                           code='FOCUS_REQUIREMENT_RESPONSE_INVALID',
+                                           operations=cross[:8])
+            raise error
         human_gap = any(item.source_quote in q.source_quote or q.source_quote in item.source_quote
                         for q in [*selection.input_questions, *selection.expectation_questions])
         identity_gap = any(p['operation_id'] == action.operation_id and p['role'] == action.role

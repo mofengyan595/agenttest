@@ -21,6 +21,7 @@ from uuid import uuid4
 import httpx
 from prepare_colleague_workspace import prepare
 
+from agenttest.execution_budget import ADAPTIVE, FIXED, ExecutionBudget
 from agenttest.goal_server import product_probe
 from agenttest.llm_planner import ModelSettings, OpenAICompatiblePlanner
 from agenttest.product_design import TestDesignModel
@@ -34,6 +35,10 @@ from agenttest.task_store import TERMINAL, TaskStore
 
 ROOT = Path(__file__).resolve().parents[1]
 KIND_OFFSET = {"parcels": 1, "reservations": 2, "directory": 3}
+# The ADAPTIVE per-call input window. P3-A.1's 20k envelope refused a legitimate pre-release
+# design before dispatch; this is the window a configured model accepts, not a task budget.
+ADAPTIVE_INPUT_TOKENS = 120_000
+ADAPTIVE_INPUT_BYTES = 480_000
 
 
 def free_port_block(start):
@@ -107,11 +112,11 @@ class RecordingModel:
         return output
 
 
-def model_settings(path, timeout, max_input, max_output):
+def model_settings(path, timeout, max_input, max_output, max_total=None):
     settings = ModelSettings.from_env_file(path)
     return settings.model_copy(update=dict(
         timeout=timeout, max_input_tokens=max_input, max_output_tokens=max_output,
-        max_total_tokens=max_input + max_output))
+        max_total_tokens=max_total if max_total is not None else max_input + max_output))
 
 
 def absence_approval(project):
@@ -161,25 +166,42 @@ def absence_approval(project):
 
 def limited_project(project, *, max_requests, max_model_calls, max_input,
                     max_output, max_seconds, supervisor_rounds=0, loop_engine="AUTO",
-                    agent_max_turns=16, agent_max_tool_calls=24, agent_max_model_calls=0):
+                    agent_max_turns=16, agent_max_tool_calls=24, agent_max_model_calls=0,
+                    execution=None):
     """Apply a development-only loop guard, not a project-wide spend ceiling.
 
     ``max_model_calls`` caps one task's planning/design calls so a malformed model
     can never loop forever. It is deliberately independent of the number of
-    independent development tasks and of their aggregate token use.
+    independent development tasks and of their aggregate token use. The numbers here
+    are the *fallback* the execution budget starts from; ``execution`` (mode, ceilings,
+    growth) decides whether a round may adapt while it keeps making progress.
     """
+    execution = execution or ExecutionBudget(mode=FIXED)
+    per_call = max(1, int(max_input) + int(max_output))
+    if execution.mode == FIXED:
+        # The exact historical per-task token envelope: the FIXED arm must be able to
+        # reproduce the P3-A.1 run, including its MODEL_TOKEN_BUDGET rejections.
+        tokens = min(120_000, per_call)
+    else:
+        tokens = min(1_000_000, max(120_000, per_call * int(max_model_calls)))
+        # A per-call input cap is a *window* limit, not a task budget: the pre-release design
+        # request over 31 approved obligations is larger than P3-A.1's 20k envelope and was
+        # refused before dispatch (MODEL_TOKEN_BUDGET). ADAPTIVE sizes the window to what the
+        # configured model actually accepts, and the transport still refuses anything above it.
+        max_input = max(int(max_input), ADAPTIVE_INPUT_TOKENS)
     budget = ProjectBudget(
-        max_model_calls=min(max_model_calls, 20), max_readonly_investigations=2,
+        max_model_calls=min(max_model_calls, 96), max_readonly_investigations=2,
         max_input_tokens=max_input, max_output_tokens=max_output,
-        max_total_tokens=min(120_000, max_input + max_output),
-        suite_max_model_calls=min(max_model_calls, 20),
-        suite_max_total_tokens=500_000,
+        max_total_tokens=tokens,
+        suite_max_model_calls=min(max_model_calls, 96),
+        suite_max_total_tokens=max(500_000, min(2_000_000, 6 * per_call)),
         supervisor_max_rounds=max(0, min(int(supervisor_rounds), 4)),
-        loop_engine=loop_engine, agent_max_turns=max(1, min(int(agent_max_turns), 40)),
-        agent_max_tool_calls=max(1, min(int(agent_max_tool_calls), 60)),
-        agent_max_model_calls=max(0, min(int(agent_max_model_calls), 20)))
+        loop_engine=loop_engine, agent_max_turns=max(1, min(int(agent_max_turns), 80)),
+        agent_max_tool_calls=max(1, min(int(agent_max_tool_calls), 200)),
+        agent_max_model_calls=max(0, min(int(agent_max_model_calls), 96)),
+        execution=execution)
     target = project.target.model_copy(update=dict(max_requests=max_requests,
-                                                   run_timeout=min(float(max_seconds), 300.0)))
+                                                   run_timeout=min(float(max_seconds), 3_600.0)))
     registration = project.registration.model_copy(update=dict(budget=budget))
     return replace(project, target=target, registration=registration)
 
@@ -304,14 +326,22 @@ async def run(args):
                       loop_engine=args.loop_engine,
                       agent_max_turns=args.agent_max_turns,
                       agent_max_tool_calls=args.agent_max_tool_calls,
-                      agent_max_model_calls=args.agent_max_model_calls))
+                      agent_max_model_calls=args.agent_max_model_calls,
+                      execution=args.execution.model_dump(mode="json")))
     try:
         wait_health(target_port)
         await prepare(data, base, environment)
         model_env = (ROOT / args.model_env).resolve() if not Path(args.model_env).is_absolute() \
             else Path(args.model_env)
-        settings = model_settings(model_env, args.model_timeout, args.model_input_bytes,
-                                  args.max_output_tokens)
+        # ADAPTIVE gets a window the configured model can actually accept and the round's token
+        # ceiling as the transport total; FIXED keeps the historical envelope byte for byte so
+        # its MODEL_TOKEN_BUDGET rejections stay reproducible.
+        envelope_bytes, envelope_total = args.model_input_bytes, None
+        if args.execution_mode == ADAPTIVE:
+            envelope_bytes = max(envelope_bytes, ADAPTIVE_INPUT_BYTES)
+            envelope_total = args.execution_token_ceiling
+        settings = model_settings(model_env, args.model_timeout, envelope_bytes,
+                                  args.max_output_tokens, max_total=envelope_total)
         project_service = TaskService(
             {}, TaskStore(data / "workspace/tasks.sqlite3"),
             ReportStore(data / "workspace/reports"),
@@ -347,14 +377,18 @@ async def run(args):
                 return project
             project = limited_project(project, max_requests=args.max_requests,
                                       max_model_calls=args.max_model_calls,
-                                      max_input=args.model_input_bytes,
+                                      max_input=max(args.max_input_tokens,
+                                                    ADAPTIVE_INPUT_TOKENS
+                                                    if args.execution_mode == ADAPTIVE
+                                                    else 0),
                                       max_output=args.max_output_tokens,
                                       max_seconds=args.max_seconds,
                                       supervisor_rounds=args.supervisor_rounds,
                                       loop_engine=args.loop_engine,
                                       agent_max_turns=args.agent_max_turns,
                                       agent_max_tool_calls=args.agent_max_tool_calls,
-                                      agent_max_model_calls=args.agent_max_model_calls)
+                                      agent_max_model_calls=args.agent_max_model_calls,
+                                      execution=args.execution)
             if args.absence_approval:
                 project, record = absence_approval(project)
                 result["absence_approval"] = record
@@ -461,23 +495,40 @@ def main():
                         help="lab answers the delete with 204 but does not delete")
     parser.add_argument("--delete-fault-status", type=int, choices=[500, 503], default=None,
                         help="lab fails the delete with this status")
+    parser.add_argument("--execution-mode", choices=[FIXED, ADAPTIVE], default=ADAPTIVE,
+                        help="FIXED reproduces the historical numbers; ADAPTIVE estimates, "
+                             "grows on progress and stops on stagnation")
+    parser.add_argument("--execution-model-ceiling", type=int, default=24,
+                        help="absolute model-call ceiling for one task (never the business "
+                             "request permission)")
+    parser.add_argument("--execution-token-ceiling", type=int, default=400_000)
+    parser.add_argument("--execution-http-ceiling", type=int, default=None,
+                        help="optional narrower operator request cap; omitted = --max-requests")
+    parser.add_argument("--execution-seconds-ceiling", type=float, default=900.0)
+    parser.add_argument("--no-progress-limit", type=int, default=2)
     args = parser.parse_args()
-    if not 0 < args.max_seconds <= 600:
-        parser.error("development deadline must be between 1 and 600 seconds")
-    if not 1 <= args.max_model_calls <= 20:
-        parser.error("development per-task model-call loop guard must be between 1 and 20")
-    if not 1 <= args.max_requests <= 40:
-        parser.error("development request loop guard must be between 1 and 40")
-    if not 0 < args.model_timeout <= 45:
-        parser.error("model timeout must be at most 45 seconds")
-    if not 1 <= args.max_input_tokens <= 20_000:
-        parser.error("reported model input token cap must be at most 20000 tokens")
-    if not args.max_input_tokens <= args.model_input_bytes <= 60_000:
-        parser.error("model byte envelope must be between the token cap and 60000")
-    if not 1 <= args.max_output_tokens <= 8_192:
-        parser.error("model output budget must be at most 8192 tokens")
-    if not 1 <= args.agent_max_turns <= 40:
-        parser.error("agent turn budget must be between 1 and 40")
+    if not 0 < args.max_seconds <= 3_600:
+        parser.error("development deadline must be between 1 and 3600 seconds")
+    if not 1 <= args.max_model_calls <= 96:
+        parser.error("development per-task model-call loop guard must be between 1 and 96")
+    if not 1 <= args.max_requests <= 400:
+        parser.error("development request loop guard must be between 1 and 400")
+    if not 0 < args.model_timeout <= 120:
+        parser.error("model timeout must be at most 120 seconds")
+    if not 1 <= args.max_input_tokens <= 200_000:
+        parser.error("reported model input token cap must be at most 200000 tokens")
+    if not args.max_input_tokens <= args.model_input_bytes <= 800_000:
+        parser.error("model byte envelope must be between the token cap and 800000")
+    if not 1 <= args.max_output_tokens <= 16_384:
+        parser.error("model output budget must be at most 16384 tokens")
+    if not 1 <= args.agent_max_turns <= 80:
+        parser.error("agent turn budget must be between 1 and 80")
+    args.execution = ExecutionBudget(
+        mode=args.execution_mode, model_calls_ceiling=args.execution_model_ceiling,
+        total_tokens_ceiling=args.execution_token_ceiling,
+        http_requests_ceiling=args.execution_http_ceiling,
+        seconds_ceiling=args.execution_seconds_ceiling,
+        no_progress_limit=args.no_progress_limit)
     result = asyncio.run(run(args))
     print(json.dumps(dict(task_id=result.get("task_id"), status=result.get("task_status"),
                           metrics=result.get("metrics"), run_dir=str(args.run_dir),

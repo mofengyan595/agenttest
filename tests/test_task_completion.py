@@ -127,8 +127,14 @@ def test_a_complete_functional_round_requires_every_obligation_and_a_real_lifecy
     assert report["checks_passed"] is True
     assert report["unmet"] == []
     assert report["coverage"] == dict(obligations=3, measured=3, missing=0, blocked=0,
-                                      operations=sorted(OPS))
-    assert criterion(report, "WRITE_LIFECYCLE_EXERCISED")["status"] == "MET"
+                                      operations=sorted(OPS),
+                                      scopes=report["coverage"]["scopes"])
+    # The four scopes are published separately; a full round covers all of them.
+    assert report["coverage"]["scopes"]["selected"] == dict(measured=3, total=3, ratio=1.0)
+    assert report["coverage"]["scopes"]["approved"]["ratio"] == 1.0
+    assert report["scope_ledger"]["unexplained"] == []
+    assert criterion(report, "APPROVED_SCOPE_COVERAGE")["status"] == "EXEMPT"
+    assert criterion(report, "REQUESTED_SCOPE_SELECTED")["status"] == "MET"
 
 
 def test_one_unexercised_obligation_keeps_the_task_incomplete():
@@ -256,7 +262,12 @@ def test_an_executed_create_without_a_cleanup_receipt_is_pending_cleanup():
     report = evaluate(project, summary, "帮我测一下包裹管理功能。", stop=dict(reason="ANSWER"))
     row = criterion(report, "RESOURCES_RESOLVED")
     assert row["status"] == "UNMET"
-    assert row["evidence"] == dict(created=1, pending=1, lifecycle=0, unproven=1)
-    assert "没有清理凭据" in row["detail"]
+    assert row["evidence"]["created"] == 1
+    assert row["evidence"]["pending"] == 1
+    assert row["evidence"]["lifecycle"] == 0
+    assert row["evidence"]["unproven"] == 0
+    # An executed write without a receipt is booked as a possibly created resource.
+    assert row["evidence"]["states"]["CLEANUP_UNPROVEN"] == 1
+    assert "待清理/清理未证明 1 个" in row["detail"]
     assert report["complete"] is False
     assert any(item["item"] == "resource" for item in report["pending"])

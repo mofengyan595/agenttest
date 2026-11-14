@@ -122,6 +122,10 @@ def test_reviewed_wait_limits_reach_executor_without_changing_legacy_defaults():
     config.run_timeout, config.read_timeout = 120.0, 15.0
     project = build_generic_project("web_imports", raw, load_openapi(raw), config, environ={})
     assert project.target.run_timeout == 120.0 and project.target.read_timeout == 15.0
-    for changes in (dict(run_timeout=301.0), dict(read_timeout=31.0)):
+    for changes in (dict(run_timeout=3_601.0), dict(read_timeout=31.0)):
         with pytest.raises(ValueError):
             GenericSetup.model_validate({**config.model_dump(), **changes})
+    # A long autonomous round is a formal setting now, not a source constant: 301s is valid
+    # while the absolute ceiling still refuses anything beyond an hour.
+    long_round = GenericSetup.model_validate({**config.model_dump(), "run_timeout": 301.0})
+    assert long_round.run_timeout == 301.0

@@ -184,6 +184,7 @@ class AgentSession:
     max_turns: int = 16
     max_tool_calls: int = 24
     max_model_calls: int = 8
+    execution: object | None = None
 
     def __post_init__(self):
         svc = self.scope.svc
@@ -195,6 +196,14 @@ class AgentSession:
         self.facts = ProductSession(project=self.project, store=svc.reports,
                                     text=self.text, environ=svc.environ,
                                     summary=self.summary)
+        if self.execution is not None:
+            self.max_turns = int(self.execution.limit("agent_turns") or self.max_turns)
+            self.max_tool_calls = int(self.execution.limit("agent_tool_calls")
+                                      or self.max_tool_calls)
+            self.facts.max_requests = int(self.execution.limit("http_requests")
+                                          or self.facts.max_requests)
+            self.facts.max_executed_plans = int(
+                self.execution.limit("obligation_runs") or self.facts.max_executed_plans)
         self.tool_calls: list[dict] = []
         self.group_runs: dict[str, int] = {}
         self.group_notes: dict[str, str] = {}
@@ -204,8 +213,11 @@ class AgentSession:
         self.error: dict | None = None
         self.started = time.monotonic()
         self.max_seconds = float(getattr(self.scope, "max_seconds", 0) or 0)
+        if self.execution is not None:
+            self.max_seconds = float(self.execution.limit("seconds") or self.max_seconds)
         self.answer = ""
         self.context_trace: list[dict] = []
+        self.budget_trace: list[dict] = []
         # Publish the runtime identity before the first action so a cancel/timeout still has
         # an auditable owner even when no tool ever ran.
         self.flush()
@@ -221,6 +233,21 @@ class AgentSession:
         """Keep the runtime audit on the task summary so a crash cannot erase it."""
         self.summary["agent_runtime"] = self.public_state()
 
+    def note_tool_error(self, tool: str, exc: BaseException) -> None:
+        """Keep the traceback of a tool defect in the evidence, never in the model's view.
+
+        The model only receives the class name and a short message; the full traceback is
+        what a developer needs to repair the product, and losing it would make a tool crash
+        indistinguishable from a legitimate refusal.
+        """
+        import traceback
+
+        rows = self.summary.setdefault("tool_errors", [])
+        if len(rows) < 8:
+            rows.append(dict(tool=tool, error=type(exc).__name__,
+                             message=str(exc)[:400],
+                             traceback=traceback.format_exc()[-4000:]))
+
     def public_state(self) -> dict:
         return dict(engine=ENGINE, stop_reason=self.stop, error=self.error,
                     tool_calls=list(self.tool_calls),
@@ -228,12 +255,13 @@ class AgentSession:
                     attempts=list(self.scope.state.get("attempts") or ()),
                     elapsed_ms=round((time.monotonic() - self.started) * 1000, 3),
                     context_trace=list(self.context_trace),
+                    budget_trace=list(self.budget_trace),
                     answer=self.answer[:2000],
                     tools=list(TOOL_NAMES))
 
     def _budget_view(self) -> dict:
         ledger = self.ledger
-        return dict(requests_left=max(0, ledger.max_requests - ledger.requests),
+        view = dict(requests_left=max(0, ledger.max_requests - ledger.requests),
                     model_calls_left=max(0, ledger.max_model_calls - ledger.model_calls),
                     tool_calls_left=max(0, self.max_tool_calls - len(self.tool_calls)),
                     turns_left=max(0, self.max_turns - len(
@@ -241,6 +269,55 @@ class AgentSession:
                          ("run_test_group", "run_open_obligation")])),
                     seconds_left=(max(0.0, self.max_seconds - (time.monotonic() - self.started))
                                   if self.max_seconds else None))
+        if self.execution is not None:
+            view["mode"] = self.execution.plan.mode
+            view["no_progress_rounds"] = self.execution.no_progress_rounds
+            view["growths"] = len(self.execution.growths)
+        return view
+
+    # ------------------------------------------------------------------ adaptive budget
+    def _sync_allowance(self) -> None:
+        """Keep the shared ledger and the loop caps in step with the current allowance.
+
+        The ledger is the single place ``BudgetPlanner``/``BudgetTransport`` read, so growth
+        must land there; the business-HTTP number is deliberately never written here.
+        """
+        if self.execution is None:
+            return
+        total = int(self.execution.limit("model_calls") or self.ledger.max_model_calls)
+        self.ledger.max_model_calls = max(self.ledger.max_model_calls, total)
+        tokens = int(self.execution.limit("total_tokens") or 0)
+        if tokens:
+            self.ledger.max_total_tokens = max(self.ledger.max_total_tokens, tokens)
+        self.max_turns = max(self.max_turns, int(self.execution.limit("agent_turns") or 0))
+        self.max_tool_calls = max(self.max_tool_calls,
+                                  int(self.execution.limit("agent_tool_calls") or 0))
+        self.facts.max_executed_plans = max(self.facts.max_executed_plans,
+                                            int(self.execution.limit("obligation_runs") or 0))
+
+    def observe_progress(self, *, trigger: str, active: bool = True) -> dict:
+        """One deterministic observation point after a business action.
+
+        It is called only at action boundaries (never after a read tool), so re-reading a
+        page cannot be mistaken for progress and cannot spend the no-progress allowance.
+        """
+        if self.execution is None:
+            return dict(progress=False, kinds=[], growths=[], no_progress_rounds=0)
+        observed = self.execution.observe(self.summary, active=active)
+        if observed.get("growths"):
+            self._sync_allowance()
+        if observed.get("progress") or observed.get("no_progress_rounds"):
+            self.budget_trace.append(dict(
+                trigger=trigger, elapsed_ms=round((time.monotonic() - self.started) * 1000, 3),
+                progress=observed.get("progress"),
+                kinds=observed.get("kinds") or [],
+                growths=observed.get("growths") or [],
+                no_progress_rounds=observed.get("no_progress_rounds"),
+                model_calls=self.ledger.model_calls, requests=self.ledger.requests))
+        if self.execution.stopped:
+            self._stop(self.execution.stop_reason)
+            observed["stopped"] = self.execution.stop_reason
+        return observed
 
     def _stop(self, reason: str) -> None:
         if self.stop == "RUNNING":
@@ -267,10 +344,45 @@ class AgentSession:
         if self.ledger.model_calls >= self.ledger.max_model_calls:
             return _refusal("MODEL_BUDGET_EXHAUSTED", "本轮模型调用预算已用尽。",
                             retryable=False, hint="停止并总结已获得的证据。")
+        if len(self.tool_calls) >= self.max_tool_calls:
+            return _refusal("TOOL_BUDGET_EXHAUSTED", "本轮工具调用次数已用尽。",
+                            retryable=False, hint="停止并总结已获得的证据。")
+        if self.execution is not None and self.execution.stopped:
+            self._stop(self.execution.stop_reason)
+            return _refusal(self.execution.stop_reason,
+                            self.execution.stop_detail or "本轮已按预算停止。",
+                            retryable=False, hint="停止并总结已获得的证据。")
+        reserve = self._cleanup_reserve()
+        if reserve and self.ledger.requests >= self.ledger.max_requests - reserve:
+            return _refusal("CLEANUP_RESERVE_REACHED",
+                            f"剩余请求只够清理仍未释放的 {reserve} 个资源，不能再开新测试。",
+                            retryable=False,
+                            hint="先用已批准删除策略清理本轮资源，或结束并报告待人工核实项。")
         if self.max_seconds and time.monotonic() - self.started > self.max_seconds:
+            if self.execution is not None:
+                # A round that is still producing evidence may earn one more time slice;
+                # a stagnant one stops here instead of idling into the outer timeout.
+                self.observe_progress(trigger="deadline")
+                if self.stop == "RUNNING":
+                    self.max_seconds = float(self.execution.limit("seconds")
+                                             or self.max_seconds)
+                    if time.monotonic() - self.started <= self.max_seconds:
+                        return None
             self._stop(STOP_DEADLINE)
             return _refusal("TASK_DEADLINE", "本轮已达到时间上限。", retryable=False,
                             hint="停止并总结已获得的证据。")
+        return None
+
+    def _cleanup_reserve(self) -> int:
+        """Requests kept back while a resource this round created is still not released."""
+        if self.execution is None:
+            return 0
+        pending = sum(
+            1 for case in self.summary.get("cases") or ()
+            for row in case.get("resource_lifecycle") or ()
+            if row.get("status") in {"OWNED", "CLEANUP_PENDING", "CLEANUP_OUTCOME_UNKNOWN",
+                                     "MUTATION_OUTCOME_UNKNOWN"})
+        return int(self.execution.limit("cleanup_reserve_requests") or 0) if pending else 0
         return None
 
     # ------------------------------------------------------------------ deterministic views
@@ -514,9 +626,11 @@ class AgentSession:
         except Exception as exc:  # a defect is reported to the model, never fatal to the run
             self.record("run_test_group", phase="error", group_id=group_id,
                         error=type(exc).__name__)
+            self.note_tool_error("run_test_group", exc)
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该动作没有完成；读取覆盖后决定是否换一个候选。")
         self.generation += 1
+        self.observe_progress(trigger="run_test_group")
         record = (self.summary.get("design_records") or [None])[-1] \
             if len(self.summary.get("design_records") or ()) > before_records else None
         cases = (self.summary.get("cases") or ())[before_cases:]
@@ -621,12 +735,14 @@ class AgentSession:
         except Exception as exc:
             self.record("run_open_obligation", phase="error", candidate_id=candidate_id,
                         error=type(exc).__name__)
+            self.note_tool_error("run_open_obligation", exc)
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该候选动作没有完成；读取覆盖后再决定。")
         cases = (self.summary.get("cases") or ())[before_cases:]
         self.generation += 1
         self.record("run_open_obligation", candidate_id=candidate_id,
                     executed=outcome.executed, requests=self.ledger.requests - before_requests)
+        self.observe_progress(trigger="run_open_obligation")
         record = (self.summary.get("design_records") or [None])[-1]
         diagnostic = self._diagnostic(record) if record else {}
         code = diagnostic.get("code") or (outcome.note or "ACTION_NOT_EXECUTED")
@@ -919,11 +1035,18 @@ class RuntimeResult:
 
 async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     max_tool_calls: int = 24, max_model_calls: int = 8,
-                    transport=None, model=None, enable_skills: bool = True) -> RuntimeResult:
+                    model_calls_ceiling: int | None = None,
+                    tool_calls_ceiling: int | None = None,
+                    total_tokens_ceiling: int | None = None,
+                    transport=None, model=None, enable_skills: bool = True,
+                    execution=None) -> RuntimeResult:
     """Run one product goal through Deep Agents; deterministic code still owns every verdict.
 
-    ``model`` exists for offline tests and for a deployment that wants to hand in its own
-    configured adapter; the default is the same ``EcnuxChatModel`` every other model call uses.
+    ``execution`` is the resolved :class:`agenttest.execution_budget.ExecutionState`. When it
+    is supplied, the middleware limits use the *ceiling* while the session/ledger enforce the
+    current allowance, so a round that keeps producing evidence can continue past the initial
+    estimate without ever passing the absolute cap. ``model`` exists for offline tests and for
+    a deployment that wants to hand in its own configured adapter.
     """
     from deepagents import create_deep_agent
     from deepagents.backends import StateBackend
@@ -948,10 +1071,18 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
 
     started = time.monotonic()
     session = AgentSession(scope=scope, tasks=tasks, max_turns=max_turns,
-                           max_tool_calls=max_tool_calls, max_model_calls=max_model_calls)
-    limits = ModelBudgetLimits(max_calls=max_model_calls,
-                               max_total_tokens=int(getattr(settings, "max_total_tokens", 0)
-                                                    or 0) or None)
+                           max_tool_calls=max_tool_calls, max_model_calls=max_model_calls,
+                           execution=execution)
+    hard_model_calls = max(max_model_calls, int(model_calls_ceiling or 0))
+    hard_tool_calls = max(max_tool_calls, int(tool_calls_ceiling or 0))
+    hard_turns = max_turns
+    if execution is not None:
+        grant = execution.plan.grants.get("agent_turns")
+        hard_turns = max(hard_turns, int(grant.ceiling if grant is not None else hard_turns))
+    limits = ModelBudgetLimits(max_calls=hard_model_calls,
+                               max_total_tokens=max(
+                                   int(getattr(settings, "max_total_tokens", 0) or 0),
+                                   int(total_tokens_ceiling or 0)) or None)
     if model is None:
         model = EcnuxChatModel(settings=settings, limits=limits, transport=transport)
 
@@ -989,19 +1120,25 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     install_narrow_profile(model)
     enforcement = await verify_enforcement(model, build_agent=build_agent, files=files)
     tools = build_tools(session)
+    per_tool = {"run_test_group": 4, "run_open_obligation": 8, "get_test_scope": 4}
+    if execution is not None:
+        per_tool = {"run_test_group": int(execution.limit("group_runs") or 4),
+                    "run_open_obligation": int(execution.limit("obligation_runs") or 8),
+                    "get_test_scope": max(4, int(execution.limit("group_runs") or 4))}
     middleware = [
         # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
         # one bounded retry keeps an otherwise healthy run alive. Budget and input rejections are
         # deterministic, so they are never retried and keep their stop reason.
         ModelRetryMiddleware(max_retries=2, retry_on=_transient_model_error,
                              on_failure="error", initial_delay=1.0, max_delay=8.0),
-        ModelCallLimitMiddleware(run_limit=max_model_calls, exit_behavior="end"),
-        ToolCallLimitMiddleware(run_limit=max_tool_calls, exit_behavior="end"),
-        ToolCallLimitMiddleware(tool_name="run_test_group", run_limit=4,
+        ModelCallLimitMiddleware(run_limit=hard_model_calls, exit_behavior="end"),
+        ToolCallLimitMiddleware(run_limit=hard_tool_calls, exit_behavior="end"),
+        ToolCallLimitMiddleware(tool_name="run_test_group", run_limit=per_tool["run_test_group"],
                                 exit_behavior="continue"),
-        ToolCallLimitMiddleware(tool_name="run_open_obligation", run_limit=8,
+        ToolCallLimitMiddleware(tool_name="run_open_obligation",
+                                run_limit=per_tool["run_open_obligation"],
                                 exit_behavior="continue"),
-        ToolCallLimitMiddleware(tool_name="get_test_scope", run_limit=4,
+        ToolCallLimitMiddleware(tool_name="get_test_scope", run_limit=per_tool["get_test_scope"],
                                 exit_behavior="continue"),
         ContextEditingMiddleware(edits=[
             ClearToolUsesEdit(trigger=CONTEXT_CLEAR_TRIGGER_TOKENS, keep=4,
@@ -1018,7 +1155,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         # session gate; this is only the framework's hard stop.
         async for outcome in agent.astream(
                 {"messages": [HumanMessage(content=scope.text)], "files": files},
-                config={"recursion_limit": max(64, 40 * max_turns)}, stream_mode="values"):
+                config={"recursion_limit": max(64, 40 * hard_turns)}, stream_mode="values"):
             messages = outcome.get("messages") or []
     except (ModelHarnessError, GraphRecursionError) as exc:
         if isinstance(exc, GraphRecursionError):
@@ -1034,7 +1171,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         stop_reason, error = STOP_RUNTIME_ERROR, dict(code=type(exc).__name__,
                                                       message=str(exc)[:300])
     if stop_reason == STOP_ANSWER:
-        if model.totals.calls >= max_model_calls:
+        if model.totals.calls >= hard_model_calls:
             stop_reason = STOP_MODEL_CALL_LIMIT
         elif any(msg.type == "tool" and msg.status == "error"
                  and msg.content == "Tool call limit exceeded. Do not make additional tool calls."

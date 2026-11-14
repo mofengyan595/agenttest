@@ -1,5 +1,45 @@
 # 开发进度
 
+## 2026-11-14 — P3-A.2：自主测试可靠性与自适应执行预算
+
+- 实现自 `0bf18fb`。修复“统一的低调用上限让合法任务提前放弃”一类可靠性缺陷，不新增第二个
+  Agent 循环：Deep Agents 仍是唯一主 Agent 运行时，Planning IR、编译器、策略、校验器、执行器
+  与可信证据仍由 AgentTest 拥有。
+- `src/agenttest/execution_budget.py`：预算拆成模型调用、Token、Agent 轮次、工具调用、业务 HTTP、
+  时间、组运行、义务运行八个维度，各有基数、天花板与来源；`FIXED` 复现历史数字（16 / 30 / 420、
+  每任务 28,192 Token），`ADAPTIVE` 按 Planning IR、批准策略、依赖图与生命周期估算后执行，只在
+  观察到真实进展（新合法计划、新可信证据、义务覆盖增加、阻塞解除、清理完成）时增长。业务 HTTP
+  权限只来自操作员，运行时只能使用、不能扩大；估超即发 `HTTP_AUTHORITY_INSUFFICIENT` 并等授权。
+- `src/agenttest/scope_ledger.py`：`agenttest.scope-ledger.v1` 分别记录原始请求、已批准范围、
+  Focus 选中范围与实际执行范围，逐条给出差异原因；完成判据新增 `APPROVED_SCOPE_COVERAGE`
+  （信息行）与 `REQUESTED_SCOPE_SELECTED`。回归/调查目标里原文没点名的兄弟操作不再让合法请求
+  失败（`SIBLING_OPERATION_NOT_SELECTED`），原文点名的仍受审计。
+- `src/agenttest/write_effects.py`：`agenttest.write-effects` 六态判定创建型写（已建已清、证明无
+  副作用、创建未证实、创建但清理失败、清理未证实、写入结果未知）；`204` 不算删除证明，`422`
+  不算无副作用，未知写永不重放。
+- Focus 有界纠错：结构化 `FOCUS_*` 与 `MODEL_SCHEMA_*` 拒绝把错误码、字段、可用操作与
+  `requirement_map` 键回喂一次，仍不合法则 `NEEDS_REVIEW`；取值/授权冲突类错误不重试。
+  同组重复执行不再产生重复用例号（`unique_case_id`）。
+- 源常量：`run_timeout` 上限 300 → 3,600 秒；`ModelSettings`/`ProjectBudget` 的输入与总 Token
+  上限放宽到模型窗口；工具异常记录 8 条以内 `tool_errors` 证据。
+- 真实 ecnu-max 两批（源码冻结 `4194c7f663059e2b`，串行、各自独立靶场）：Batch A 同口径复现
+  P3-A.1 四条目标，FIXED 3/4（34 次调用 / 210,132 Token / 21 HTTP）、ADAPTIVE 2/4（45 / 334,900
+  / 13）；两臂差异落在同一文本的模型随机波动内，FIXED 复现 P3-A.1 的 3/4 且调用与 Token 更低。
+  Batch B 六个独立目标 ×3：CRUD 功能 3/3，删除后状态 0/3，故障调查 0/3，上线前 0/3（最好 8/31），
+  参数边界 0/3，真正模糊的自然语言 0/3（三轮均为 `needs_information` 结构化提问，属正确行为）。
+  合计 26 轮 8 轮严格完成，217 次调用 / 1,675,573 Token / 96 次 HTTP / 190 次工具调用。
+- 安全与清理：23 个资源已建已清、12 条创建未证实（被拒集合 POST 无批准回读）、5 条清理未证实
+  （删除回执无回读）、0 条写入结果未知、0 次重放、0 次未批准请求；`NO_PROGRESS` 真实触发 2 次，
+  无一轮触及绝对上限。
+- 全量离线 2,827 收集 / 2,811 通过 / 16 跳过 / 0 失败，`source_unchanged: true`、
+  `exact_test_id_coverage: true`；`ruff` 全绿。新增 `test_execution_budget.py`（13）、
+  `test_scope_ledger.py`（6）、`test_write_effects.py`（9）并改写完成判据、需求映射与产品任务用例。
+- [本轮详细报告](deepagents-reliability-p3a2.md)。未解决：422 副作用在冻结靶场仍不可证明；上线前
+  31 项义务的单轮粒度；跨用例清理凭据规则；零请求轮次仍占多数；运行级与项目级预算双账本；增长
+  判据偏宽（新证据 ≠ 接近完成）。
+- 下一步：P3-B 入口条件见报告第 12 节。先统一预算账本与增长判据、给集合写入补缺失读、把上线前
+  按义务分批，再谈“自主测试可交付”。
+
 ## 2026-11-14 — P3-A.1：自主测试质量回归和运行优化
 
 - 实现 `52779c9`。对已批准正向实例仅让模型填写未定输入，保留绑定、Validator 和 Executor 校验。修复删除回归前后读的同资源映射及上线前首轮设计输入过大。

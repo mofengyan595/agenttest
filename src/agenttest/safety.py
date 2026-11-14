@@ -52,7 +52,9 @@ class TargetConfig(StrictModel):
     max_body_bytes: int = Field(default=100_000, ge=1, le=1_000_000)
     connect_timeout: float = Field(default=2.0, gt=0, le=30)
     read_timeout: float = Field(default=5.0, gt=0, le=30)
-    run_timeout: float = Field(default=60.0, gt=0, le=300)
+    # One workflow run may legitimately last as long as the task's execution deadline;
+    # the per-request timeouts above and the task deadline stay the real guards.
+    run_timeout: float = Field(default=60.0, gt=0, le=3_600)
     min_request_interval: float = Field(default=0.01, ge=0, le=5)
     resource_lifecycles: list[ResourceLifecycle] = Field(default_factory=list, max_length=30)
     credential_inputs: dict[str, dict[str, str]] = Field(default_factory=dict)

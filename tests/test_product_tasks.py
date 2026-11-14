@@ -12,10 +12,37 @@ from test_product_design import case, project, settings
 from agenttest.generic_intake import GenericSetup, IntakeRole
 from agenttest.main import create_app
 from agenttest.product_design import TestDesignModel as DesignModel
+from agenttest.product_tasks import unique_case_id
 from agenttest.project_intake import IntakeInput
 from agenttest.report import ModelCallStats, ReportStore
 from agenttest.task_service import TaskService
 from agenttest.task_store import TaskConflict, TaskStore
+
+
+def test_a_reexecuted_group_never_reuses_a_case_id():
+    """A retried group must not create a second evidence row under the same case id."""
+    summary = dict(cases=[dict(case_id="supervision_2_group_1_case_1"),
+                          dict(case_id="supervision_2_group_1_case_1_2")])
+    assert unique_case_id(summary, "group_1_case_1") == "group_1_case_1"
+    assert unique_case_id(summary, "supervision_2_group_1_case_1") == (
+        "supervision_2_group_1_case_1_3")
+
+
+def test_a_terse_focus_rejection_still_gets_an_actionable_repair_payload():
+    """``FOCUS_*`` codes with no fields must not turn a legitimate request into a dead round."""
+    from agenttest.diagnostics import Layer, ValidationFailure
+    from agenttest.product_tasks import focus_repair_payload
+
+    built, _ = project()
+    diagnostic = ValidationFailure(Layer.MODEL, "FOCUS_REQUIREMENT_ACTION_INVALID").diagnostic
+    payload = focus_repair_payload(built, diagnostic,
+                                   atoms=[dict(source_id="request_1")])
+    assert payload["code"] == "FOCUS_REQUIREMENT_ACTION_INVALID"
+    assert payload["fields"] == []
+    detail = payload["detail"]
+    assert detail["schema"] == "agenttest.focus-repair.v1"
+    assert detail["allowed_operations"] == sorted(built.target.allowed_operations)[:16]
+    assert detail["requirement_keys"] == ["request_1"]
 
 
 def service(root, model):
