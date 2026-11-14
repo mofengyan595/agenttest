@@ -92,6 +92,8 @@ HARD_EDGE_REASONS = frozenset({
 # The IR derives this instance from an approved 404/410 rule and a planned deletion. It is a
 # lifecycle verification of an existing instance, not an action the user's clause named.
 ABSENCE_INSTANCE_ORIGIN = "APPROVED_ABSENCE_POLICY"
+PRESENCE_INSTANCE_ORIGIN = "APPROVED_PRESENCE_POLICY"
+SETUP_INSTANCE_ORIGIN = "APPROVED_LIFECYCLE_SETUP"
 
 
 class ResponseAssertion(BaseModel):
@@ -453,7 +455,8 @@ def topological_order(instances, edge_pairs):
 # --------------------------------------------------------------------------------------
 
 def build_planning_ir(requirements, atoms, *, operations, policies,
-                      target_lifecycles=(), read_operations=(), input_requirements=()):
+                      target_lifecycles=(), read_operations=(), input_requirements=(),
+                      regression_presence_operations=(), regression_setup_operations=()):
     """Normalize Focus clauses into instances and constraints without any model call.
 
     ``requirements`` are the validated ``RequestRequirement`` dumps of one request;
@@ -641,6 +644,28 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
     for rule in target_lifecycles:
         creates = [item for item in instances
                    if item.operation_id == rule["create_operation"]]
+        if not creates and rule["create_operation"] in regression_setup_operations:
+            deletes = [item for item in instances
+                       if item.operation_id == rule["delete_operation"]]
+            if len(deletes) == 1:
+                deletion = deletes[0]
+                creators = _policy_candidates(policies, rule["create_operation"], deletion.role)
+                delete_policies = _policy_candidates(policies, deletion.operation_id,
+                                                     deletion.role)
+                if (len(creators) == len(delete_policies) == 1 and any(
+                        binding.get("source_policy_id") == creators[0]["id"]
+                        and binding["location"] == "path_parameters"
+                        and binding["name"] == rule["path_parameter"]
+                        and binding.get("source_selector") == rule["id_selector"]
+                        for binding in delete_policies[0].get("binding_rules") or ())):
+                    setup = ActionInstance(
+                        instance_id=f"ai_{len(instances) + 1}",
+                        operation_id=rule["create_operation"], role=deletion.role,
+                        source_id=deletion.source_id, source_quote=deletion.source_quote,
+                        source_start=deletion.source_start, action_index=deletion.action_index,
+                        origin=SETUP_INSTANCE_ORIGIN)
+                    instances.append(setup)
+                    creates.append(setup)
         if not creates:
             continue
         if len(creates) > 1:
@@ -767,6 +792,47 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                   f"删除后回读沿用 {handle.producer_instance} 产生的 {handle.selector}",
                   deletion.source_id)
 
+    # A regression can select the approved pre-delete read and absence check on the same API.
+    # Focus has one clause action for that API. Supply the missing positive policy instance
+    # only where the two approved policies share the exact resource binding.
+    for handle in resources:
+        consumers = consumers_by_handle.get(handle.resource_id, [])
+        for absent in list(consumers):
+            if (absent.phase != ResourcePhase.VERIFY_ABSENT.value
+                    or absent.operation_id not in regression_presence_operations
+                    or any(item.operation_id == absent.operation_id
+                           and item.phase == ResourcePhase.EXISTS.value for item in consumers)):
+                continue
+            absence = next((p for p in policies if p["id"] == absent.policy_id), None)
+            if absence is None:
+                continue
+            producer = next(item for item in instances
+                            if item.instance_id == handle.producer_instance)
+            sources = _policy_candidates(policies, producer.operation_id, producer.role)
+            if len(sources) != 1 or not any(rule.get("source_policy_id") == sources[0]["id"]
+                       and rule.get("location") == "path_parameters"
+                       and rule.get("name") == handle.path_parameter
+                       and rule.get("source_selector") == handle.selector
+                       for rule in absence.get("binding_rules") or ()):
+                continue
+            approved = [p for p in policies if p["operation_id"] == absent.operation_id
+                        and absent.role in p["roles"] and not p.get("negative")
+                        and _status_codes(p) and all(200 <= code < 300 for code in _status_codes(p))
+                        and p.get("binding_rules") == absence.get("binding_rules")]
+            if len(approved) != 1:
+                continue
+            present = absent.model_copy(update=dict(
+                instance_id=f"ai_{len(instances) + 1}", policy_id=approved[0]["id"],
+                policy_origin="APPROVED_PRESENCE", phase=ResourcePhase.EXISTS.value,
+                assertions=[ResponseAssertion(statuses=sorted(_status_codes(approved[0])),
+                    source_id=absent.source_id, source_quote=absent.source_quote,
+                    origin="APPROVED_PRESENCE")],
+                origin=PRESENCE_INSTANCE_ORIGIN))
+            instances.append(present)
+            consumers.append(present)
+            _add_edge(edges, handle.producer_instance, present.instance_id,
+                      EDGE.DATA_DEPENDENCY, "存在性检查沿用同一新建资源", present.source_id)
+
     # 4. Lifecycle edges by resource phase; the post-delete readback never delays the delete.
     for handle in resources:
         consumers = consumers_by_handle.get(handle.resource_id, [])
@@ -837,7 +903,10 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                         detail=dict(reason=EDGE.TEXT_ORDER), origin="FOCUS_TEXT"))
 
     # 6. Adjacency markers only between consecutive request instances; no marker, no edge.
-    requests_in_order = sorted(instances, key=lambda item: item.sort_key)
+    requests_in_order = sorted((item for item in instances
+                                if item.origin not in {PRESENCE_INSTANCE_ORIGIN,
+                                                       SETUP_INSTANCE_ORIGIN}),
+                               key=lambda item: item.sort_key)
     for previous, current in zip(requests_in_order, requests_in_order[1:]):
         if previous.source_id == current.source_id:
             continue
@@ -1113,12 +1182,13 @@ def _order_side(order, side, instances, clauses):
     text order such as "create before read" must not become ambiguous merely because the read
     operation now occurs twice.
     """
+    instances = [item for item in instances if item.origin != PRESENCE_INSTANCE_ORIGIN]
     source = order.get(f"{side}_source_id")
     index = order.get(f"{side}_index")
     operation = order.get(side)
 
     def named(item):
-        return item.origin != ABSENCE_INSTANCE_ORIGIN
+        return item.origin not in {ABSENCE_INSTANCE_ORIGIN, PRESENCE_INSTANCE_ORIGIN}
 
     def one_of(items):
         """Prefer the clause's own action; fall back to a lifecycle verification if it is the

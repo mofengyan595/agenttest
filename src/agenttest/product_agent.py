@@ -38,7 +38,13 @@ from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
 from agenttest.product_obligations import executed_evidence, supervision_facts
 from agenttest.report import fingerprint
-from agenttest.task_completion import classify_task, evaluate, public_view, subject_scope
+from agenttest.task_completion import (
+    PRE_RELEASE,
+    classify_task,
+    evaluate,
+    public_view,
+    subject_scope,
+)
 
 ENGINE = "DEEP_AGENTS"
 LEGACY = "LEGACY_SUPERVISOR"
@@ -191,6 +197,7 @@ class AgentSession:
                                     summary=self.summary)
         self.tool_calls: list[dict] = []
         self.group_runs: dict[str, int] = {}
+        self.group_notes: dict[str, str] = {}
         self.generation = 0
         self.seen: dict[str, dict] = {}
         self.stop = "RUNNING"
@@ -273,8 +280,8 @@ class AgentSession:
         return supervision_facts(
             project=self.project, summary=self.summary, text=self.text,
             remaining=remaining or self._budget_view(),
-            allow_negatives=(self.scope.text == self.tasks.DEFAULT_ROUND
-                             if hasattr(self.tasks, "DEFAULT_ROUND") else mode != "selected"),
+            allow_negatives=(mode != "selected" or self._classification()["kind"] == PRE_RELEASE
+                             or self.text == getattr(self.tasks, "DEFAULT_ROUND", None)),
             attempts=attempts,
             attempted=[item.get("target") for item in attempts if item.get("target")])
 
@@ -292,7 +299,7 @@ class AgentSession:
             group_id = group.get("id")
             members = list(group.get("primary") or ())
             related = [policy.id for policy in policies.values()
-                       if policy.operation_id in members]
+                       if policy.operation_id in members and policy.negative is None]
             measured = [policy_id for policy_id in related if policy_id in evidence]
             failed = [policy_id for policy_id in measured
                       if not evidence[policy_id]["passed"]]
@@ -300,11 +307,9 @@ class AgentSession:
             runs = self.group_runs.get(group_id, 0)
             runnable = (bool(group.get("supported", True)) and runs < MAX_GROUP_RUNS
                         and status not in {"OUTSIDE_FOCUS"}
-                        and not (related and len(measured) == len(related) and failed == []))
+                        and not (related and len(measured) == len(related)))
             row = dict(group_id=group_id, operations=members,
-                       policies=[dict(policy_id=policy_id,
-                                      operation_id=policies[policy_id].operation_id)
-                                 for policy_id in related],
+                       policy_ids=related,
                        status=status, runs=runs,
                        reason=(group.get("reason") or "")[:200] or None,
                        measured_policy_ids=measured, failed_policy_ids=failed,
@@ -323,7 +328,8 @@ class AgentSession:
         classification = self._classification()
         subject = self._subject()
         groups = self._group_view()
-        candidates = [dict(item, next_step=dict(
+        candidates = [dict({key: item[key] for key in ("id", "action", "kind",
+                                                      "operations", "policies")}, next_step=dict(
             tool="run_open_obligation", arguments={"candidate_id": item["id"]}))
             for item in facts.get("candidates") or ()]
         inventory = (self.summary.get("inventory") or {}).get("operations") or []
@@ -477,23 +483,30 @@ class AgentSession:
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
         related = [policy.id for policy in policies.values()
-                   if policy.operation_id in (group.get("primary") or ())]
+                   if policy.operation_id in (group.get("primary") or ())
+                   and policy.negative is None]
         if related and all(policy_id in evidence for policy_id in related) and not design_note:
             refusal_payload = _refusal(
                 "GROUP_ALREADY_MEASURED", "该分组内所有已批准义务都已有执行证据。",
-                hint="用 get_test_coverage 查看未满足义务；如需补充，请提供 design_note。",
+                hint="用 get_test_coverage 查看未测义务；通过候选动作补测独立检查。",
                 unmeasured=[policy_id for policy_id in related if policy_id not in evidence])
             return refusal_payload
         note = self._note(design_note)
+        if (runs and group.get("status") in {"NOT_EXECUTED", "REJECTED"}
+                and (not note or note == self.group_notes.get(group_id))):
+            return _refusal("REPAIR_NOTE_REQUIRED", "此分组已经拒绝过一次。",
+                            hint="按上一轮结构化错误给出一条新的设计约束，或选择其他义务。")
         supervision = None
         if note or group.get("status") in {"NOT_EXECUTED", "REJECTED"}:
             round_number = self.tasks.next_supervision_round(self.scope)
             supervision = dict(round=round_number, target=f"agent:group:{group_id}",
-                               text=self._design_text(group, note))
+                               text=self._design_text(group, note), preserve_focus=True,
+                               design_note=note)
         before_cases = len(self.summary.get("cases") or ())
         before_records = len(self.summary.get("design_records") or ())
         before_requests = self.ledger.requests
         self.group_runs[group_id] = runs + 1
+        self.group_notes[group_id] = note
         self.record("run_test_group", phase="start", group_id=group_id,
                     design_note=bool(note), status="STARTED")
         try:
@@ -533,6 +546,14 @@ class AgentSession:
                 detail=detail,
                 retryable=bool(note) is False,
                 hint=detail.get("hint") or self._repair_hint(code))
+        elif cases and all(case.get("status") == "REJECTED" for case in cases):
+            group["status"] = payload["status"] = "REJECTED"
+            payload["ok"] = False
+            payload["error"] = dict(
+                code=cases[0].get("reason") or "PLAN_REJECTED",
+                message="方案未通过执行前校验，未发送业务请求。",
+                retryable=runs == 0,
+                hint="核对必填参数或绑定后提供新的设计约束，或选择其他可执行义务。")
         return payload
 
     @staticmethod
@@ -609,12 +630,13 @@ class AgentSession:
         record = (self.summary.get("design_records") or [None])[-1]
         diagnostic = self._diagnostic(record) if record else {}
         code = diagnostic.get("code") or (outcome.note or "ACTION_NOT_EXECUTED")
-        return dict(ok=bool(outcome.executed), candidate_id=candidate_id,
+        obtained_evidence = bool(outcome.executed and outcome.requests)
+        return dict(ok=obtained_evidence, candidate_id=candidate_id,
                     action=candidate.get("action"), executed=outcome.executed,
                     cases=[self._case_summary(case) for case in cases][:6],
                     requests=self.ledger.requests - before_requests,
                     detail=outcome.detail, note=outcome.note,
-                    error=None if outcome.executed else dict(
+                    error=None if obtained_evidence else dict(
                         code=code,
                         message="该候选动作没有产生执行证据。", retryable=False,
                         fields=diagnostic.get("fields") or [],

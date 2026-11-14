@@ -303,6 +303,15 @@ def strip_instance_bindings(schema) -> None:
 
 class TestDesignModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
+        if context.get("instance_inputs"):
+            from agenttest.instance_design import instance_request
+
+            schema, public = instance_request(context)
+            return self._encode_request(
+                schema, public,
+                "按用户目标为输入槽提供符合 Schema 的测试值。步骤、角色、策略和来源已批准，"
+                "由编译器组装。按原文保持已明确的输入约束。",
+                "agenttest_instance_inputs")
         schema = TestDesign.model_json_schema()
         bindings = _needs_instance_bindings(context)
         if not bindings:
@@ -388,6 +397,11 @@ class TestDesignModel(OpenAICompatiblePlanner):
 
     def _decode_output(self, content, context):
         wire = bounded_json(content, self._settings.max_response_bytes)
+        if context.get("instance_inputs"):
+            from agenttest.instance_design import instance_response
+
+            wire = instance_response(wire, context)
+            context = {**context, "exact_instance_step_ids": True}
         if not isinstance(wire, dict) or not isinstance(wire.get("not_covered"), list):
             raise ValidationFailure(Layer.MODEL, "DESIGN_OMISSION_SHAPE_INVALID")
         sources = {s["request_ref"]: s["text"] for s in omission_sources(context)}
@@ -622,7 +636,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          allow_optional_negatives=True, request_requirements=(),
                          http_status_requirements=(), response_requirements=(),
                          permission_action_scope=None, data_references=(), planning_ir=None,
-                         witness_requirements=None):
+                         witness_requirements=None, instance_inputs=False, instance_feedback=None):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -704,6 +718,13 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
         context["suggested_group_http_requests"] = group_http_budget
     context["pending_checks"] = [p for p in pending_checks
                                if p["operation_id"] in group["operations"]]
+    if (instance_inputs and planning_ir is not None and not context["requested_checks"]
+            and not allow_optional_negatives and not context["deferred_questions"]
+            and all(i.policy_id in {p["id"] for p in context["policies"]}
+                    for i in planning_ir.instances)):
+        context["instance_inputs"] = True
+        context["instance_feedback"] = instance_feedback
+        context["design_note"] = (task_context or {}).get("design_note")
     vault = CredentialVault(project.target, environ)
     try:
         if vault.contains_secret(context):

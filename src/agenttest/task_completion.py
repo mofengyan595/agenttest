@@ -210,7 +210,7 @@ def _scope_rows(project, summary, subject, kind):
         scope = [item for item in scope if item["policy_id"] in set(subject["policy_ids"])]
     policies = _policies(project)
     excluded = []
-    if kind in {FUNCTIONAL, PRE_RELEASE} and (summary.get("focus") or {}).get(
+    if kind == FUNCTIONAL and (summary.get("focus") or {}).get(
             "mode") == "selected":
         # A narrowed focus deliberately leaves the approved negative-value checks out of the
         # round. Requiring them here would make ``complete`` unreachable for every narrowed

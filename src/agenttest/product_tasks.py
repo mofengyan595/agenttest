@@ -10,7 +10,7 @@ import httpx
 from pydantic import ValidationError
 
 from agenttest.credentials import CredentialVault, sensitive_field
-from agenttest.diagnostics import ValidationFailure, presentation_language
+from agenttest.diagnostics import Layer, ValidationFailure, presentation_language
 from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
@@ -34,7 +34,7 @@ DEFAULT_FOLLOWUP = "沿用上次测试重点，按最新已确认的信息安排
 AGENT_ENGINE = "DEEP_AGENTS"
 
 
-def request_planning_ir(project, selection, atoms, text):
+def request_planning_ir(project, selection, atoms, text, *, autonomous=False):
     """Build the normalized planning representation from the validated Focus output."""
     from agenttest.planning_ir import build_planning_ir
 
@@ -42,6 +42,16 @@ def request_planning_ir(project, selection, atoms, text):
                     for item in selection.requirements]
     inputs = [item.model_dump() if hasattr(item, "model_dump") else item
               for item in selection.input_requirements]
+    presence_operations = ()
+    setup_operations = ()
+    if autonomous and selection.mode == "selected":
+        from agenttest.task_completion import REGRESSION, classify_task, subject_scope
+
+        if (classify_task(text)["kind"] == REGRESSION and not explicit_http_statuses(text)
+                and not explicit_response_checks(text)
+                and not any(r.get("forbidden_operation_ids") for r in requirements)):
+            presence_operations = subject_scope(project, text, REGRESSION)["operations"]
+            setup_operations = selection.operation_ids
     return build_planning_ir(
         requirements, atoms, operations=[dict(id=op.operation_id, method=op.method,
                                               path=op.path)
@@ -50,7 +60,8 @@ def request_planning_ir(project, selection, atoms, text):
         target_lifecycles=[rule.model_dump() for rule in project.target.resource_lifecycles],
         read_operations={op.operation_id for op in project.contract.operations
                          if op.method in {"GET", "HEAD", "OPTIONS"}},
-        input_requirements=inputs)
+        input_requirements=inputs, regression_presence_operations=presence_operations,
+        regression_setup_operations=setup_operations)
 
 
 def aggregate_usage(records):
@@ -545,7 +556,7 @@ class ProductTasks:
                             try:
                                 planning_ir = request_planning_ir(
                                     project, selection, summary["requirement_sources"],
-                                    context["current_request"])
+                                    context["current_request"], autonomous=engine == AGENT_ENGINE)
                                 summary["planning_ir"] = planning_ir.public_summary()
                             except Exception as exc:
                                 # The legacy path stays available for an input shape the
@@ -807,6 +818,37 @@ class ProductTasks:
                             op for op in selected_ids if op not in blocked_inputs
                             and op not in rule_logins],
                             requirement_links=selection.requirements)
+                        if engine == AGENT_ENGINE and planning_ir is not None:
+                            from agenttest.planning_ir import (
+                                ABSENCE_INSTANCE_ORIGIN,
+                                PRESENCE_INSTANCE_ORIGIN,
+                                SETUP_INSTANCE_ORIGIN,
+                            )
+
+                            # Keep the approved lifecycle observers in the same group as their
+                            # producer and deletion, including when Focus named only the delete.
+                            allowed = set(project.target.allowed_operations)
+                            for group in summary["groups"]:
+                                primary = set(group["primary"])
+                                for item in planning_ir.instances:
+                                    if (item.origin not in {ABSENCE_INSTANCE_ORIGIN,
+                                                           PRESENCE_INSTANCE_ORIGIN,
+                                                           SETUP_INSTANCE_ORIGIN}
+                                            or item.operation_id not in allowed
+                                            or item.operation_id in blocked_inputs
+                                            or item.operation_id in rule_logins):
+                                        continue
+                                    producer_ops = {planning_ir.instance(arg.from_instance)
+                                                    .operation_id for arg in item.arguments
+                                                    if arg.from_instance}
+                                    setup_op = (item.origin == SETUP_INSTANCE_ORIGIN
+                                                and item.operation_id in group["operations"])
+                                    if setup_op or (producer_ops and producer_ops <= primary):
+                                        if item.operation_id not in group["primary"]:
+                                            group["primary"].append(item.operation_id)
+                                            primary.add(item.operation_id)
+                                        if item.operation_id not in group["operations"]:
+                                            group["operations"].append(item.operation_id)
                         if rule_reads and not summary['groups']:
                             summary['reason'] = '业务规则待确认。本轮没有安排业务请求。'
                         checkpoint()
@@ -917,18 +959,28 @@ class ProductTasks:
         # path, which is exactly the downgrade P1 forbids; if a scope cannot be built the
         # reason is recorded on the round instead of disappearing.
         planning_ir = scope.planning_ir
+        original_group = supervision is None or supervision.get("preserve_focus", False)
+        autonomous = (summary.get("agent_runtime") or {}).get("engine") == AGENT_ENGINE
+        negative_checks = (supervision or {}).get("approved_negative_checks") or []
         supervision_downgrade = None
-        if supervision is not None:
+        if not original_group:
             planning_ir, supervision_downgrade = scoped_supervision_ir(
                 scope.planning_ir, group)
-        design_requirements = [] if supervision is not None else scope.requirements
+        if negative_checks:
+            planning_ir = None
+            executable_checks = negative_checks
+        design_requirements = scope.requirements if original_group else []
         witness_requirements = design_requirements
-        design_text = text if supervision is None else supervision["text"]
+        design_text = text if original_group else supervision["text"]
         proposal_context = context
-        if supervision is not None:
+        if not original_group:
             proposal_context = {**context, "current_request": design_text,
                 "requests": [*(context.get("requests") or ()), design_text]}
-        if supervision is not None:
+        elif (supervision or {}).get("design_note"):
+            proposal_context = {**context, "design_note": supervision["design_note"]}
+        if negative_checks:
+            required_normal_operations = []
+        elif not original_group:
             required_normal_operations = list(group["primary"])
         elif text == DEFAULT_ROUND or summary.get("focus", {}).get("mode") == "all_ready":
             required_normal_operations = project.target.allowed_operations
@@ -1011,7 +1063,15 @@ class ProductTasks:
             group_witness_requirements = summary.get('focus', {}).get(
                 'requirements', [])
             group_ir = planning_ir
+        instance_inputs = autonomous and group_ir is not None and original_group
+        record["instance_inputs_requested"] = instance_inputs
+        previous_rejection = next((r.get("diagnostic") for r in
+                                   reversed(summary["design_records"][:-1])
+                                   if r["group_id"] == group["id"]
+                                   and r["status"] == "REJECTED"), None)
         try:
+            if instance_inputs and len(group_ir.instances) > group_request_limit - ledger.requests:
+                raise ValidationFailure(Layer.MODEL, "DESIGN_STEP_BUDGET_EXCEEDED")
             design = await propose_design(project, design_text, group, model,
                 environ=svc.environ,
                 remaining_requests=group_request_limit - ledger.requests,
@@ -1037,8 +1097,10 @@ class ProductTasks:
                 pending_negative_values=summary.get("pending_negative_values", []),
                 project_notes=project_record.get("business_notes", ""),
                 group_http_budget=suggested,
-                allow_optional_negatives=(summary.get("focus", {}).get(
-                    "mode") != "selected"),
+                allow_optional_negatives=(not instance_inputs and summary.get(
+                    "focus", {}).get("mode") != "selected" and not negative_checks),
+                instance_inputs=instance_inputs,
+                instance_feedback=previous_rejection,
                 must_be_relevant=must_be_relevant,
                 available_identity_aliases=[r["alias"] for r in svc.intake.record(
                     row["project_id"])["generic"]["roles"]],
@@ -1077,7 +1139,7 @@ class ProductTasks:
             if diagnostic is not None:
                 record['diagnostic'] = diagnostic.model_dump(mode='json')
             if isinstance(exc, ValidationError):
-                from agenttest.diagnostics import Layer, schema_diagnostic
+                from agenttest.diagnostics import schema_diagnostic
 
                 reason = "DESIGN_SCENARIO_INVALID"
                 record["diagnostic"] = schema_diagnostic(
@@ -1506,6 +1568,18 @@ class ProductTasks:
         from agenttest.product_supervisor import ActionOutcome
 
         summary, project = scope.summary, scope.project
+        approved_negative_checks = []
+        if ((summary.get("agent_runtime") or {}).get("engine") == AGENT_ENGINE
+                and candidate.get("kind") == "APPROVED_NEGATIVE"):
+            approved = {p.id for p in project.registry.definitions() if p.negative is not None
+                        and p.operation_id in project.target.allowed_operations}
+            policy_ids = candidate.get("policies") or []
+            if len(policy_ids) != 1 or policy_ids[0] not in approved:
+                return ActionOutcome(executed=False, note="NEGATIVE_CHECK_NOT_APPROVED")
+            supplied = next((row for row in scope.executable_checks
+                             if row["policy_id"] == policy_ids[0]), None)
+            approved_negative_checks = [supplied or dict(
+                policy_id=policy_ids[0], source_quote=scope.text[:300])]
         operations = [operation for operation in candidate.get("operations") or ()
                       if operation in project.target.allowed_operations]
         groups = [group for group in design_groups(project, operation_ids=operations)
@@ -1524,7 +1598,8 @@ class ProductTasks:
         scope.state.setdefault("attempts", []).append(attempt)
         before = self.round_evidence(summary)
         await self.run_group(scope, group, supervision=dict(round=round_number,
-            target=candidate.get("id"), text=self.supervision_text(scope, candidate)))
+            target=candidate.get("id"), text=self.supervision_text(scope, candidate),
+            approved_negative_checks=approved_negative_checks))
         after = self.round_evidence(summary)
         status = group.get("status")
         attempt.update(status=status, cases=after["cases"] - before["cases"],

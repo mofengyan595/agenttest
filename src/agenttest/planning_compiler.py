@@ -17,7 +17,13 @@ from __future__ import annotations
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
-from agenttest.planning_ir import HARD_EDGE_REASONS, ActionInstance, PlanningIR
+from agenttest.planning_ir import (
+    HARD_EDGE_REASONS,
+    PRESENCE_INSTANCE_ORIGIN,
+    SETUP_INSTANCE_ORIGIN,
+    ActionInstance,
+    PlanningIR,
+)
 
 ENCODING = "NORMALIZED_IR_COMPILER_V1"
 # The IR marks a read instance it derived from an approved 404/410 rule with this origin.
@@ -43,7 +49,8 @@ def _repair_facts(detail):
         elif isinstance(value, (int, float, bool)) or value is None:
             kept[key] = value
         elif isinstance(value, (list, tuple)):
-            kept[key] = [str(item)[:80] for item in list(value)[:6]]
+            kept[key] = [_repair_facts(item) if isinstance(item, dict) else str(item)[:80]
+                         for item in list(value)[:8]]
         elif isinstance(value, dict):
             kept[key] = {str(k)[:40]: str(v)[:80] for k, v in list(value.items())[:6]}
     return kept
@@ -185,13 +192,20 @@ def _step_instance_map(ir: PlanningIR, draft, policies=None):
         progress = False
         deferred = []
         for position, step in unresolved:
-            candidates = [item for item in by_operation.get(
-                (step.operation_id, step.role), []) if item.instance_id not in used_instances]
+            matches = by_operation.get((step.operation_id, step.role), [])
+            candidates = [item for item in matches if item.instance_id not in used_instances]
             if not candidates:
                 raise _failure(
                     "PLANNING_INSTANCE_UNBOUND", [f"plan.steps.{position}"],
-                    dict(operation_id=step.operation_id, role=step.role, candidates=[],
-                         message="没有剩余的同操作实例可绑定；程序不会按数组位置猜测。"))
+                    dict(operation_id=step.operation_id, role=step.role, step=step.id,
+                         proposed_policy=step.policy_id, candidates=[
+                             dict(instance_id=item.instance_id, policy_id=item.policy_id,
+                                  phase=item.phase, used=item.instance_id in used_instances,
+                                  producers=sorted({a.from_instance for a in item.arguments
+                                                    if a.from_instance}))
+                             for item in matches],
+                         hint="用相应阶段的已批准实例，删除没有独立义务的额外步骤；"
+                              "每个实例只提交一次。"))
             if len(candidates) == 1:
                 chosen = candidates[0]
             else:
@@ -354,7 +368,14 @@ def compile_design(ir, plan, context):
         ambiguity = ir.ambiguities[0]
         raise _failure("PLANNING_IR_AMBIGUOUS", fields=list(ambiguity.fields),
                        construction=dict(ambiguity=ambiguity.model_dump(mode="json")))
-    mapping, by_instance = _step_instance_map(ir, draft, policies)
+    if context.get("exact_instance_step_ids"):
+        known_ids = {item.instance_id for item in ir.instances}
+        if len(draft.steps) != len(known_ids) or {step.id for step in draft.steps} != known_ids:
+            raise _failure("PLANNING_INSTANCE_COVERAGE")
+        mapping = {step.id: step.id for step in draft.steps}
+        by_instance = {step.id: [step.id] for step in draft.steps}
+    else:
+        mapping, by_instance = _step_instance_map(ir, draft, policies)
     instance_step = {}
     for design_id, instance_id in mapping.items():
         if instance_id in instance_step:
@@ -400,13 +421,19 @@ def compile_design(ir, plan, context):
             raise _failure("PLANNING_INSTANCE_CONFLICT", [f"plan.steps.{step.id}"],
                            dict(instance_id=instance_id, operation_id=step.operation_id,
                                 role=step.role))
+        if step.policy_id != instance.policy_id:
+            raise _failure("PLANNING_POLICY_MISMATCH", [f"plan.steps.{step.id}.policy_id"],
+                           dict(instance_id=instance_id, operation_id=step.operation_id,
+                                approved_policy=instance.policy_id, proposed_policy=step.policy_id,
+                                hint="沿用已批准的实例策略及其生命周期阶段。"))
         _policy_for(instance, policies)
         # The compiler owns identity: an instance's clause occurrence comes from the IR, never
         # from a model-echoed default (a null index on every step used to collapse all of them
         # onto `request_1:0` and be rejected as a conflict). A derived post-delete read is a
         # lifecycle verification, not a clause action, so it carries no requirement slot and the
         # clause validator does not try to count it twice.
-        synthesized = instance.origin == ABSENCE_ORIGIN
+        synthesized = instance.origin in {
+            ABSENCE_ORIGIN, PRESENCE_INSTANCE_ORIGIN, SETUP_INSTANCE_ORIGIN}
         steps.append(dict(id=design_id, operation_id=instance.operation_id,
                           role=instance.role, policy_id=instance.policy_id,
                           arguments=_apply_arguments(step, instance, mapping, instance_step,

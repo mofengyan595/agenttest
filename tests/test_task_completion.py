@@ -84,6 +84,24 @@ def criterion(report, identifier):
     return next(row for row in report["criteria"] if row["id"] == identifier)
 
 
+def test_selected_prerelease_keeps_approved_negative_obligations():
+    from types import SimpleNamespace
+
+    from agenttest.task_completion import _scope_rows
+
+    project = project_with_absence()
+    policies = list(project.registry.definitions())
+    negative = policies[0].model_copy(update=dict(id="negative", negative=object()))
+    project = SimpleNamespace(contract=project.contract, target=project.target,
+                              registry=SimpleNamespace(definitions=lambda: [*policies, negative]))
+    summary = summary_for(project)
+    summary["focus"] = {"mode": "selected"}
+    release = _scope_rows(project, summary, {}, PRE_RELEASE)
+    assert any(row["policy_id"] == "negative" for row in release["missing"])
+    functional = _scope_rows(project, summary, {}, FUNCTIONAL)
+    assert any(row["policy_id"] == "negative" for row in functional["excluded_negatives"])
+
+
 @pytest.mark.parametrize("text,kind", GOALS.items())
 def test_the_goal_text_decides_the_completion_kind(text, kind):
     classification = classify_task(text)

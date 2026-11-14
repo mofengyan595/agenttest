@@ -129,6 +129,68 @@ def test_an_absence_read_is_not_derived_without_an_approved_rule():
     assert [item for item in ir.instances if item.phase == "VERIFY_ABSENT"] == []
 
 
+@pytest.mark.parametrize("omit_setup", [False, True])
+def test_regression_presence_and_absence_are_distinct_on_one_approved_resource(omit_setup):
+    from agenttest.instance_design import instance_response
+    from agenttest.planning_compiler import compile_design
+
+    text = "删除功能刚改过，帮我回归一下。"
+    row = requirement()
+    ops = ("deleteParcel",) if omit_setup else ("createParcel", "deleteParcel", "readParcel")
+    row.update(source_quote=text, actions=[dict(operation_id=op, role=None) for op in ops],
+               before=[] if omit_setup else [dict(earlier="deleteParcel", later="readParcel")])
+    ir = build_planning_ir([row], [dict(source_id="request_1", text=text, start=0)],
+        operations=OPERATIONS, policies=policies(), target_lifecycles=LIFECYCLE,
+        read_operations=READ_OPERATIONS, regression_presence_operations=READ_OPERATIONS,
+        regression_setup_operations={"createParcel"})
+    assert not ir.ambiguities
+    ctx = {**context(ir), "exact_instance_step_ids": True}
+    proposal = instance_response({"inputs": {}}, ctx)["cases"][0]["plan"]
+    result, _ = compile_design(ir, proposal, ctx)
+    assert [node["policy_id"] for node in result["steps"]] == [
+        "createParcel", "readParcel", "deleteParcel", "readParcel_expectation_404"]
+    producer, *consumers = result["steps"]
+    assert all(node["arguments"][0]["from_step"] == producer["id"] for node in consumers)
+    assert all(node["arguments"][0]["select"] == "$.id" for node in consumers)
+
+
+def test_literal_only_design_cannot_add_steps_or_supply_a_foreign_reference():
+    from agenttest.instance_design import instance_request, instance_response
+    from agenttest.planning_compiler import compile_design
+
+    approved = policies()
+    approved[0]["binding_rules"][0]["literal_schema"] = {"type": "string", "minLength": 1}
+    row = requirement()
+    ir = build_planning_ir([row], [dict(source_id="request_1", text=row["source_quote"], start=0)],
+        operations=OPERATIONS, policies=approved, target_lifecycles=LIFECYCLE,
+        read_operations=READ_OPERATIONS)
+    ctx = {**context(ir), "policies": approved, "user_task": row["source_quote"],
+           "exact_instance_step_ids": True}
+    schema, facts = instance_request(ctx)
+    assert schema["properties"]["inputs"]["required"] == ["ai_1"]
+    assert len(facts["nodes"]) == len(ir.instances)
+    proposal = instance_response({"inputs": {"ai_1": {"arg_0": "demo"}}}, ctx)
+    plan = proposal["cases"][0]["plan"]
+    result, _ = compile_design(ir, plan, ctx)
+    assert result["steps"][0]["arguments"][0]["value"] == "demo"
+    with pytest.raises(ValidationFailure) as refused:
+        instance_response({"inputs": {"ai_1": {"arg_0": "demo"}, "ai_2": {"from_step": "x"}}}, ctx)
+    assert codes(refused) == "DESIGN_INSTANCE_INPUTS_INVALID"
+    assert refused.value.diagnostic.detail["expected"] == {"ai_1": ["arg_0"]}
+
+
+def test_instance_wire_requires_nested_fields_before_compilation():
+    from agenttest.instance_design import input_schema
+
+    approved = dict(type="object", required=["labels", "options"], properties={
+        "labels": dict(type="array", items=dict(type="string")),
+        "options": dict(type="object", required=["tracked"], properties={
+            "tracked": dict(type="boolean")})})
+    schema = input_schema(approved)
+    assert schema["required"] == ["labels", "options"]
+    assert schema["properties"]["options"]["required"] == ["tracked"]
+
+
 def test_a_create_delete_case_is_accepted_even_if_the_round_also_names_reads():
     ir = planner_ir()
     scoped = ir.scope_to(["createParcel", "deleteParcel"])
