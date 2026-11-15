@@ -75,7 +75,7 @@
 
 - 定向无密钥 92 项通过，修复 PUT 重复入账后补跑预算与写证据 25 项通过。Deep Agents 专项、安全与编译器检查 137 项通过。
 - 六进程全量首次结果为收集并执行 2,831 项，2,811 通过、16 跳过（含 1 个既有 xfail）、4 失败，源码快照一致、测试 ID 全覆盖。失败包括启动靶场控制令牌冲突及 Windows 多进程报告发布超时。相关三个测试文件隔离复查为 39 通过、7 跳过。保留 [全量原始计数](evidence/deepagents-p3a3/offline.json)，全量首次结果不能视为全绿。
-- `ruff check .` 和 `git diff --check` 通过。远端按实现提交核查 GitHub Actions。
+- `ruff check .` 和 `git diff --check` 通过。实现提交 `6caf52920ab60137cda6b0d4f6c563fe9f2e2013` 的 [Keyless Python checks](https://github.com/mofengyan595/agenttest/actions/runs/43659251802) 和 [Web Console checks](https://github.com/mofengyan595/agenttest/actions/runs/43659251900) 均于 2026-11-15 08:59（北京时间）前成功完成。Python 覆盖 Linux/Windows 的 base/agent 四格及 Deep Agents 专项，Web 覆盖 Linux/Windows。本地在该实现提交上复跑 165 项 Deep Agents、规划、生命周期和安全专项，全部通过。
 
 ## P3-B 进入条件
 
