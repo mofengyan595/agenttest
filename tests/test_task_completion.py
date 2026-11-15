@@ -268,23 +268,39 @@ def test_project_release_qualifiers_share_one_positive_planning_scope():
     assert [item.operation_id for item in ir.instances] == list(OPS)
 
 
-def test_release_policy_qualifier_does_not_add_a_second_create():
+@pytest.mark.parametrize("scope_in_wire", [False, True])
+def test_release_policy_qualifier_does_not_add_a_second_create(scope_in_wire):
     from types import SimpleNamespace
 
     from agenttest.product_tasks import request_planning_ir
-    from agenttest.request_requirements import request_atoms
+    from agenttest.request_requirements import (
+        decode_requirements,
+        request_atoms,
+        requirement_schema,
+    )
+    from agenttest.task_completion import project_variant_scope_sources
 
     project, _ = lifecycle_project()
     text = "发版前请完整验收整个项目，正常路径和非法入参都按已批准的规则执行。"
     for suffix in ("", "另外新建一个包裹。"):
         atoms = request_atoms(text + suffix)
-        selection = SimpleNamespace(input_requirements=[], expectation_questions=[],
-            mode="selected", operation_ids=list(OPS), requirements=[
-                dict(source_id=atom["source_id"], source_quote=atom["text"],
-                     disposition="required",
-                     actions=[dict(operation_id=op, role=None) for op in operations])
+        sources = project_variant_scope_sources(project, text + suffix, atoms)
+        assert sources == ["request_2"]
+        context = dict(user_task=text + suffix, request_atoms=atoms, approved_ids=list(OPS),
+                       trusted_scope_clauses=[] if scope_in_wire else sources)
+        wire = {atom["source_id"]: dict(disposition="required", before=[], same_resource=[],
+                   actions=[dict(operation_id=op, role=None) for op in operations])
                 for atom, operations in zip(atoms, [OPS] + [("createParcel",)] * (len(atoms) - 1),
-                                            strict=True)])
+                                            strict=True)
+                if atom["source_id"] not in context["trusted_scope_clauses"]}
+        assert set(wire) == set(requirement_schema(context)["required"])
+        requirements = decode_requirements(wire, context)
+        assert requirements[1].source_quote == atoms[1]["text"]
+        if not scope_in_wire:
+            assert requirements[1].disposition == "constraint"
+            assert requirements[1].actions == []
+        selection = SimpleNamespace(input_requirements=[], expectation_questions=[],
+            mode="selected", operation_ids=list(OPS), requirements=requirements)
         ir = request_planning_ir(project, selection, atoms, text + suffix, autonomous=True)
         operations = [item.operation_id for item in ir.instances]
         assert operations.count("createParcel") == 1 + bool(suffix)

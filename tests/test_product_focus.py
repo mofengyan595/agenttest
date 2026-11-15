@@ -211,6 +211,38 @@ def test_release_negative_scope_ref_does_not_accept_an_invented_exact_sample():
     assert not validator.is_valid(wire)
 
 
+@pytest.mark.asyncio
+async def test_focus_gateway_exhaustion_records_each_actual_attempt(tmp_path):
+    replies = []
+
+    def busy(_request):
+        replies.append(429)
+        return httpx.Response(429, headers={"Retry-After": "0"},
+                              json={"error": {"code": "model_concurrency_exceeded"}})
+
+    svc = service(tmp_path, lambda _: pytest.fail("Design must not run during Focus 429"))
+    svc.focus_factory = lambda _: FocusModel(settings(), transport=httpx.MockTransport(busy),
+                                             profile="generic")
+    try:
+        proj, setup = project()
+        saved = svc.intake.save(IntakeInput(name="限流回归", document=proj.document.decode(),
+                                           generic=setup, confirmed=True), "operator")
+        row = await svc.submit("operator", saved["id"], "创建一个测试任务", uuid4().hex)
+        await svc._workers[row["id"]]
+        done = svc.db.get(row["id"], "operator")
+        assert replies == [429, 429, 429]
+        assert done["status"] == "NEEDS_REVIEW"
+        assert done["summary"]["context_usage"] == dict(requests=0, model_calls=3,
+            known_tokens=0, total_tokens=0, usage_known=True)
+        attempts = done["summary"]["focus_gateway_retries"]
+        assert [item["delay_seconds"] for item in attempts] == [1, 2]
+        assert {item["code"] for item in attempts} == {"MODEL_GATEWAY_CONCURRENCY_LIMIT"}
+        assert not done["summary"]["questions"]
+        assert "网关" in done["summary"]["reason"]
+    finally:
+        await svc.close()
+
+
 def test_fixed_input_wire_does_not_ask_for_a_dynamic_source_choice():
     model = FocusModel(settings(), profile='generic')
     context = dict(approved_ids=['read'], user_task='读取固定预约记录')

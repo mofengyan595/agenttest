@@ -189,6 +189,17 @@ def _operations(project):
     return {operation.operation_id: operation for operation in project.contract.operations}
 
 
+def project_variant_scope_sources(project, text, atoms):
+    """Bind source IDs for closed project-wide positive/negative scope qualifiers."""
+    if classify_task(text)["kind"] != PRE_RELEASE or not subject_scope(
+            project, text, PRE_RELEASE).get("whole_project"):
+        return []
+    if sum(bool(_FULL_PROJECT_RELEASE.search(atom["text"])) for atom in atoms) != 1:
+        return []
+    return [atom["source_id"] for atom in atoms
+            if not atom["future"] and is_variant_scope_clause(atom["text"])]
+
+
 def project_release_requirements(project, text, requirements):
     """Give project-scope qualifiers one witness each without making them HTTP calls."""
     if classify_task(text)["kind"] != PRE_RELEASE or not subject_scope(
@@ -199,9 +210,13 @@ def project_release_requirements(project, text, requirements):
     if len(anchors) != 1:
         return requirements, []
     anchor = anchors[0]
-    candidates = [item for item in requirements if item["disposition"] == "required"
-                  and (_RELEASE_TIMING.fullmatch(item["source_quote"].strip())
-                       or is_variant_scope_clause(item["source_quote"]))]
+    candidates = [item for item in requirements if (
+        item["disposition"] == "required"
+        and (_RELEASE_TIMING.fullmatch(item["source_quote"].strip())
+             or is_variant_scope_clause(item["source_quote"]))
+    ) or (
+        item["disposition"] == "constraint" and is_variant_scope_clause(item["source_quote"])
+    )]
     if any(item.get(field) for item in [anchor, *candidates] for field in (
             "before", "existing_resources", "forbidden_operation_ids", "blocked_operation_ids")):
         return requirements, []

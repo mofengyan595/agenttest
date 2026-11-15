@@ -82,6 +82,8 @@ def check_groups(index):
 
 
 def validate_requested_checks(checks, context, selected):
+    from agenttest.task_completion import is_variant_scope_clause
+
     index = {entry["policy_id"]: entry for entry in context.get("approved_checks", [])}
     seen = set()
     for position, check in enumerate(checks):
@@ -94,6 +96,11 @@ def validate_requested_checks(checks, context, selected):
                 or check.policy_id in seen):
             raise ValidationFailure(Layer.MODEL, "FOCUS_REQUESTED_CHECK_INVALID")
         seen.add(check.policy_id)
+        if (check.exact_value is not None or check.exact_length is not None) and (
+                is_variant_scope_clause(check.source_quote)):
+            error = ValidationFailure(Layer.MODEL, "FOCUS_INPUT_TEXT_CHANGED")
+            error.diagnostic.fields = [f"requested_checks.{position}.exact_value"]
+            raise error
         # An explicit field=value request cannot migrate to another field with the same value.
         import re
 

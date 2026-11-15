@@ -264,8 +264,8 @@ For a request naming one feature or resource, select only operations semanticall
 feature; do not add availability/health/readiness diagnostics unless the request asks for service
 status or names that diagnostic. A whole-project request may use all_ready.
 
-request_atoms is the server's complete original-text partition. requirement_map needs EVERY
-source_id. required names actions with identity aliases, before edges and approved producer/consumer
+request_atoms is the server's complete original-text partition. requirement_map needs every
+source_id listed in its schema. required names actions with aliases and approved producer/consumer
 same_resource links; null identity means public/anonymous. An ordered clause (然后/再/之后/最后)
 keeps its before edge to the preceding requested action. When the same operation appears in more
 than one clause (for example one read before a delete and another read after it), each appearance
@@ -407,8 +407,11 @@ proposal: repair exactly what it names — a requirement_map field, or the opera
 detail — using the allowed ids/actions it gives, then answer once. Never repeat the same rejected
 value and never widen scope to satisfy it. If an operation you selected has no requirement clause
 of its own, either quote the sentence that asks for it in requirement_map or remove it from the
-selection. detail.allowed_operations is the complete list of operations you may select, and
-detail.requirement_keys is the complete set of requirement_map keys you must fill.
+selection. Use only the allowed operations and requirement_map keys in the response schema.
+A clause in
+trusted_scope_clauses is recorded by the server as project scope, so it has no
+requirement_map entry or independent action. Its source_ref can select approved
+negative checks with exact_value=null and (when present) exact_length=null.
 """
 
 
@@ -605,6 +608,11 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     from agenttest.request_requirements import request_atoms
 
     context['request_atoms'] = request_atoms(context['user_task'])
+    from agenttest.task_completion import project_variant_scope_sources
+
+    if scope_sources := project_variant_scope_sources(
+            project, context['user_task'], context['request_atoms']):
+        context['trusted_scope_clauses'] = scope_sources
     if order_feedback:
         # Same field name kept for stored evidence; ``previous_error`` is the generic view.
         context['previous_order_error'] = order_feedback

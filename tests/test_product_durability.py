@@ -73,6 +73,11 @@ def test_native_deep_agents_checkpoint_survives_process_exit(tmp_path):
     assert second.returncode == 0, second.stderr
     assert json.loads(second.stdout.strip().splitlines()[-1]) == dict(
         reason="ANSWER", calls=0, cases=1, error=None)
+    (tmp_path / "tasks.checkpoints.sqlite3").write_bytes(b"invalid sqlite database")
+    corrupt = subprocess.run([*args, "resume"], capture_output=True, text=True,
+                             encoding="utf-8", timeout=60, check=False)
+    assert corrupt.returncode != 0
+    assert "DURABLE_CHECKPOINT_INVALID" in corrupt.stderr
 
 
 @pytest.mark.asyncio

@@ -561,6 +561,8 @@ def requirement_schema(context):
     properties = {}
     trusted_actions = explicit_boundary_actions(context)
     for atom in context.get('request_atoms', []):
+        if atom['source_id'] in context.get('trusted_scope_clauses', ()):
+            continue
         choices = list(resource_choices)
         if references := fixed_resource_sources(context, atom):
             choices.append(dict(type='object', additionalProperties=False,
@@ -627,7 +629,8 @@ def resource_edges(context):
 
 def decode_requirements(wire, context):
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
-    if type(wire) is not dict or set(wire) != set(atoms):
+    scope_sources = set(context.get('trusted_scope_clauses', ()))
+    if type(wire) is not dict or set(wire) != set(atoms) - scope_sources:
         raise ValidationFailure(Layer.MODEL, 'FOCUS_SOURCE_CLAUSE_MISSING')
     resources = context.get('existing_resources', {})
     result = []
@@ -651,6 +654,12 @@ def decode_requirements(wire, context):
                 links.append(relation)
         result.append(RequestRequirement(source_id=key, source_quote=atoms[key]['text'],
             **{**value, 'same_resource': links}, existing_resources=existing))
+    if scope_sources:
+        by_source = {item.source_id: item for item in result}
+        result = [RequestRequirement(source_id=key, source_quote=atom['text'],
+                                     disposition='constraint', actions=[], before=[],
+                                     same_resource=[]) if key in scope_sources
+                  else by_source[key] for key, atom in atoms.items()]
     return result
 
 
@@ -1122,7 +1131,9 @@ def validate_requirement_links(requirements, context, selection):
                     or item.blocked_operation_ids):
                 raise ValidationFailure(Layer.MODEL, 'FOCUS_FUTURE_SCOPE_INVALID')
             continue
-        if item.disposition == 'constraint' and (not atom['constraint'] or item.actions):
+        trusted_scope = item.source_id in context.get('trusted_scope_clauses', ())
+        if item.disposition == 'constraint' and (
+                not (atom['constraint'] or trusted_scope) or item.actions):
             raise ValidationFailure(Layer.MODEL, 'FOCUS_REQUIREMENT_CONSTRAINT_INVALID')
         if item.forbidden_operation_ids and (item.disposition != 'constraint'
                 or set(item.forbidden_operation_ids) - set(context['approved_ids'])):
