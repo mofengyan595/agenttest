@@ -58,7 +58,7 @@ EXEMPT = "EXEMPT"
 # Ordered: the most specific intent wins. Every pattern is a plain lexical rule, so the same
 # goal always classifies the same way and the matched phrase is reported verbatim.
 _INVESTIGATION = re.compile(
-    r"偶发|偶尔|时好时坏|报错|出错|异常|排查|调查|定位|看看|看一下|为什么|原因|不稳定|"
+    r"偶发|偶尔|时好时坏|报错|出错|复现|异常|排查|调查|定位|看看|看一下|为什么|原因|不稳定|"
     r"intermittent|occasionally|investigat|diagnos|debug|trace|why does", re.IGNORECASE)
 _REGRESSION = re.compile(
     r"回归|刚改|改过|改动|修改过|修复后|变更后|重新验证|验证修复|"
@@ -107,6 +107,74 @@ def _policies(project):
     return {policy.id: policy for policy in project.registry.definitions()}
 
 
+def _named_operations(operations, text):
+    tokens = {token.casefold() for token in re.findall(r"[A-Za-z][A-Za-z0-9_]*", text)}
+    named = {op.operation_id for op in operations if op.operation_id.casefold() in tokens}
+    for op in operations:
+        references = re.findall(r"(?<![A-Za-z0-9_/])(?:(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)"
+                                r"\s+)?(" + re.escape(op.path) + r")(?![A-Za-z0-9_/{])",
+                                text, re.IGNORECASE)
+        if any(not verb or verb.upper() == op.method for verb, _ in references):
+            named.add(op.operation_id)
+    return named
+
+
+def _specific_investigation(operations, text):
+    """Recognize a single qualified subject followed by reproduction/evidence clauses."""
+    head, *tail = re.split(r"[，,。；;\n]", text)
+    _, separator, subject = head.partition("的")
+    if not separator or not tail or any(
+            part.strip() and not re.match(r"\s*(?:请)?(?:实际)?(?:复现|记录|保留)", part)
+            and not _named_operations(operations, part)
+            for part in tail):
+        return set()
+    grams = {run[i:i + 2] for run in re.findall(r"[\u4e00-\u9fff]+", subject)
+             for i in range(len(run) - 1)}
+    matching = {op.operation_id for op in operations if any(
+        gram in (op.summary or "") for gram in grams)}
+    return matching if len(matching) == 1 else set()
+
+
+def _explicit_lifecycle(operations, policies, text, methods):
+    """Match explicit lifecycle actions to a single approved identity producer."""
+    if (not {"POST", "DELETE"} <= methods or not methods & {"GET", "HEAD"}
+            or not re.search(r"同一|同个|same\b|(?:再|回)查它|回读它", text, re.IGNORECASE)
+            or re.search(r"另外|此外|顺便|同时检查|另行|\balso\b", text, re.IGNORECASE)):
+        return set()
+    from agenttest.request_requirements import common_phrase
+
+    by_id = {op.operation_id: op for op in operations}
+    named = _named_operations(operations, text)
+    labels = text
+    for pattern, _ in _METHOD_CUES:
+        labels = pattern.sub(" ", labels)
+    families = []
+    for producer in policies.values():
+        create = by_id.get(producer.operation_id)
+        if producer.negative is not None or create is None or create.method != "POST":
+            continue
+        family = {policy.operation_id for policy in policies.values()
+                  if policy.negative is None and policy.operation_id in by_id
+                  and any(rule.source_policy_id == producer.id for rule in policy.binding_rules)}
+        selected = {op for op in family if by_id[op].method in methods}
+        if (not named.intersection(family | {create.operation_id})
+                and not common_phrase(labels, create.summary or "")):
+            continue
+        verbs = {by_id[op].method for op in selected}
+        if not ("DELETE" in verbs and verbs & {"GET", "HEAD"}):
+            continue
+        if methods & {"PATCH", "PUT"} and not verbs & {"PATCH", "PUT"}:
+            continue
+        # Generic modification may be verified through a partial update. Keep explicitly
+        # requested replacement and updates to a different resource path mandatory.
+        if not re.search(r"替换|覆盖|全量|\b(?:put|replace)\b", text, re.IGNORECASE):
+            patch_paths = {by_id[op].path for op in selected if by_id[op].method == "PATCH"}
+            selected = {op for op in selected
+                        if by_id[op].method != "PUT" or by_id[op].path not in patch_paths}
+        families.append(selected | {create.operation_id})
+    return families[0] if len(families) == 1 else set()
+
+
 def subject_scope(project, text: str, kind: str) -> dict:
     """The operations/policies the goal is *about*, derived from its words and the contract.
 
@@ -125,10 +193,21 @@ def subject_scope(project, text: str, kind: str) -> dict:
         if matched:
             methods |= wanted
             cues.extend(matched)
-    lexical = {operation.operation_id for operation in allowed
-               if any(operation.operation_id.lower() in token.lower()
-                      for token in re.findall(r"[A-Za-z][A-Za-z0-9_]{2,}", text or ""))}
-    if lexical:
+    original = text or ""
+    lexical = _named_operations(allowed, original)
+    lifecycle_methods = set(methods)
+    if re.search(r"清理", original):
+        lifecycle_methods.add("DELETE")
+    if re.search(r"(?:再|回)查|回读", original):
+        lifecycle_methods.add("GET")
+    narrow = (_specific_investigation(allowed, original) if kind == INVESTIGATION else
+              _explicit_lifecycle(allowed, policies, original, lifecycle_methods)
+              if kind == FUNCTIONAL else set())
+    bounded = bool(narrow)
+    if narrow:
+        subject_operations = lexical | narrow
+        basis = "原文明确的主体及已批准的资源身份关系"
+    elif lexical:
         subject_operations = lexical
         basis = "operation_id 在原文中出现"
     else:
@@ -180,7 +259,7 @@ def subject_scope(project, text: str, kind: str) -> dict:
                 policy.id == rule.source_policy_id
                 for identifier in policy_ids
                 for rule in policies[identifier].binding_rules)
-            if sources & policy_ids or produces_for_selected:
+            if (not bounded and sources & policy_ids) or produces_for_selected:
                 policy_ids.add(policy.id)
                 changed = True
     # An approved absence expectation (404/410) is part of the lifecycle even when the read
@@ -198,7 +277,7 @@ def subject_scope(project, text: str, kind: str) -> dict:
                            if identifier in policies}
     resolved = bool(subject_operations and policy_ids)
     return dict(operations=sorted(subject_operations), policy_ids=sorted(policy_ids),
-                basis=basis, cues=sorted(set(cues)), resolved=resolved)
+                basis=basis, cues=sorted(set(cues)), resolved=resolved, bounded=bounded)
 
 
 def _ready_operations(summary):
@@ -218,9 +297,12 @@ def _scope_rows(project, summary, subject, kind):
         # A narrowed focus deliberately leaves the approved negative-value checks out of the
         # round. Requiring them here would make ``complete`` unreachable for every narrowed
         # request; ignoring them silently would hide the gap. They are excluded *and listed*.
+        requested_checks = {check.get("policy_id") for check in
+                            summary["focus"].get("requested_checks") or ()}
         excluded = [item for item in scope
                     if (policies.get(item["policy_id"]) is not None
-                        and policies[item["policy_id"]].negative is not None)]
+                        and policies[item["policy_id"]].negative is not None
+                        and item["policy_id"] not in requested_checks)]
         scope = [item for item in scope if item not in excluded]
     evidence = executed_evidence(summary)
     ready = _ready_operations(summary)
@@ -619,7 +701,7 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
     else:
         specific = _functional_criteria(project, summary, scope_rows, subject, kind)
     questions = _questions_in_scope(summary, kind, subject)
-    if kind in {FUNCTIONAL, REGRESSION}:
+    if kind in {FUNCTIONAL, REGRESSION, INVESTIGATION}:
         specific = specific + [_criterion(
             "NO_OPEN_QUESTIONS", "没有影响本轮的待确认事项",
             MET if not questions else UNMET,
@@ -668,7 +750,9 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
                                    "TOOL_CALL_LIMIT", "NO_FURTHER_ACTION"},
         agent_stop_reason=ended,
         evidence_produced=bool(_executed_cases(summary)),
-        obligations_covered=not scope_rows["missing"],
+        obligations_covered=(bool(scope_rows["measured"]) and not scope_rows["missing"]
+                             and not scope_rows["blocked"]
+                             and not ledger["requested"]["missing_evidence"]),
         task_complete=complete,
         anomalies_found=bool(confirmed),
         pending_items=bool(pending))

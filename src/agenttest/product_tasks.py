@@ -1504,10 +1504,14 @@ class ProductTasks:
             # What each creating write actually did, from the create/cleanup receipts and the
             # approved read-back — never from a bare status code. Computed after the absence
             # rows are attached, because that read-back is what proves a cleanup.
-            from agenttest.write_effects import for_case
+            from agenttest.write_effects import cleanup_message, for_case
 
             case_row["write_effects"] = for_case(
                 case_row, {p.id: p for p in project.registry.definitions()})
+            cleanup = cleanup_message(case_row["write_effects"])
+            if cleanup is not None and cleanup != report.cleanup:
+                report.cleanup = case_row["cleanup"] = cleanup
+                store.save(report)
             record_requirement_evidence(summary, case_row, report)
             if report.outcome != Outcome.PASS:
                 case_row["reason"] = {

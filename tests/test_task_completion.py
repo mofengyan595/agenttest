@@ -101,6 +101,11 @@ def test_selected_prerelease_keeps_approved_negative_obligations():
     functional = _scope_rows(project, summary, {}, FUNCTIONAL)
     assert any(row["policy_id"] == "negative" for row in functional["excluded_negatives"])
 
+    summary["focus"]["requested_checks"] = [
+        dict(policy_id="negative", source_quote="验证已批准的非法输入")]
+    functional = _scope_rows(project, summary, {}, FUNCTIONAL)
+    assert any(row["policy_id"] == "negative" for row in functional["missing"])
+
 
 @pytest.mark.parametrize("text,kind", GOALS.items())
 def test_the_goal_text_decides_the_completion_kind(text, kind):
@@ -251,6 +256,57 @@ def test_an_investigation_without_a_request_proves_nothing():
     assert report["complete"] is False
     assert "SUBJECT_REPRODUCED" in report["unmet"]
     assert report["flags"]["evidence_produced"] is False
+
+
+def test_same_resource_scope_does_not_require_every_approved_consumer():
+    from dataclasses import replace
+
+    project = project_with_absence()
+    read = next(op for op in project.contract.operations if op.operation_id == "readParcel")
+    patch = read.model_copy(update=dict(operation_id="patchRecord", method="PATCH"))
+    put = read.model_copy(update=dict(operation_id="replaceRecord", method="PUT"))
+    availability = read.model_copy(update=dict(operation_id="checkStatus", path="/status",
+                                               summary="读取服务可用状态"))
+    rule = next(rule for rule in project.registry.definitions()
+                if rule.id == policy_of(project, "readParcel"))
+    operations = [patch, put, availability]
+    project = replace(project,
+        contract=project.contract.model_copy(update=dict(
+            operations=[*project.contract.operations, *operations])),
+        target=project.target.model_copy(update=dict(
+            allowed_operations=[*project.target.allowed_operations,
+                                *(op.operation_id for op in operations)])),
+        registry=PolicyRegistry([*project.registry.definitions(),
+            *(rule.model_copy(update=dict(id=f"rule_{op.operation_id}",
+                operation_id=op.operation_id,
+                binding_rules=rule.binding_rules if op != availability else []))
+              for op in operations)]))
+    text = "新建、查询、修改并删除包裹，必须核对同一条包裹记录的状态。"
+    subject = subject_scope(project, text, FUNCTIONAL)
+    assert set(subject["operations"]) == {*OPS, "patchRecord"}
+    named = subject_scope(project, text + "执行 replaceRecord。", FUNCTIONAL)
+    assert "replaceRecord" in named["operations"]
+
+    summary = summary_for(project, absence_satisfied=True)
+    # Dropping a required modification blocks completion even when the selected lifecycle passes.
+    report = evaluate(project, summary, text)
+    assert "REQUESTED_SCOPE_SELECTED" in report["unmet"]
+    assert "REQUESTED_SCOPE_MEASURED" in report["unmet"]
+
+
+def test_investigation_of_a_qualified_subject_excludes_unrelated_reads():
+    from types import SimpleNamespace
+
+    project = SimpleNamespace(
+        contract=SimpleNamespace(operations=[SimpleNamespace(
+            operation_id=name, summary=label, method="GET", path=f"/{name}")
+            for name, label in (("alarm", "读取告警状态"), ("section", "读取工作台分区"))]),
+        registry=SimpleNamespace(definitions=lambda: []),
+        target=SimpleNamespace(allowed_operations=["alarm", "section"]))
+    text = "工作台的告警检查异常，请复现一次，保留返回状态。"
+    assert subject_scope(project, text, INVESTIGATION)["operations"] == ["alarm"]
+    assert subject_scope(project, text + "核对 GET /section。", INVESTIGATION)[
+        "operations"] == ["alarm", "section"]
 
 
 def test_an_executed_create_without_a_cleanup_receipt_is_pending_cleanup():

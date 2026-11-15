@@ -244,6 +244,16 @@ def build(project, summary, text: str | None = None, *, selected_policies=None) 
     requested_positive = [policy_id for policy_id in requested["policies"]
                           if not negative(policy_id)]
     requested_considered = (requested["policies"] if wants_negatives else requested_positive)
+    explicit_checks = {check.get("policy_id") for check in focus.get("requested_checks") or ()
+                       if check.get("policy_id") in approved_rows}
+    requested_considered = sorted(set(requested_considered) | explicit_checks)
+    exact_requirements = set(requested_considered if subject.get("bounded")
+                             or kind == PRE_RELEASE else ()) | explicit_checks
+    missing_selection = sorted(exact_requirements - selected_ids)
+    witnessed = {policy_id for policy_id, entry in evidence.items()
+                 if entry["checks"] and {"PASS", "ASSERTION_FAILED"}.intersection(
+                     entry["outcomes"])}
+    missing_evidence = sorted(exact_requirements - witnessed)
 
     excluded = []
     for policy_id in sorted(approved_ids - selected_ids):
@@ -275,7 +285,8 @@ def build(project, summary, text: str | None = None, *, selected_policies=None) 
     coverage = dict(
         selected=_ratio(measured & selected_ids, len(selected_ids)),
         approved=_ratio(measured & approved_ids, len(approved_ids)),
-        requested=(_ratio(measured & set(requested_considered), len(requested_considered))
+        requested=(_ratio(((measured - exact_requirements) | witnessed)
+                          & set(requested_considered), len(requested_considered))
                    if requested["resolved"] else
                    dict(measured=0, total=0, ratio=None, note="原文主体未能确定")),
         excluded_by_focus=len(approved_ids - selected_ids),
@@ -291,6 +302,7 @@ def build(project, summary, text: str | None = None, *, selected_policies=None) 
         requested=dict({key: value for key, value in requested.items() if key != "rows"},
                        count=len(requested["rows"]),
                        considered=len(requested_considered),
+                       missing_selection=missing_selection, missing_evidence=missing_evidence,
                        needs_negative_variants=wants_negatives),
         approved=dict(count=len(approved_ids),
                       operations=sorted({row["operation_id"]
@@ -341,6 +353,8 @@ def completion_rows(ledger):
                       added=[item["policy_id"] for item in ledger.get("added") or ()][:12]))]
     unexplained = ledger.get("unexplained") or []
     requested = ledger.get("requested") or {}
+    missing_selection = sorted(set(requested.get("missing_selection") or ()) |
+                               {item["policy_id"] for item in unexplained})
     if not requested.get("resolved"):
         rows.append(dict(
             id="REQUESTED_SCOPE_SELECTED", title="原文点明的接口都进入了本轮选中范围",
@@ -351,15 +365,19 @@ def completion_rows(ledger):
     else:
         rows.append(dict(
             id="REQUESTED_SCOPE_SELECTED", title="原文点明的接口都进入了本轮选中范围",
-            status="MET" if not unexplained else "UNMET",
+            status="MET" if not missing_selection else "UNMET",
             detail=("原文主体（" + str(requested.get("basis") or "")
                     + "）的已批准义务都在选中范围内。"
-                    if not unexplained else
-                    "原文点明但这些义务没有被选中，也没有记录排除原因："
-                    + "、".join(item["policy_id"] for item in unexplained[:8])),
+                    if not missing_selection else
+                    "以下请求义务没有进入选中范围：" + "、".join(missing_selection[:8])),
             evidence=dict(requested=requested.get("policies"),
-                          unexplained=[item["policy_id"] for item in unexplained[:12]],
+                          unexplained=missing_selection[:12],
                           basis=requested.get("basis"))))
+    if requested.get("missing_evidence"):
+        rows.append(dict(id="REQUESTED_SCOPE_MEASURED", title="请求义务具有真实断言证据",
+                         status="UNMET", detail="以下请求义务缺执行证据："
+                         + "、".join(requested["missing_evidence"][:8]),
+                         evidence=dict(missing=requested["missing_evidence"][:12])))
     prerequisites = ledger.get("prerequisites") or []
     if prerequisites:
         rows.append(dict(

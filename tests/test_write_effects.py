@@ -93,11 +93,16 @@ def test_failed_readback_of_the_bound_resource_overrides_a_delete_receipt():
         status="CLEANED", cleanup_result="PASS")], absence=[dict(step_id="read",
         policy_id="absence", direction="absence", satisfied=True, deletions=["delete"],
         identities=[dict(producer="create")])])
+    from agenttest.write_effects import cleanup_message, for_case
+
     assert analyse([row])["counts"][CREATED_CLEANUP_FAILED] == 1
+    assert cleanup_message(for_case(row)) == "本轮有资源清理失败，请人工核实。"
     read.update(outcome="PASS", checks=[dict(kind="http_status", actual=404, passed=True)])
     assert analyse([row])["counts"][CREATED_AND_CLEANED] == 1
+    assert "已按批准证据" in cleanup_message(for_case(row))
     read.update(executed=False)
     assert analyse([row])["counts"][CLEANUP_UNPROVEN] == 1
+    assert "尚未证明" in cleanup_message(for_case(row))
 
 
 def test_cross_case_cleanup_requires_environment_order_and_unchanged_identity():

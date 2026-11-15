@@ -280,6 +280,20 @@ def for_case(case, policies=None) -> list[dict]:
     return rows
 
 
+def cleanup_message(effects):
+    """Summarize only what the approved per-case evidence proves."""
+    states = {row["status"] for row in effects}
+    if CREATED_CLEANUP_FAILED in states:
+        return "本轮有资源清理失败，请人工核实。"
+    if states - PROVEN:
+        return "清理或写入副作用尚未证明，请人工核实。"
+    if CREATED_AND_CLEANED in states:
+        return "本轮创建的资源已按批准证据证明清理。"
+    if NO_SIDE_EFFECT_PROVEN in states:
+        return "本轮写入未产生需清理的资源，已有证据。"
+    return None
+
+
 def _cross_case_cleanup(case, effect, later, policies):
     """Reuse a later receipt only for an unchanged environment and owned identity."""
     receipt = _row_for_step(case.get("resource_lifecycle") or (), effect.get("step_id"))
