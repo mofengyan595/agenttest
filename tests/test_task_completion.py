@@ -331,6 +331,51 @@ def test_same_resource_scope_does_not_require_every_approved_consumer():
     assert "REQUESTED_SCOPE_MEASURED" in report["unmet"]
 
 
+@pytest.mark.parametrize("presence", ["optional", "explicit", "prerequisite"])
+def test_delete_readback_counts_the_required_phase_of_the_read(presence):
+    from dataclasses import replace
+
+    from agenttest.product_obligations import supervision_facts
+    from agenttest.safety import ResourceLifecycle
+
+    project = project_with_absence()
+    project = replace(project, target=project.target.model_copy(update={
+        "resource_lifecycles": [ResourceLifecycle(
+            create_operation="createParcel", delete_operation="deleteParcel",
+            id_selector="$.id", path_parameter="parcelId",
+            fresh_resource_basis="The isolated fixture assigns a fresh identifier.")]}))
+    read = policy_of(project, "readParcel")
+    text = "创建测试包裹，删除它，随后回读同一包裹并确认已不存在。"
+    if presence == "explicit":
+        text = "创建测试包裹，查询它确认存在，删除它，随后回读同一包裹。"
+    if presence == "prerequisite":
+        project = replace(project, registry=PolicyRegistry([
+            policy.model_copy(update={"prerequisite_policy_ids": [read]})
+            if policy.operation_id == "deleteParcel" else policy
+            for policy in project.registry.definitions()]))
+    summary = summary_for(project, measured=("createParcel", "deleteParcel"),
+                          absence_satisfied=True)
+    summary["focus"] = {"mode": "selected"}
+    report = evaluate(project, summary, text, stop={"reason": "ANSWER"})
+    requested = report["scope_ledger"]["coverage"]["requested"]
+    assert requested["measured"] == 3
+    assert report["scope_ledger"]["coverage"]["approved"]["total"] == 4
+    assert requested["total"] == (3 if presence == "optional" else 4)
+    assert report["complete"] is (presence == "optional")
+    facts = supervision_facts(project=project, summary=summary, text=text,
+                              remaining={}, allow_negatives=False)
+    assert (read in {row["policy_id"] for row in facts["open_obligations"]}) is (
+        presence != "optional")
+    if presence == "optional":
+        unverified = summary_for(project, measured=("createParcel", "deleteParcel"))
+        unverified["focus"] = {"mode": "selected"}
+        assert "REQUESTED_SCOPE_MEASURED" in evaluate(project, unverified, text)["unmet"]
+    else:
+        measured = summary_for(project, absence_satisfied=True)
+        measured["focus"] = {"mode": "selected"}
+        assert evaluate(project, measured, text)["complete"]
+
+
 def test_investigation_of_a_qualified_subject_excludes_unrelated_reads():
     from types import SimpleNamespace
 

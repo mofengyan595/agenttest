@@ -230,6 +230,9 @@ def build(project, summary, text: str | None = None, *, selected_policies=None) 
                          for policy_id in selected_policies if policy_id in approved_rows}
     else:
         selected_rows = _selected(project, summary)
+    optional_presence = subject.get("optional_presence_policy")
+    if optional_presence:
+        selected_rows.pop(optional_presence, None)
     requested = _requested_rows(project, approved_rows, subject)
     approved_ids, selected_ids = set(approved_rows), set(selected_rows)
     policies = {policy.id: policy for policy in project.registry.definitions()}
@@ -258,7 +261,8 @@ def build(project, summary, text: str | None = None, *, selected_policies=None) 
     excluded = []
     for policy_id in sorted(approved_ids - selected_ids):
         row = approved_rows[policy_id]
-        reason = (NEGATIVE_VARIANT_NOT_SELECTED if negative(policy_id) and not wants_negatives
+        reason = (NOT_IN_REQUESTED_SCOPE if policy_id == optional_presence else
+                  NEGATIVE_VARIANT_NOT_SELECTED if negative(policy_id) and not wants_negatives
                   else _exclusion_reason(row, summary=summary, focus=focus,
                                          requested=requested, kind=kind))
         excluded.append(dict(policy_id=policy_id, operation_id=row["operation_id"],

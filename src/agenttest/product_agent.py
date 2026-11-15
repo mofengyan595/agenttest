@@ -415,12 +415,14 @@ class AgentSession:
     def _group_view(self) -> list[dict]:
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
+        presence = self._subject().get("optional_presence_policy")
         rows = []
         for group in self.summary.get("groups") or ():
             group_id = group.get("id")
             members = list(group.get("primary") or ())
             related = group.get("policy_ids") or [policy.id for policy in policies.values()
-                       if policy.operation_id in members and policy.negative is None]
+                       if policy.operation_id in members and policy.negative is None
+                       and policy.id != presence]
             measured = [policy_id for policy_id in related if policy_id in evidence]
             failed = [policy_id for policy_id in measured
                       if not evidence[policy_id]["passed"]]
@@ -607,11 +609,14 @@ class AgentSession:
                             retryable=False, hint="改用候选义务或结束本轮。")
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
+        subject = self._subject()
         related = group.get("policy_ids") or [policy.id for policy in policies.values()
                    if policy.operation_id in (group.get("primary") or ())
-                   and policy.negative is None]
+                   and policy.negative is None
+                   and policy.id != subject.get("optional_presence_policy")]
         if related and all(policy_id in evidence for policy_id in related) and (
-                group.get("policy_ids") or self._subject().get("whole_project")
+                group.get("policy_ids") or subject.get("whole_project")
+                or subject.get("optional_presence_policy")
                 or not design_note):
             refusal_payload = _refusal(
                 "GROUP_ALREADY_MEASURED", "该分组内所有已批准义务都已有执行证据。",

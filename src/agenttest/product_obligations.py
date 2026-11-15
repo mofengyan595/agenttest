@@ -381,7 +381,11 @@ def progress(summary):
 def supervision_facts(*, project, summary, text, remaining, allow_negatives,
                       attempts=(), attempted=()):
     """The complete, narrowed decision payload; no OpenAPI, bodies or historic logs."""
-    scope = approved_scope(project, summary)
+    from agenttest.task_completion import classify_task, subject_scope
+
+    presence = subject_scope(project, text, classify_task(text)["kind"]).get(
+        "optional_presence_policy")
+    scope = [item for item in approved_scope(project, summary) if item["policy_id"] != presence]
     evidence = executed_evidence(summary)
     confirmed, unconfirmed = anomalies(summary)
     return dict(user_task=text,

@@ -101,6 +101,68 @@ _METHOD_CUES = (
 # interface without asking for an action of its own (see request_requirements).
 METHOD_CUES = _METHOD_CUES
 
+_READ_ACTION = re.compile(
+    r"回读|读回|读取|查询|获取|查看|查验|查一[下次]|再查|详情|\b(?:read|get|fetch|lookup|head)\b",
+    re.IGNORECASE)
+
+
+def _optional_presence_policy(project, text, operations, policies):
+    """Identify the sibling positive read of a single, explicitly post-delete readback."""
+    delete_mentions = list(_METHOD_CUES[0][0].finditer(text))
+    reads = list(_READ_ACTION.finditer(text))
+    if len(operations) != 3 or len(delete_mentions) != 1 or len(reads) != 1:
+        return None
+    start, end = delete_mentions[0].end(), reads[0].start()
+    order = text[start:end]
+    after = reads[0].group() == "再查" or re.search(r"后|接着|然后|再|最后|\bthen\b", order, re.I)
+    if (end < start or not after
+            or re.search(r"前|\bbefore\b", order, re.I)):
+        return None
+    from agenttest.planning_ir import explicit_statuses
+
+    if set(explicit_statuses(text[end:])) - {404, 410}:
+        return None
+    by_operation = _operations(project)
+    read = next((op for op in operations if by_operation[op].method in {"GET", "HEAD"}), None)
+    lifecycle = [rule for rule in project.target.resource_lifecycles
+                 if {rule.create_operation, rule.delete_operation, read} == operations]
+    if len(lifecycle) != 1:
+        return None
+    rule = lifecycle[0]
+    approved = [p for p in policies.values() if p.operation_id in operations
+                and p.negative is None and p.assertions.reviewed and p.assertions.source
+                and p.assertions.status]
+    creates = [p for p in approved if p.operation_id == rule.create_operation
+               and all(200 <= code < 300 for code in p.assertions.status.codes)]
+    if len(creates) != 1:
+        return None
+    create = creates[0]
+
+    def same_identity(policy):
+        return policy.roles == create.roles and any(
+            binding.location == "path_parameters" and binding.name == rule.path_parameter
+            and binding.source_policy_id == create.id
+            and binding.source_selector == rule.id_selector for binding in policy.binding_rules)
+
+    deletes = [p for p in approved if p.operation_id == rule.delete_operation and same_identity(p)
+               and all(200 <= code < 300 for code in p.assertions.status.codes)]
+    absences = [p for p in approved if p.operation_id == read and same_identity(p)
+                and set(p.assertions.status.codes) <= {404, 410}]
+    if len(deletes) != 1 or len(absences) != 1:
+        return None
+    absent = absences[0]
+    presence = [p for p in approved if p.operation_id == read and p.roles == absent.roles
+                and p.binding_rules == absent.binding_rules
+                and all(200 <= code < 300 for code in p.assertions.status.codes)]
+    if len(presence) != 1:
+        return None
+    present = presence[0].id
+    if any(present in p.prerequisite_policy_ids or any(
+            binding.source_policy_id == present for binding in p.binding_rules)
+            for p in policies.values() if p.operation_id in operations):
+        return None
+    return present
+
 
 def classify_task(text: str) -> dict:
     """Classify the goal from its own words and report the matched cues (no model call)."""
@@ -335,11 +397,16 @@ def subject_scope(project, text: str, kind: str) -> dict:
             continue
         if {rule.source_policy_id for rule in policy.binding_rules} & policy_ids:
             policy_ids.add(policy.id)
+    optional_presence = (_optional_presence_policy(project, original, subject_operations, policies)
+                         if kind == FUNCTIONAL and narrow else None)
+    if optional_presence:
+        policy_ids.discard(optional_presence)
     subject_operations |= {policies[identifier].operation_id for identifier in policy_ids
                            if identifier in policies}
     resolved = bool(subject_operations and policy_ids)
     return dict(operations=sorted(subject_operations), policy_ids=sorted(policy_ids),
-                basis=basis, cues=sorted(set(cues)), resolved=resolved, bounded=bounded)
+                basis=basis, cues=sorted(set(cues)), resolved=resolved, bounded=bounded,
+                **({"optional_presence_policy": optional_presence} if optional_presence else {}))
 
 
 def _ready_operations(summary):
@@ -349,7 +416,8 @@ def _ready_operations(summary):
 
 def _scope_rows(project, summary, subject, kind):
     """Approved obligations of the round scope, split into in-scope, measured and blocked."""
-    scope = approved_scope(project, summary)
+    scope = [item for item in approved_scope(project, summary)
+             if item["policy_id"] != subject.get("optional_presence_policy")]
     if kind == PRE_RELEASE and subject.get("whole_project"):
         from agenttest.product_obligations import approved_project_scope
 
