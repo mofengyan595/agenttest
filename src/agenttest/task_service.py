@@ -1,4 +1,4 @@
-"""Local task runner around the existing engine; serial admission and no restart recovery."""
+"""Local task runner with serial admission and opt-in product recovery."""
 
 import asyncio
 import os
@@ -56,6 +56,8 @@ class TaskService:
         self.agent_model_factory = agent_model_factory
         self.private_input_guard = private_input_guard or (lambda _: False)
         self.environ = dict(os.environ if environ is None else environ)
+        self.durable_execution = self.environ.get("AGENTTEST_DURABLE_EXECUTION") == "1"
+        self.durable_resumes = {}
         self._inputs, self._workers = {}, {}
         self._owners = {}
         self._assets = {}
@@ -322,6 +324,10 @@ class TaskService:
 
     async def cancel(self, task_id, owner):
         row = self.db.get(task_id, owner)
+        if (self.durable_execution and row["status"] == "INTERRUPTED"
+                and self.db.durable_state(task_id, owner) is not None):
+            return self.db.transition(task_id, owner, "INTERRUPTED", "CANCELLED",
+                summary={**row["summary"], "reason": "CANCELLED_NO_ROLLBACK_OR_REPLAY"})
         if row["status"] in TERMINAL:
             return row
         worker = self._workers.get(task_id)
@@ -340,6 +346,51 @@ class TaskService:
             row = self.db.transition(task_id, owner, row["status"], "CANCELLED",
                                      summary=summary)
             self.db.event(task_id, "CANCELLED")
+        return row
+
+    async def recovery_status(self, task_id, owner):
+        row = self.db.get(task_id, owner)
+        result = dict(status=row["status"], resumable=False, checkpoint=False)
+        if not self.durable_execution or row["status"] != "INTERRUPTED":
+            return result
+        from agenttest.product_durability import ProductDurability
+
+        try:
+            payload = await ProductDurability(self, row, owner).load()
+        except (TaskConflict, ImportError) as exc:
+            return dict(result, reason=str(exc) if isinstance(exc, TaskConflict)
+                        else "DURABLE_CHECKPOINTER_UNAVAILABLE")
+        if self.db.get(task_id, owner)["status"] != "INTERRUPTED":
+            return dict(result, status=self.db.get(task_id, owner)["status"])
+        blocked = self.db.model_usage_blocked()
+        return dict(result, resumable=not blocked, checkpoint=bool(payload["checkpoint_id"]),
+                    phase=payload["phase"], reason="MODEL_USAGE_REQUIRES_RECONCILIATION"
+                    if blocked else None)
+
+    async def resume(self, task_id, owner):
+        row = self.db.get(task_id, owner)
+        if (not self.durable_execution or self._shutting_down or len(self._workers) >= 8
+                or row["status"] != "INTERRUPTED" or task_id in self._workers):
+            raise TaskConflict("DURABLE_TASK_NOT_RESUMABLE")
+        from agenttest.product_durability import ProductDurability
+
+        payload = await ProductDurability(self, row, owner).load()
+        if self.db.model_usage_blocked():
+            raise TaskConflict("MODEL_USAGE_REQUIRES_RECONCILIATION")
+        context = self.db.context(task_id, owner)
+        budget, usage = row["summary"]["budget"], payload["state"]["usage"]
+        if fingerprint(context["text"]) != row["request_sha256"] or not usage["usage_known"]:
+            raise TaskConflict("DURABLE_CHECKPOINT_MISMATCH")
+        ledger = SuiteLedger(budget["max_requests"], budget["max_model_calls"],
+                             budget["max_total_tokens"], requests=usage["requests"],
+                             model_calls=usage["model_calls"], known_tokens=usage["known_tokens"])
+        row = self.db.transition(task_id, owner, "INTERRUPTED", "QUEUED")
+        self.durable_resumes[task_id] = payload
+        self._inputs[task_id] = (row["project_id"], context["text"], False, ledger)
+        self._owners[task_id] = owner
+        self.product.inputs.add(task_id)
+        self.db.event(task_id, "QUEUED", requests=ledger.requests)
+        self._enqueue(task_id, owner)
         return row
 
     def export_regression(self, task_id, owner, run_id):

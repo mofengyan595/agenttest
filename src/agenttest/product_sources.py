@@ -270,6 +270,39 @@ def constrain_numeric_check_sources(array, checks, context):
         array["maxItems"] = 0
 
 
+def constrain_scope_check_sources(array, context):
+    """Scope-only citations select the approved check without proposing an override."""
+    from agenttest.task_completion import is_variant_scope_clause
+
+    sources = input_sources(context)
+    generic = {entry["source_id"] for entry in sources if is_variant_scope_clause(entry["text"])}
+    if not generic:
+        return
+    branches = []
+    for branch in array.get("items", {}).get("anyOf", []):
+        properties = branch["properties"]
+        if "source_ref" in properties:
+            candidates = properties["source_ref"]["enum"]
+        else:
+            candidates = [entry["source_id"] for entry in sources]
+        for default in (False, True):
+            refs = [ref for ref in candidates if (ref in generic) == default]
+            if not refs:
+                continue
+            choice = deepcopy(branch)
+            fields = choice["properties"]
+            fields.pop("source_quote", None)
+            fields["source_ref"] = dict(type="string", enum=refs)
+            if default:
+                fields["exact_value"] = dict(type="null")
+                if "exact_length" in fields:
+                    fields["exact_length"] = dict(type="null")
+            choice["required"] = list(fields)
+            branches.append(choice)
+    if branches:
+        array["items"]["anyOf"] = branches
+
+
 def decode_source_refs(wire, sources, context=None):
     index = {entry["source_id"]: entry["text"] for entry in sources}
     texts = literal_texts(sources)

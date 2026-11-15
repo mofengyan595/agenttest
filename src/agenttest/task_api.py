@@ -242,6 +242,23 @@ def install_task_api(app, service):
         lookup(task_id, who)
         return dict(events=enabled().db.events(task_id, who))
 
+    @app.get("/api/tasks/{task_id}/recovery")
+    async def recovery_status(task_id: str, request: Request):
+        who = owner(request)
+        lookup(task_id, who)
+        return await enabled().recovery_status(task_id, who)
+
+    @app.post("/api/tasks/{task_id}/resume")
+    async def resume(task_id: str, request: Request):
+        who = owner(request, True)
+        lookup(task_id, who)
+        try:
+            return await enabled().resume(task_id, who)
+        except TaskConflict as exc:
+            raise HTTPException(409, str(exc)) from None
+        except ImportError:
+            raise HTTPException(409, "DURABLE_CHECKPOINTER_UNAVAILABLE") from None
+
     @app.get("/api/tasks/{task_id}/reports/{run_id}")
     def owned_report(task_id: str, run_id: str, request: Request):
         row = lookup(task_id, owner(request))

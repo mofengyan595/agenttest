@@ -37,6 +37,7 @@ from agenttest.deep_harness.loop import (
 )
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
+from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
 from agenttest.product_obligations import (
     executed_evidence,
     negative_dispatch_floor,
@@ -244,6 +245,20 @@ class AgentSession:
     def flush(self) -> None:
         """Keep the runtime audit on the task summary so a crash cannot erase it."""
         self.summary["agent_runtime"] = self.public_state()
+
+    def durable_state(self) -> dict:
+        return dict(tool_calls=self.tool_calls, group_runs=self.group_runs,
+                    obligation_runs=self.obligation_runs, group_notes=self.group_notes,
+                    generation=self.generation, seen=self.seen, context_trace=self.context_trace,
+                    budget_trace=self.budget_trace,
+                    active_seconds=time.monotonic() - self.started)
+
+    def restore(self, state: dict) -> None:
+        for key in ("tool_calls", "group_runs", "obligation_runs", "group_notes",
+                    "generation", "seen", "context_trace", "budget_trace"):
+            setattr(self, key, state[key])
+        self.started -= state["active_seconds"]
+        self.flush()
 
     def note_tool_error(self, tool: str, exc: BaseException) -> None:
         """Keep the traceback of a tool defect in the evidence, never in the model's view.
@@ -1085,6 +1100,7 @@ class RuntimeResult:
     answer: str
     error: dict | None
     elapsed_ms: float
+    checkpoint_id: str | None = None
 
 
 async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
@@ -1121,12 +1137,19 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         EcnuxChatModel,
         ModelBudgetLimits,
         ModelHarnessError,
+        ModelTotals,
     )
+    from agenttest.product_durability import GATEWAY_STOP, PAUSED
 
     started = time.monotonic()
     session = AgentSession(scope=scope, tasks=tasks, max_turns=max_turns,
                            max_tool_calls=max_tool_calls, max_model_calls=max_model_calls,
                            execution=execution)
+    durable = getattr(scope, "durability", None)
+    recovery = getattr(scope, "recovery", None)
+    saved = recovery["state"] if recovery else {}
+    if recovery:
+        session.restore(saved["session"])
     hard_model_calls = max(max_model_calls, int(model_calls_ceiling or 0))
     hard_tool_calls = max(max_tool_calls, int(tool_calls_ceiling or 0))
     hard_turns = max_turns
@@ -1139,6 +1162,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                                    int(total_tokens_ceiling or 0)) or None)
     if model is None:
         model = EcnuxChatModel(settings=settings, limits=limits, transport=transport)
+    if recovery:
+        model.totals = ModelTotals.model_validate(saved["agent_model_totals"])
+        model.call_trace = list(saved["agent_call_trace"])
 
     from uuid import uuid4
 
@@ -1176,16 +1202,33 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     files = skill_files() if enable_skills else {}
     model.on_payload = lambda payload: session.record_context(payload, set(files))
 
-    def build_agent(agent_model, tools, middleware=()):
+    def build_agent(agent_model, tools, middleware=(), *, saver=None):
         backend = StateBackend()
         return create_deep_agent(
             model=agent_model, tools=tools, backend=backend,
             skills=[SKILL_ROOT] if files else None, system_prompt=SYSTEM_PROMPT,
-            middleware=[skill_filesystem(backend, files), *middleware])
+            middleware=[skill_filesystem(backend, files), *middleware],
+            checkpointer=saver)
 
     install_narrow_profile(model)
     enforcement = await verify_enforcement(model, build_agent=build_agent, files=files)
     tools = build_tools(session)
+    class GatewayRetryMiddleware(ModelRetryMiddleware):
+        async def awrap_model_call(self, request, handler):
+            attempt = 0
+            while True:
+                try:
+                    return await handler(request)
+                except ModelHarnessError as exc:
+                    eligible = (exc.status in TRANSIENT_STATUSES or
+                                not ledger.usage_unknown and exc.status is None
+                                and _transient_model_error(exc))
+                    delay = retry_delay(attempt, exc.retry_after) if eligible else None
+                    if delay is None:
+                        raise
+                    await asyncio.sleep(delay)
+                    attempt += 1
+
     per_tool = {"run_test_group": 4, "run_open_obligation": 8, "get_test_scope": 4}
     if execution is not None:
         per_tool = {"get_test_scope": 4}
@@ -1193,8 +1236,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
         # one bounded retry keeps an otherwise healthy run alive. Budget and input rejections are
         # deterministic, so they are never retried and keep their stop reason.
-        ModelRetryMiddleware(max_retries=2, retry_on=_transient_model_error,
-                             on_failure="error", initial_delay=1.0, max_delay=8.0),
+        GatewayRetryMiddleware(max_retries=2, on_failure="error"),
         ModelCallLimitMiddleware(run_limit=hard_model_calls, exit_behavior="end"),
         ToolCallLimitMiddleware(run_limit=hard_tool_calls, exit_behavior="end"),
         *(ToolCallLimitMiddleware(tool_name=name, run_limit=limit, exit_behavior="continue")
@@ -1204,18 +1246,67 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                               clear_tool_inputs=True, exclude_tools=["read_file"],
                               placeholder=CLEARED_TOOL_RESULT)]),
     ]
-    agent = build_agent(model, tools, middleware)
-    catalogue = verify_catalogue(agent)
-    stop_reason, error, messages = STOP_ANSWER, None, []
-    try:
+    stop_reason, error, messages, checkpoint_id = STOP_ANSWER, None, [], None
+
+    async def stream(saver=None):
+        nonlocal messages, checkpoint_id, stop_reason
+        agent = build_agent(model, tools, middleware, saver=saver)
+        catalogue.update(verify_catalogue(agent))
         # ``recursion_limit`` counts graph node steps, not agent turns: every harness
         # middleware is a node, so a small multiple of the turn budget ends a healthy run
         # early. The product budgets are enforced by the model/tool-call middleware and the
         # session gate; this is only the framework's hard stop.
-        async for outcome in agent.astream(
-                {"messages": [HumanMessage(content=scope.text)], "files": files},
-                config={"recursion_limit": max(64, 40 * hard_turns)}, stream_mode="values"):
-            messages = outcome.get("messages") or []
+        config = {"recursion_limit": max(64, 40 * hard_turns)}
+        options = {}
+        if saver is not None:
+            config.update(durable.config)
+            options["durability"] = "sync"
+            if session.svc.environ.get("AGENTTEST_DURABLE_PAUSE_AFTER_TOOLS") == "1":
+                options["interrupt_after"] = ["tools"]
+            if recovery:
+                latest = await saver.aget_tuple(config)
+                if latest is None or latest.checkpoint["id"] != recovery["checkpoint_id"]:
+                    raise ValueError("DURABLE_CHECKPOINT_MISMATCH")
+        initial = None if recovery else dict(
+            messages=[HumanMessage(content=scope.text)], files=files)
+        try:
+            async for outcome in agent.astream(initial, config=config, stream_mode="values",
+                                               **options):
+                messages = outcome.get("messages") or []
+        except ModelHarnessError as exc:
+            if (saver is None or exc.status not in TRANSIENT_STATUSES or ledger.usage_unknown):
+                raise
+            stop_reason = GATEWAY_STOP
+            raise
+        finally:
+            if saver is not None and (stop_reason == GATEWAY_STOP or
+                                      options.get("interrupt_after")):
+                graph_state = await agent.aget_state(config)
+                if graph_state.next:
+                    checkpoint_id = graph_state.config["configurable"]["checkpoint_id"]
+                    messages = graph_state.values.get("messages") or []
+                    if stop_reason == STOP_ANSWER:
+                        stop_reason = PAUSED
+
+    catalogue = {}
+    try:
+        if durable is None:
+            await stream()
+        else:
+            from agenttest.credentials import CredentialVault
+
+            vault = CredentialVault(scope.project.target, session.svc.environ)
+            key = settings.api_key.get_secret_value()
+
+            def contains_secret(value):
+                return vault.contains_secret(value) or bool(key and key in str(value))
+
+            try:
+                async with durable.saver(secret_check=contains_secret,
+                                         create=not recovery) as saver:
+                    await stream(saver)
+            finally:
+                vault.close()
     except (ModelHarnessError, GraphRecursionError) as exc:
         if session.stop != "RUNNING":
             stop_reason = session.stop
@@ -1227,11 +1318,16 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
             stop_reason = (STOP_MODEL_CALL_LIMIT if exc.code == MODEL_CALL_BUDGET
                            else "MODEL_TOKEN_LIMIT")
             error = dict(code=exc.code, message=str(exc))
+        elif stop_reason == GATEWAY_STOP and checkpoint_id:
+            error = dict(code=exc.detail or exc.code, http_status=exc.status,
+                         retry_after=exc.retry_after)
         else:
             stop_reason, error = STOP_MODEL_ERROR, dict(code=str(exc))
     except Exception as exc:  # a framework failure is reported, never turned into success
         stop_reason, error = STOP_RUNTIME_ERROR, dict(code=type(exc).__name__,
                                                       message=str(exc)[:300])
+    if stop_reason not in {PAUSED, GATEWAY_STOP} or ledger.usage_unknown:
+        checkpoint_id = None
     if stop_reason == STOP_ANSWER:
         if model.totals.calls >= hard_model_calls:
             stop_reason = STOP_MODEL_CALL_LIMIT
@@ -1250,7 +1346,8 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                          model_totals=model.totals.public(), call_trace=list(model.call_trace),
                          catalogue=catalogue, enforcement=enforcement,
                          transcript=transcript, answer=session.answer, error=error,
-                         elapsed_ms=round((time.monotonic() - started) * 1000, 3))
+                         elapsed_ms=round((time.monotonic() - started) * 1000, 3),
+                         checkpoint_id=checkpoint_id)
 
 
 def report_payload(result: RuntimeResult, *, completion: dict, budget: dict) -> dict:

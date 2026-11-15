@@ -24,6 +24,7 @@ from pydantic_core import PydanticCustomError
 
 from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import ArgumentBinding, Scenario, Step
+from agenttest.model_retry import retry_after_seconds
 from agenttest.plan_json import bounded_json
 from agenttest.report import ModelCallStats, Outcome, fingerprint
 from agenttest.safety import StrictModel
@@ -50,6 +51,14 @@ async def provider_error_diagnostic(response, stats):
         data = bounded_json(raw.decode("utf-8"), 8192)
         error = data.get("error") if isinstance(data, dict) else None
         message = error.get("message") if isinstance(error, dict) else None
+        if response.status_code == 429:
+            subtype = (error.get("code") or error.get("type")) if isinstance(error, dict) else None
+            concurrency = (subtype == "model_concurrency_exceeded"
+                           or isinstance(message, str) and "model_concurrency_exceeded" in message)
+            return Diagnostic(layer=Layer.MODEL, code="MODEL_GATEWAY_CONCURRENCY_LIMIT"
+                              if concurrency else "MODEL_GATEWAY_RATE_LIMIT",
+                              detail={"retry_after": retry_after_seconds(
+                                  response.headers.get("Retry-After"))})
         if not isinstance(message, str):
             return None
         keywords = [key for key in ("allOf", "contains", "minContains", "maxContains",
@@ -602,6 +611,10 @@ class OpenAICompatiblePlanner:
                         infra = response.status_code == 429 or response.status_code >= 500
                         self.stats.refused = True
                         diagnostic = await provider_error_diagnostic(response, self.stats)
+                        if response.status_code == 429 and diagnostic is None:
+                            diagnostic = Diagnostic(layer=Layer.MODEL,
+                                code="MODEL_GATEWAY_RATE_LIMIT", detail={"retry_after":
+                                    retry_after_seconds(response.headers.get("Retry-After"))})
                         raise PlannerFailure(
                             Outcome.TEST_INFRA_ERROR if infra else Outcome.TOOL_ERROR,
                             "MODEL_SERVICE_ERROR" if infra else "MODEL_API_ERROR", diagnostic)

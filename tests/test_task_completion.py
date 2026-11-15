@@ -268,6 +268,29 @@ def test_project_release_qualifiers_share_one_positive_planning_scope():
     assert [item.operation_id for item in ir.instances] == list(OPS)
 
 
+def test_release_policy_qualifier_does_not_add_a_second_create():
+    from types import SimpleNamespace
+
+    from agenttest.product_tasks import request_planning_ir
+    from agenttest.request_requirements import request_atoms
+
+    project, _ = lifecycle_project()
+    text = "发版前请完整验收整个项目，正常路径和非法入参都按已批准的规则执行。"
+    for suffix in ("", "另外新建一个包裹。"):
+        atoms = request_atoms(text + suffix)
+        selection = SimpleNamespace(input_requirements=[], expectation_questions=[],
+            mode="selected", operation_ids=list(OPS), requirements=[
+                dict(source_id=atom["source_id"], source_quote=atom["text"],
+                     disposition="required",
+                     actions=[dict(operation_id=op, role=None) for op in operations])
+                for atom, operations in zip(atoms, [OPS] + [("createParcel",)] * (len(atoms) - 1),
+                                            strict=True)])
+        ir = request_planning_ir(project, selection, atoms, text + suffix, autonomous=True)
+        operations = [item.operation_id for item in ir.instances]
+        assert operations.count("createParcel") == 1 + bool(suffix)
+        assert ir.coverage["project_scope_clauses"] == ["request_2"]
+
+
 def test_an_investigation_is_complete_when_the_subject_was_actually_probed():
     project, _ = lifecycle_project()
     summary = summary_for(project, measured=("readParcel",), executed=("readParcel",))

@@ -463,6 +463,28 @@ class ExecutionState:
     def limit(self, dimension: str):
         return self.plan.limit(dimension)
 
+    def durable_state(self) -> dict:
+        from dataclasses import asdict
+
+        return dict(plan=asdict(self.plan), growths=self.growths,
+                    no_progress_rounds=self.no_progress_rounds, delta=self.delta,
+                    started_progress=self.started_progress, stop_reason=self.stop_reason,
+                    stop_detail=self.stop_detail)
+
+    @classmethod
+    def restore(cls, state, budget, summary):
+        raw = state["plan"]
+        plan = BudgetPlan(raw["mode"], {key: Grant(**item) for key, item in raw["grants"].items()},
+                          Estimate(**raw["estimate"]) if raw["estimate"] else None,
+                          raw["authority"], raw["notes"])
+        execution = cls(plan, budget=budget)
+        for key in ("growths", "no_progress_rounds", "delta", "started_progress",
+                    "stop_reason", "stop_detail"):
+            setattr(execution, key, state[key])
+        if execution.started_progress:
+            execution.signature = progress_signature(summary)
+        return execution
+
     def apply_allowance(self, ledger):
         ledger.max_model_calls = self.limit("model_calls")
         ledger.max_total_tokens = self.limit("total_tokens")

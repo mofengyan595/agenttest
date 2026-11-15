@@ -50,6 +50,8 @@ class TaskStore:
                 CREATE TABLE IF NOT EXISTS product_assets (
                     run_id TEXT PRIMARY KEY, task_id TEXT NOT NULL, identity TEXT NOT NULL,
                     payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS product_durability (
+                    task_id TEXT PRIMARY KEY REFERENCES tasks(id), payload TEXT NOT NULL);
             """)
 
     def interrupt_unfinished(self):
@@ -185,6 +187,26 @@ class TaskStore:
         if row is None:
             raise TaskConflict("TASK_CONTEXT_UNAVAILABLE")
         return json.loads(row[0])
+
+    def durable_state(self, task_id, owner):
+        with self.connect() as db:
+            self._owned_row(db, task_id, owner)
+            row = db.execute("SELECT payload FROM product_durability WHERE task_id=?",
+                             (task_id,)).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def save_durable_state(self, task_id, owner, payload, *, summary=None):
+        """Publish the application boundary and its evidence in one transaction."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if self._owned_row(db, task_id, owner)["state"] != "RUNNING":
+                raise TaskConflict("TASK_STATE_OR_VERSION_CONFLICT")
+            db.execute("INSERT INTO product_durability VALUES (?,?) ON CONFLICT(task_id) "
+                       "DO UPDATE SET payload=excluded.payload",
+                       (task_id, json.dumps(payload, ensure_ascii=False)))
+            if summary is not None:
+                db.execute("UPDATE tasks SET summary=? WHERE id=?",
+                           (json.dumps(summary, ensure_ascii=False), task_id))
 
     def model_usage_blocked(self):
         with self.connect() as db:

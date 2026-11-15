@@ -14,6 +14,7 @@ from agenttest.diagnostics import Layer, ValidationFailure, presentation_languag
 from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
+from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
 from agenttest.product_design import design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, aggregate, fingerprint
 from agenttest.requirement_ledger import (
@@ -374,6 +375,8 @@ class RunScope:
     planning_ir: object | None
     requirements: list
     state: dict = field(default_factory=dict)
+    durability: object | None = None
+    recovery: dict | None = None
 
 
 def resolve_planning_ambiguities(project, planning_ir):
@@ -516,12 +519,17 @@ class ProductTasks:
         _, text, _, ledger = svc._inputs[task_id]
         summary = svc.db.get(task_id, owner)["summary"]
         context = svc.db.context(task_id, owner)
+        recovery = getattr(svc, "durable_resumes", {}).pop(task_id, None)
+        resume_phase = recovery["phase"] if recovery else None
+        resumed_state = recovery["state"] if recovery else {}
         transport = None
         executable_checks = []
         started = time.perf_counter()
+        previous_seconds = resumed_state.get("active_seconds", 0)
 
         def record_timing():
-            summary["timings"] = dict(total_ms=round((time.perf_counter() - started) * 1000, 3),
+            active = previous_seconds + time.perf_counter() - started
+            summary["timings"] = dict(total_ms=round(active * 1000, 3),
                 planning_ms=round(sum(r.get("elapsed_ms", 0)
                     for r in summary.get("design_records", [])), 3),
                 execution_ms=round(sum(c.get("elapsed_ms", 0)
@@ -563,18 +571,38 @@ class ProductTasks:
                     svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW", summary=summary)
                     return
                 summary["agent_runtime"] = dict(engine=engine, reason=engine_reason)
+                durability = None
+                if getattr(svc, "durable_execution", False) and engine == AGENT_ENGINE:
+                    from agenttest.product_durability import ProductDurability
+
+                    durability = ProductDurability(svc, row, owner)
+                    async with durability.saver(create=resume_phase != "AGENT"):
+                        pass
+                    durability.publish("ACTIVE", summary=summary)
+                elif recovery:
+                    raise TaskConflict("DURABLE_ENGINE_CHANGED")
                 if engine == AGENT_ENGINE:
                     execution = resolve_task_execution(project, summary, ledger)
                     summary["execution_budget"] = execution.public(ledger)
                 transport = httpx.AsyncHTTPTransport(retries=0, trust_env=False)
                 bounded_transport = BudgetTransport(transport, ledger, guard)
-                async with asyncio.timeout(summary["budget"]["max_seconds"]):
+                remaining = summary["budget"]["max_seconds"] - previous_seconds
+                if remaining <= 0:
+                    raise TaskConflict("DURABLE_TASK_DEADLINE")
+                if resume_phase == "AGENT":
+                    from agenttest.planning_ir import PlanningIR
+
+                    stored_ir = resumed_state["planning_ir"]
+                    planning_ir = PlanningIR.model_validate(stored_ir) if stored_ir else None
+                    executable_checks = resumed_state["executable_checks"]
+                async with asyncio.timeout(remaining):
                     if context.get("current_request", text) == DEFAULT_ROUND:
                         self.note_unready(project, summary, [op["operation_id"]
                             for op in summary["inventory"]["operations"] if op["state"] != "READY"],
                             ask_unauthorized=False)
                         checkpoint()
-                    if (context.get("current_request", text) != DEFAULT_ROUND
+                    if (resume_phase != "AGENT"
+                            and context.get("current_request", text) != DEFAULT_ROUND
                             and svc.focus_factory is not None):
                         from agenttest.product_focus import (
                             permission_review_scope,
@@ -604,18 +632,36 @@ class ProductTasks:
                         order_feedback = None
 
                         async def select(order_feedback=None):
-                            return await select_focus(project, focus_model, context,
-                                environ=svc.environ, notes=project_record.get("business_notes", ""),
-                                inventory=summary["inventory"],
-                                available_identity_aliases=[r["alias"] for r in
-                                    project_record.get("generic", {}).get("roles", [])],
-                                order_feedback=order_feedback,
-                                timeout=getattr(getattr(raw_focus, "_settings", None),
-                                                "timeout", 90.0) + 1)
+                            attempt = 0
+                            while True:
+                                try:
+                                    return await select_focus(project, focus_model, context,
+                                        environ=svc.environ,
+                                        notes=project_record.get("business_notes", ""),
+                                        inventory=summary["inventory"],
+                                        available_identity_aliases=[r["alias"] for r in
+                                            project_record.get("generic", {}).get("roles", [])],
+                                        order_feedback=order_feedback,
+                                        timeout=getattr(getattr(raw_focus, "_settings", None),
+                                                        "timeout", 90.0) + 1)
+                                except PlannerFailure as exc:
+                                    stats = focus_model.stats
+                                    delay = retry_delay(attempt, exc.diagnostic.detail.get(
+                                        "retry_after")) if (stats.refused
+                                            and stats.http_status in TRANSIENT_STATUSES) else None
+                                    if delay is None:
+                                        raise
+                                    summary.setdefault("focus_gateway_retries", []).append(dict(
+                                        code=exc.diagnostic.code, delay_seconds=delay,
+                                        model_call=stats.model_dump(mode="json")))
+                                    checkpoint()
+                                    await asyncio.sleep(delay)
+                                    attempt += 1
 
+                        order_feedback = resumed_state.get("focus_feedback")
                         try:
                             try:
-                                selection = await select()
+                                selection = await select(order_feedback)
                             except (PlannerFailure, ValidationFailure) as exc:
                                 diagnostic = exc.diagnostic
                                 # One bounded correction, never a model-driven repair loop: the
@@ -635,12 +681,18 @@ class ProductTasks:
                                 negative_literal = (order_code == "FOCUS_INPUT_TEXT_CHANGED"
                                     and any(field.startswith("requested_checks.")
                                             for field in diagnostic.fields))
-                                if not repairable or (order_code in NON_REPAIRABLE_FOCUS
+                                if order_feedback or not repairable or (
+                                        order_code in NON_REPAIRABLE_FOCUS
                                                       and not negative_literal):
                                     raise
                                 order_feedback = focus_repair_payload(
                                     project, diagnostic,
                                     atoms=summary["requirement_sources"])
+                                if negative_literal:
+                                    order_feedback["detail"]["negative_literal_hint"] = (
+                                        "引用范围说明时，保留对应 source_ref 和 check_ref，"
+                                        "将 exact_value 及适用的 exact_length 填为 null。"
+                                        "明确指定的原文值仍须完整保留。")
                                 elapsed_ms = (time.perf_counter() - focus_started) * 1000
                                 focus_record.update(status="REJECTED", reason=order_code,
                                     diagnostic=order_feedback,
@@ -829,6 +881,22 @@ class ProductTasks:
                                 raw_focus, 'proposed_question_count', None)
                             checkpoint()
                         if selection is None or selection.mode == "needs_information":
+                            if (durability is not None and selection is None
+                                    and focus_model.stats.refused
+                                    and focus_model.stats.http_status in TRANSIENT_STATUSES):
+                                from agenttest.product_durability import GATEWAY_STOP
+
+                                summary.update(reason=GATEWAY_STOP, complete=False)
+                                durability.publish("FOCUS", summary=summary, state=dict(
+                                    usage=ledger.summary(), focus_feedback=order_feedback,
+                                    active_seconds=previous_seconds + (
+                                        time.perf_counter() - started)),
+                                    retry_after=(focus_model.stats.diagnostic.detail.get(
+                                        "retry_after") if focus_model.stats.diagnostic else None))
+                                svc.db.transition(task_id, owner, "RUNNING", "INTERRUPTED",
+                                                  summary=summary)
+                                svc.db.event(task_id, "INTERRUPTED", requests=ledger.requests)
+                                return
                             if selection:
                                 summary["questions"].append(dict(id="focus_question",
                                     operation_id=None, question=selection.question,
@@ -843,6 +911,10 @@ class ProductTasks:
                                     "请查看方案原因，再安排新的独立测试。")
                                 code = getattr(focus_model.stats.diagnostic, "code", None)
                                 summary["reason"] = {
+                                    "MODEL_GATEWAY_RATE_LIMIT": "模型网关限流，重试窗口耗尽；"
+                                        "本次没有发送业务请求。",
+                                    "MODEL_GATEWAY_CONCURRENCY_LIMIT": "模型网关达到并发上限，"
+                                        "重试窗口耗尽；本次没有发送业务请求。",
                                     "MODEL_TOKEN_BUDGET": "规划输入超过本任务预算，未调用模型，"
                                         "也未发送业务请求。请查看输入预算记录。",
                                     "FOCUS_INPUT_TEXT_CHANGED": "模型提取的文字没有保留原文，"
@@ -965,9 +1037,36 @@ class ProductTasks:
                         context=context, text=text, ledger=ledger,
                         transport=bounded_transport, guard=guard, checkpoint=checkpoint,
                         executable_checks=executable_checks, planning_ir=planning_ir,
-                        requirements=design_requirements)
+                        requirements=design_requirements, durability=durability,
+                        recovery=recovery if resume_phase == "AGENT" else None,
+                        state=resumed_state.get("scope_state", {}))
                     if engine == AGENT_ENGINE:
-                        await self.run_deep_agent(scope)
+                        result = await self.run_deep_agent(scope)
+                        if durability and result.checkpoint_id:
+                            from agenttest.task_completion import write_effects_view
+
+                            policies = {p.id: p for p in project.registry.definitions()}
+                            unknown = write_effects_view(summary, policies)["counts"].get(
+                                "WRITE_OUTCOME_UNKNOWN", 0)
+                            if unknown:
+                                raise TaskConflict("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW")
+                            durability.publish("AGENT", summary=summary,
+                                checkpoint_id=result.checkpoint_id, state=dict(
+                                    usage=ledger.summary(), session=result.session.durable_state(),
+                                    execution=result.session.execution.durable_state(),
+                                    agent_model_totals=result.model_totals,
+                                    agent_call_trace=result.call_trace,
+                                    runtime_limits=scope.state["runtime_limits"],
+                                    scope_state=scope.state,
+                                    planning_ir=planning_ir.model_dump(mode="json")
+                                    if planning_ir else None, executable_checks=executable_checks,
+                                    active_seconds=previous_seconds + (
+                                        time.perf_counter() - started)),
+                                retry_after=(result.error or {}).get("retry_after"))
+                            svc.db.transition(task_id, owner, "RUNNING", "INTERRUPTED",
+                                              summary=summary)
+                            svc.db.event(task_id, "INTERRUPTED", requests=ledger.requests)
+                            return
                     else:
                         for position, group in enumerate(summary["groups"]):
                             await self.run_group(scope, group, position=position,
@@ -1018,6 +1117,8 @@ class ProductTasks:
                 checkpoint()
                 svc.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=summary)
                 svc.db.event(task_id, "FINISHED", requests=ledger.requests)
+                if durability:
+                    await durability.prune()
         except asyncio.CancelledError:
             record_timing()
             self.stop(task_id, owner, summary, ledger,
@@ -1578,7 +1679,7 @@ class ProductTasks:
         authority and HTTP. Completion is published from measured evidence by
         :mod:`agenttest.task_completion`, never from the model's closing prose.
         """
-        from agenttest.execution_budget import ADAPTIVE, estimate_round
+        from agenttest.execution_budget import ADAPTIVE, ExecutionState, estimate_round
         from agenttest.product_agent import report_payload, run_agent
         from agenttest.task_completion import PRE_RELEASE, evaluate, public_view
 
@@ -1589,7 +1690,8 @@ class ProductTasks:
         from agenttest.task_completion import classify_task as _classify
 
         goal_kind = _classify(scope.text)["kind"]
-        if goal_kind == PRE_RELEASE:
+        saved = scope.recovery["state"] if scope.recovery else None
+        if goal_kind == PRE_RELEASE and not saved:
             from agenttest.product_obligations import negative_batches
 
             batches = negative_batches(scope.project, summary)
@@ -1605,8 +1707,10 @@ class ProductTasks:
                                    requirements=scope.requirements,
                                    negative_variants=wants_negative_variants(
                                        goal_kind, scope.text))
-                    if execution.mode == ADAPTIVE else None)
-        state = resolve_task_execution(scope.project, summary, ledger, estimate=estimate)
+                    if execution.mode == ADAPTIVE and not saved else None)
+        state = (ExecutionState.restore(saved["execution"], execution, summary) if saved else
+                 resolve_task_execution(scope.project, summary, ledger, estimate=estimate))
+        state.apply_allowance(ledger)
         plan = state.plan
         remaining_ceiling = max(1, plan.grants["model_calls"].ceiling - ledger.model_calls)
         max_calls = min(budget.agent_max_model_calls or remaining_ceiling, remaining_ceiling)
@@ -1614,6 +1718,12 @@ class ProductTasks:
         max_tools = int(plan.limit("agent_tool_calls"))
         max_tools_ceiling = max(max_tools, int(plan.grants["agent_tool_calls"].ceiling))
         settings = svc.agent_model_factory(scope.project)
+        limits = saved["runtime_limits"] if saved else dict(
+            max_turns=max_turns, max_tool_calls=max_tools, max_model_calls=max_calls,
+            tool_calls_ceiling=max_tools_ceiling, total_tokens_ceiling=int(
+                plan.grants["total_tokens"].ceiling - ledger.known_tokens))
+        if scope.durability:
+            scope.state["runtime_limits"] = limits
         scope.max_seconds = float(min(summary["budget"]["max_seconds"],
                                       float(plan.limit("seconds")
                                             or summary["budget"]["max_seconds"])))
@@ -1625,13 +1735,7 @@ class ProductTasks:
         # where a reader can audit it without a schema change.
         svc.db.event(scope.task_id, "SUPERVISING", requests=ledger.requests)
         try:
-            result = await run_agent(scope, self, settings, max_turns=max_turns,
-                                     max_tool_calls=max_tools, max_model_calls=max_calls,
-                                     tool_calls_ceiling=max_tools_ceiling,
-                                     total_tokens_ceiling=int(
-                                         plan.grants["total_tokens"].ceiling
-                                         - ledger.known_tokens),
-                                     execution=state)
+            result = await run_agent(scope, self, settings, **limits, execution=state)
         except asyncio.CancelledError:
             summary["agent_runtime"] = {**summary.get("agent_runtime", {}),
                                         "engine": AGENT_ENGINE, "stop_reason": "CANCELLED"}
@@ -1668,6 +1772,8 @@ class ProductTasks:
             "MODEL_ERROR": "模型调用失败；已保留已发生的证据并生成确定性任务报告。",
             "RUNTIME_ERROR": "自主运行时异常终止；已保留已发生的证据并生成确定性任务报告。",
             "AUTHORITY_CHANGED": "项目授权在任务执行期间发生变化；已停止后续动作。",
+            "DURABLE_CHECKPOINT_PAUSED": "已在工具执行边界暂停，可恢复此任务。",
+            "DURABLE_MODEL_GATEWAY_UNAVAILABLE": "模型网关暂时不可用，已保存任务恢复位置。",
         }.get(result.stop_reason,
               "自主运行时已结束；完成情况由确定性判据给出，不采用模型总结作为结论。")
         self.coverage(summary, project=scope.project)

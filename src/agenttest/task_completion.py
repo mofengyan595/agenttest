@@ -86,7 +86,13 @@ _VARIANT_SCOPE = re.compile(
     r"(?:把|请)?(?:覆盖|包含|包括|执行)?(?:已确认(?:的)?|已批准(?:的)?)?"
     r"(?:正常|正向)(?:行为|流程|用例|路径|请求)"
     r"(?:和|及|与|以及)(?:无效|非法|负向)(?:参数|入参|输入|用例)"
-    r"(?:用例)?(?:都测到|均覆盖|全部执行)?")
+    r"(?:用例)?(?:(?:都|均|全部)?(?:按|按照|依照)(?:已确认|已批准)(?:的)?"
+    r"(?:规则|策略|标准)(?:执行|检查|验证|覆盖)|都测到|均覆盖|全部执行)?")
+
+
+def is_variant_scope_clause(text):
+    """Recognize a scope qualifier with no literal data or independent action."""
+    return _VARIANT_SCOPE.fullmatch(text.strip()) is not None
 
 # Lexical subject cues mapped to HTTP methods. The subject is what the user pointed at; an
 # unrelated endpoint is never counted as the subject of a regression goal.
@@ -195,7 +201,7 @@ def project_release_requirements(project, text, requirements):
     anchor = anchors[0]
     candidates = [item for item in requirements if item["disposition"] == "required"
                   and (_RELEASE_TIMING.fullmatch(item["source_quote"].strip())
-                       or _VARIANT_SCOPE.fullmatch(item["source_quote"].strip()))]
+                       or is_variant_scope_clause(item["source_quote"]))]
     if any(item.get(field) for item in [anchor, *candidates] for field in (
             "before", "existing_resources", "forbidden_operation_ids", "blocked_operation_ids")):
         return requirements, []

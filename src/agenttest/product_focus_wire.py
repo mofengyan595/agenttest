@@ -94,6 +94,7 @@ def constrain_operation_bundles(schema, context):
         from agenttest.product_sources import (
             constrain_input_sources,
             constrain_numeric_check_sources,
+            constrain_scope_check_sources,
         )
 
         constrain_input_sources(local["properties"], context, operation, fields)
@@ -107,6 +108,7 @@ def constrain_operation_bundles(schema, context):
                 branch["required"] = list(branch["properties"])
             constrain_numeric_check_sources(local["properties"]["requested_checks"],
                                             local_checks[operation], context)
+            constrain_scope_check_sources(local["properties"]["requested_checks"], context)
         if standalone:
             local['properties']['requested_checks'] = dict(type='array', maxItems=0)
         normal = dict(type='boolean', enum=[False]) if standalone else dict(type='boolean')

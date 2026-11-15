@@ -94,7 +94,10 @@ def configured_task_service(runs_dir, *, projects=None, model_env=None, generic_
         agent_model_factory=settings_for,
         model_status=model_status, generic_intake=generic_intake,
         private_input_guard=private_input_guard,
-        environ=target_environment(model_env or os.environ.get("AGENTTEST_MODEL_ENV")),
+        environ={**target_environment(model_env or os.environ.get("AGENTTEST_MODEL_ENV")),
+                 **{key: os.environ[key] for key in ("AGENTTEST_DURABLE_EXECUTION",
+                    "AGENTTEST_DURABLE_TARGET_EPOCH", "AGENTTEST_DURABLE_PAUSE_AFTER_TOOLS")
+                    if key in os.environ}},
         intake_authorized_ips=tuple(filter(None,
             os.environ.get("AGENTTEST_INTAKE_AUTHORIZED_IPS", "").split(","))))
 

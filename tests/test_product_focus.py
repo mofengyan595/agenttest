@@ -186,6 +186,31 @@ def test_duplicate_wire_operation_keys_are_rejected_instead_of_repaired():
     assert error.value.diagnostic.code == "JSON_DUPLICATE_KEY"
 
 
+def test_release_negative_scope_ref_does_not_accept_an_invented_exact_sample():
+    from agenttest.product_focus_wire import constrain_operation_bundles
+    from agenttest.product_sources import constrain_source_refs, input_sources
+    from agenttest.request_requirements import request_atoms
+
+    task = "上线前请把整个项目完整测一遍，覆盖已批准的正常流程和无效输入。"
+    context = dict(user_task=task, request_atoms=request_atoms(task), approved_ids=["createParcel"],
+        approved_checks=[dict(policy_id="wrong_type", operation_id="createParcel",
+            location="json_body", name="meta", kind="type_mismatch", field_constraints={})])
+    schema = FocusSelection.model_json_schema()
+    operations = constrain_operation_bundles(schema, context)
+    operations["$defs"] = schema["$defs"]
+    constrain_source_refs(operations, input_sources(context))
+    validator = Draft202012Validator(operations)
+    check = dict(check_ref="check_1", source_ref="source_3", exact_value=None)
+    wire = dict(createParcel=dict(input_requirements=[], input_questions=[],
+        requested_checks=[check], expectation_questions=[], test_normal=True))
+    assert validator.is_valid(wire)
+    # C-r1 proposed this value even though the cited clause contains no field value.
+    check["exact_value"] = {"value": "not-an-object"}
+    assert not validator.is_valid(wire)
+    check["exact_value"] = {"value": {"key": "meta", "value": "string"}}
+    assert not validator.is_valid(wire)
+
+
 def test_fixed_input_wire_does_not_ask_for_a_dynamic_source_choice():
     model = FocusModel(settings(), profile='generic')
     context = dict(approved_ids=['read'], user_task='读取固定预约记录')

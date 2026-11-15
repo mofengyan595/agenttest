@@ -45,6 +45,7 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field
 
 from agenttest.llm_planner import ModelSettings
+from agenttest.model_retry import retry_after_seconds
 from agenttest.report import ModelCallStats, fingerprint
 
 # Closed error taxonomy; a caller can branch on these without parsing prose.
@@ -91,9 +92,11 @@ class ModelTotals(BaseModel):
 class ModelHarnessError(RuntimeError):
     """One measured, closed failure from the tool-calling gateway."""
 
-    def __init__(self, code: str, detail: str = "", *, status: int | None = None):
+    def __init__(self, code: str, detail: str = "", *, status: int | None = None,
+                 retry_after: float | None = None):
         super().__init__(code)
         self.code, self.detail, self.status = code, detail[:400], status
+        self.retry_after = retry_after
 
     def __str__(self) -> str:  # pragma: no cover - message shape only
         return f"{self.code}: {self.detail}" if self.detail else self.code
@@ -350,8 +353,11 @@ class EcnuxChatModel(BaseChatModel):
                         stats.refused = True
                         raise ModelHarnessError(
                             MODEL_SERVICE_ERROR if infra else MODEL_API_ERROR,
-                            bytes(raw[:200]).decode("utf-8", "replace"),
-                            status=response.status_code)
+                            "MODEL_GATEWAY_CONCURRENCY_LIMIT" if response.status_code == 429
+                            and b"model_concurrency_exceeded" in raw else
+                            "MODEL_GATEWAY_RATE_LIMIT" if response.status_code == 429 else "",
+                            status=response.status_code,
+                            retry_after=retry_after_seconds(response.headers.get("Retry-After")))
         except (httpx.TimeoutException, TimeoutError):
             raise ModelHarnessError(MODEL_TIMEOUT) from None
         except httpx.TransportError:
