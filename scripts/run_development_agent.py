@@ -308,6 +308,7 @@ async def run(args):
          "--project", args.project_kind, "--port", str(target_port),
          "--events", str(events_path),
          *(["--delete-noop"] if args.delete_noop else []),
+         *(["--observe-negative-posts"] if args.observe_negative_posts else []),
          *(["--delete-fault-status", str(args.delete_fault_status)]
            if args.delete_fault_status else [])],
         cwd=ROOT, env=environment, stdout=target_log, stderr=subprocess.STDOUT,
@@ -331,7 +332,7 @@ async def run(args):
                       execution=args.execution.model_dump(mode="json")))
     try:
         wait_health(target_port)
-        await prepare(data, base, environment)
+        await prepare(data, base, environment, observe_negative_posts=args.observe_negative_posts)
         model_env = (ROOT / args.model_env).resolve() if not Path(args.model_env).is_absolute() \
             else Path(args.model_env)
         # ADAPTIVE gets a window the configured model can actually accept and the round's token
@@ -494,6 +495,8 @@ def main():
                         help="inject one operator-style 404 policy bound to the delete lifecycle")
     parser.add_argument("--delete-noop", action="store_true",
                         help="lab answers the delete with 204 but does not delete")
+    parser.add_argument("--observe-negative-posts", action="store_true",
+                        help="enable explicitly approved correlation reads on the parcels lab")
     parser.add_argument("--delete-fault-status", type=int, choices=[500, 503], default=None,
                         help="lab fails the delete with this status")
     parser.add_argument("--execution-mode", choices=[FIXED, ADAPTIVE], default=ADAPTIVE,

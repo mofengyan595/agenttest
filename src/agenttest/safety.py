@@ -38,6 +38,16 @@ class ResourceCreation(StrictModel):
     fresh_resource_basis: str = Field(min_length=10, max_length=500)
 
 
+class NegativePostObservation(StrictModel):
+    """Reviewed assurance that the lookup counts every creation bearing the header."""
+
+    operation_id: str
+    request_header: str
+    query_parameter: str
+    count_selector: str
+    basis: str = Field(min_length=10, max_length=500)
+
+
 class TargetConfig(StrictModel):
     base_url: str = "http://127.0.0.1:8080"
     environment: Literal["local", "isolated"] = "local"
@@ -60,6 +70,7 @@ class TargetConfig(StrictModel):
     credential_inputs: dict[str, dict[str, str]] = Field(default_factory=dict)
     unauthenticated_checks: dict[str, list[str]] = Field(default_factory=dict)
     resource_creations: dict[str, ResourceCreation] = Field(default_factory=dict)
+    negative_post_observations: dict[str, NegativePostObservation] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def legacy_identity(self, handler):
@@ -72,11 +83,19 @@ class TargetConfig(StrictModel):
             data.pop("unauthenticated_checks", None)
         if not self.resource_creations:
             data.pop("resource_creations", None)
+        if not self.negative_post_observations:
+            data.pop("negative_post_observations", None)
         return data
 
     @model_validator(mode="after")
     def validate_target(self) -> "TargetConfig":
         from agenttest.controlled_inputs import credential_alias
+
+        for writer, observation in self.negative_post_observations.items():
+            if (self.environment != "isolated" or not self.allow_mutations
+                    or writer == observation.operation_id
+                    or not {writer, observation.operation_id} <= set(self.allowed_operations)):
+                raise ValueError("NEGATIVE_POST_OBSERVATION_NOT_AUTHORIZED")
 
         for operation, policies in self.unauthenticated_checks.items():
             if (operation not in self.allowed_operations or not policies

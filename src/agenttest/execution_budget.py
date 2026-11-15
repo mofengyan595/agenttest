@@ -205,7 +205,10 @@ def estimate_round(*, project, summary, group_operations=(), executable_checks=(
         if policy.negative is not None:
             negatives += 1
             reason = "一次已批准异常取值请求"
-            if operation.method == "POST":
+            if policy.operation_id in project.target.negative_post_observations:
+                requests += 2
+                reason += " + 同一关联键的两次批准只读观测"
+            elif operation.method == "POST":
                 prerequisites += 1
                 cleanup += 1
                 requests += 1

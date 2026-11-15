@@ -54,6 +54,14 @@ def scenario_shape(project, scenario, precondition=None) -> dict:
     positions = _producer_positions(project, scenario)
     satisfied = {row["step_id"]: row["satisfied"]
                  for row in (precondition or {}).get("rows", ())}
+    correlation_slots = set()
+    if project.target.negative_post_observations:
+        from agenttest.negative_post_observation import observations
+
+        for before, write, after, rule in observations(project.target, scenario):
+            correlation_slots.update(((before.id, "query", rule.query_parameter),
+                                      (after.id, "query", rule.query_parameter),
+                                      (write.id, "headers", rule.request_header.casefold())))
     steps = []
     for index, step in enumerate(scenario.steps):
         policy = policies.get(step.policy_id)
@@ -68,8 +76,10 @@ def scenario_shape(project, scenario, precondition=None) -> dict:
                 else:
                     # A different literal is a different input, so it is a different experiment
                     # (an input variation). Only a digest is kept, never the value.
-                    bindings.append([location, name, None, None,
-                                     fingerprint(bound.value)])
+                    slot = (step.id, location, name.casefold() if location == "headers" else name)
+                    digest = ("CORRELATION" if slot in correlation_slots
+                              else fingerprint(bound.value))
+                    bindings.append([location, name, None, None, digest])
         steps.append(dict(
             position=index, operation_id=step.operation_id,
             method=operation.method if operation is not None else None,

@@ -231,6 +231,20 @@ def test_pre_release_needs_every_group_decided_and_no_open_question():
     assert "NO_OPEN_QUESTIONS" in report["unmet"]
 
 
+def test_complete_release_scope_stays_at_project_approval_when_focus_narrows():
+    project, _ = lifecycle_project()
+    summary = summary_for(project, measured=("readParcel",), executed=("readParcel",))
+    summary["groups"][0]["primary"] = ["readParcel"]
+    text = "服务即将发布，请运行完整的上线前检查，把已确认正常行为和无效参数用例都测到。"
+    report = evaluate(project, summary, text)
+    coverage = report["scope_ledger"]["coverage"]
+    assert coverage["requested"]["total"] == coverage["approved"]["total"]
+    assert coverage["selected"]["total"] < coverage["requested"]["total"]
+    assert "REQUESTED_SCOPE_SELECTED" in report["unmet"]
+    assert "ALL_OBLIGATIONS_MEASURED" in report["unmet"]
+    assert not subject_scope(project, "发布前仅检查 readParcel", PRE_RELEASE).get("whole_project")
+
+
 def test_an_investigation_is_complete_when_the_subject_was_actually_probed():
     project, _ = lifecycle_project()
     summary = summary_for(project, measured=("readParcel",), executed=("readParcel",))

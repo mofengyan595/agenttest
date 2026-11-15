@@ -420,7 +420,8 @@ def constrain_required_cases(schema, context):
         return
     if len(requested) > 12:
         raise ValidationFailure(Layer.MODEL, "DESIGN_CHECK_BATCH_LIMIT")
-    schema["properties"]["cases"]["maxItems"] = 12 - len(requested)
+    schema["properties"]["cases"]["maxItems"] = (
+        0 if context.get("only_required_checks") else 12 - len(requested))
     cases = {}
     for requirement in requested:
         identifier = requirement["policy_id"]
@@ -458,6 +459,8 @@ def decode_required_cases(wire, context, *, construction_chains=None):
             or type(wire.get("cases")) is not list):
         raise ValidationFailure(Layer.MODEL, "DESIGN_REQUESTED_CHECKS_MISSING")
     if any(case.get("kind") == "negative" for case in wire["cases"] if type(case) is dict):
+        raise ValidationFailure(Layer.MODEL, "DESIGN_NEGATIVE_CASE_OUTSIDE_REQUIRED")
+    if context.get("only_required_checks") and wire["cases"]:
         raise ValidationFailure(Layer.MODEL, "DESIGN_NEGATIVE_CASE_OUTSIDE_REQUIRED")
     outside = [step for case in wire["cases"] for step in case.get("plan", {}).get("steps", [])]
     for case in required.values():

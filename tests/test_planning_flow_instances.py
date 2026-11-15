@@ -255,3 +255,67 @@ def test_the_compiler_error_names_the_missing_instances_and_operations():
     assert diagnostic.fields and all(field.startswith("instance.") for field in diagnostic.fields)
     assert diagnostic.detail["hint"]
     assert diagnostic.detail["consumers"]
+
+
+@pytest.mark.parametrize("with_absence", [True, False])
+def test_explicit_read_in_next_clause_is_the_absence_instance(with_absence):
+    from test_planning_ir import M2_LIFECYCLE, M2_OPERATIONS, m2_policies
+
+    from agenttest.planning_ir import build_planning_ir
+    from agenttest.request_requirements import request_atoms
+
+    text = "新建条目并删除，随后回读同一条目，检查它是否已不存在。"
+    atoms = request_atoms(text)
+    actions = [["createItem", "deleteItem"], ["getItem"], ["getItem"]]
+    requirements = [dict(source_id=atom["source_id"], source_quote=atom["text"],
+                         disposition="required", actions=[dict(operation_id=op, role="author")
+                                                          for op in operations])
+                    for atom, operations in zip(atoms, actions, strict=True)]
+    requirements[1]["before"] = [dict(
+        earlier="deleteItem", later="getItem", earlier_source_id=atoms[0]["source_id"],
+        earlier_index=0, later_source_id=atoms[1]["source_id"], later_index=0)]
+    approved = [p for p in m2_policies() if with_absence
+                or p["id"] != "getItem_expectation_1"]
+    ir = build_planning_ir(requirements, atoms, operations=M2_OPERATIONS,
+                           policies=approved, target_lifecycles=M2_LIFECYCLE,
+                           read_operations={"getItem"})
+
+    if not with_absence:
+        assert "RESPONSE_STATUS_NOT_APPROVED" in {a.kind.value for a in ir.ambiguities}
+        assert all(item.phase != "VERIFY_ABSENT" for item in ir.instances)
+        return
+    assert not ir.ambiguities
+    assert [(ir.instance(key).operation_id, ir.instance(key).phase) for key in ir.order] == [
+        ("createItem", None), ("deleteItem", "DELETED"), ("getItem", "VERIFY_ABSENT")]
+    assert ir.instances[-1].source_id == atoms[1]["source_id"]
+    assert ir.instances[-1].policy_id == "getItem_expectation_1"
+
+
+def test_two_approved_resource_families_keep_independent_readback_bindings():
+    import json
+
+    from test_planning_ir import M2_LIFECYCLE, M2_OPERATIONS, m2_policies
+
+    def other(rows):
+        return json.loads(json.dumps(rows).replace("Item", "Job").replace(
+            "itemId", "jobId").replace("/items", "/jobs"))
+
+    atoms = [dict(source_id="request_1", text="创建条目后删除并回读条目", start=0),
+             dict(source_id="request_2", text="创建作业后删除并回读作业", start=20)]
+    requirements = [dict(source_id=atom["source_id"], source_quote=atom["text"],
+        disposition="required",
+        actions=[dict(operation_id=f"{action}{kind}", role="author")
+                 for action in ("create", "delete", "get")],
+        before=[dict(earlier=f"delete{kind}", later=f"get{kind}")])
+        for atom, kind in zip(atoms, ("Item", "Job"), strict=True)]
+    result = build_planning_ir(requirements, atoms,
+        operations=[*M2_OPERATIONS, *other(M2_OPERATIONS)],
+        policies=[*m2_policies(), *other(m2_policies())],
+        target_lifecycles=[*M2_LIFECYCLE, *other(M2_LIFECYCLE)],
+        read_operations={"getItem", "getJob"})
+    assert not result.ambiguities
+    for operation, producer in (("getItem", "createItem"), ("getJob", "createJob")):
+        read = next(instance for instance in result.instances
+                    if instance.operation_id == operation)
+        assert read.phase == "VERIFY_ABSENT"
+        assert result.instance(read.arguments[0].from_instance).operation_id == producer

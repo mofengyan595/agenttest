@@ -634,6 +634,10 @@ async def test_archived_m2_semantics_reach_the_executor_as_four_requests(tmp_pat
             action["role"] = None
             if action["operation_id"] == "getItem":
                 action["operation_id"] = "readItem"
+        for order in item.get("before") or ():
+            for side in ("earlier", "later"):
+                if order[side] == "getItem":
+                    order[side] = "readItem"
         requirements.append(item)
     proj = project()
     policies = [item.model_dump(mode="json") for item in proj.registry.definitions()]

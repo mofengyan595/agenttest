@@ -1289,6 +1289,7 @@ class ProductTasks:
                 preflight.append(validate_design_case(project, case, svc.reports,
                     cleanup_operations=group["primary"],
                     requested_checks=executable_checks,
+                    verify_batch_cleanup=bool(group.get("policy_ids")),
                     environ=svc.environ, transport=bounded_transport))
             except ValueError as exc:
                 preflight.append(exc)
@@ -1319,7 +1320,10 @@ class ProductTasks:
                 case_row["reason"] = (
                     "本场景的异常输入或判断依据仍待补充，未发送请求。")
                 continue
-            if ledger.requests + len(case.plan.steps) > group_request_limit:
+            prepared = preflight[index]
+            planned = getattr(prepared, "steps", case.plan.steps)
+            case_row["max_business_requests"] = len(planned)
+            if ledger.requests + len(planned) > group_request_limit:
                 case_row["reason"] = (
                     "保留后续接口的基本请求预算，未执行此额外场景。"
                     if reserved_requests else
@@ -1506,6 +1510,12 @@ class ProductTasks:
             # rows are attached, because that read-back is what proves a cleanup.
             from agenttest.write_effects import cleanup_message, for_case
 
+            if project.target.negative_post_observations:
+                from agenttest.negative_post_observation import observation_receipts
+
+                receipts = observation_receipts(project, scenario, case_row)
+                if receipts:
+                    case_row["negative_post_observations"] = receipts
             case_row["write_effects"] = for_case(
                 case_row, {p.id: p for p in project.registry.definitions()})
             cleanup = cleanup_message(case_row["write_effects"])
@@ -1618,8 +1628,10 @@ class ProductTasks:
         summary["agent_runtime"] = payload
         summary["execution_budget"] = state.public(ledger)
         summary["task_completion"] = completion
-        summary["execution_budget"]["pending_obligations"] = [
-            item["policy_id"] for item in summary["scope_ledger"]["missing"]]
+        scope_ledger = summary["scope_ledger"]
+        summary["execution_budget"]["pending_obligations"] = sorted(
+            {item["policy_id"] for item in scope_ledger["missing"]}
+            | set(scope_ledger["requested"]["missing_evidence"]))
         batch_rows = {row["group_id"]: row for row in result.session._group_view()}
         summary["obligation_batches"] = [dict(batch_rows[group["id"]], cases=[
             dict(case_id=case["case_id"], run_id=case.get("run_id"),

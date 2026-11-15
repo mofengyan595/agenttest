@@ -467,8 +467,11 @@ def design_groups(project, size=6, operation_ids=None, requirement_links=()):
     by_operation = {}
     for policy in definitions:
         by_operation.setdefault(policy.operation_id, []).append(policy)
+    auxiliary = {rule.operation_id for rule in
+                 project.target.negative_post_observations.values()}
     allowed = [o.operation_id for o in project.contract.operations
-               if o.operation_id in project.target.allowed_operations]
+               if o.operation_id in project.target.allowed_operations
+               and (operation_ids is not None or o.operation_id not in auxiliary)]
     operations = [key for key in allowed if operation_ids is None or key in operation_ids]
     source_edges = {}
     for raw in requirement_links:
@@ -646,6 +649,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
     context["project_notes"] = project_notes
     context["selected_for_current_focus"] = must_be_relevant
     context["allow_new_questions"] = allow_new_questions
+    if group.get("policy_ids"):
+        context["only_required_checks"] = True
     context['request_requirements'] = list(request_requirements)
     # Trusted compiler input; compact_sources removes it from the model-visible payload.
     context['planning_ir'] = planning_ir
@@ -767,6 +772,9 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                         or not question.status_choices
                         or set(question.status_choices) - {403, 404}):
                     raise ValueError("DESIGN_PERMISSION_QUESTION_REJECTED")
+        if context.get("only_required_checks") and any(case.kind != "negative"
+                                                     for case in design.cases):
+            raise ValidationFailure(Layer.MODEL, "DESIGN_NEGATIVE_CASE_OUTSIDE_REQUIRED")
         for case in design.cases:
             scenario = case.plan.scenario()
             if any(s.policy_id in omitted_negative for s in scenario.steps):
@@ -943,7 +951,7 @@ def validate_distinct_setups(project, design):
 
 
 def validate_design_case(project, case, store, *, environ, transport=None, cleanup_operations=(),
-                         requested_checks=()):
+                         requested_checks=(), verify_batch_cleanup=False):
     """Independent deterministic engine validation; this does not verify natural semantics."""
     from agenttest.executor import Executor
 
@@ -969,6 +977,16 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
     executor = Executor(project.target, project.contract, store, transport, environ,
                         registry=project.registry)
     executor.validate(scenario)
+    if verify_batch_cleanup:
+        from agenttest.product_preconditions import add_batch_cleanup_reads
+
+        scenario = add_batch_cleanup_reads(project, scenario)
+        executor.validate(scenario)
+    if project.target.negative_post_observations:
+        from agenttest.negative_post_observation import add_observations
+
+        scenario = add_observations(project, scenario)
+        executor.validate(scenario)
     validate_cleanup_dependencies(project, scenario, cleanup_operations)
     # An "absent" expectation (approved 404/410) is only legal once an approved deletion of
     # the same resource has established that phase; otherwise the run would accuse the

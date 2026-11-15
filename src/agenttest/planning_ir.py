@@ -578,12 +578,13 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
         if not deletes:
             continue
         deletion = deletes[-1]
-        read_policy = next((policy for policy in policies
-                            if policy["operation_id"] in read_ops
-                            and deletion.role in (policy.get("roles") or [])
-                            and set(_status_codes(policy)) == {404}), None)
-        if read_policy is None:
+        delete_path = operations[deletion.operation_id].get("path")
+        approved = [policy for op in read_ops if operations[op].get("path") == delete_path
+                    for policy in _policy_candidates(policies, op, deletion.role)
+                    if set(_status_codes(policy)) == {404}]
+        if len(approved) != 1:
             continue
+        read_policy = approved[0]
         instances.append(ActionInstance(
             instance_id=f"ai_{len(instances) + 1}",
             operation_id=read_policy["operation_id"], role=deletion.role,
@@ -715,57 +716,77 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
                       f"{consumer.source_id} 消费 {producer.instance_id} 产生的 "
                       f"{rule['id_selector']}", consumer.source_id)
 
+    written_order = {}
+    for requirement in raw_required:
+        for order in requirement.get("before") or ():
+            earlier = _order_side(order, "earlier", instances, clauses)
+            later = _order_side(order, "later", instances, clauses)
+            for left in earlier or ():
+                written_order.setdefault(left.instance_id, set()).update(
+                    right.instance_id for right in later or ())
+    explicit = sorted((item for item in instances if item.origin in {"FOCUS", "FOCUS_REPEAT"}),
+                      key=lambda item: item.sort_key)
+    for previous, current in zip(explicit, explicit[1:]):
+        if previous.source_id != current.source_id and starts_with_sequence_marker(
+                current.source_quote):
+            written_order.setdefault(previous.instance_id, set()).add(current.instance_id)
+
     # 3b. An approved absence rule is an expectation the operator already confirmed. Derive the
     # post-delete read instance from that policy instead of waiting for the request text to say
     # "verify it is gone": a narrowed round then has a real instance to bind, and the compiler
     # keeps the delete->readback dependency as a hard RESOURCE_ABSENT edge.
     for handle in resources:
         consumers = consumers_by_handle.get(handle.resource_id, [])
-        if any(item.phase == ResourcePhase.VERIFY_ABSENT.value for item in consumers):
-            continue
         deletes = [item for item in consumers if item.phase == ResourcePhase.DELETED.value]
-        if not deletes:
+        if len(deletes) != 1:
             continue
         deletion = deletes[0]
-        absence = _approved_absence_policy(policies, read_ops, deletion)
+        producer = next(item for item in instances if item.instance_id == handle.producer_instance)
+        successors = _order_successors(deletion.instance_id, written_order)
+        readbacks = [item for item in consumers if item.operation_id in read_ops
+                     and (item.instance_id in successors
+                          or item.phase == ResourcePhase.VERIFY_ABSENT.value)]
+        if readbacks:
+            for readback in readbacks:
+                if readback.origin == "APPROVED_EXPECTATION":
+                    continue  # The explicit confirmation already has its approved path witness.
+                approved = _approved_absence_policy(
+                    policies, read_ops, deletion, producer, handle, readback=readback)
+                if approved is None:
+                    ambiguities.append(Ambiguity(
+                        kind=AmbiguityKind.RESPONSE_STATUS_NOT_APPROVED,
+                        source_id=readback.source_id,
+                        message="删除后回读缺少同一资源、同一读取身份的唯一已批准缺失策略。",
+                        detail=dict(instance=readback.instance_id, deletion=deletion.instance_id)))
+                    continue
+                readback.phase = ResourcePhase.VERIFY_ABSENT.value
+                readback.policy_id = approved["id"]
+                if not readback.assertions:
+                    _attach_assertion(readback, _status_codes(approved),
+                                      next(clause for clause in clauses
+                                           if clause.source_id == readback.source_id), constraints)
+                for constraint in constraints:
+                    if (constraint.kind == ConstraintKind.SAME_RESOURCE
+                            and readback.instance_id in constraint.instances):
+                        constraint.detail["phase"] = readback.phase
+            continue
+        absence = _approved_absence_policy(policies, read_ops, deletion, producer, handle)
         if absence is None:
             continue
-        # The request may already name the post-delete read ("create, delete, then read"): that
-        # existing read instance *is* the absence verification. Deriving a second one would put
-        # the same read both after and before the deletion and manufacture a dependency cycle.
-        orders = {(order.get("earlier"), order.get("later"))
-                  for order in (by_source.get(deletion.source_id) or {}).get("before") or ()}
-        candidates = [item for item in consumers
-                      if item.instance_id != deletion.instance_id
-                      and item.operation_id == absence["operation_id"]
-                      and item.source_id == deletion.source_id
-                      and item.phase in (None, ResourcePhase.EXISTS.value)
-                      and (deletion.operation_id, item.operation_id) in orders]
-        reused = candidates[0] if len(candidates) == 1 else None
-        if reused is not None:
-            absent = reused
-            absent.phase = ResourcePhase.VERIFY_ABSENT.value
-            absent.policy_id = absence["id"]
-            absent.policy_origin = "APPROVED_ABSENCE"
-            absent.origin = ABSENCE_INSTANCE_ORIGIN
-            absent.assertions = [ResponseAssertion(
-                statuses=sorted(_status_codes(absence)), source_id=deletion.source_id,
-                source_quote=deletion.source_quote, origin="APPROVED_ABSENCE")]
-        else:
-            absent = ActionInstance(
-                instance_id=f"ai_{len(instances) + 1}",
-                operation_id=absence["operation_id"], role=deletion.role,
-                source_id=deletion.source_id, source_quote=deletion.source_quote,
-                source_start=deletion.source_start, action_index=deletion.action_index,
-                policy_id=absence["id"], policy_origin="APPROVED_ABSENCE",
-                resource_id=handle.resource_id, phase=ResourcePhase.VERIFY_ABSENT.value,
-                assertions=[ResponseAssertion(statuses=sorted(_status_codes(absence)),
-                                              source_id=deletion.source_id,
-                                              source_quote=deletion.source_quote,
-                                              origin="APPROVED_ABSENCE")],
-                origin="APPROVED_ABSENCE_POLICY")
-            instances.append(absent)
-            consumers.append(absent)
+        absent = ActionInstance(
+            instance_id=f"ai_{len(instances) + 1}",
+            operation_id=absence["operation_id"], role=deletion.role,
+            source_id=deletion.source_id, source_quote=deletion.source_quote,
+            source_start=deletion.source_start, action_index=deletion.action_index,
+            policy_id=absence["id"], policy_origin="APPROVED_ABSENCE",
+            resource_id=handle.resource_id, phase=ResourcePhase.VERIFY_ABSENT.value,
+            assertions=[ResponseAssertion(statuses=sorted(_status_codes(absence)),
+                                          source_id=deletion.source_id,
+                                          source_quote=deletion.source_quote,
+                                          origin="APPROVED_ABSENCE")],
+            origin=ABSENCE_INSTANCE_ORIGIN)
+        instances.append(absent)
+        consumers.append(absent)
         if not any(argument.location == "path_parameters"
                    and argument.name == handle.path_parameter
                    for argument in absent.arguments):
@@ -905,7 +926,8 @@ def build_planning_ir(requirements, atoms, *, operations, policies,
     # 6. Adjacency markers only between consecutive request instances; no marker, no edge.
     requests_in_order = sorted((item for item in instances
                                 if item.origin not in {PRESENCE_INSTANCE_ORIGIN,
-                                                       SETUP_INSTANCE_ORIGIN}),
+                                                       SETUP_INSTANCE_ORIGIN,
+                                                       ABSENCE_INSTANCE_ORIGIN}),
                                key=lambda item: item.sort_key)
     for previous, current in zip(requests_in_order, requests_in_order[1:]):
         if previous.source_id == current.source_id:
@@ -1113,7 +1135,18 @@ def _previous_request(clause, instances):
     return max(preceding, key=lambda item: item.sort_key)
 
 
-def _approved_absence_policy(policies, read_ops, deletion):
+def _order_successors(origin, edges):
+    reached = set()
+    frontier = list(edges.get(origin, ()))
+    while frontier:
+        node = frontier.pop()
+        if node not in reached:
+            reached.add(node)
+            frontier.extend(edges.get(node, ()))
+    return reached
+
+
+def _approved_absence_policy(policies, read_ops, deletion, producer, handle, *, readback=None):
     """The approved 404/410 read policy that reads the same identity this deletion removes.
 
     The operator approval is the ordinary Policy schema: a reviewed status assertion on a read
@@ -1121,29 +1154,28 @@ def _approved_absence_policy(policies, read_ops, deletion):
     (both bind the path parameter from the create), not the deletion policy id, so an injected
     ``<read>_absence404`` copy and a natively reviewed rule are both recognized.
     """
-    producers = set()
-    for candidate in policies:
-        if candidate["operation_id"] != deletion.operation_id:
-            continue
-        for rule in candidate.get("binding_rules") or []:
-            if rule.get("source_policy_id"):
-                producers.add(rule["source_policy_id"])
-    if not producers:
+    producers = {p["id"] for p in _policy_candidates(
+        policies, producer.operation_id, producer.role)}
+
+    def uses_identity(policy, sources):
+        return {rule["source_policy_id"] for rule in policy.get("binding_rules") or ()
+                if rule.get("source_policy_id") in sources
+                and rule.get("location") == "path_parameters"
+                and rule.get("name") == handle.path_parameter
+                and rule.get("source_selector") == handle.selector}
+
+    deleted = set().union(*(uses_identity(candidate, producers) for candidate in
+                           _policy_candidates(policies, deletion.operation_id, deletion.role)))
+    if len(deleted) != 1:
         return None
-    for policy in policies:
-        if policy.get("negative_test"):
-            continue
-        if policy["operation_id"] not in read_ops:
-            continue
-        codes = set(_status_codes(policy))
-        if not codes or not codes <= {404, 410}:
-            continue
-        if deletion.role not in (policy.get("roles") or []):
-            continue
-        sources = {rule.get("source_policy_id") for rule in policy.get("binding_rules") or []}
-        if sources & producers:
-            return policy
-    return None
+    role = readback.role if readback else deletion.role
+    statuses = {code for assertion in readback.assertions for code in assertion.statuses} \
+        if readback else set()
+    approved = [p for op in (set(read_ops) if readback is None else {readback.operation_id})
+                for p in _policy_candidates(policies, op, role)
+                if (codes := set(_status_codes(p))) and statuses <= codes <= {404, 410}
+                and uses_identity(p, deleted)]
+    return approved[0] if len(approved) == 1 else None
 
 
 def _consumes_resource(instance, producer, operations, rule):
@@ -1162,7 +1194,7 @@ def _consumes_resource(instance, producer, operations, rule):
 def _phase_for(instance):
     statuses = {status for assertion in instance.assertions
                 for status in assertion.statuses}
-    return (ResourcePhase.VERIFY_ABSENT.value if 404 in statuses
+    return (ResourcePhase.VERIFY_ABSENT.value if statuses and statuses <= {404, 410}
             else ResourcePhase.EXISTS.value)
 
 
@@ -1199,21 +1231,17 @@ def _order_side(order, side, instances, clauses):
 
     if source is None:
         return one_of([item for item in instances if item.operation_id == operation])
-    matched = [item for item in instances
-               if item.source_id == source and item.action_index == (index or 0)]
+    matched = [item for item in instances if item.source_id == source
+               and item.action_index == (index or 0) and item.operation_id == operation]
     if matched:
-        return one_of(matched) or matched
-    if index is None:
+        return one_of(matched)
+    if index in (None, 0):
         # A side that names only an operation inside a known request clause: the operation is
         # the unambiguous witness as long as it occurs once among the clause's own actions.
         by_operation = one_of([item for item in instances if item.source_id == source
                                and item.operation_id == operation])
         if by_operation is not None:
             return by_operation
-    # A removed assertion clause names no request; its anchor is the request it qualifies.
-    clause = next((item for item in clauses if item.source_id == source), None)
-    if clause is not None and clause.role is ClauseRole.REQUEST:
-        return [item for item in instances if item.source_id == source and named(item)]
     return None
 
 

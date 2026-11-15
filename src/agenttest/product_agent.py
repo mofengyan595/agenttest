@@ -37,7 +37,11 @@ from agenttest.deep_harness.loop import (
 )
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
-from agenttest.product_obligations import executed_evidence, supervision_facts
+from agenttest.product_obligations import (
+    executed_evidence,
+    negative_dispatch_floor,
+    supervision_facts,
+)
 from agenttest.report import fingerprint
 from agenttest.task_completion import (
     PRE_RELEASE,
@@ -434,8 +438,9 @@ class AgentSession:
                                        arguments={"group_id": group_id})
                                   if runnable else None))
             if group.get("policy_ids"):
-                row["minimum_requests"] = len(related) - len(measured)
                 row["remaining_policy_ids"] = [key for key in related if key not in evidence]
+                row["minimum_requests"] = negative_dispatch_floor(
+                    self.project.target, policies, row["remaining_policy_ids"])
             if status in {"NOT_EXECUTED", "REJECTED"} and runs:
                 row["retry_hint"] = ("上一次设计被拒绝；如要重试，请在 design_note 中写明一条"
                                      "新的、与既有证据不同的设计约束。")
@@ -606,7 +611,8 @@ class AgentSession:
                    if policy.operation_id in (group.get("primary") or ())
                    and policy.negative is None]
         if related and all(policy_id in evidence for policy_id in related) and (
-                group.get("policy_ids") or not design_note):
+                group.get("policy_ids") or self._subject().get("whole_project")
+                or not design_note):
             refusal_payload = _refusal(
                 "GROUP_ALREADY_MEASURED", "该分组内所有已批准义务都已有执行证据。",
                 hint="用 get_test_coverage 查看未测义务；通过候选动作补测独立检查。",
@@ -625,10 +631,11 @@ class AgentSession:
                                design_note=note)
         if group.get("policy_ids"):
             remaining = [key for key in related if key not in evidence]
-            if len(remaining) > self.ledger.max_requests - self.ledger.requests:
+            minimum = negative_dispatch_floor(self.project.target, policies, remaining)
+            if minimum > self.ledger.max_requests - self.ledger.requests:
                 return _refusal("BATCH_REQUEST_BUDGET", "剩余授权不足以执行本批次。",
                                 retryable=False, remaining_policy_ids=remaining,
-                                minimum_requests=len(remaining))
+                                minimum_requests=minimum)
             supplied = {row["policy_id"]: row for row in self.scope.executable_checks}
             supervision = dict(supervision or {}, preserve_focus=False,
                 round=self.tasks.next_supervision_round(self.scope),

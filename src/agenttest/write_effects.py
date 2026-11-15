@@ -207,6 +207,14 @@ def classify(*, case, step, lifecycle_row, policies) -> dict:
                     diagnostic=dict(code=CLEANUP_UNPROVEN, basis="NO_APPROVED_CLEANUP_RAN"))
 
     if state == LIFECYCLE_REJECTED or (status_code is not None and 400 <= int(status_code) < 500):
+        observation = (case.get("negative_post_observations") or {}).get(step_id)
+        if observation is not None and policy is not None and policy.negative is not None:
+            return dict(status=NO_SIDE_EFFECT_PROVEN, step_id=step_id, policy_id=policy_id,
+                        operation_id=step.get("operation_id"), method=step.get("method"),
+                        cleanup_proven=True, replay_allowed=False,
+                        basis=[*basis, "CORRELATED_ABSENCE_BEFORE_AND_AFTER"],
+                        detail="同一关联键在批准的前后观测中均无匹配资源。",
+                        cleanup_receipt=observation)
         absence = _absence_verified(case, policy_id, step_id, policies)
         if absence:
             return dict(status=NO_SIDE_EFFECT_PROVEN, step_id=step_id, policy_id=policy_id,

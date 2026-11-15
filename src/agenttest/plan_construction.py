@@ -34,10 +34,19 @@ def construct_plan(plan, context):
         return compile_design(context['planning_ir'], plan, context)
     draft = GenericPlannerDraft.model_validate(plan)
     nodes = {}
+    requirements = {row["source_id"]: row for row in context.get("request_requirements", ())}
     for node in draft.steps:
         if node.id in nodes:
             raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_DUPLICATE_NODE')
-        nodes[node.id] = node.model_dump(mode='json')
+        row = node.model_dump(mode='json')
+        if node.requirement_action_index in (None, 0):
+            actions = (requirements.get(node.requirement_source_id) or {}).get("actions") or ()
+            indexes = [index for index, action in enumerate(actions)
+                       if action["operation_id"] == node.operation_id
+                       and action.get("role") == node.role]
+            if len(indexes) == 1:
+                row["requirement_action_index"] = indexes[0]
+        nodes[node.id] = row
     policies = {p['id']: p for p in context.get('policies', [])}
     if any(n['policy_id'] not in policies or policies[n['policy_id']]['operation_id'] !=
            n['operation_id'] or n['role'] not in policies[n['policy_id']]['roles']

@@ -84,6 +84,49 @@ def _consumer_identity(step, policy) -> list[tuple[str, str]]:
     return identities
 
 
+def add_batch_cleanup_reads(project, scenario):
+    """Attach a uniquely approved absence read to an owned resource's batch cleanup."""
+    from agenttest.dsl import Scenario, Step
+
+    operations = {op.operation_id: op for op in project.contract.operations}
+    policies = {p.id: p for p in project.registry.definitions()}
+    lifecycle = {rule.delete_operation: rule for rule in project.target.resource_lifecycles}
+    if not lifecycle:
+        return scenario
+    steps = list(scenario.steps)
+    existing = {step.id: step for step in steps}
+    for index, delete in enumerate(scenario.steps):
+        rule = lifecycle.get(delete.operation_id)
+        if rule is None or policies[delete.policy_id].negative is not None:
+            continue
+        bound = delete.path_parameters.get(rule.path_parameter)
+        owner = existing.get(bound.from_step) if bound else None
+        if (owner is None or owner.operation_id != rule.create_operation
+                or owner.role != delete.role or bound.select != rule.id_selector):
+            continue
+        approved = [p for p in policies.values() if absence_expectation(p)
+                    and delete.role in p.roles
+                    and operations[p.operation_id].method == "GET"
+                    and operations[p.operation_id].path == operations[delete.operation_id].path
+                    and len(p.binding_rules) == 1
+                    and (binding := p.binding_rules[0]).location == "path_parameters"
+                    and binding.name == rule.path_parameter
+                    and binding.source_policy_id == owner.policy_id
+                    and binding.source_selector == bound.select]
+        if len(approved) != 1:
+            continue
+        policy = approved[0]
+        if any(step.policy_id == policy.id and step.path_parameters == delete.path_parameters
+               for step in scenario.steps[index + 1:]):
+            continue
+        identifier = f"batch_cleanup_read_{index}"
+        if identifier in existing:
+            raise ValueError("BATCH_CLEANUP_STEP_ID_COLLISION")
+        steps.append(Step(id=identifier, operation_id=policy.operation_id, role=delete.role,
+                          policy_id=policy.id, path_parameters={rule.path_parameter: bound}))
+    return Scenario(name=scenario.name, steps=steps)
+
+
 def precondition_report(project, scenario) -> dict:
     """Deterministically audit both directions of the resource-lifecycle contract.
 

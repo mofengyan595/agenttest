@@ -9,12 +9,12 @@ from agenttest.contracts import load_openapi
 from agenttest.generic_intake import GenericSetup, IntakeExpectation, IntakeRole, analyze_contract
 from agenttest.project_intake import IntakeInput
 from agenttest.report import ReportStore
-from agenttest.safety import ResourceLifecycle
+from agenttest.safety import NegativePostObservation, ResourceLifecycle
 from agenttest.task_service import TaskService
 from agenttest.task_store import TaskStore
 
 
-async def prepare(data: Path, port: int, environ):
+async def prepare(data: Path, port: int, environ, *, observe_negative_posts=False):
     workspace = data / "workspace"
     receipt = data / "lab-projects.json"
     if receipt.exists():
@@ -28,7 +28,8 @@ async def prepare(data: Path, port: int, environ):
     result = dict(product_port=port, projects={}, model_calls=0, target_requests=0)
     try:
         for offset, kind in enumerate(("parcels", "reservations", "directory"), 1):
-            raw = json.dumps(document(kind), ensure_ascii=False)
+            raw = json.dumps(document(kind, observe_negative_posts=observe_negative_posts),
+                             ensure_ascii=False)
             existing = next((r for r in service.intake.records() if (r.get("generic") or {}).get(
                 "base_url") == f"http://127.0.0.1:{port + offset}"
                 and json.loads(r["document"]) == json.loads(raw)), None)
@@ -69,10 +70,21 @@ async def prepare(data: Path, port: int, environ):
                 next(o for o in operations if o["operation_id"] == "readParcel")[
                     "expectations"] = [IntakeExpectation(statuses=[404],
                     rule="删除同一包裹后再次读取应返回404，确认资源不可访问。")]
+            observations = {}
+            if kind == "parcels" and observe_negative_posts:
+                lookup = next(op for op in operations if op["operation_id"] ==
+                              "observeParcelCreation")
+                lookup["checks"] = [dict(select="$.count", expected=0)]
+                lookup["check_source"] = "隔离靶场批准：关联键只读观测匹配资源数必须为零。"
+                observations["createParcel"] = NegativePostObservation(
+                    operation_id=lookup["operation_id"], request_header="X-Lab-Correlation",
+                    query_parameter="key", count_selector="$.count",
+                    basis="隔离靶场在记录落库时保存关联键，查询统计同一键的全部仍存在记录。")
             setup = GenericSetup(base_url=f"http://127.0.0.1:{port + offset}",
                 isolated_confirmed=True, allow_mutations=kind != "directory", assisted=True,
                 approve_negative_tests=True, allow_negative_value_variants=True,
-                roles=roles, operations=operations, resource_lifecycles=lifecycle)
+                roles=roles, operations=operations, resource_lifecycles=lifecycle,
+                negative_post_observations=observations)
             item = service.intake.save(IntakeInput(name={"parcels": "包裹隔离靶场",
                 "reservations": "预约隔离靶场", "directory": "目录隔离靶场"}[kind], document=raw,
                 business_notes="自建专用隔离靶场；资源不跨靶场重启保存，不能依赖历史数据。",

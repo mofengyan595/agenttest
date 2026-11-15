@@ -68,7 +68,9 @@ def approved_scope(project, summary):
     only check that makes the deletion trustworthy is never required.
     """
     operations = set(round_operations(project, summary))
-    logins = login_operations(project)
+    auxiliary = {rule.operation_id for rule in
+                 project.target.negative_post_observations.values()}
+    logins = login_operations(project) | auxiliary
     allowed = set(project.target.allowed_operations)
     scope = []
     for policy in project.registry.definitions():
@@ -95,6 +97,16 @@ def approved_scope(project, summary):
     return scope
 
 
+def approved_project_scope(project):
+    """The stable project denominator, independent of Focus and batch execution."""
+    return approved_scope(project, {"groups": [{"primary": project.target.allowed_operations}]})
+
+
+def negative_dispatch_floor(target, policies, policy_ids):
+    return sum(3 if policies[key].operation_id in target.negative_post_observations else 1
+               for key in policy_ids)
+
+
 def negative_batches(project, summary):
     """Partition approved variants by the operation and reusable policy prerequisites."""
     from agenttest.product_design import design_groups
@@ -119,7 +131,7 @@ def negative_batches(project, summary):
             batches.append(dict(group, id=f"negative_batch_{len(batches) + 1}",
                 policy_ids=members, status="PENDING",
                 supported=group["supported"] and set(sources) <= set(group["operations"]),
-                minimum_requests=len(members)))
+                minimum_requests=negative_dispatch_floor(project.target, policies, members)))
     return batches
 
 

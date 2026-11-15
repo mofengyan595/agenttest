@@ -49,7 +49,7 @@ def links(prefix, parameter, selector, consumers):
         parameters={parameter: "$response.body#/" + selector}) for name in consumers}
 
 
-def document(kind):
+def document(kind, *, observe_negative_posts=False):
     text = dict(type="string", minLength=1, maxLength=24)
     identifier = dict(type="string")
     healthy = schema_object(dict(state=dict(type="string", enum=["ready"])))
@@ -79,6 +79,14 @@ def document(kind):
                 parameter),
             "delete": operation("deleteParcel", "删除本轮创建的包裹", {"204": response(),
                 "404": response(description="包裹不存在")}, parameters=parameter)}
+        if observe_negative_posts:
+            token = dict(type="string", pattern="^[a-f0-9]{32}$")
+            paths["/parcels"]["post"]["parameters"] = [dict(
+                name="X-Lab-Correlation", required=False, schema=token, **{"in": "header"})]
+            paths["/parcel-observations"] = {"get": operation(
+                "observeParcelCreation", "隔离靶场关联键观测",
+                {"200": response(schema_object({"count": dict(type="integer", minimum=0)}))},
+                parameters=[dict(name="key", required=True, schema=token, **{"in": "query"})])}
     elif kind == "reservations":
         body = schema_object(dict(title=text, slot=schema_object(dict(
             day=dict(type="string", enum=["Monday", "Tuesday"]),
@@ -135,7 +143,7 @@ def document(kind):
 
 
 def create_target(kind, environ=None, events=None, fault_http_status=503, read_delay=0,
-                  delete_fault_status=None, delete_noop=False):
+                  delete_fault_status=None, delete_noop=False, observe_negative_posts=False):
     if kind not in {"parcels", "reservations", "directory"}:
         raise ValueError("Unknown fixture project")
     if fault_http_status not in {200, 503}:
@@ -190,7 +198,8 @@ def create_target(kind, environ=None, events=None, fault_http_status=503, read_d
         return JSONResponse(dict(state="unavailable"), status_code=fault_http_status)
 
     if kind == "parcels":
-        specification = document(kind)
+        specification = document(kind, observe_negative_posts=observe_negative_posts)
+        correlations = {}
         create_schema = specification["paths"]["/parcels"]["post"]["requestBody"][
             "content"]["application/json"]["schema"]
 
@@ -199,8 +208,15 @@ def create_target(kind, environ=None, events=None, fault_http_status=503, read_d
             body = await request.json()
             validate(body, create_schema)
             key = "parcel_" + uuid4().hex[:12]
+            if observe_negative_posts:
+                correlations[key] = request.headers.get("X-Lab-Correlation")
             records[key] = dict(id=key, **deepcopy(body))
             return records[key]
+
+        if observe_negative_posts:
+            @app.get("/parcel-observations")
+            async def observe_creation(key: str):
+                return dict(count=sum(correlations.get(record) == key for record in records))
 
         @app.api_route("/parcels/{parcel_id}", methods=["GET", "PUT", "PATCH", "DELETE"])
         async def resource(parcel_id: str, request: Request):
@@ -218,6 +234,7 @@ def create_target(kind, environ=None, events=None, fault_http_status=503, read_d
                     # trustworthy "after deletion it must be 404" expectation has to catch.
                     return Response(status_code=204)
                 del records[parcel_id]
+                correlations.pop(parcel_id, None)
                 return Response(status_code=204)
             if request.method in {"PUT", "PATCH"}:
                 body = await request.json()
@@ -294,12 +311,14 @@ def main():
     parser.add_argument("--read-delay", type=float, default=0)
     parser.add_argument("--delete-fault-status", type=int, choices=[500, 503], default=None)
     parser.add_argument("--delete-noop", action="store_true")
+    parser.add_argument("--observe-negative-posts", action="store_true")
     args = parser.parse_args()
     if args.documents:
         args.documents.mkdir(parents=True, exist_ok=True)
         for kind in ("parcels", "reservations", "directory"):
             (args.documents / (kind + ".openapi.json")).write_text(json.dumps(
-                document(kind), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                document(kind, observe_negative_posts=args.observe_negative_posts),
+                ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.project:
         if args.port is None or not 1024 <= args.port <= 65535:
             parser.error("An explicit local port is required")
@@ -307,7 +326,8 @@ def main():
                                   fault_http_status=args.fault_http_status,
                                   read_delay=args.read_delay,
                                   delete_fault_status=args.delete_fault_status,
-                                  delete_noop=args.delete_noop),
+                                  delete_noop=args.delete_noop,
+                                  observe_negative_posts=args.observe_negative_posts),
                     host="127.0.0.1", port=args.port,
                     proxy_headers=False, access_log=False)
 

@@ -147,7 +147,6 @@ def _step_instance_map(ir: PlanningIR, draft, policies=None):
     mapping: dict[str, str] = {}
     by_instance: dict[str, list[str]] = {}
     used_instances: set[str] = set()
-    used_clauses: dict[str, int] = {}
     unresolved = []
     for position, step in enumerate(draft.steps):
         source = step.requirement_source_id
@@ -159,31 +158,24 @@ def _step_instance_map(ir: PlanningIR, draft, policies=None):
         # The operation id is part of the identity: a clause may own a delete and an approved
         # post-delete readback at the same action index, and a proposal step must never be
         # mapped to an instance of a different operation just because the index matches.
-        members = [item for item in all_members if item.action_index == index
-                   and item.operation_id == step.operation_id]
+        same_action = [item for item in all_members if item.operation_id == step.operation_id
+                       and item.role == step.role]
+        members = [item for item in same_action if item.action_index == index]
         if not members and index == 0:
-            members = [item for item in all_members if item.operation_id == step.operation_id]
+            members = same_action
         if not members:
             raise _failure("PLANNING_UNSOURCED_STEP",
                            [f"plan.steps.{position}.requirement_source_id"],
                            dict(clause=source, index=index,
                                 message="该子句不是本轮可执行的请求实例。"))
-        cursor = used_clauses.get(source, 0)
-        instance = members[cursor] if cursor < len(members) else None
-        if instance is None:
-            # A model may reuse index 0 for a second call from the same clause when an
-            # approved expectation adds a distinct instance. The operation identity is
-            # stronger evidence than the repeated index; never guess across operations.
-            instance = next((item for item in all_members
-                             if item.instance_id not in used_instances
-                             and item.operation_id == step.operation_id), None)
-        if instance is None:
+        available = [item for item in members if item.instance_id not in used_instances]
+        if len(available) != 1:
             raise _failure("PLANNING_INSTANCE_CONFLICT",
                            [f"plan.steps.{position}.requirement_source_id"],
                            dict(clause=source, instances=[item.instance_id
                                                          for item in members],
                                 message="模型为一个请求实例计划了多个不同步骤。"))
-        used_clauses[source] = cursor + 1
+        instance = available[0]
         mapping[step.id] = instance.instance_id
         used_instances.add(instance.instance_id)
         by_instance.setdefault(instance.instance_id, []).append(step.id)

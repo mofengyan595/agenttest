@@ -70,6 +70,15 @@ _FUNCTIONAL = re.compile(
     r"测一下|测试|测测|帮我测|功能|接口正常|能用|冒烟|"
     r"test|smoke|functional|check", re.IGNORECASE)
 
+_FULL_PROJECT_RELEASE = re.compile(
+    r"(?:完整|全量|整套)(?:的)?(?:上线前|发布前|发版前|投产前)"
+    r"|(?:上线|发布|发版|投产)前.{0,16}(?:完整|全量|整套)"
+    r"|(?:整个项目|全项目|全部接口|整个服务|all endpoints|whole project|entire service)"
+    r"|(?:full|complete|comprehensive)\s+pre-?release",
+    re.IGNORECASE)
+_LIMITED_RELEASE = re.compile(
+    r"(?:仅|只)(?:测|检查|验证|验收)|单个|指定|\bonly\b", re.IGNORECASE)
+
 # Lexical subject cues mapped to HTTP methods. The subject is what the user pointed at; an
 # unrelated endpoint is never counted as the subject of a regression goal.
 _METHOD_CUES = (
@@ -195,6 +204,15 @@ def subject_scope(project, text: str, kind: str) -> dict:
             cues.extend(matched)
     original = text or ""
     lexical = _named_operations(allowed, original)
+    if (kind == PRE_RELEASE and not lexical and _FULL_PROJECT_RELEASE.search(original)
+            and not _LIMITED_RELEASE.search(original)):
+        from agenttest.product_obligations import approved_project_scope
+
+        scope = approved_project_scope(project)
+        return dict(operations=sorted({row["operation_id"] for row in scope}),
+                    policy_ids=sorted({row["policy_id"] for row in scope}),
+                    basis="原文明确要求完整上线前检查", cues=sorted(set(cues)),
+                    resolved=bool(scope), bounded=True, whole_project=True)
     lifecycle_methods = set(methods)
     if re.search(r"清理", original):
         lifecycle_methods.add("DELETE")
@@ -288,6 +306,10 @@ def _ready_operations(summary):
 def _scope_rows(project, summary, subject, kind):
     """Approved obligations of the round scope, split into in-scope, measured and blocked."""
     scope = approved_scope(project, summary)
+    if kind == PRE_RELEASE and subject.get("whole_project"):
+        from agenttest.product_obligations import approved_project_scope
+
+        scope = approved_project_scope(project)
     if kind in {REGRESSION, INVESTIGATION} and subject.get("resolved"):
         scope = [item for item in scope if item["policy_id"] in set(subject["policy_ids"])]
     policies = _policies(project)
@@ -717,9 +739,10 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
     from agenttest.scope_ledger import completion_rows, with_producers
     from agenttest.scope_ledger import public_view as public_ledger
 
+    chosen_scope = approved_scope(project, summary) if subject.get("whole_project") else (
+        scope_rows["scope"])
     ledger = build_ledger(project, summary, text, selected_policies=with_producers(
-        project, [row.get("policy_id") for row in scope_rows["scope"]
-                  if row.get("policy_id")]))
+        project, [row["policy_id"] for row in chosen_scope]))
     summary["scope_ledger"] = ledger
     specific = specific + completion_rows(ledger)
     criteria = common + specific

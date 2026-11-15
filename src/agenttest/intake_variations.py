@@ -24,7 +24,7 @@ def negative_capabilities(base, op, specs, arguments):
     by_slot = {(a.location, a.name): a for a in arguments}
     for spec in specs.values():
         argument = by_slot.get((spec.location, spec.name))
-        if (spec.location == "path_parameters" or not argument
+        if (spec.location not in {"body", "query"} or not argument
                 or not (argument.generated or argument.negative_enabled)
                 or argument.source_operation):
             continue
