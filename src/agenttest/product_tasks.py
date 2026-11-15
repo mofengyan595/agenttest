@@ -1077,6 +1077,10 @@ class ProductTasks:
             executable_checks = negative_checks
         elif group.get("defer_approved_negatives"):
             executable_checks = []
+        else:
+            from agenttest.product_obligations import checks_outside_batches
+
+            executable_checks = checks_outside_batches(executable_checks, summary["groups"])
         project_release_ir = bool(planning_ir and planning_ir.coverage.get("project_scope_clauses"))
         if project_release_ir and original_group:
             planning_ir = planning_ir.scope_to(group["operations"])

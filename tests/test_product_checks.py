@@ -259,3 +259,11 @@ def test_optional_negative_wire_requires_an_actual_approved_negative_step():
     assert not Draft202012Validator(schema).is_valid(fake)
     with pytest.raises(ValidationFailure, match="DESIGN_NEGATIVE_CASE_OUTSIDE_REQUIRED"):
         model._decode_output(json.dumps(fake), context)
+def test_positive_followup_cannot_dispatch_negative_checks_owned_by_a_batch():
+    from agenttest.product_obligations import checks_outside_batches
+
+    assigned = dict(policy_id="assigned", exact_value=dict(value=0))
+    independent = dict(policy_id="independent", exact_value=dict(value=5))
+    groups = [dict(id="ordinary"), dict(id="negative_batch", policy_ids=["assigned"])]
+    assert checks_outside_batches([assigned, independent], groups) == [independent]
+    assert checks_outside_batches([assigned], groups[:1]) == [assigned]

@@ -107,6 +107,12 @@ def negative_dispatch_floor(target, policies, policy_ids):
                for key in policy_ids)
 
 
+def checks_outside_batches(checks, groups):
+    """Only the owning batch may dispatch one of its negative checks."""
+    owned = {policy_id for group in groups for policy_id in group.get("policy_ids", ())}
+    return [check for check in checks if check["policy_id"] not in owned]
+
+
 def negative_batches(project, summary):
     """Partition approved variants by the operation and reusable policy prerequisites."""
     from agenttest.product_design import design_groups
