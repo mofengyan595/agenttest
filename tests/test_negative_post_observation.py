@@ -84,3 +84,37 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(tmp_p
     case["evidence"][-1]["request"]["values"]["query"]["key"] = "other"
     case["negative_post_observations"] = observation_receipts(project, scenario, case)
     assert for_case(case, policies)[0]["status"] == CREATION_UNPROVEN
+
+    create = next(p for p in policies.values()
+                  if p.operation_id == "createParcel" and p.negative is None)
+    change = next(p for p in policies.values() if p.operation_id == "changeParcel"
+                  and p.negative and p.negative.name == "name")
+    seed = proposed.plan.steps[0].model_dump()
+    seed.update(id="owned", policy_id=create.id)
+    prepared = DesignCase.model_validate(dict(title="bound negative", kind="negative",
+        plan=dict(name="bound", steps=[seed, dict(id="edit", operation_id="changeParcel",
+            role=None, policy_id=change.id, arguments=[
+                dict(location="path_parameters", name="parcelId", value=None,
+                     from_step="owned", select="$.id"),
+                dict(location="body", name="name", value="test", from_step=None, select=None)
+            ])])))
+    closed = validate_design_case(project, prepared, store, environ={}, verify_batch_cleanup=True)
+    assert [step.operation_id for step in closed.steps] == [
+        "createParcel", "changeParcel", "deleteParcel", "readParcel"]
+    assert all(step.path_parameters["parcelId"].from_step == "owned"
+               for step in closed.steps[1:])
+    lifetime = await Executor(project.target, project.contract, store, transport, {},
+        registry=project.registry).run(closed)
+    assert [step.attempts[-1].status_code for step in lifetime.steps] == [201, 422, 204, 404]
+    assert lifetime.policy_authorized and lifetime.outcome.value == "PASS"
+    assert not app.state.records
+
+    from dataclasses import replace
+
+    from agenttest.policies import NeedsReview, PolicyRegistry
+
+    deletion = policies[closed.steps[-2].policy_id]
+    ambiguous = replace(project, registry=PolicyRegistry(
+        [*policies.values(), deletion.model_copy(update={"id": "another_delete_rule"})]))
+    with pytest.raises(NeedsReview, match="DESIGN_SELECTED_CLEANUP_MISSING"):
+        validate_design_case(ambiguous, prepared, store, environ={}, verify_batch_cleanup=True)

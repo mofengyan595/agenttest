@@ -978,9 +978,9 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
                         registry=project.registry)
     executor.validate(scenario)
     if verify_batch_cleanup:
-        from agenttest.product_preconditions import add_batch_cleanup_reads
+        from agenttest.product_preconditions import add_batch_cleanup
 
-        scenario = add_batch_cleanup_reads(project, scenario)
+        scenario = add_batch_cleanup(project, scenario)
         executor.validate(scenario)
     if project.target.negative_post_observations:
         from agenttest.negative_post_observation import add_observations

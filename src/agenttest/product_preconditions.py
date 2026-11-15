@@ -84,9 +84,10 @@ def _consumer_identity(step, policy) -> list[tuple[str, str]]:
     return identities
 
 
-def add_batch_cleanup_reads(project, scenario):
-    """Attach a uniquely approved absence read to an owned resource's batch cleanup."""
-    from agenttest.dsl import Scenario, Step
+def add_batch_cleanup(project, scenario):
+    """Close approved batch setup with the unique owned deletion and its absence read."""
+    from agenttest.dsl import ArgumentBinding, Scenario, Step
+    from agenttest.policies import NeedsReview
 
     operations = {op.operation_id: op for op in project.contract.operations}
     policies = {p.id: p for p in project.registry.definitions()}
@@ -95,7 +96,42 @@ def add_batch_cleanup_reads(project, scenario):
         return scenario
     steps = list(scenario.steps)
     existing = {step.id: step for step in steps}
-    for index, delete in enumerate(scenario.steps):
+    lifecycle_by_create = {rule.create_operation: rule for rule in lifecycle.values()}
+    for index, owner in enumerate(scenario.steps):
+        rule = lifecycle_by_create.get(owner.operation_id)
+        if rule is None or policies[owner.policy_id].negative is not None:
+            continue
+        identity = ArgumentBinding(from_step=owner.id, select=rule.id_selector)
+        dependents = [offset for offset, check in enumerate(scenario.steps)
+                      if offset > index and policies[check.policy_id].negative is not None
+                      and check.role == owner.role
+                      and check.path_parameters.get(rule.path_parameter) == identity]
+        if not dependents:
+            continue
+        deletes = [offset for offset, step in enumerate(steps)
+                   if step.operation_id == rule.delete_operation and step.role == owner.role
+                   and step.path_parameters.get(rule.path_parameter) == identity
+                   and policies[step.policy_id].negative is None]
+        if deletes:
+            if len(deletes) != 1 or deletes[0] <= dependents[-1]:
+                raise NeedsReview("DESIGN_SELECTED_CLEANUP_MISSING")
+            continue
+        approved = [p for p in policies.values() if p.operation_id == rule.delete_operation
+                    and owner.role in p.roles and existence_expectation(p)
+                    and len(p.binding_rules) == 1
+                    and (rule_binding := p.binding_rules[0]).location == "path_parameters"
+                    and rule_binding.name == rule.path_parameter
+                    and rule_binding.source_policy_id == owner.policy_id
+                    and rule_binding.source_selector == rule.id_selector]
+        if len(approved) != 1:
+            raise NeedsReview("DESIGN_SELECTED_CLEANUP_MISSING")
+        identifier = f"batch_cleanup_delete_{index}"
+        if identifier in existing:
+            raise ValueError("BATCH_CLEANUP_STEP_ID_COLLISION")
+        steps.append(Step(id=identifier, operation_id=rule.delete_operation, role=owner.role,
+                          policy_id=approved[0].id,
+                          path_parameters={rule.path_parameter: identity}))
+    for index, delete in enumerate(tuple(steps)):
         rule = lifecycle.get(delete.operation_id)
         if rule is None or policies[delete.policy_id].negative is not None:
             continue
@@ -117,7 +153,7 @@ def add_batch_cleanup_reads(project, scenario):
             continue
         policy = approved[0]
         if any(step.policy_id == policy.id and step.path_parameters == delete.path_parameters
-               for step in scenario.steps[index + 1:]):
+               for step in steps[index + 1:]):
             continue
         identifier = f"batch_cleanup_read_{index}"
         if identifier in existing:
