@@ -34,6 +34,17 @@ DEFAULT_FOLLOWUP = "沿用上次测试重点，按最新已确认的信息安排
 AGENT_ENGINE = "DEEP_AGENTS"
 
 
+def resolve_task_execution(project, summary, ledger, *, estimate=None):
+    from agenttest.execution_budget import ExecutionState, resolve_fallback, resolve_plan
+
+    budget = project.registration.budget.execution
+    plan = resolve_plan(budget=budget, target=project.target,
+                        fallback=resolve_fallback(project, summary), estimate=estimate)
+    state = ExecutionState(plan, budget=budget)
+    state.apply_allowance(ledger)
+    return state
+
+
 def request_planning_ir(project, selection, atoms, text, *, autonomous=False):
     """Build the normalized planning representation from the validated Focus output."""
     from agenttest.planning_ir import build_planning_ir
@@ -541,6 +552,9 @@ class ProductTasks:
                     svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW", summary=summary)
                     return
                 summary["agent_runtime"] = dict(engine=engine, reason=engine_reason)
+                if engine == AGENT_ENGINE:
+                    execution = resolve_task_execution(project, summary, ledger)
+                    summary["execution_budget"] = execution.public(ledger)
                 transport = httpx.AsyncHTTPTransport(retries=0, trust_env=False)
                 bounded_transport = BudgetTransport(transport, ledger, guard)
                 async with asyncio.timeout(summary["budget"]["max_seconds"]):
@@ -569,7 +583,7 @@ class ProductTasks:
                             summary['data_references'] = data_references
                         raw_focus = svc.focus_factory(project)
                         focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
-                                                    ledger, guard)
+                            ledger, guard, reserve_encoded=engine == AGENT_ENGINE)
                         focus_record = dict(group_id="focus", status="PLANNING")
                         summary["design_records"].append(focus_record)
                         svc.db.event(task_id, "PLANNING", requests=ledger.requests)
@@ -604,12 +618,18 @@ class ProductTasks:
                                 # approved value.
                                 repairable = (order_code.startswith("FOCUS_")
                                               or order_code.startswith("MODEL_SCHEMA_"))
-                                if not repairable or order_code in NON_REPAIRABLE_FOCUS:
+                                # A policy-supplied negative sample is often emitted as an exact
+                                # user literal. Retry only this wire slot; all values still pass
+                                # the original source check on the replacement proposal.
+                                negative_literal = (order_code == "FOCUS_INPUT_TEXT_CHANGED"
+                                    and any(field.startswith("requested_checks.")
+                                            for field in diagnostic.fields))
+                                if not repairable or (order_code in NON_REPAIRABLE_FOCUS
+                                                      and not negative_literal):
                                     raise
                                 order_feedback = focus_repair_payload(
                                     project, diagnostic,
-                                    atoms=(summary.get("request_atoms")
-                                          or (context.get("request_atoms") or ())))
+                                    atoms=summary["requirement_sources"])
                                 elapsed_ms = (time.perf_counter() - focus_started) * 1000
                                 focus_record.update(status="REJECTED", reason=order_code,
                                     diagnostic=order_feedback,
@@ -789,6 +809,8 @@ class ProductTasks:
                                     getattr(exc, "diagnostic", None), "code", None)
                                 or "FOCUS_NOT_VALIDATED")
                         finally:
+                            if engine == AGENT_ENGINE:
+                                summary["execution_budget"] = execution.public(ledger)
                             focus_record["elapsed_ms"] = round(
                                 (time.perf_counter() - focus_started) * 1000, 3)
                             focus_record["model_call"] = focus_model.stats.model_dump(mode="json")
@@ -981,7 +1003,7 @@ class ProductTasks:
                     summary["checks_passed"] = bool(summary["cases"]) and all(
                         c.get("outcome") == "PASS" for c in summary["cases"]
                     ) and status_states <= {'PASS'}
-                self.coverage(summary)
+                self.coverage(summary, project=project)
                 checkpoint()
                 svc.db.transition(task_id, owner, "RUNNING", "FINISHED", summary=summary)
                 svc.db.event(task_id, "FINISHED", requests=ledger.requests)
@@ -1042,6 +1064,8 @@ class ProductTasks:
         if negative_checks:
             planning_ir = None
             executable_checks = negative_checks
+        elif group.get("defer_approved_negatives"):
+            executable_checks = []
         design_requirements = scope.requirements if original_group else []
         witness_requirements = design_requirements
         design_text = text if original_group else supervision["text"]
@@ -1090,7 +1114,7 @@ class ProductTasks:
         svc.db.event(task_id, "PLANNING", requests=ledger.requests)
         raw_model = svc.designer_factory(project)
         model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id),
-                              ledger, guard)
+                              ledger, guard, reserve_encoded=autonomous)
         record = dict(group_id=group["id"], status="PLANNING")
         suggested = None
         if supervision is None and text == DEFAULT_ROUND:
@@ -1117,7 +1141,7 @@ class ProductTasks:
                                                        for item in planning_ir.instances})}
         engine_conditions = planning_engine_conditions(
             planning_ir, group=engine_group, questions=summary.get("questions"),
-            requested_checks=summary.get("requested_checks"),
+            requested_checks=executable_checks,
             permission_requirements=summary.get("permission_requirements"),
             unresolved=unresolved)
         choice = planning_engine_choice(engine_conditions)
@@ -1171,7 +1195,8 @@ class ProductTasks:
                 project_notes=project_record.get("business_notes", ""),
                 group_http_budget=suggested,
                 allow_optional_negatives=(not instance_inputs and summary.get(
-                    "focus", {}).get("mode") != "selected" and not negative_checks),
+                    "focus", {}).get("mode") != "selected" and not negative_checks
+                    and not any(item.get("policy_ids") for item in summary["groups"])),
                 instance_inputs=instance_inputs,
                 instance_feedback=previous_rejection,
                 must_be_relevant=must_be_relevant,
@@ -1273,7 +1298,7 @@ class ProductTasks:
             # and cleanup accounting reads one resource per case row.
             case_row = dict(case_id=unique_case_id(
                 summary, f"{group['id']}_case_{index + 1}"),
-                title=case.title, kinds=[case.kind], operation_id=None,
+                title=case.title, kinds=[case.kind], operation_id=None, group_id=group["id"],
                 planned_operations=list(dict.fromkeys(
                     s.operation_id for s in case.plan.steps)),
                 planned_steps=len(case.plan.steps),
@@ -1356,7 +1381,8 @@ class ProductTasks:
             probe_allowed = (probe_remaining > 0 and ledger.requests
                              + len(scenario.steps) < group_request_limit)
             probe_model = (BudgetPlanner(JournalPlanner(
-                svc.product_probe_factory(project), svc.db, task_id), ledger, guard)
+                svc.product_probe_factory(project), svc.db, task_id), ledger, guard,
+                reserve_encoded=autonomous)
                 if probe_allowed and svc.product_probe_factory else None)
             case_started = time.perf_counter()
             try:
@@ -1419,6 +1445,8 @@ class ProductTasks:
             plan_roles = {p.step_id: p.role for p in report.plan_structure}
             plan_policies = {p.step_id: p.policy_id for p in report.plan_structure}
             case_row.update(status="FINISHED", run_id=report.run_id,
+                finished_sequence=time.monotonic_ns(),
+                target_config_sha256=report.target_config_sha256,
                 outcome=report.outcome.value, task_satisfied=None,
                 planned_steps=len(scenario.steps),
                 executed_steps=sum(bool(s.attempts) for s in report.steps),
@@ -1447,6 +1475,7 @@ class ProductTasks:
                     step_id=s.step_id, role=plan_roles.get(s.step_id),
                     policy_id=plan_policies.get(s.step_id),
                     executed=bool(s.attempts),
+                    attempt=(s.attempts[-1].model_dump(mode="json") if s.attempts else None),
                     path=s.path_template, outcome=s.outcome.value,
                     request=s.request_evidence,
                     checks=[c.model_dump() for c in s.checks])
@@ -1457,6 +1486,7 @@ class ProductTasks:
                     step_id=s.step_id, role=plan_roles.get(s.step_id),
                     policy_id=plan_policies.get(s.step_id),
                     executed=bool(s.attempts), cleanup=True,
+                    attempt=(s.attempts[-1].model_dump(mode="json") if s.attempts else None),
                     path=s.path_template, outcome=s.outcome.value,
                     request=s.request_evidence,
                     checks=[c.model_dump() for c in s.checks])
@@ -1516,25 +1546,25 @@ class ProductTasks:
         authority and HTTP. Completion is published from measured evidence by
         :mod:`agenttest.task_completion`, never from the model's closing prose.
         """
-        from agenttest.execution_budget import (
-            ADAPTIVE,
-            ExecutionBudget,
-            ExecutionState,
-            estimate_round,
-            resolve_fallback,
-            resolve_plan,
-        )
+        from agenttest.execution_budget import ADAPTIVE, estimate_round
         from agenttest.product_agent import report_payload, run_agent
-        from agenttest.task_completion import evaluate, public_view
+        from agenttest.task_completion import PRE_RELEASE, evaluate, public_view
 
         svc, summary, ledger = scope.svc, scope.summary, scope.ledger
         budget = scope.project.registration.budget
-        execution = getattr(budget, "execution", None) or ExecutionBudget()
-        fallback = resolve_fallback(scope.project, summary)
+        execution = budget.execution
         from agenttest.scope_ledger import wants_negative_variants
         from agenttest.task_completion import classify_task as _classify
 
-        goal_kind = _classify(str(summary.get("user_task") or ""))["kind"]
+        goal_kind = _classify(scope.text)["kind"]
+        if goal_kind == PRE_RELEASE:
+            from agenttest.product_obligations import negative_batches
+
+            batches = negative_batches(scope.project, summary)
+            if batches:
+                for group in summary["groups"]:
+                    group["defer_approved_negatives"] = True
+                summary["groups"].extend(batches)
         estimate = (estimate_round(project=scope.project, summary=summary,
                                    group_operations=[operation for group in
                                                      summary.get("groups") or ()
@@ -1542,36 +1572,20 @@ class ProductTasks:
                                    executable_checks=scope.executable_checks,
                                    requirements=scope.requirements,
                                    negative_variants=wants_negative_variants(
-                                       goal_kind, str(summary.get("user_task") or "")))
+                                       goal_kind, scope.text))
                     if execution.mode == ADAPTIVE else None)
-        plan = resolve_plan(budget=execution, target=scope.project.target,
-                            fallback=fallback, estimate=estimate)
-        state = ExecutionState(plan, budget=execution)
-        requested_calls = int(getattr(budget, "agent_max_model_calls", 0) or 0)
-        if execution.mode == ADAPTIVE:
-            # The shared ledger is the single budget every planner/transport reads, so the
-            # resolved grant (never a source constant) is what the agent loop may spend.
-            ledger.max_model_calls = max(ledger.model_calls + 1,
-                                         int(plan.limit("model_calls")))
-            ledger.max_total_tokens = max(ledger.max_total_tokens,
-                                          int(plan.limit("total_tokens") or 0))
-        else:
-            remaining_calls = max(1, ledger.max_model_calls - ledger.model_calls)
-            ledger.max_model_calls = max(ledger.max_model_calls,
-                                         ledger.model_calls + (
-                                             min(remaining_calls, requested_calls)
-                                             if requested_calls else remaining_calls))
-        max_calls = max(1, ledger.max_model_calls - ledger.model_calls)
-        max_calls_ceiling = max(max_calls, int(
-            plan.grants["model_calls"].ceiling - ledger.model_calls))
-        max_turns = int(plan.limit("agent_turns") or fallback["agent_turns"])
-        max_tools = int(plan.limit("agent_tool_calls") or fallback["agent_tool_calls"])
+        state = resolve_task_execution(scope.project, summary, ledger, estimate=estimate)
+        plan = state.plan
+        remaining_ceiling = max(1, plan.grants["model_calls"].ceiling - ledger.model_calls)
+        max_calls = min(budget.agent_max_model_calls or remaining_ceiling, remaining_ceiling)
+        max_turns = int(plan.limit("agent_turns"))
+        max_tools = int(plan.limit("agent_tool_calls"))
         max_tools_ceiling = max(max_tools, int(plan.grants["agent_tool_calls"].ceiling))
         settings = svc.agent_model_factory(scope.project)
         scope.max_seconds = float(min(summary["budget"]["max_seconds"],
                                       float(plan.limit("seconds")
                                             or summary["budget"]["max_seconds"])))
-        summary["execution_budget"] = state.public()
+        summary["execution_budget"] = state.public(ledger)
         if plan.authority:
             # A legal task that the *approval* cannot fund is disclosed, not silently narrowed.
             summary["budget_diagnostic"] = dict(plan.authority)
@@ -1581,7 +1595,6 @@ class ProductTasks:
         try:
             result = await run_agent(scope, self, settings, max_turns=max_turns,
                                      max_tool_calls=max_tools, max_model_calls=max_calls,
-                                     model_calls_ceiling=max_calls_ceiling,
                                      tool_calls_ceiling=max_tools_ceiling,
                                      total_tokens_ceiling=int(
                                          plan.grants["total_tokens"].ceiling
@@ -1599,8 +1612,16 @@ class ProductTasks:
         payload["reason"] = resolution.get("reason")
         payload["task_completion"] = public_view(completion)
         summary["agent_runtime"] = payload
-        summary["execution_budget"] = state.public()
+        summary["execution_budget"] = state.public(ledger)
         summary["task_completion"] = completion
+        summary["execution_budget"]["pending_obligations"] = [
+            item["policy_id"] for item in summary["scope_ledger"]["missing"]]
+        batch_rows = {row["group_id"]: row for row in result.session._group_view()}
+        summary["obligation_batches"] = [dict(batch_rows[group["id"]], cases=[
+            dict(case_id=case["case_id"], run_id=case.get("run_id"),
+                 write_effects=case.get("write_effects", []))
+            for case in summary["cases"] if case.get("group_id") == group["id"]])
+            for group in summary["groups"] if group.get("policy_ids")]
         summary["complete"] = completion["complete"]
         summary["checks_passed"] = completion["checks_passed"]
         summary["reason"] = {
@@ -1615,7 +1636,7 @@ class ProductTasks:
             "AUTHORITY_CHANGED": "项目授权在任务执行期间发生变化；已停止后续动作。",
         }.get(result.stop_reason,
               "自主运行时已结束；完成情况由确定性判据给出，不采用模型总结作为结论。")
-        self.coverage(summary)
+        self.coverage(summary, project=scope.project)
         scope.checkpoint()
         return result
 
@@ -1799,6 +1820,25 @@ class ProductTasks:
         checks = [dict(kind=check.kind, selector=check.selector, expected=check.expected,
                        actual=check.actual, passed=check.passed)
                   for item in report.steps for check in item.checks][:6]
+        if (scope.summary.get("agent_runtime") or {}).get("engine") == AGENT_ENGINE:
+            # The probe uses the same executor and approved assertion as a designed case.
+            # Keep its report in the main evidence stream used by coverage and completion.
+            scope.summary["cases"].append(dict(
+                case_id=unique_case_id(scope.summary, f"probe_{round_number}"),
+                run_id=report.run_id, title="已批准的只读复核", status="FINISHED",
+                finished_sequence=time.monotonic_ns(),
+                target_config_sha256=report.target_config_sha256,
+                outcome=report.outcome.value, http_requests=requests,
+                diagnostic=report.diagnostic.code if report.diagnostic else report.reason,
+                executed_operations=[step.operation_id] if requests else [],
+                evidence=[dict(operation_id=item.operation_id, method=item.method,
+                    path=item.path_template, role=step.role, request=item.request_evidence,
+                    step_id=item.step_id, policy_id=step.policy_id,
+                    executed=bool(item.attempts), outcome=item.outcome.value,
+                    status=item.attempts[-1].status_code if item.attempts else None,
+                    checks=[check.model_dump() for check in item.checks])
+                    for item in report.steps]))
+            scope.checkpoint()
         scope.state.setdefault("probes", []).append(dict(round=round_number,
             target=candidate.get("id"), run_id=report.run_id, operation_id=step.operation_id,
             policy_id=step.policy_id, outcome=report.outcome.value, requests=requests,
@@ -1885,11 +1925,12 @@ class ProductTasks:
                 summary["not_covered"].append(f"{label}：{entry['reason']} {entry['next_step']}")
 
     @staticmethod
-    def coverage(summary):
+    def coverage(summary, *, project=None):
         cases = summary["cases"]
         from agenttest.write_effects import analyse as analyse_write_effects
 
-        summary["write_effects"] = analyse_write_effects(cases)
+        policies = {p.id: p for p in project.registry.definitions()} if project else None
+        summary["write_effects"] = analyse_write_effects(cases, policies)
         executed = {o for c in cases for o in c.get("executed_operations", [])}
         summary["coverage"] = dict(operation_denominator=summary["inventory"]["total"],
             scenario_denominator=len(cases), executed_operations=len(executed),

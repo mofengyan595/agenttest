@@ -23,8 +23,7 @@ Two modes share this module and the same Deep Agents runtime:
               estimation, no growth, no drift between A/B cells.
 ``ADAPTIVE``  a real autonomous task: the budget starts at a deterministic estimate of
               what this round's approved obligations need, and grows in bounded steps
-              while the round keeps producing *new* evidence (a new legal plan, a new
-              trusted test result, a newly closed obligation, a completed cleanup).
+              while the round closes obligations, resolves blockers or proves cleanup.
               Repeating a failing plan without new evidence is not progress.
 
 Everything here is a plain function of already measured state: no model decides a
@@ -382,6 +381,13 @@ def resolve_plan(*, budget: ExecutionBudget, target, fallback, estimate: Estimat
         float(budget.cleanup_reserve_seconds), "safety reserve", "one task")
     if mode == FIXED:
         notes.append("FIXED：使用配置的固定上限，不做估算扩展，便于 A/B 复现。")
+    for dimension, fallback_key in (("model_calls", "model_calls_ceiling"),
+                                    ("total_tokens", "total_tokens_ceiling"),
+                                    ("seconds", "seconds")):
+        grant = grants[dimension]
+        grant.ceiling = min(grant.ceiling, fallback.get(fallback_key, grant.ceiling))
+    for grant in grants.values():
+        grant.limit = min(grant.limit, grant.ceiling)
     return BudgetPlan(mode=mode, grants=grants, estimate=estimate, authority=authority,
                       notes=notes)
 
@@ -396,50 +402,36 @@ def progress_signature(summary: dict) -> dict:
     turn with no new evidence leaves this signature unchanged on purpose.
     """
     cases = summary.get("cases") or ()
-    evidence = set()
-    for case in cases:
-        if case.get("status") != "FINISHED":
-            continue
-        for step in case.get("evidence") or ():
-            if step.get("executed") and step.get("policy_id"):
-                evidence.add(step["policy_id"])
-        for step in case.get("cleanup_evidence") or ():
-            if step.get("executed") and step.get("policy_id"):
-                evidence.add(step["policy_id"])
-    receipts = {}
-    for case in cases:
-        for row in [*(case.get("resource_lifecycle") or ()),
-                    *(case.get("created_resources") or ())]:
-            key = str(row.get("create_step") or row.get("cleanup_step") or "")
-            receipts[key] = (row.get("status"), row.get("cleanup_result"))
+    from agenttest.product_obligations import executed_evidence
+
+    selected = (summary.get("scope_ledger") or {}).get("selected", {}).get("policies")
+    evidence = {key for key, row in executed_evidence(summary).items()
+                if row["checks"] and row["observed"] in {"PASS", "ASSERTION_FAILED"}
+                and (selected is None or key in selected)}
+    receipts = {(case.get("run_id") or case.get("case_id"), row.get("step_id"))
+                for case in cases for row in case.get("write_effects") or ()
+                if row.get("status") == "CREATED_AND_CLEANED" and row.get("cleanup_proven")}
     plans = {str(case.get("scenario_fingerprint") or case.get("case_id"))
              for case in cases if case.get("status") == "FINISHED"}
     blocked = len(summary.get("input_blocked_operations") or ()) + len(
         summary.get("source_blocked_operations") or ())
-    return dict(evidence=frozenset(evidence), receipts=frozenset(receipts.items()),
+    return dict(evidence=frozenset(evidence), receipts=frozenset(receipts),
                 plans=frozenset(plans),
                 unresolved_blocks=blocked,
                 questions=len(summary.get("questions") or ()))
 
 
 def progress_delta(previous: dict | None, current: dict) -> dict:
-    """Which of the five accepted progress kinds actually changed."""
+    """A distinct plan or tool result alone earns no allowance."""
     if previous is None:
-        initial = bool(current["plans"] or current["evidence"])
-        return dict(new_plans=len(current["plans"]), new_evidence=len(current["evidence"]),
-                    closed_obligations=len(current["evidence"]),
-                    resolved_blocks=0, cleanup_completed=0, progress=initial,
-                    kinds=["INITIAL_EVIDENCE"] if initial else [])
+        previous = dict(plans=frozenset(), evidence=frozenset(), receipts=frozenset(),
+                        unresolved_blocks=current["unresolved_blocks"])
     kinds = []
     new_plans = len(current["plans"] - previous["plans"])
     new_evidence = len(current["evidence"] - previous["evidence"])
     resolved = max(0, previous["unresolved_blocks"] - current["unresolved_blocks"])
-    cleaned = sum(1 for key, value in current["receipts"]
-                  if key not in previous["receipts"] and value[0] == "CLEANED")
-    if new_plans:
-        kinds.append("NEW_LEGAL_PLAN")
+    cleaned = len(current["receipts"] - previous["receipts"])
     if new_evidence:
-        kinds.append("NEW_TRUSTED_EVIDENCE")
         kinds.append("OBLIGATIONS_COVERED")
     if resolved:
         kinds.append("BLOCK_RESOLVED")
@@ -467,6 +459,11 @@ class ExecutionState:
     # ------------------------------------------------------------------ dimensions
     def limit(self, dimension: str):
         return self.plan.limit(dimension)
+
+    def apply_allowance(self, ledger):
+        ledger.max_model_calls = self.limit("model_calls")
+        ledger.max_total_tokens = self.limit("total_tokens")
+        ledger.max_requests = self.limit("http_requests")
 
     def growth_for(self, dimension: str):
         return {"model_calls": self.budget.growth_model_calls,
@@ -503,6 +500,9 @@ class ExecutionState:
         if not active:
             return dict(progress=False, kinds=[], growths=[], no_progress_rounds=0)
         current = progress_signature(summary)
+        if self.signature is not None:
+            for key in ("evidence", "receipts"):
+                current[key] |= self.signature[key]
         delta = progress_delta(self.signature, current)
         self.signature = current
         self.delta = delta
@@ -524,7 +524,7 @@ class ExecutionState:
             if self.no_progress_rounds >= self.budget.no_progress_limit:
                 self.stop("NO_PROGRESS",
                           "连续 " + str(self.no_progress_rounds)
-                          + " 次观察没有新的合法规划、可信证据、义务覆盖、阻塞解除或清理完成。")
+                          + " 次动作没有闭合义务、解除阻塞或取得可信清理凭据。")
         return dict(delta, growths=growths,
                     no_progress_rounds=self.no_progress_rounds)
 
@@ -537,16 +537,24 @@ class ExecutionState:
         return self.stop_reason is not None
 
     # ------------------------------------------------------------------ publishing
-    def public(self) -> dict:
+    def public(self, ledger=None) -> dict:
+        dimensions = {key: grant.public() for key, grant in self.plan.grants.items()}
+        if ledger is not None:
+            for key, used in (("model_calls", ledger.model_calls),
+                              ("total_tokens", ledger.known_tokens),
+                              ("http_requests", ledger.requests)):
+                known = key != "total_tokens" or not ledger.usage_unknown
+                dimensions[key].update(used=used if known else None,
+                    remaining=max(0, dimensions[key]["limit"] - used) if known else None)
         return dict(
             schema="agenttest.execution-budget.v1", mode=self.plan.mode,
-            dimensions={key: grant.public()
-                        for key, grant in self.plan.grants.items()},
+            dimensions=dimensions,
             estimate=(self.plan.estimate.public() if self.plan.estimate else None),
             authority=self.plan.authority, notes=self.plan.notes[:12],
             growths=self.growths[:20], no_progress_rounds=self.no_progress_rounds,
             progress=self.delta, stop_reason=self.stop_reason,
-            stop_detail=self.stop_detail)
+            stop_detail=self.stop_detail,
+            last_model_reservation_rejection=ledger.last_model_stop if ledger else None)
 
 
 def resolve_fallback(project, summary) -> dict:
@@ -557,6 +565,8 @@ def resolve_fallback(project, summary) -> dict:
                                                 100_000) or 100_000)),
                 agent_turns=int(getattr(budget, "agent_max_turns", 16) or 16),
                 agent_tool_calls=int(getattr(budget, "agent_max_tool_calls", 24) or 24),
+                model_calls_ceiling=budget.suite_max_model_calls,
+                total_tokens_ceiling=budget.suite_max_total_tokens,
                 http_requests=int(getattr(project.target, "max_requests", 24) or 24),
                 seconds=float((summary.get("budget") or {}).get("max_seconds", 600.0)))
 

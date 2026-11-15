@@ -253,7 +253,7 @@ def _executed_cases(summary):
             if case.get("status") == "FINISHED" and (case.get("http_requests") or 0) > 0]
 
 
-def _created_resources(summary):
+def _created_resources(summary, policies=None):
     """What the round's writes really did, from receipts instead of from request counts.
 
     P3-A.1 counted every executed POST that carried request evidence as a resource, so an
@@ -276,7 +276,7 @@ def _created_resources(summary):
 
     # Rebuilt from the cases, never read back from a previously published view: the agent may
     # have seen an earlier evaluation of this same round.
-    effects = analyse(summary.get("cases") or ())
+    effects = analyse(summary.get("cases") or (), policies)
     counts = effects.get("counts") or {}
     pending = list(effects.get("pending") or ())
     unresolved = list(effects.get("unresolved") or ())
@@ -314,11 +314,11 @@ def _write_lifecycle(summary):
     return None
 
 
-def write_effects_view(summary) -> dict:
+def write_effects_view(summary, policies=None) -> dict:
     """The write-effect states for the completion report (never a secret or a model claim)."""
     from agenttest.write_effects import analyse, public_view
 
-    return public_view(analyse(summary.get("cases") or ()))
+    return public_view(analyse(summary.get("cases") or (), policies))
 
 
 def _questions_in_scope(summary, kind, subject):
@@ -359,11 +359,11 @@ def _criterion(identifier, title, status, detail, evidence=None):
                 evidence=evidence or {})
 
 
-def _common_criteria(summary):
+def _common_criteria(summary, policies=None):
     executed = _executed_cases(summary)
     checks = [check for case in executed for step in case.get("evidence") or ()
               for check in step.get("checks") or ()]
-    resources = _created_resources(summary)
+    resources = _created_resources(summary, policies)
     confirmed, _ = _anomalies(summary)
     rows = [
         _criterion("EVIDENCE_PRODUCED", "产生了真实执行证据",
@@ -607,7 +607,9 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
     kind = classification["kind"]
     subject = subject_scope(project, text, kind)
     scope_rows = _scope_rows(project, summary, subject, kind)
-    common = _common_criteria(summary)
+    policies = {p.id: p for p in project.registry.definitions()}
+    resources = _created_resources(summary, policies)
+    common = _common_criteria(summary, policies)
     if kind == REGRESSION:
         specific = _regression_criteria(project, summary, scope_rows, subject, kind)
     elif kind == PRE_RELEASE:
@@ -656,10 +658,10 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
                         operation_id=item["operation_id"]) for item in scope_rows["missing"])
     pending.extend(dict(item="resource", detail=row.get("create_step")
                         or row.get("step_id"), operation_id=row.get("operation_id"))
-                   for row in _created_resources(summary)["pending"])
+                   for row in resources["pending"])
     pending.extend(dict(item="write", detail=row.get("detail"),
                         operation_id=row.get("operation_id"))
-                   for row in _created_resources(summary)["unresolved"])
+                   for row in resources["unresolved"])
     ended = stop.get("reason") or "UNKNOWN"
     flags = dict(
         agent_terminated=ended in {"ANSWER", "MODEL_CALL_LIMIT", "TURN_LIMIT",
@@ -679,7 +681,7 @@ def evaluate(project, summary, text, *, stop=None) -> dict:
         flags=flags,
         anomalies=dict(confirmed=confirmed, unconfirmed=unproven),
         pending=pending[:20],
-        write_effects=write_effects_view(summary),
+        write_effects=write_effects_view(summary, policies),
         scope_ledger=public_ledger(ledger),
         coverage=dict(obligations=len(scope_rows["scope"]),
                       measured=len(scope_rows["measured"]),

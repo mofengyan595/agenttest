@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from test_task_completion import project_with_absence, summary_for
 
+from agenttest.report import fingerprint
 from agenttest.task_completion import _created_resources, evaluate
 from agenttest.write_effects import (
     CLEANUP_UNPROVEN,
@@ -83,6 +84,59 @@ def test_a_delete_receipt_without_a_read_back_is_not_a_cleanup_proof():
                               "delete_parcel": policy(sources=["create_parcel"])})
     assert effects["counts"][CLEANUP_UNPROVEN] == 1
     assert effects["pending"][0]["diagnostic"]["basis"] == "DELETE_RECEIPT_WITHOUT_READ_BACK"
+
+
+def test_failed_readback_of_the_bound_resource_overrides_a_delete_receipt():
+    read = step(step_id="read", method="GET", policy_id="absence", outcome="ASSERTION_FAILED",
+                checks=[dict(kind="http_status", expected=[404], actual=200, passed=False)])
+    row = case(steps=[step(), read], lifecycle=[dict(create_step="create", cleanup_step="delete",
+        status="CLEANED", cleanup_result="PASS")], absence=[dict(step_id="read",
+        policy_id="absence", direction="absence", satisfied=True, deletions=["delete"],
+        identities=[dict(producer="create")])])
+    assert analyse([row])["counts"][CREATED_CLEANUP_FAILED] == 1
+    read.update(outcome="PASS", checks=[dict(kind="http_status", actual=404, passed=True)])
+    assert analyse([row])["counts"][CREATED_AND_CLEANED] == 1
+    read.update(executed=False)
+    assert analyse([row])["counts"][CLEANUP_UNPROVEN] == 1
+
+
+def test_cross_case_cleanup_requires_environment_order_and_unchanged_identity():
+    request = dict(values=dict(path_parameters=dict(id="owned")))
+    deletion = step(step_id="delete", method="DELETE", path="/parcels/{id}", request=request)
+    creation = case(steps=[step(), deletion], lifecycle=[dict(create_step="create",
+        cleanup_step="delete", status="CLEANED", cleanup_result="PASS", owner_run_id="run-1",
+        id_sha256=fingerprint("owned"))])
+    creation.update(target_config_sha256="target", finished_sequence=1)
+    read = step(step_id="read", method="GET", policy_id="absence", path="/parcels/{id}",
+                request=request, checks=[dict(kind="http_status", actual=404, passed=True)])
+    observer = case(steps=[read])
+    observer.update(target_config_sha256="target", finished_sequence=2, run_id="run-2")
+    approved = policy()
+    approved.assertions = SimpleNamespace(reviewed=True, status=SimpleNamespace(codes=[404]))
+    policies = {"absence": approved}
+    proof, = analyse([creation, observer], policies)["rows"]
+    assert proof["status"] == CREATED_AND_CLEANED
+    assert proof["cleanup_receipt"]["run_id"] == "run-2"
+    assert analyse([observer, creation], policies)["counts"][CLEANUP_UNPROVEN] == 1
+    assert analyse([creation, dict(observer, target_config_sha256="elsewhere")],
+                   policies)["counts"][CLEANUP_UNPROVEN] == 1
+    assert analyse([creation, dict(observer, evidence=[step(), read])],
+                   policies)["counts"][CLEANUP_UNPROVEN] >= 1
+    read["request"] = dict(values=dict(path_parameters=dict(id="different")))
+    assert analyse([creation, observer], policies)["counts"][CLEANUP_UNPROVEN] == 1
+
+
+def test_mutation_reuses_ownership_without_creating_another_receipt():
+    mutation = step(step_id="update", method="PUT")
+    receipt = dict(create_step="create", mutation_step="update", cleanup_step="delete",
+                   status="CLEANED", cleanup_result="PASS")
+    row = case(steps=[step(), mutation], lifecycle=[receipt],
+               absence=[dict(policy_id="create_parcel", satisfied=True)])
+    assert analyse([row])["created"] == 1
+    assert analyse([row])["counts"][CREATED_AND_CLEANED] == 1
+    receipt.update(status="MUTATION_OUTCOME_UNKNOWN", cleanup_result="NOT_SENT")
+    assert analyse([row])["created"] == 1
+    assert analyse([row])["counts"][WRITE_OUTCOME_UNKNOWN] == 1
 
 
 def test_a_failed_cleanup_is_distinguished_from_an_unproven_one():

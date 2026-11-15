@@ -279,7 +279,10 @@ or an approved idempotency conflict 409) is required with that policy's operatio
 do not turn it into a business_rule question, and do not invent a different expected value.
 For boundary_links with explicit=true, the server supplies the exact check and action for the
 listed source_id and any status_source_id. Mark these clauses required with actions=[] and select
-the listed operation. Do not repeat these requested_checks. Keep any independently requested order
+the listed operation. Do not repeat these requested_checks. For a general boundary or invalid-input
+request, select approved check IDs without exact_value or exact_length. Use exact_value or
+exact_length only when the operator supplied that literal in the cited original clause.
+Keep any independently requested order
 and resource references. For an existing fixed path ID, cite
 {resource_ref} from existing_resources; never invent a producer or use a self-edge. Field clauses
 belong to their action,

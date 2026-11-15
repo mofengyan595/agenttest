@@ -35,7 +35,9 @@ def plan_for(*, mode=ADAPTIVE, target=None, estimate=None, **overrides):
 
 def summary_with(plans=()):
     cases = [dict(status="FINISHED", case_id=name, resource_lifecycle=[],
-                  evidence=[dict(executed=True, policy_id=policy) for policy in policies])
+                  evidence=[dict(executed=True, policy_id=policy, outcome="PASS",
+                                 checks=[dict(kind="http_status", passed=True)])
+                            for policy in policies])
              for name, policies in plans]
     return dict(cases=cases)
 
@@ -139,7 +141,7 @@ def test_the_session_observation_uses_the_flat_delta_contract():
 
     stub = Stub()
     first = AgentSession.observe_progress(stub, trigger="first")
-    assert first["progress"] is True, "the first observation always establishes a baseline"
+    assert first["progress"] is False, "a case without checks cannot earn more budget"
     second = AgentSession.observe_progress(stub, trigger="second")
     assert second["progress"] is False
     assert second["kinds"] == []
@@ -155,12 +157,35 @@ def test_cleanup_completion_counts_as_progress():
     pending = summary_with([("c1", [])])
     pending["cases"][0]["resource_lifecycle"] = [
         dict(create_step="s1", status="OWNED", cleanup_result="NOT_SENT")]
-    state.observe(pending)
+    assert not state.observe(pending)["progress"]
     cleaned = summary_with([("c1", [])])
     cleaned["cases"][0]["resource_lifecycle"] = [
         dict(create_step="s1", status="CLEANED", cleanup_result="PASS")]
+    assert not state.observe(cleaned)["progress"]
+    cleaned["cases"][0]["write_effects"] = [
+        dict(step_id="s1", status="CREATED_AND_CLEANED", cleanup_proven=True)]
     delta = state.observe(cleaned)
     assert "CLEANUP_COMPLETED" in delta["kinds"]
+
+
+def test_model_reservation_prevents_concurrent_or_duplicate_charge():
+    from agenttest.goal_suite import SuiteLedger
+    from agenttest.report import ModelCallStats
+
+    ledger = SuiteLedger(2, 2, 100)
+    ticket = ledger.reserve_model(70)
+    assert ticket is not None
+    assert ledger.reserve_model(31) is None
+    assert ledger.last_model_stop["dimension"] == "total_tokens"
+    measured = ModelCallStats(calls=1, total_tokens=35)
+    ledger.settle_model(ticket, measured)
+    ledger.settle_model(ticket, measured)
+    assert (ledger.model_calls, ledger.known_tokens) == (1, 35)
+    refused = ledger.reserve_model(30)
+    ledger.settle_model(refused, ModelCallStats(calls=1, refused=True))
+    assert ledger.summary()["usage_known"]
+    assert ledger.reserve_model(1) is None
+    assert ledger.last_model_stop["dimension"] == "model_calls"
 
 
 def test_time_growth_keeps_the_cleanup_reserve():

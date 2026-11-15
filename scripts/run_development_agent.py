@@ -194,7 +194,8 @@ def limited_project(project, *, max_requests, max_model_calls, max_input,
         max_input_tokens=max_input, max_output_tokens=max_output,
         max_total_tokens=tokens,
         suite_max_model_calls=min(max_model_calls, 96),
-        suite_max_total_tokens=max(500_000, min(2_000_000, 6 * per_call)),
+        suite_max_total_tokens=max(500_000, min(2_000_000, 6 * per_call),
+                                   min(2_000_000, execution.total_tokens_ceiling)),
         supervisor_max_rounds=max(0, min(int(supervisor_rounds), 4)),
         loop_engine=loop_engine, agent_max_turns=max(1, min(int(agent_max_turns), 80)),
         agent_max_tool_calls=max(1, min(int(agent_max_tool_calls), 200)),
@@ -229,7 +230,7 @@ def evidence_metrics(summary, task_row, model_calls, reports, target_events,
     for run_id, report in reports.items():
         outcomes.append(dict(run_id=run_id, outcome=report.get("outcome"),
                              reason=report.get("reason")))
-        for step in report.get("steps") or []:
+        for step in [*(report.get("steps") or ()), *(report.get("lifecycle_cleanup") or ())]:
             for attempt in step.get("attempts") or []:
                 http_attempts.append(dict(method=step.get("method"),
                                           path=step.get("path_template"),
@@ -337,7 +338,7 @@ async def run(args):
         # ceiling as the transport total; FIXED keeps the historical envelope byte for byte so
         # its MODEL_TOKEN_BUDGET rejections stay reproducible.
         envelope_bytes, envelope_total = args.model_input_bytes, None
-        if args.execution_mode == ADAPTIVE:
+        if args.execution_mode == ADAPTIVE or args.execution_model_base is not None:
             envelope_bytes = max(envelope_bytes, ADAPTIVE_INPUT_BYTES)
             envelope_total = args.execution_token_ceiling
         settings = model_settings(model_env, args.model_timeout, envelope_bytes,
@@ -502,6 +503,8 @@ def main():
                         help="absolute model-call ceiling for one task (never the business "
                              "request permission)")
     parser.add_argument("--execution-token-ceiling", type=int, default=400_000)
+    parser.add_argument("--execution-model-base", type=int, default=None)
+    parser.add_argument("--execution-token-base", type=int, default=None)
     parser.add_argument("--execution-http-ceiling", type=int, default=None,
                         help="optional narrower operator request cap; omitted = --max-requests")
     parser.add_argument("--execution-seconds-ceiling", type=float, default=900.0)
@@ -524,7 +527,10 @@ def main():
     if not 1 <= args.agent_max_turns <= 80:
         parser.error("agent turn budget must be between 1 and 80")
     args.execution = ExecutionBudget(
-        mode=args.execution_mode, model_calls_ceiling=args.execution_model_ceiling,
+        mode=args.execution_mode, model_calls=args.execution_model_base,
+        total_tokens=args.execution_token_base, model_calls_ceiling=args.execution_model_ceiling,
+        agent_turns_ceiling=max(40, args.agent_max_turns),
+        agent_tool_calls_ceiling=max(60, args.agent_max_tool_calls),
         total_tokens_ceiling=args.execution_token_ceiling,
         http_requests_ceiling=args.execution_http_ceiling,
         seconds_ceiling=args.execution_seconds_ceiling,

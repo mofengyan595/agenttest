@@ -23,6 +23,7 @@ started beside this runtime.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from dataclasses import dataclass
@@ -157,6 +158,11 @@ def _json(payload, limit: int = MAX_RESULT_BYTES) -> str:
         head_keys = ("ok", "error", "status", "group_id", "candidate_id", "run_id", "outcome",
                      "executed", "requests", "budget", "next_step", "evidence_refs")
         head = {key: payload[key] for key in head_keys if key in payload}
+        for key in ("groups", "candidates"):
+            if payload.get(key):
+                head[key] = [dict((field, row[field]) for field in (
+                    "group_id", "id", "status", "minimum_requests", "next_step")
+                    if field in row) for row in payload[key][:12]]
         head["truncated"] = True
         head["note"] = ("结果过大：保留错误和证据引用，其余为前部预览；"
                         "用更窄的参数读取完整证据（如 read_test_report(run_id)）。")
@@ -205,7 +211,9 @@ class AgentSession:
             self.facts.max_executed_plans = int(
                 self.execution.limit("obligation_runs") or self.facts.max_executed_plans)
         self.tool_calls: list[dict] = []
+        self.business_action_lock = asyncio.Lock()
         self.group_runs: dict[str, int] = {}
+        self.obligation_runs = 0
         self.group_notes: dict[str, str] = {}
         self.generation = 0
         self.seen: dict[str, dict] = {}
@@ -284,16 +292,13 @@ class AgentSession:
         """
         if self.execution is None:
             return
-        total = int(self.execution.limit("model_calls") or self.ledger.max_model_calls)
-        self.ledger.max_model_calls = max(self.ledger.max_model_calls, total)
-        tokens = int(self.execution.limit("total_tokens") or 0)
-        if tokens:
-            self.ledger.max_total_tokens = max(self.ledger.max_total_tokens, tokens)
+        self.execution.apply_allowance(self.ledger)
         self.max_turns = max(self.max_turns, int(self.execution.limit("agent_turns") or 0))
         self.max_tool_calls = max(self.max_tool_calls,
                                   int(self.execution.limit("agent_tool_calls") or 0))
         self.facts.max_executed_plans = max(self.facts.max_executed_plans,
                                             int(self.execution.limit("obligation_runs") or 0))
+        self.max_seconds = float(self.execution.limit("seconds"))
 
     def observe_progress(self, *, trigger: str, active: bool = True) -> dict:
         """One deterministic observation point after a business action.
@@ -344,7 +349,7 @@ class AgentSession:
         if self.ledger.model_calls >= self.ledger.max_model_calls:
             return _refusal("MODEL_BUDGET_EXHAUSTED", "本轮模型调用预算已用尽。",
                             retryable=False, hint="停止并总结已获得的证据。")
-        if len(self.tool_calls) >= self.max_tool_calls:
+        if sum(row["phase"] != "start" for row in self.tool_calls) >= self.max_tool_calls:
             return _refusal("TOOL_BUDGET_EXHAUSTED", "本轮工具调用次数已用尽。",
                             retryable=False, hint="停止并总结已获得的证据。")
         if self.execution is not None and self.execution.stopped:
@@ -410,7 +415,7 @@ class AgentSession:
         for group in self.summary.get("groups") or ():
             group_id = group.get("id")
             members = list(group.get("primary") or ())
-            related = [policy.id for policy in policies.values()
+            related = group.get("policy_ids") or [policy.id for policy in policies.values()
                        if policy.operation_id in members and policy.negative is None]
             measured = [policy_id for policy_id in related if policy_id in evidence]
             failed = [policy_id for policy_id in measured
@@ -428,6 +433,9 @@ class AgentSession:
                        next_step=(dict(tool="run_test_group",
                                        arguments={"group_id": group_id})
                                   if runnable else None))
+            if group.get("policy_ids"):
+                row["minimum_requests"] = len(related) - len(measured)
+                row["remaining_policy_ids"] = [key for key in related if key not in evidence]
             if status in {"NOT_EXECUTED", "REJECTED"} and runs:
                 row["retry_hint"] = ("上一次设计被拒绝；如要重试，请在 design_note 中写明一条"
                                      "新的、与既有证据不同的设计约束。")
@@ -594,10 +602,11 @@ class AgentSession:
                             retryable=False, hint="改用候选义务或结束本轮。")
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
-        related = [policy.id for policy in policies.values()
+        related = group.get("policy_ids") or [policy.id for policy in policies.values()
                    if policy.operation_id in (group.get("primary") or ())
                    and policy.negative is None]
-        if related and all(policy_id in evidence for policy_id in related) and not design_note:
+        if related and all(policy_id in evidence for policy_id in related) and (
+                group.get("policy_ids") or not design_note):
             refusal_payload = _refusal(
                 "GROUP_ALREADY_MEASURED", "该分组内所有已批准义务都已有执行证据。",
                 hint="用 get_test_coverage 查看未测义务；通过候选动作补测独立检查。",
@@ -614,6 +623,18 @@ class AgentSession:
             supervision = dict(round=round_number, target=f"agent:group:{group_id}",
                                text=self._design_text(group, note), preserve_focus=True,
                                design_note=note)
+        if group.get("policy_ids"):
+            remaining = [key for key in related if key not in evidence]
+            if len(remaining) > self.ledger.max_requests - self.ledger.requests:
+                return _refusal("BATCH_REQUEST_BUDGET", "剩余授权不足以执行本批次。",
+                                retryable=False, remaining_policy_ids=remaining,
+                                minimum_requests=len(remaining))
+            supplied = {row["policy_id"]: row for row in self.scope.executable_checks}
+            supervision = dict(supervision or {}, preserve_focus=False,
+                round=self.tasks.next_supervision_round(self.scope),
+                text=self._design_text(group, note),
+                approved_negative_checks=[supplied.get(key) or dict(
+                    policy_id=key, source_quote=self.text[:300]) for key in remaining])
         before_cases = len(self.summary.get("cases") or ())
         before_records = len(self.summary.get("design_records") or ())
         before_requests = self.ledger.requests
@@ -627,6 +648,7 @@ class AgentSession:
             self.record("run_test_group", phase="error", group_id=group_id,
                         error=type(exc).__name__)
             self.note_tool_error("run_test_group", exc)
+            self.observe_progress(trigger="run_test_group_error")
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该动作没有完成；读取覆盖后决定是否换一个候选。")
         self.generation += 1
@@ -711,6 +733,9 @@ class AgentSession:
         refusal = self._operable()
         if refusal:
             return refusal
+        if self.execution and self.obligation_runs >= self.execution.limit("obligation_runs"):
+            return _refusal("OBLIGATION_RUN_LIMIT", "本轮已达到单项补测次数上限。",
+                            retryable=False, hint="可继续执行尚未测量的已批准分组。")
         candidates = {item["id"]: item for item in (self._facts().get("candidates") or ())}
         candidate = candidates.get(candidate_id)
         if candidate is None:
@@ -720,6 +745,7 @@ class AgentSession:
                             valid_candidate_ids=sorted(candidates)[:12])
         before_cases = len(self.summary.get("cases") or ())
         before_requests = self.ledger.requests
+        self.obligation_runs += 1
         self.record("run_open_obligation", phase="start", candidate_id=candidate_id,
                     action=candidate.get("action"), design_note=bool(design_note))
         note = self._note(design_note)
@@ -736,6 +762,7 @@ class AgentSession:
             self.record("run_open_obligation", phase="error", candidate_id=candidate_id,
                         error=type(exc).__name__)
             self.note_tool_error("run_open_obligation", exc)
+            self.observe_progress(trigger="run_open_obligation_error")
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该候选动作没有完成；读取覆盖后再决定。")
         cases = (self.summary.get("cases") or ())[before_cases:]
@@ -768,7 +795,10 @@ class AgentSession:
         static = name in {"get_contract", "get_approved_policies"}
         revision = 0 if static else self.generation
         previous = self.seen.get(name)
-        if not refresh and previous is not None and previous["generation"] == revision:
+        repeated = previous is not None and previous["generation"] == revision
+        if repeated:
+            self.observe_progress(trigger="repeated_read")
+        if not refresh and repeated:
             pointer = dict(ok=True, repeated=True, unchanged_since_previous_call=True,
                            **previous, note="复用上文。若旧结果已清理，传 refresh=true。",
                            next_step=dict(tool=name, arguments={"refresh": True}))
@@ -963,10 +993,12 @@ def build_tools(session: AgentSession) -> list:
         return view("get_test_coverage", session.coverage_view, refresh)
 
     async def group(group_id: str, design_note: str = "") -> str:
-        return result(await session.run_group(group_id, design_note))
+        async with session.business_action_lock:
+            return result(await session.run_group(group_id, design_note))
 
     async def obligation(candidate_id: str, design_note: str = "") -> str:
-        return result(await session.run_obligation(candidate_id, design_note))
+        async with session.business_action_lock:
+            return result(await session.run_obligation(candidate_id, design_note))
 
     async def report(run_id: str, operation_id: str | None = None, step_offset: int = 0,
                      step_limit: int = 3) -> str:
@@ -1086,24 +1118,36 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     if model is None:
         model = EcnuxChatModel(settings=settings, limits=limits, transport=transport)
 
-    def charge(stats) -> None:
-        """One ledger for designer and harness calls; unknown usage stays unknown."""
-        ledger = scope.ledger
-        ledger.model_calls += stats.calls
-        if stats.calls:
-            if stats.total_tokens is None and not getattr(stats, "refused", False):
-                ledger.usage_unknown = True
-            elif stats.total_tokens is not None:
-                ledger.known_tokens += stats.total_tokens
+    from uuid import uuid4
 
-    def check_model_budget() -> None:
-        ledger = scope.ledger
-        if ledger.usage_unknown:
-            raise ModelHarnessError(MODEL_USAGE_UNKNOWN)
-        if ledger.model_calls >= ledger.max_model_calls:
-            raise ModelHarnessError(MODEL_CALL_BUDGET)
-        if ledger.known_tokens >= ledger.max_total_tokens:
-            raise ModelHarnessError(MODEL_TOKEN_BUDGET)
+    ledger = scope.ledger
+    journal = getattr(scope.svc, "db", None)
+    reservations = {}
+
+    def charge(stats) -> None:
+        reservation = reservations.pop(id(stats), None)
+        if reservation is not None:
+            ticket, call_id = reservation
+            ledger.settle_model(ticket, stats)
+            if journal is not None and hasattr(journal, "finish_model_call"):
+                journal.finish_model_call(call_id, stats)
+
+    def check_model_budget(stats) -> None:
+        if session.stop != "RUNNING":
+            raise ModelHarnessError(session.stop)
+        if model.totals.calls >= session.max_turns:
+            session._stop(STOP_TURN_LIMIT)
+            raise ModelHarnessError(STOP_TURN_LIMIT)
+        tokens = stats.input_token_upper_bound + model.settings.max_output_tokens
+        ticket = ledger.reserve_model(tokens)
+        if ticket is None:
+            code = {"model_calls": MODEL_CALL_BUDGET, "total_tokens": MODEL_TOKEN_BUDGET,
+                    "usage_known": MODEL_USAGE_UNKNOWN}[ledger.last_model_stop["dimension"]]
+            raise ModelHarnessError(code)
+        call_id = uuid4().hex
+        reservations[id(stats)] = ticket, call_id
+        if journal is not None and hasattr(journal, "begin_model_call"):
+            journal.begin_model_call(call_id, scope.task_id)
 
     model.on_call = charge
     model.before_call = check_model_budget
@@ -1122,9 +1166,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     tools = build_tools(session)
     per_tool = {"run_test_group": 4, "run_open_obligation": 8, "get_test_scope": 4}
     if execution is not None:
-        per_tool = {"run_test_group": int(execution.limit("group_runs") or 4),
-                    "run_open_obligation": int(execution.limit("obligation_runs") or 8),
-                    "get_test_scope": max(4, int(execution.limit("group_runs") or 4))}
+        per_tool = {"get_test_scope": 4}
     middleware = [
         # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
         # one bounded retry keeps an otherwise healthy run alive. Budget and input rejections are
@@ -1133,13 +1175,8 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                              on_failure="error", initial_delay=1.0, max_delay=8.0),
         ModelCallLimitMiddleware(run_limit=hard_model_calls, exit_behavior="end"),
         ToolCallLimitMiddleware(run_limit=hard_tool_calls, exit_behavior="end"),
-        ToolCallLimitMiddleware(tool_name="run_test_group", run_limit=per_tool["run_test_group"],
-                                exit_behavior="continue"),
-        ToolCallLimitMiddleware(tool_name="run_open_obligation",
-                                run_limit=per_tool["run_open_obligation"],
-                                exit_behavior="continue"),
-        ToolCallLimitMiddleware(tool_name="get_test_scope", run_limit=per_tool["get_test_scope"],
-                                exit_behavior="continue"),
+        *(ToolCallLimitMiddleware(tool_name=name, run_limit=limit, exit_behavior="continue")
+          for name, limit in per_tool.items()),
         ContextEditingMiddleware(edits=[
             ClearToolUsesEdit(trigger=CONTEXT_CLEAR_TRIGGER_TOKENS, keep=4,
                               clear_tool_inputs=True, exclude_tools=["read_file"],
@@ -1158,12 +1195,15 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                 config={"recursion_limit": max(64, 40 * hard_turns)}, stream_mode="values"):
             messages = outcome.get("messages") or []
     except (ModelHarnessError, GraphRecursionError) as exc:
-        if isinstance(exc, GraphRecursionError):
+        if session.stop != "RUNNING":
+            stop_reason = session.stop
+        elif isinstance(exc, GraphRecursionError):
             stop_reason = STOP_TURN_LIMIT
         elif exc.code in {"MODEL_TOKEN_BUDGET", "MODEL_CALL_BUDGET"}:
             # The envelope refused the next request before it was sent. That is a spent budget,
             # not a broken model, and the deterministic report is still produced.
-            stop_reason = STOP_MODEL_CALL_LIMIT
+            stop_reason = (STOP_MODEL_CALL_LIMIT if exc.code == MODEL_CALL_BUDGET
+                           else "MODEL_TOKEN_LIMIT")
             error = dict(code=exc.code, message=str(exc))
         else:
             stop_reason, error = STOP_MODEL_ERROR, dict(code=str(exc))

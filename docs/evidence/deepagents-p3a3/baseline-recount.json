@@ -1,0 +1,787 @@
+[
+  {
+    "attempt": "A:functional-adaptive:1",
+    "requests": 6,
+    "reported_attempts": 6,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 6,
+      "model_calls": 6,
+      "known_tokens": 30813,
+      "total_tokens": 30813,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:functional-fixed:1",
+    "requests": 8,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 8,
+      "model_calls": 8,
+      "known_tokens": 37415,
+      "total_tokens": 37415,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:investigation-adaptive:1",
+    "requests": 1,
+    "reported_attempts": 0,
+    "zero_reason": null,
+    "first_rejection": [
+      "group_1",
+      "CONSTRUCTION_ORDER_INSTANCE_CONFLICT"
+    ],
+    "focus": "selected",
+    "stop": "NO_PROGRESS",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 1,
+      "model_calls": 14,
+      "known_tokens": 111323,
+      "total_tokens": 111323,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:investigation-fixed:1",
+    "requests": 8,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 8,
+      "model_calls": 9,
+      "known_tokens": 44144,
+      "total_tokens": 44144,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:prerelease-adaptive:1",
+    "requests": 4,
+    "reported_attempts": 3,
+    "zero_reason": null,
+    "first_rejection": [
+      "group_1",
+      "DESIGN_REQUIRED_ORDER_INSTANCE_CONFLICT"
+    ],
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "createParcel",
+      "deleteParcel",
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 4,
+      "model_calls": 19,
+      "known_tokens": 152689,
+      "total_tokens": 152689,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:prerelease-fixed:1",
+    "requests": 1,
+    "reported_attempts": 0,
+    "zero_reason": null,
+    "first_rejection": [
+      "group_1",
+      "MODEL_TOKEN_BUDGET"
+    ],
+    "focus": "all_ready",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 1,
+      "model_calls": 9,
+      "known_tokens": 61743,
+      "total_tokens": 61743,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:regression-adaptive:1",
+    "requests": 4,
+    "reported_attempts": 4,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "createParcel",
+      "deleteParcel",
+      "readParcel"
+    ],
+    "usage": {
+      "requests": 4,
+      "model_calls": 7,
+      "known_tokens": 40593,
+      "total_tokens": 40593,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "A:regression-fixed:1",
+    "requests": 7,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "createParcel",
+      "deleteParcel",
+      "readParcel"
+    ],
+    "usage": {
+      "requests": 7,
+      "model_calls": 10,
+      "known_tokens": 67861,
+      "total_tokens": 67861,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:ambiguous:1",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "CLARIFICATION",
+    "first_rejection": [
+      "focus",
+      "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE"
+    ],
+    "focus": "needs_information",
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 2,
+      "known_tokens": 38596,
+      "total_tokens": 38596,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:ambiguous:2",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "CLARIFICATION",
+    "first_rejection": [
+      "focus",
+      "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE"
+    ],
+    "focus": "needs_information",
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 2,
+      "known_tokens": 38597,
+      "total_tokens": 38597,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:ambiguous:3",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_SELECTED_ACTION_WITHOUT_SOURCE"
+    ],
+    "focus": null,
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 2,
+      "known_tokens": 40636,
+      "total_tokens": 40636,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:boundary-negative:1",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_INPUT_TEXT_CHANGED"
+    ],
+    "focus": null,
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 1,
+      "known_tokens": 11436,
+      "total_tokens": 11436,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:boundary-negative:2",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_INPUT_TEXT_CHANGED"
+    ],
+    "focus": null,
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 1,
+      "known_tokens": 11362,
+      "total_tokens": 11362,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:boundary-negative:3",
+    "requests": 14,
+    "reported_attempts": 14,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "createParcel",
+      "deleteParcel"
+    ],
+    "usage": {
+      "requests": 14,
+      "model_calls": 21,
+      "known_tokens": 165197,
+      "total_tokens": 165197,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:crud-functional:1",
+    "requests": 7,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 7,
+      "model_calls": 8,
+      "known_tokens": 37508,
+      "total_tokens": 37508,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:crud-functional:2",
+    "requests": 8,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 8,
+      "model_calls": 7,
+      "known_tokens": 30268,
+      "total_tokens": 30268,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:crud-functional:3",
+    "requests": 8,
+    "reported_attempts": 7,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": true,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 8,
+      "model_calls": 7,
+      "known_tokens": 30786,
+      "total_tokens": 30786,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:delete-then-state:1",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_REQUIREMENT_WITNESS_MISSING"
+    ],
+    "focus": null,
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      },
+      "DELETE_NOOP": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 2,
+      "known_tokens": 24985,
+      "total_tokens": 24985,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:delete-then-state:2",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_REQUIREMENT_WITNESS_MISSING"
+    ],
+    "focus": null,
+    "stop": null,
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      },
+      "DELETE_NOOP": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 2,
+      "known_tokens": 25004,
+      "total_tokens": 25004,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:delete-then-state:3",
+    "requests": 4,
+    "reported_attempts": 4,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      },
+      "DELETE_NOOP": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "createParcel",
+      "deleteParcel",
+      "readParcel"
+    ],
+    "usage": {
+      "requests": 4,
+      "model_calls": 10,
+      "known_tokens": 50068,
+      "total_tokens": 50068,
+      "usage_known": true
+    },
+    "remaining_records": 1
+  },
+  {
+    "attempt": "B:fault-investigation:1",
+    "requests": 0,
+    "reported_attempts": 0,
+    "zero_reason": "FOCUS_REJECTED",
+    "first_rejection": [
+      "focus",
+      "FOCUS_REQUIREMENT_GAP_WITHOUT_EVIDENCE"
+    ],
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": false,
+        "detected": false
+      }
+    },
+    "complete": false,
+    "matched_operations": [],
+    "usage": {
+      "requests": 0,
+      "model_calls": 10,
+      "known_tokens": 88804,
+      "total_tokens": 88804,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:fault-investigation:2",
+    "requests": 1,
+    "reported_attempts": 0,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 1,
+      "model_calls": 11,
+      "known_tokens": 91788,
+      "total_tokens": 91788,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:fault-investigation:3",
+    "requests": 1,
+    "reported_attempts": 0,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 1,
+      "model_calls": 8,
+      "known_tokens": 56777,
+      "total_tokens": 56777,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:pre-release:1",
+    "requests": 14,
+    "reported_attempts": 13,
+    "zero_reason": null,
+    "first_rejection": null,
+    "focus": "selected",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 14,
+      "model_calls": 20,
+      "known_tokens": 150832,
+      "total_tokens": 150832,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:pre-release:2",
+    "requests": 1,
+    "reported_attempts": 0,
+    "zero_reason": null,
+    "first_rejection": [
+      "group_1",
+      "CONSTRUCTION_ORDER_INSTANCE_CONFLICT"
+    ],
+    "focus": "all_ready",
+    "stop": "NO_PROGRESS",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "readAvailability"
+    ],
+    "usage": {
+      "requests": 1,
+      "model_calls": 13,
+      "known_tokens": 112530,
+      "total_tokens": 112530,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  },
+  {
+    "attempt": "B:pre-release:3",
+    "requests": 10,
+    "reported_attempts": 10,
+    "zero_reason": null,
+    "first_rejection": [
+      "supervision_2_group_1",
+      "DESIGN_REQUESTED_OPERATIONS_MISSING"
+    ],
+    "focus": "all_ready",
+    "stop": "ANSWER",
+    "faults": {
+      "AVAILABILITY_503": {
+        "observed": true,
+        "detected": true
+      }
+    },
+    "complete": false,
+    "matched_operations": [
+      "changeParcel",
+      "createParcel",
+      "deleteParcel",
+      "readAvailability",
+      "readParcel",
+      "replaceParcel"
+    ],
+    "usage": {
+      "requests": 10,
+      "model_calls": 17,
+      "known_tokens": 128639,
+      "total_tokens": 128639,
+      "usage_known": true
+    },
+    "remaining_records": 0
+  }
+]

@@ -1,10 +1,11 @@
 """Single/flow/project suites reuse one trusted workflow and one fixed aggregate budget."""
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
+from agenttest.diagnostics import Diagnostic, Layer
 from agenttest.discovery import discover
 from agenttest.discovery_schema import fields, variations
 from agenttest.goal_derivation import (
@@ -13,7 +14,7 @@ from agenttest.goal_derivation import (
     derive_goal,
     public_goal_plan,
 )
-from agenttest.llm_planner import PlannerFailure
+from agenttest.llm_planner import PlannerFailure, planner_token_check
 from agenttest.plan_reuse import LegalStructure, explicit_literal_fixed, structure_id
 from agenttest.policies import NeedsReview
 from agenttest.project_goals import check_goal_credentials
@@ -309,6 +310,45 @@ class SuiteLedger:
     model_calls: int = 0
     known_tokens: int = 0
     usage_unknown: bool = False
+    _pending: dict = field(default_factory=dict, init=False, repr=False)
+    last_model_stop: dict | None = field(default=None, init=False)
+
+    def reserve_model(self, tokens, *, reserve_calls=0, reserve_tokens=0):
+        """Reserve before dispatch; a reservation can be settled exactly once."""
+        for dimension, used, limit, requested in (
+            ("model_calls", self.model_calls + len(self._pending),
+             self.max_model_calls, 1 + reserve_calls),
+            ("total_tokens", self.known_tokens + sum(self._pending.values()),
+             self.max_total_tokens, max(1, tokens + reserve_tokens)),
+        ):
+            if self.usage_unknown or used + requested > limit:
+                self.last_model_stop = dict(
+                    dimension="usage_known" if self.usage_unknown else dimension,
+                    used=used, limit=limit, remaining=max(0, limit - used),
+                    requested=requested)
+                return None
+        ticket = object()
+        self._pending[ticket] = tokens
+        return ticket
+
+    def settle_model(self, ticket, stats):
+        if self._pending.pop(ticket, None) is None:
+            return
+        self.model_calls += stats.calls
+        if stats.calls and stats.total_tokens is None and not stats.refused:
+            self.usage_unknown = True
+        elif stats.calls and stats.total_tokens is not None:
+            self.known_tokens += stats.total_tokens
+
+    def resize_model(self, ticket, tokens, reserve_tokens):
+        used = self.known_tokens + sum(self._pending.values()) - self._pending[ticket]
+        if used + tokens + reserve_tokens > self.max_total_tokens:
+            self.last_model_stop = dict(dimension="total_tokens", used=used,
+                limit=self.max_total_tokens, remaining=max(0, self.max_total_tokens - used),
+                requested=tokens + reserve_tokens)
+            return False
+        self._pending[ticket] = tokens
+        return True
 
     def summary(self):
         return dict(requests=self.requests, model_calls=self.model_calls,
@@ -335,11 +375,13 @@ class BudgetTransport(httpx.AsyncBaseTransport):
 
 
 class BudgetPlanner:
-    def __init__(self, inner, ledger, guard=None, *, reserve_calls=0, reserve_tokens=0):
+    def __init__(self, inner, ledger, guard=None, *, reserve_calls=0, reserve_tokens=0,
+                 reserve_encoded=False):
         self.inner, self.ledger = inner, ledger
         self.guard = guard
         self.stats = ModelCallStats()
         self.reserve_calls, self.reserve_tokens = reserve_calls, reserve_tokens
+        self.reserve_encoded = reserve_encoded
 
     @property
     def token_reservation(self):
@@ -357,26 +399,34 @@ class BudgetPlanner:
         self.stats = ModelCallStats()
         if self.guard is not None:
             self.guard()
-        if (self.ledger.usage_unknown or self.ledger.model_calls + self.reserve_calls
-                >= self.ledger.max_model_calls
-                or self.ledger.known_tokens + self.token_reservation + self.reserve_tokens
-                > self.ledger.max_total_tokens):
-            raise PlannerFailure(Outcome.NEEDS_REVIEW, "SUITE_MODEL_BUDGET_EXHAUSTED")
+        ticket = self.ledger.reserve_model(0 if self.reserve_encoded else self.token_reservation,
+            reserve_calls=self.reserve_calls, reserve_tokens=self.reserve_tokens)
+
+        def exhausted():
+            code = "SUITE_MODEL_BUDGET_EXHAUSTED"
+            return PlannerFailure(Outcome.NEEDS_REVIEW, code,
+                Diagnostic(layer=Layer.MODEL, code=code, detail=self.ledger.last_model_stop))
+
+        if ticket is None:
+            raise exhausted()
+
+        def check_tokens(tokens):
+            if not self.ledger.resize_model(ticket, tokens, self.reserve_tokens):
+                raise exhausted()
+
+        check_context = planner_token_check.set(check_tokens) if self.reserve_encoded else None
         try:
             return await self.inner.generate(context)
         finally:
+            if check_context is not None:
+                planner_token_check.reset(check_context)
             stats = getattr(self.inner, "stats", None)
             if isinstance(stats, ModelCallStats):
                 self.stats = stats.model_copy(deep=True)
-                self.ledger.model_calls += stats.calls
-                if stats.calls:
-                    if stats.total_tokens is None:
-                        self.ledger.usage_unknown = True
-                    else:
-                        self.ledger.known_tokens += stats.total_tokens
             else:
                 # Fake protocol attempts still consume coordination slots; no paid usage.
-                self.ledger.model_calls += 1
+                stats = ModelCallStats(calls=1, total_tokens=0)
+            self.ledger.settle_model(ticket, stats)
 
 
 async def run_suite(project, user_task, planner, store, *, environ, transport=None,

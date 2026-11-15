@@ -26,6 +26,8 @@ opinion are never accepted as proof. Unknown write outcomes are never replayed.
 
 from __future__ import annotations
 
+from agenttest.report import fingerprint
+
 CREATED_AND_CLEANED = "CREATED_AND_CLEANED"
 NO_SIDE_EFFECT_PROVEN = "NO_SIDE_EFFECT_PROVEN"
 CREATION_UNPROVEN = "CREATION_UNPROVEN"
@@ -69,9 +71,25 @@ def _absence_verified(case, policy_id, step_id, policies=None):
     consumers = {other_id for other_id, other in policies.items()
                  if any(getattr(rule, "source_policy_id", None) == policy_id
                         for rule in (getattr(other, "binding_rules", ()) or ()))}
+    evidence = {step.get("step_id"): step for step in case.get("evidence") or ()}
+    lifecycle = _row_for_step(case.get("resource_lifecycle") or (), step_id)
     for row in case.get("absence_expectations") or ():
         if not row.get("satisfied"):
             continue
+        if row.get("step_id"):
+            read = evidence.get(row["step_id"], {})
+            if (row.get("direction") != "absence" or not read.get("executed")
+                    or read.get("policy_id") != row.get("policy_id")
+                    or read.get("outcome") != "PASS"
+                    or not any(check.get("kind") == "http_status" and check.get("passed")
+                               and check.get("actual") in {404, 410}
+                               for check in read.get("checks") or ())
+                    or not any(identity.get("producer") == step_id
+                               for identity in row.get("identities") or ())
+                    or (lifecycle and lifecycle.get("cleanup_step") not in (
+                        row.get("deletions") or ()))):
+                continue
+            return True
         if policy_id and row.get("policy_id") == policy_id:
             return True
         if step_id and row.get("deleted_step") == step_id:
@@ -83,6 +101,20 @@ def _absence_verified(case, policy_id, step_id, policies=None):
         if sources & (consumers | {policy_id}):
             return True
     return False
+
+
+def _observed_after_delete(case, create_step, cleanup_step):
+    """A bound, executed absence assertion can demonstrate that the delete failed."""
+    failed = {step.get("step_id") for step in case.get("evidence") or ()
+              if step.get("executed") and step.get("outcome") == "ASSERTION_FAILED"
+              and any(check.get("kind") == "http_status" and not check.get("passed")
+                      and type(check.get("actual")) is int and 200 <= check["actual"] < 300
+                      for check in step.get("checks") or ())}
+    return any(row.get("direction") == "absence" and row.get("step_id") in failed
+               and cleanup_step in (row.get("deletions") or ())
+               and any(identity.get("producer") == create_step
+                       for identity in row.get("identities") or ())
+               for row in case.get("absence_expectations") or ())
 
 
 def _row_for_step(lifecycle, step_id):
@@ -117,7 +149,8 @@ def classify(*, case, step, lifecycle_row, policies) -> dict:
                     basis=[*basis, "NOT_SENT"],
                     detail="该写操作没有发送请求（预检拒绝或未执行），没有副作用。")
 
-    if _attempt_unknown(step) or state == LIFECYCLE_UNKNOWN:
+    if (_attempt_unknown(step) or state == LIFECYCLE_UNKNOWN
+            or (state == "MUTATION_OUTCOME_UNKNOWN" and row.get("mutation_step") == step_id)):
         return dict(status=WRITE_OUTCOME_UNKNOWN, step_id=step_id, policy_id=policy_id,
                     operation_id=step.get("operation_id"), method=step.get("method"),
                     cleanup_proven=False, replay_allowed=False,
@@ -136,6 +169,12 @@ def classify(*, case, step, lifecycle_row, policies) -> dict:
                         diagnostic=dict(code=CREATION_UNPROVEN,
                                         basis="RESOURCE_ID_UNVERIFIED"))
         if cleaned:
+            if _observed_after_delete(case, step_id, row.get("cleanup_step")):
+                return dict(status=CREATED_CLEANUP_FAILED, step_id=step_id,
+                            policy_id=policy_id, operation_id=step.get("operation_id"),
+                            method=step.get("method"), cleanup_proven=False,
+                            replay_allowed=False, basis=[*basis, "RESOURCE_PRESENT_AFTER_DELETE"],
+                            detail="同一资源的已批准回读仍然可见，清理失败。")
             absence = _absence_verified(case, policy_id, step_id, policies)
             if absence:
                 return dict(status=CREATED_AND_CLEANED, step_id=step_id,
@@ -232,17 +271,76 @@ def for_case(case, policies=None) -> list[dict]:
         row = _row_for_step(lifecycle, step.get("step_id"))
         if row is None and method != "POST":
             continue
+        if row and row.get("create_step") != step.get("step_id"):
+            # A mutation can leave an unknown result, but it cannot create another
+            # ownership receipt for the same resource.
+            if row.get("status") != "MUTATION_OUTCOME_UNKNOWN" and not _attempt_unknown(step):
+                continue
         rows.append(classify(case=case, step=step, lifecycle_row=row, policies=policies))
     return rows
+
+
+def _cross_case_cleanup(case, effect, later, policies):
+    """Reuse a later receipt only for an unchanged environment and owned identity."""
+    receipt = _row_for_step(case.get("resource_lifecycle") or (), effect.get("step_id"))
+    target = case.get("target_config_sha256")
+    if (not target or not receipt or receipt.get("owner_run_id") != case.get("run_id")
+            or receipt.get("cleanup_result") != "PASS" or not receipt.get("id_sha256")):
+        return None
+    deletion = next((step for step in [*(case.get("evidence") or ()),
+                                      *(case.get("cleanup_evidence") or ())]
+                     if step.get("step_id") == receipt.get("cleanup_step")
+                     and step.get("method") == "DELETE" and step.get("executed")
+                     and step.get("outcome") == "PASS"), None)
+    if deletion is None:
+        return None
+    values = ((deletion.get("request") or {}).get("values") or {}).get("path_parameters")
+    if (not values or len(values) != 1
+            or fingerprint(next(iter(values.values()))) != receipt["id_sha256"]):
+        return None
+    for other in later:
+        if (other.get("target_config_sha256") != target
+                or not case.get("finished_sequence")
+                or case["finished_sequence"] >= (other.get("finished_sequence") or 0)):
+            break
+        # Without ordering individual mutations in another case, a later write invalidates
+        # reuse. Only a read-only case can contribute the corroborating receipt.
+        if any(step.get("executed") and step.get("method") not in {"GET", "HEAD", "OPTIONS"}
+               for step in [*(other.get("evidence") or ()),
+                            *(other.get("cleanup_evidence") or ())]):
+            break
+        for step in other.get("evidence") or ():
+            policy = (policies or {}).get(step.get("policy_id"))
+            if (policy is None or policy.negative is not None
+                    or not policy.assertions.reviewed or step.get("method") not in {"GET", "HEAD"}
+                    or step.get("path") != deletion.get("path")
+                    or step.get("role") != deletion.get("role") or not step.get("executed")
+                    or step.get("outcome") != "PASS"):
+                continue
+            status = policy.assertions.status
+            bound = ((step.get("request") or {}).get("values") or {}).get("path_parameters")
+            if (bound == values and status and status.codes and set(status.codes) <= {404, 410}
+                    and any(check.get("kind") == "http_status" and check.get("passed")
+                            and check.get("actual") in status.codes
+                            for check in step.get("checks") or ())):
+                return dict(run_id=other.get("run_id"), step_id=step.get("step_id"),
+                            delete_step=deletion.get("step_id"), id_sha256=receipt["id_sha256"])
+    return None
 
 
 def analyse(cases, policies=None) -> dict:
     """Aggregate the per-write states for one round (or one case list)."""
     rows = []
-    for case in cases or ():
-        if case.get("status") != "FINISHED":
-            continue
+    finished = [case for case in cases or () if case.get("status") == "FINISHED"]
+    for index, case in enumerate(finished):
         for row in case.get("write_effects") or for_case(case, policies):
+            if row["status"] == CLEANUP_UNPROVEN:
+                proof = _cross_case_cleanup(case, row, finished[index + 1:], policies)
+                if proof is not None:
+                    row = dict(row, status=CREATED_AND_CLEANED, cleanup_proven=True,
+                               basis=[*row["basis"], "CROSS_CASE_ABSENCE_READ_BACK"],
+                               detail="同一环境及身份的后续批准回读确认资源已删除。",
+                               diagnostic=None, cleanup_receipt=proof)
             rows.append(dict(row, case_id=case.get("case_id"), run_id=case.get("run_id")))
     counts = {state: sum(1 for row in rows if row["status"] == state) for state in
               (CREATED_AND_CLEANED, NO_SIDE_EFFECT_PROVEN, CREATION_UNPROVEN,

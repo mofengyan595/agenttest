@@ -298,8 +298,6 @@ class EcnuxChatModel(BaseChatModel):
     def _encode(self, payload: dict) -> bytes:
         """Budget-check the exact request and refuse to send a body containing the key."""
         settings = self.settings
-        if self.before_call is not None:
-            self.before_call()
         if self.limits is not None:
             if (self.limits.max_calls is not None
                     and self.totals.calls >= self.limits.max_calls):
@@ -326,6 +324,8 @@ class EcnuxChatModel(BaseChatModel):
         started = time.monotonic()
         stats = self.model_stats
         stats.model_name, stats.model_sha256 = settings.model, fingerprint(settings.model)
+        if self.before_call is not None:
+            self.before_call(stats)
         # Count the attempt before dispatch: a timeout may already have reached the gateway,
         # so a request that produced no measured answer still consumed one call.
         stats.calls = 1
@@ -388,6 +388,7 @@ class EcnuxChatModel(BaseChatModel):
                 "total_tokens": counts[2]}
 
     def _message(self, data: dict, message: dict, index: int) -> AIMessage:
+        usage = self._usage(data)
         choice = data["choices"][0]
         finish = choice.get("finish_reason")
         if finish == "length":
@@ -398,7 +399,6 @@ class EcnuxChatModel(BaseChatModel):
         if self.settings.api_key.get_secret_value() in content:
             raise ModelHarnessError(MODEL_SECRET_OUTPUT)
         calls = parse_tool_calls(message, index)
-        usage = self._usage(data)
         self.model_stats.output_sha256 = fingerprint(content)
         self.model_stats.reason = "MODEL_OUTPUT_RECEIVED"
         return AIMessage(content=content, tool_calls=calls,

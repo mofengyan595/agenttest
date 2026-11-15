@@ -6,6 +6,7 @@ import json
 import math
 import os
 import time
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -26,6 +27,8 @@ from agenttest.dsl import ArgumentBinding, Scenario, Step
 from agenttest.plan_json import bounded_json
 from agenttest.report import ModelCallStats, Outcome, fingerprint
 from agenttest.safety import StrictModel
+
+planner_token_check = ContextVar("planner_token_check", default=None)
 
 
 class PlannerFailure(Exception):
@@ -581,6 +584,9 @@ class OpenAICompatiblePlanner:
     async def _generate(self, context: dict) -> str:
         settings = self._settings
         encoded = self.prepare_request(context)
+        check_tokens = planner_token_check.get()
+        if check_tokens is not None:
+            check_tokens(self.stats.input_token_upper_bound + settings.max_output_tokens)
         async with asyncio.timeout(settings.timeout):
             async with httpx.AsyncClient(
                     transport=self._transport, trust_env=False,
@@ -594,6 +600,7 @@ class OpenAICompatiblePlanner:
                     self.stats.http_status = response.status_code
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
+                        self.stats.refused = True
                         diagnostic = await provider_error_diagnostic(response, self.stats)
                         raise PlannerFailure(
                             Outcome.TEST_INFRA_ERROR if infra else Outcome.TOOL_ERROR,

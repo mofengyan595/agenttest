@@ -206,7 +206,7 @@ class TaskStore:
                        (call_id, task_id, "PENDING", "{}"))
 
     def finish_model_call(self, call_id, stats):
-        state = ("NOT_SENT" if stats.calls == 0 else
+        state = ("NOT_SENT" if stats.calls == 0 else "REFUSED" if stats.refused else
                  "KNOWN" if stats.total_tokens is not None else "UNKNOWN")
         with self.connect() as db:
             db.execute("UPDATE model_usage_journal SET state=?,stats=? WHERE id=?",

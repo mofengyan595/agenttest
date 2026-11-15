@@ -836,7 +836,7 @@ def order_ambiguity(requirements, atoms):
     return None
 
 
-def textual_order_edge(atom, item, preceding_operations):
+def textual_order_edge(atom, item, preceding_operations, *, methods=None):
     """Derive the adjacency witness the user's own clause order already states.
 
     An ordered clause (然后/再/最后) that maps to actions needs a ``before`` edge, but the
@@ -844,7 +844,22 @@ def textual_order_edge(atom, item, preceding_operations):
     the last action of the preceding clause and this clause's action, so two reads of the same
     operation on both sides of a DELETE never collapse into one instance.
     """
-    if not atom.get('ordered') or not item.actions or item.before or not preceding_operations:
+    if not atom.get('ordered') or not item.actions or item.before:
+        return None
+    # A single clause can name both the deletion and the observation of its absence.
+    # Require distinct, source-mapped actions; the approved policy still owns the binding.
+    if methods and re.search(r'删除后.*(?:查不到|不存在|无法(?:读取|查询))', atom['text']):
+        deletions = [(index, action.operation_id) for index, action in enumerate(item.actions)
+                     if methods.get(action.operation_id) == 'DELETE']
+        reads = [(index, action.operation_id) for index, action in enumerate(item.actions)
+                 if methods.get(action.operation_id) in {'GET', 'HEAD'}]
+        if len(deletions) == len(reads) == 1:
+            earlier_index, earlier = deletions[0]
+            later_index, later = reads[0]
+            return RequiredOrder(earlier=earlier, later=later, earlier_source_id=item.source_id,
+                earlier_index=earlier_index, later_source_id=item.source_id,
+                later_index=later_index)
+    if not preceding_operations:
         return None
     previous = preceding_operations[-1]
     later_index = 0
@@ -964,8 +979,10 @@ def validate_requirement_links(requirements, context, selection):
         predicates.setdefault(entry['source_id'], []).append(entry)
     statuses = {entry['source_id']: entry for entry in explicit_http_statuses(text)
                 if entry['reason'] == 'HTTP_STATUS_UNWITNESSED'}
-    read_operations = {o['id'] for group in context.get('grouped_index', [])
-                       for o in group['operations'] if o['method'] in {'GET', 'HEAD'}} & selected
+    methods = {o['id']: o['method'] for group in context.get('grouped_index', [])
+               for o in group['operations']}
+    read_operations = {operation for operation, method in methods.items()
+                       if method in {'GET', 'HEAD'}} & selected
     by_source = {item.source_id: item for item in requirements}
     requested = [check.model_dump() for check in selection.requested_checks]
     previous = None
@@ -996,7 +1013,7 @@ def validate_requirement_links(requirements, context, selection):
                     or item.disposition in {'required', 'needs_review'} and status_continuation):
                 item.actions = previous.actions
         bind_response_continuation(item, atom, previous, catalog, read_operations)
-        derived = textual_order_edge(atom, item, last_action_operations)
+        derived = textual_order_edge(atom, item, last_action_operations, methods=methods)
         if derived is not None:
             item.before = [derived]
         evidence = evidence_fragment(atom)

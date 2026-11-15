@@ -95,6 +95,34 @@ def approved_scope(project, summary):
     return scope
 
 
+def negative_batches(project, summary):
+    """Partition approved variants by the operation and reusable policy prerequisites."""
+    from agenttest.product_design import design_groups
+
+    primary = {op for group in summary.get("groups") or () for op in group["primary"]}
+    policies = {policy.id: policy for policy in project.registry.definitions()}
+    variants = {}
+    for policy in policies.values():
+        if policy.operation_id not in primary or policy.negative is None:
+            continue
+        dependencies = set(policy.prerequisite_policy_ids)
+        dependencies.update(rule.source_policy_id for rule in policy.binding_rules
+                            if rule.source_policy_id)
+        key = policy.operation_id, tuple(sorted(dependencies)), tuple(sorted(policy.roles))
+        variants.setdefault(key, []).append(policy.id)
+    batches = []
+    for (operation, dependencies, _), ids in variants.items():
+        group, = design_groups(project, operation_ids=[operation])
+        for start in range(0, len(ids), 4):
+            members = ids[start:start + 4]
+            sources = [policies[key].operation_id for key in dependencies if key in policies]
+            batches.append(dict(group, id=f"negative_batch_{len(batches) + 1}",
+                policy_ids=members, status="PENDING",
+                supported=group["supported"] and set(sources) <= set(group["operations"]),
+                minimum_requests=len(members)))
+    return batches
+
+
 def executed_evidence(summary):
     """policy_id -> checks measured on real attempts; a planned step is not evidence.
 
