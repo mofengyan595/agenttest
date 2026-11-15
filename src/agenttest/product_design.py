@@ -471,7 +471,7 @@ def design_groups(project, size=6, operation_ids=None, requirement_links=()):
                  project.target.negative_post_observations.values()}
     allowed = [o.operation_id for o in project.contract.operations
                if o.operation_id in project.target.allowed_operations
-               and (operation_ids is not None or o.operation_id not in auxiliary)]
+               and o.operation_id not in auxiliary]
     operations = [key for key in allowed if operation_ids is None or key in operation_ids]
     source_edges = {}
     for raw in requirement_links:

@@ -750,6 +750,16 @@ class AgentSession:
                             hint="candidate_id 只能来自 get_test_scope 的 candidates[].id；"
                                  "已满足或已尝试过的义务不会再出现。",
                             valid_candidate_ids=sorted(candidates)[:12])
+        if candidate.get("kind") == "APPROVED_NEGATIVE":
+            requested = set(candidate.get("policies") or ())
+            batch = next((group for group in self.summary.get("groups") or ()
+                          if requested and requested <= set(group.get("policy_ids") or ())), None)
+            if batch:
+                self.obligation_runs += 1
+                self.record("run_open_obligation", candidate_id=candidate_id,
+                            delegated_group=batch["id"])
+                outcome = await self.run_group(batch["id"], design_note)
+                return dict(outcome, candidate_id=candidate_id, delegated_group=batch["id"])
         before_cases = len(self.summary.get("cases") or ())
         before_requests = self.ledger.requests
         self.obligation_runs += 1

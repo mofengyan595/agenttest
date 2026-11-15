@@ -34,7 +34,8 @@ def construct_plan(plan, context):
         return compile_design(context['planning_ir'], plan, context)
     draft = GenericPlannerDraft.model_validate(plan)
     nodes = {}
-    requirements = {row["source_id"]: row for row in context.get("request_requirements", ())}
+    requirements = {row["source_id"]: row for row in context.get("request_requirements", ())
+                    if row.get("source_id")}
     for node in draft.steps:
         if node.id in nodes:
             raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_DUPLICATE_NODE')

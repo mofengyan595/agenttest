@@ -36,12 +36,17 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--start-port", type=int, default=28600)
     parser.add_argument("--jobs", type=int, choices=[1, 2, 3], default=3)
+    parser.add_argument("--release-only", action="store_true")
     args = parser.parse_args()
     source = source_fingerprint()
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT,
                                    text=True).strip()
     args.out.mkdir(parents=True, exist_ok=False)
     tasks = list(schedule())
+    if args.release_only:
+        tasks = [task for task in tasks if task["key"].startswith("C-")]
+        tasks.append(dict(key="D-new-release", kind="parcels", observe_negative_posts=True,
+            text="上线前，对项目的全部接口做一次完整验收，覆盖已批准正向流程和非法入参。"))
     (args.out / "manifest.json").write_text(json.dumps(
         dict(head=head, source_sha256=source, positions=tasks, jobs=args.jobs),
         ensure_ascii=False, indent=2), encoding="utf-8")

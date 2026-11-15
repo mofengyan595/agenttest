@@ -245,6 +245,29 @@ def test_complete_release_scope_stays_at_project_approval_when_focus_narrows():
     assert not subject_scope(project, "发布前仅检查 readParcel", PRE_RELEASE).get("whole_project")
 
 
+def test_project_release_qualifiers_share_one_positive_planning_scope():
+    from types import SimpleNamespace
+
+    from agenttest.product_tasks import request_planning_ir, unresolved_ir_clauses
+    from agenttest.request_requirements import request_atoms
+
+    project, _ = lifecycle_project()
+    text = "服务即将发布，请运行完整的上线前检查，把已确认正常行为和无效参数用例都测到。"
+    atoms = request_atoms(text)
+    selected = [("readParcel",), OPS, ("readParcel", "createParcel")]
+    requirements = [dict(source_id=atom["source_id"], source_quote=atom["text"],
+        disposition="required", actions=[dict(operation_id=op, role=None) for op in chosen])
+        for atom, chosen in zip(atoms, selected, strict=True)]
+    scope = SimpleNamespace(requirements=requirements, input_requirements=[],
+        expectation_questions=[], mode="selected", operation_ids=list(OPS))
+    ir = request_planning_ir(project, scope, atoms, text, autonomous=True)
+    assert not ir.ambiguities
+    assert not unresolved_ir_clauses(ir, requirements)
+    assert set(ir.coverage["project_scope_clauses"]) == {
+        atoms[0]["source_id"], atoms[2]["source_id"]}
+    assert [item.operation_id for item in ir.instances] == list(OPS)
+
+
 def test_an_investigation_is_complete_when_the_subject_was_actually_probed():
     project, _ = lifecycle_project()
     summary = summary_for(project, measured=("readParcel",), executed=("readParcel",))

@@ -53,6 +53,12 @@ def request_planning_ir(project, selection, atoms, text, *, autonomous=False):
                     for item in selection.requirements]
     inputs = [item.model_dump() if hasattr(item, "model_dump") else item
               for item in selection.input_requirements]
+    scope_clauses = []
+    if autonomous and not inputs and not explicit_http_statuses(text) and not (
+            explicit_response_checks(text) or selection.expectation_questions):
+        from agenttest.task_completion import project_release_requirements
+
+        requirements, scope_clauses = project_release_requirements(project, text, requirements)
     presence_operations = ()
     setup_operations = ()
     if autonomous and selection.mode == "selected":
@@ -63,7 +69,7 @@ def request_planning_ir(project, selection, atoms, text, *, autonomous=False):
                 and not any(r.get("forbidden_operation_ids") for r in requirements)):
             presence_operations = subject_scope(project, text, REGRESSION)["operations"]
             setup_operations = selection.operation_ids
-    return build_planning_ir(
+    ir = build_planning_ir(
         requirements, atoms, operations=[dict(id=op.operation_id, method=op.method,
                                               path=op.path)
                                          for op in project.contract.operations],
@@ -73,6 +79,9 @@ def request_planning_ir(project, selection, atoms, text, *, autonomous=False):
                          if op.method in {"GET", "HEAD", "OPTIONS"}},
         input_requirements=inputs, regression_presence_operations=presence_operations,
         regression_setup_operations=setup_operations)
+    if scope_clauses:
+        ir.coverage["project_scope_clauses"] = scope_clauses
+    return ir
 
 
 def aggregate_usage(records):
@@ -179,6 +188,8 @@ def unresolved_ir_clauses(planning_ir, focus_requirements):
     original = {item.get("source_id"): item for item in focus_requirements or ()}
     unresolved = []
     for clause in planning_ir.clauses:
+        if clause.source_id in planning_ir.coverage.get("project_scope_clauses", []):
+            continue
         role = getattr(clause.role, "value", str(clause.role))
         if role != "CONSTRAINT":
             continue
@@ -1066,6 +1077,9 @@ class ProductTasks:
             executable_checks = negative_checks
         elif group.get("defer_approved_negatives"):
             executable_checks = []
+        project_release_ir = bool(planning_ir and planning_ir.coverage.get("project_scope_clauses"))
+        if project_release_ir and original_group:
+            planning_ir = planning_ir.scope_to(group["operations"])
         design_requirements = scope.requirements if original_group else []
         witness_requirements = design_requirements
         design_text = text if original_group else supervision["text"]
@@ -1136,7 +1150,7 @@ class ProductTasks:
         # create/delete that establish the phase before a 404 read), not just the obligation's
         # own operations; otherwise the compiler would always look "partially covering".
         engine_group = group
-        if supervision is not None and planning_ir is not None:
+        if (supervision is not None or project_release_ir) and planning_ir is not None:
             engine_group = {**group, "primary": sorted({item.operation_id
                                                        for item in planning_ir.instances})}
         engine_conditions = planning_engine_conditions(
@@ -1157,8 +1171,8 @@ class ProductTasks:
             # deterministic compiler realizes them as instances. A group that
             # covers only part of the request keeps the unchanged legacy path.
             group_requirements = planning_ir.normalized_requirements
-            group_witness_requirements = summary.get('focus', {}).get(
-                'requirements', [])
+            group_witness_requirements = (planning_ir.normalized_requirements
+                if project_release_ir else summary.get('focus', {}).get('requirements', []))
             group_ir = planning_ir
         instance_inputs = autonomous and group_ir is not None and original_group
         record["instance_inputs_requested"] = instance_inputs

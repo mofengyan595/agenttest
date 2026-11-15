@@ -78,6 +78,15 @@ _FULL_PROJECT_RELEASE = re.compile(
     re.IGNORECASE)
 _LIMITED_RELEASE = re.compile(
     r"(?:仅|只)(?:测|检查|验证|验收)|单个|指定|\bonly\b", re.IGNORECASE)
+_RELEASE_TIMING = re.compile(
+    r"(?:(?:本|该|此|这个)?(?:服务|项目|应用|系统|版本))?"
+    r"(?:即将|准备|计划|拟|快要)(?:上线|发布|发版|投产)(?:了)?"
+    r"|(?:上线|发布|发版|投产)前")
+_VARIANT_SCOPE = re.compile(
+    r"(?:把|请)?(?:覆盖|包含|包括|执行)?(?:已确认(?:的)?|已批准(?:的)?)?"
+    r"(?:正常|正向)(?:行为|流程|用例|路径|请求)"
+    r"(?:和|及|与|以及)(?:无效|非法|负向)(?:参数|入参|输入|用例)"
+    r"(?:用例)?(?:都测到|均覆盖|全部执行)?")
 
 # Lexical subject cues mapped to HTTP methods. The subject is what the user pointed at; an
 # unrelated endpoint is never counted as the subject of a regression goal.
@@ -110,6 +119,41 @@ def classify_task(text: str) -> dict:
 
 def _operations(project):
     return {operation.operation_id: operation for operation in project.contract.operations}
+
+
+def project_release_requirements(project, text, requirements):
+    """Give project-scope qualifiers one witness each without making them HTTP calls."""
+    if classify_task(text)["kind"] != PRE_RELEASE or not subject_scope(
+            project, text, PRE_RELEASE).get("whole_project"):
+        return requirements, []
+    anchors = [item for item in requirements if item["disposition"] == "required"
+               and _FULL_PROJECT_RELEASE.search(item["source_quote"])]
+    if len(anchors) != 1:
+        return requirements, []
+    anchor = anchors[0]
+    candidates = [item for item in requirements if item["disposition"] == "required"
+                  and (_RELEASE_TIMING.fullmatch(item["source_quote"].strip())
+                       or _VARIANT_SCOPE.fullmatch(item["source_quote"].strip()))]
+    if any(item.get(field) for item in [anchor, *candidates] for field in (
+            "before", "existing_resources", "forbidden_operation_ids", "blocked_operation_ids")):
+        return requirements, []
+    if any(item.get("response_checks") for item in candidates):
+        return requirements, []
+    merged = {(action["operation_id"], action.get("role")): action
+              for item in [anchor, *candidates] for action in item.get("actions") or ()}
+    if len(merged) != len({operation for operation, _ in merged}):
+        return requirements, []
+    consumed = [item["source_id"] for item in candidates]
+    relationships = list(anchor.get("same_resource") or ())
+    for item in candidates:
+        for pair in item.get("same_resource") or ():
+            if pair not in relationships:
+                relationships.append(pair)
+    normal = [dict(item, actions=list(merged.values()), same_resource=relationships)
+              if item is anchor else
+              dict(item, disposition="constraint", actions=[])
+              if item["source_id"] in consumed else item for item in requirements]
+    return normal, consumed
 
 
 def _policies(project):

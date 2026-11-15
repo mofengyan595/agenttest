@@ -590,6 +590,7 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
                        inventory=None, available_identity_aliases=None, order_feedback=None):
     operations = {o.operation_id: o for o in project.contract.operations}
     groups = design_groups(project)
+    business_ids = {key for group in groups for key in group["primary"]}
     index = [dict(group_id=g["id"], operations=[dict(id=key, method=operations[key].method,
         path=operations[key].path, summary=operations[key].summary,
         parameters=[dict(name=p["name"], location=p["in"], type=p.get("schema", {}).get("type"))
@@ -599,7 +600,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     context = dict(user_task=task_context["current_request"],
         previous_requests=task_context.get("requests", [])[:-1], project_notes=notes,
         previous_result=task_context.get("previous_result"),
-        grouped_index=index, approved_ids=list(project.target.allowed_operations))
+        grouped_index=index, approved_ids=[key for key in project.target.allowed_operations
+                                          if key in business_ids])
     from agenttest.request_requirements import request_atoms
 
     context['request_atoms'] = request_atoms(context['user_task'])
@@ -690,7 +692,7 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         if derived:
             selection.expectation_questions = [*selection.expectation_questions, *derived]
             selection.operation_ids = [*selection.operation_ids, *added]
-        if set(selection.operation_ids) - set(project.target.allowed_operations):
+        if set(selection.operation_ids) - set(context["approved_ids"]):
             raise ValueError("FOCUS_OPERATION_NOT_APPROVED")
         selected = (context["approved_ids"] if selection.mode == "all_ready"
                     else selection.operation_ids)
