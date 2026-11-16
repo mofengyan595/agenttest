@@ -26,6 +26,7 @@ from run_p3a3 import source_fingerprint
 from run_p3b_gate import FRESH
 
 from agenttest.execution_budget import ADAPTIVE, ExecutionBudget
+from agenttest.human_review import ReviewDecision
 from agenttest.llm_planner import OpenAICompatiblePlanner
 from agenttest.product_design import TestDesignModel
 from agenttest.product_durability import PAUSED
@@ -41,12 +42,13 @@ NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 async def worker(out, kind, step, task_id, pause):
     manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("fault") and manifest["source_sha256"] != source_fingerprint():
+    if (manifest.get("fault") or manifest.get("hitl")) and (
+            manifest["source_sha256"] != source_fingerprint()):
         raise RuntimeError("RECOVERY_ACCEPTANCE_SOURCE_CHANGED")
     fault = manifest.get("fault")
-    if fault and step == 0:
+    if fault and not (out / "interrupted.json").exists():
         def stop_after_response(journal, phase, result):
-            if (phase == RESPONSE and result.method == fault["method"]
+            if (phase == fault.get("phase", RESPONSE) and result.method == fault["method"]
                     and result.attempts[-1].status_code == fault["status"]):
                 os._exit(89)
 
@@ -63,6 +65,8 @@ async def worker(out, kind, step, task_id, pause):
         generic_intake=True, model_status=lambda: "CONFIGURED_MODEL",
         environ=dict(AGENTTEST_DURABLE_EXECUTION="1",
                      AGENTTEST_DURABLE_TARGET_EPOCH=manifest["target_epoch"],
+                     AGENTTEST_HITL="1" if manifest.get("hitl") else "0",
+                     AGENTTEST_HITL_OPERATIONS="createParcel",
                      AGENTTEST_DURABLE_PAUSE_AFTER_TOOLS="1" if pause else "0"),
         focus_factory=lambda _: RecordingModel(TestFocusModel(settings, profile="generic"),
                                                "focus", out / "model-outputs.jsonl"),
@@ -82,8 +86,19 @@ async def worker(out, kind, step, task_id, pause):
     service.dev_max_seconds = 900
     start = time.perf_counter()
     try:
-        row = (await service.resume(task_id, OWNER) if task_id else
-               await service.submit(OWNER, project_id, FRESH[kind], manifest["submission"]))
+        if task_id:
+            row = service.db.get(task_id, OWNER)
+            reviews = service.review_records(task_id, OWNER)
+            waiting = [review for review in reviews if review["status"] == "WAITING_APPROVAL"]
+            for review in waiting:
+                decision = ReviewDecision(decision=manifest["hitl"], version=review["version"])
+                await service.decide_review(task_id, OWNER, review["review_id"], decision)
+            if not any(review["status"] == "REVIEW_REQUIRED" for review in reviews):
+                row = service.db.get(task_id, OWNER)
+                if row["status"] == "INTERRUPTED":
+                    row = await service.resume(task_id, OWNER)
+        else:
+            row = await service.submit(OWNER, project_id, FRESH[kind], manifest["submission"])
         task_id = row["id"]
         (out / "task-id.txt").write_text(task_id, encoding="ascii")
         while row["status"] not in TERMINAL:
@@ -98,6 +113,7 @@ async def worker(out, kind, step, task_id, pause):
             elapsed_ms=round(1000 * (time.perf_counter() - start), 3),
             checkpoint_bytes=path.stat().st_size if path.exists() else 0,
             status=row["status"], summary=summary, reports=reports, recovery=recovery,
+            reviews=service.review_records(task_id, OWNER),
             checkpoint_id=marker.get("checkpoint_id") if marker else None,
             target_health=wait_health(manifest["port"]))
         (out / f"phase-{step:02}.json").write_text(
@@ -106,12 +122,12 @@ async def worker(out, kind, step, task_id, pause):
         await service.close()
 
 
-async def run(out, kind, port, *, fault=None, fake_delete=False):
+async def run(out, kind, port, *, fault=None, fake_delete=False, hitl=None):
     out.mkdir(parents=True)
     base = free_port_block(port)
     epoch = uuid4().hex
     manifest = dict(port=base + 1, target_epoch=epoch, submission=uuid4().hex,
-                    kind=kind, text=FRESH[kind], fault=fault, fake_delete=fake_delete,
+                    kind=kind, text=FRESH[kind], fault=fault, fake_delete=fake_delete, hitl=hitl,
                     source_sha256=source_fingerprint(),
                     head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
     (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
@@ -126,7 +142,7 @@ async def run(out, kind, port, *, fault=None, fake_delete=False):
         try:
             wait_health(base + 1)
             await prepare(out / "lab", base, env, observe_negative_posts=kind == "release")
-            task_id, pause = "", fault is None
+            task_id, pause = "", fault is None and not hitl
             for step in range(18):
                 phase_started = time.perf_counter()
                 with (out / f"phase-{step:02}.log").open("wb") as log:
@@ -136,7 +152,7 @@ async def run(out, kind, port, *, fault=None, fake_delete=False):
                         "--task-id", task_id, *(["--pause"] if pause else [])],
                         check=False, timeout=930, env=env, stdout=log, stderr=subprocess.STDOUT,
                         creationflags=NO_WINDOW)
-                if fault and step == 0 and child.returncode == 89:
+                if fault and child.returncode == 89 and not (out / "interrupted.json").exists():
                     task_id = (out / "task-id.txt").read_text(encoding="ascii").strip()
                     db = TaskStore(out / "lab/workspace/tasks.sqlite3")
                     marker = db.durable_state(task_id, OWNER)
@@ -163,6 +179,9 @@ async def run(out, kind, port, *, fault=None, fake_delete=False):
                     recovery=result["recovery"], usage=summary.get("context_usage"),
                     reports=len(result["reports"])),
                     ensure_ascii=False), flush=True)
+                if hitl and any(review["status"] == "WAITING_APPROVAL"
+                                for review in result["reviews"]):
+                    continue
                 if not result["recovery"]["resumable"] or (
                     summary.get("agent_runtime", {}).get("stop_reason") != PAUSED
                 ):
@@ -187,16 +206,19 @@ def main():
     parser.add_argument("--break-after-method", choices=("POST", "DELETE"))
     parser.add_argument("--break-after-status", type=int)
     parser.add_argument("--fake-delete", action="store_true")
+    parser.add_argument("--hitl", choices=("approve", "reject"))
+    parser.add_argument("--break-before-receipt", action="store_true")
     args = parser.parse_args()
     if args.worker is not None:
         asyncio.run(worker(args.out.resolve(), args.kind, args.worker, args.task_id, args.pause))
     else:
         if bool(args.break_after_method) != bool(args.break_after_status):
             parser.error("a crash position requires both method and HTTP status")
-        fault = (dict(method=args.break_after_method, status=args.break_after_status)
+        fault = (dict(method=args.break_after_method, status=args.break_after_status,
+                      phase="RESPONSE_RECEIVED" if args.break_before_receipt else RESPONSE)
                  if args.break_after_method else None)
         asyncio.run(run(args.out.resolve(), args.kind, args.port,
-                        fault=fault, fake_delete=args.fake_delete))
+                        fault=fault, fake_delete=args.fake_delete, hitl=args.hitl))
 
 
 if __name__ == "__main__":

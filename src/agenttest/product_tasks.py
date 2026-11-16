@@ -541,6 +541,7 @@ class ProductTasks:
         if resume_phase == "TOOL":
             summary = deepcopy(resumed_state["before_summary"])
         transport = None
+        durability = None
         executable_checks = []
         started = time.perf_counter()
         previous_seconds = resumed_state.get("active_seconds", 0)
@@ -592,7 +593,6 @@ class ProductTasks:
                     svc.db.transition(task_id, owner, "RUNNING", "NEEDS_REVIEW", summary=summary)
                     return
                 summary["agent_runtime"] = dict(engine=engine, reason=engine_reason)
-                durability = None
                 if getattr(svc, "durable_execution", False) and engine == AGENT_ENGINE:
                     from agenttest.product_durability import ProductDurability
 
@@ -603,6 +603,8 @@ class ProductTasks:
                         durability.publish("ACTIVE", summary=summary)
                 elif recovery:
                     raise TaskConflict("DURABLE_ENGINE_CHANGED")
+                if getattr(svc, "hitl", None) is not None and durability is None:
+                    raise TaskConflict("HITL_DURABLE_AGENT_REQUIRED")
                 if engine == AGENT_ENGINE:
                     execution = resolve_task_execution(project, summary, ledger)
                     summary["execution_budget"] = execution.public(ledger)
@@ -1066,6 +1068,7 @@ class ProductTasks:
                     if engine == AGENT_ENGINE:
                         result = await self.run_deep_agent(scope)
                         if durability and result.checkpoint_id:
+                            from agenttest.human_review import PAUSED_FOR_REVIEW
                             from agenttest.task_completion import write_effects_view
 
                             policies = {p.id: p for p in project.registry.definitions()}
@@ -1073,19 +1076,21 @@ class ProductTasks:
                                 "WRITE_OUTCOME_UNKNOWN", 0)
                             if unknown:
                                 raise TaskConflict("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW")
-                            durability.publish("AGENT", summary=summary,
-                                checkpoint_id=result.checkpoint_id, state=dict(
-                                    usage=ledger.summary(), session=result.session.durable_state(),
-                                    execution=result.session.execution.durable_state(),
-                                    agent_model_totals=result.model_totals,
-                                    agent_call_trace=result.call_trace,
-                                    runtime_limits=scope.state["runtime_limits"],
-                                    scope_state=scope.state,
-                                    planning_ir=planning_ir.model_dump(mode="json")
-                                    if planning_ir else None, executable_checks=executable_checks,
-                                    active_seconds=previous_seconds + (
-                                        time.perf_counter() - started)),
-                                retry_after=(result.error or {}).get("retry_after"))
+                            if result.stop_reason != PAUSED_FOR_REVIEW:
+                                durability.publish("AGENT", summary=summary,
+                                    checkpoint_id=result.checkpoint_id, state=dict(
+                                        usage=ledger.summary(),
+                                        session=result.session.durable_state(),
+                                        execution=result.session.execution.durable_state(),
+                                        agent_model_totals=result.model_totals,
+                                        agent_call_trace=result.call_trace,
+                                        runtime_limits=scope.state["runtime_limits"],
+                                        scope_state=scope.state,
+                                        planning_ir=planning_ir.model_dump(mode="json")
+                                        if planning_ir else None,
+                                        executable_checks=executable_checks,
+                                        active_seconds=active_seconds()),
+                                    retry_after=(result.error or {}).get("retry_after"))
                             svc.db.transition(task_id, owner, "RUNNING", "INTERRUPTED",
                                               summary=summary)
                             svc.db.event(task_id, "INTERRUPTED", requests=ledger.requests)
@@ -1157,6 +1162,8 @@ class ProductTasks:
             summary["failure_detail"] = str(exc)
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       "恢复账本无法确认，保留原报告与复核义务。")
+            if durability and str(exc) == "DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW":
+                durability.unknown_reviews()
         except Exception as exc:
             record_timing()
             # The type is safe to persist (no target URL, body or credential); without it an
@@ -1449,18 +1456,24 @@ class ProductTasks:
             except ValueError as exc:
                 preflight.append(exc)
         if tool:
+            from agenttest.human_review import group_operations, verification_candidates
+
             planned = [fingerprint(scenario.model_dump()) if not isinstance(scenario, ValueError)
                        else None for scenario in preflight]
             if cached:
                 if (group["id"] != cached["group_id"] or planned != cached["plans"]
                         or group_request_limit != cached["group_request_limit"]):
                     raise StepRecoveryBlocked("STEP_APPROVED_GROUP_CHANGED")
+                tool["arm"](cached, None)
             else:
+                recovery_probes = (verification_candidates(project, preflight)
+                                   if scope.durability.hitl is not None else [])
                 tool["arm"](dict(group_id=group["id"], plans=planned, record=record,
                     design=design.model_dump(mode="json"),
                     witnesses=[(case._http_status_steps, case._response_steps,
                                 case._data_source_steps) for case in design.cases],
-                    group_request_limit=group_request_limit))
+                    group_request_limit=group_request_limit, recovery_probes=recovery_probes),
+                    group_operations(project, preflight, scope.durability.hitl))
         for index, case in enumerate(ordered_cases):
             # A group can be executed again under the same group id (a retry of the same
             # supervision attempt). Two evidence records may never share a case id: the write
@@ -1834,6 +1847,7 @@ class ProductTasks:
             "RUNTIME_ERROR": "自主运行时异常终止；已保留已发生的证据并生成确定性任务报告。",
             "AUTHORITY_CHANGED": "项目授权在任务执行期间发生变化；已停止后续动作。",
             "DURABLE_CHECKPOINT_PAUSED": "已在工具执行边界暂停，可恢复此任务。",
+            "HUMAN_APPROVAL_REQUIRED": "测试方案已通过预检，等待任务所有者审批。",
             "DURABLE_MODEL_GATEWAY_UNAVAILABLE": "模型网关暂时不可用，已保存任务恢复位置。",
         }.get(result.stop_reason,
               "自主运行时已结束；完成情况由确定性判据给出，不采用模型总结作为结论。")

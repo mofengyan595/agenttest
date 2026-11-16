@@ -78,8 +78,10 @@ def child(root, port, end, method, mode="executor"):
             return publish(durable, phase, **kwargs)
 
         ProductDurability.publish = interrupt_publish
-    if mode == "product":
-        asyncio.run(run_product(root, target, scenario, project, end != "no-fault"))
+    if mode != "executor":
+        asyncio.run(run_product(root, target, scenario, project,
+                                end not in {"no-fault", "approve", "reject", "decide"},
+                                hitl=mode == "hitl", decision=end))
         return
     db = TaskStore(root / "tasks.sqlite3")
     db.create("task", "operator", "submission", "parcels", "identity",
@@ -98,9 +100,10 @@ def child(root, port, end, method, mode="executor"):
     print(result.model_dump_json())
 
 
-async def run_product(root, target, scenario, project, first):
+async def run_product(root, target, scenario, project, first, *, hitl=False, decision=""):
     import agenttest.product_agent as agent
     import agenttest.product_tasks as tasks
+    from agenttest.human_review import ReviewDecision
     from agenttest.product_design import TestDesign
     from agenttest.product_schema import encoded_literal
     from agenttest.project_intake import IntakeInput
@@ -135,7 +138,8 @@ async def run_product(root, target, scenario, project, first):
     svc = TaskService({}, db, ReportStore(root / "reports"), lambda _: None,
         generic_intake=True, designer_factory=lambda _: object(),
         agent_model_factory=lambda _: settings(), model_status=lambda: "CONFIGURED_MODEL",
-        environ=dict(AGENTTEST_DURABLE_EXECUTION="1", AGENTTEST_DURABLE_TARGET_EPOCH="test"))
+        environ=dict(AGENTTEST_DURABLE_EXECUTION="1", AGENTTEST_DURABLE_TARGET_EPOCH="test",
+                     AGENTTEST_HITL="1" if hitl else "0"))
     lookup = svc.project
     svc.project = lambda key: replace(lookup(key), registry=project.registry)
     path = root / "task-id"
@@ -148,7 +152,20 @@ async def run_product(root, target, scenario, project, first):
             row = await svc.submit("operator", record["id"], tasks.DEFAULT_ROUND, "request")
             path.write_text(row["id"], encoding="ascii")
         else:
-            row = await svc.resume(path.read_text(encoding="ascii"), "operator")
+            task_id = path.read_text(encoding="ascii")
+            if decision in {"approve", "reject", "decide"}:
+                review, = svc.review_records(task_id, "operator")
+                data = ReviewDecision(decision="reject" if decision == "reject" else "approve",
+                                      version=1, note="审批备注不能扩大授权。")
+                result = await svc.decide_review(task_id, "operator", review["review_id"], data)
+                assert result == await svc.decide_review(
+                    task_id, "operator", review["review_id"], data)
+                if decision == "decide":
+                    os._exit(89)
+            if decision == "reject":
+                print(json.dumps(db.get(task_id, "operator")))
+                return
+            row = await svc.resume(task_id, "operator")
         await svc._workers[row["id"]]
         row = db.get(row["id"], "operator")
         assert row["status"] in TERMINAL
@@ -171,11 +188,14 @@ async def run_product(root, target, scenario, project, first):
     ("REPEATED_CRASH", "POST", False, True, 1),
     ("PRODUCT_RECOVERY", "POST", False, True, 1),
     ("BEFORE_TOOL_DONE", "GET", False, True, 3),
+    ("HITL_APPROVE", "POST", False, True, 0),
+    ("HITL_REJECT", "POST", False, False, 0),
 ])
 def test_process_exit_at_execution_boundary(
         tmp_path, phase, method, fake_delete, can_resume, before_count):
     pytest.importorskip("langgraph")
-    product_mode = phase in {"PRODUCT_RECOVERY", "BEFORE_TOOL_DONE"}
+    hitl = phase.startswith("HITL_")
+    product_mode = hitl or phase in {"PRODUCT_RECOVERY", "BEFORE_TOOL_DONE"}
     if product_mode:
         pytest.importorskip("deepagents")
         pytest.importorskip("langgraph.checkpoint.sqlite.aio")
@@ -220,12 +240,22 @@ def test_process_exit_at_execution_boundary(
         try:
             args = [sys.executable, "-X", "utf8", str(Path(__file__).resolve()), str(tmp_path),
                     str(server.server_address[1])]
-            mode = "product" if product_mode else "executor"
+            mode = "hitl" if hitl else "product" if product_mode else "executor"
             first_phase = ("RESPONSE_RECORDED" if phase in {"REPEATED_CRASH", "PRODUCT_RECOVERY"}
                            else phase)
             interrupted = subprocess.run([*args, first_phase, method, mode], capture_output=True,
                                          timeout=60, encoding="utf-8", check=False)
-            assert interrupted.returncode == 89, interrupted.stderr or interrupted.stdout
+            if hitl:
+                assert interrupted.returncode == 0, interrupted.stderr or interrupted.stdout
+                paused = json.loads(interrupted.stdout)
+                assert paused["summary"]["agent_runtime"]["stop_reason"] == (
+                    "HUMAN_APPROVAL_REQUIRED"), paused["summary"]
+                if can_resume:
+                    decided = subprocess.run([*args, "decide", method, mode],
+                        capture_output=True, timeout=60, encoding="utf-8", check=False)
+                    assert decided.returncode == 89, decided.stderr or decided.stdout
+            else:
+                assert interrupted.returncode == 89, interrupted.stderr or interrupted.stdout
             assert len(events) == before_count
             release_response.set()
             if phase == "BEFORE_TOOL_DONE":
@@ -239,7 +269,8 @@ def test_process_exit_at_execution_boundary(
                     capture_output=True, timeout=60, encoding="utf-8", check=False)
                 assert again.returncode == 89, again.stderr or again.stdout
                 assert len(events) == 2
-            resumed = subprocess.run([*args, "no-fault", method, mode], capture_output=True,
+            restart = "reject" if hitl and not can_resume else "no-fault"
+            resumed = subprocess.run([*args, restart, method, mode], capture_output=True,
                                      timeout=60, encoding="utf-8", check=True)
         finally:
             release_response.set()
@@ -248,6 +279,11 @@ def test_process_exit_at_execution_boundary(
     db = TaskStore(tmp_path / "tasks.sqlite3")
     if product_mode:
         product = json.loads(resumed.stdout)
+        if hitl and not can_resume:
+            assert product["status"] == "NEEDS_REVIEW"
+            assert not product["summary"]["complete"]
+            assert not events
+            return
         assert product["status"] == "FINISHED", resumed.stderr or product["summary"]
         assert product["summary"]["context_usage"]["requests"] == 3, product["summary"]
         assert product["summary"]["cases"][0]["outcome"] == "PASS", product["summary"]

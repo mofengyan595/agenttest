@@ -1,3 +1,4 @@
+import asyncio
 import json
 import sqlite3
 from pathlib import Path
@@ -21,7 +22,7 @@ from agenttest.write_effects import CREATION_UNPROVEN, NO_SIDE_EFFECT_PROVEN, fo
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("recover", [False, True])
+@pytest.mark.parametrize("recover", [False, True, "unknown"])
 async def test_isolated_observation_counts_only_correlated_actual_requests(
         tmp_path, monkeypatch, recover):
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -69,17 +70,29 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
                        environment="isolated", target_origin=project.target.base_url)
     if recover:
         db = TaskStore(tmp_path / "recovery.sqlite3")
-        db.create("task", "owner", "submission", identifier, project.identity(),
-                  "request", "RUNNING", {})
+        row, _ = db.create("task", "owner", "submission", identifier, project.identity(),
+                           "request", "RUNNING", {})
+        authority = "deployment"
+        if recover == "unknown":
+            from types import SimpleNamespace
+
+            from agenttest.product_durability import ProductDurability
+
+            svc = SimpleNamespace(db=db, project=lambda _: project, environ={
+                "AGENTTEST_HITL": "1", "AGENTTEST_DURABLE_TARGET_EPOCH": "test"},
+                private_input_guard=lambda _: False)
+            durable = ProductDurability(svc, row, "owner")
+            authority = durable.identity
         key = StepScope(db, "task", "owner", "tool", "batch", "case", report.run_id,
-                        "deployment", fingerprint(scenario.model_dump()))
+                        authority, fingerprint(scenario.model_dump()))
         journal = StepJournal(key)
 
         class Interrupt(BaseException):
             pass
 
         def stop_after_negative(phase, step):
-            if phase == RESPONSE and step.method == "POST":
+            boundary = "RESPONSE_RECEIVED" if recover == "unknown" else RESPONSE
+            if phase == boundary and step.method == "POST":
                 raise Interrupt()
 
         journal.boundary = stop_after_negative
@@ -87,6 +100,44 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
             await Executor(project.target, project.contract, store, transport, {},
                 registry=project.registry, step_journal=journal).run(scenario, report=report)
         assert events == ["GET", "POST"]
+        if recover == "unknown":
+            from agenttest.human_review import HumanReviews, ReviewDecision, verification_candidates
+            from agenttest.step_recovery import tool_attempts
+            from agenttest.task_service import TaskService
+
+            durable.publish("TOOL", summary={}, checkpoint_id="test",
+                state=dict(tool_key="tool", usage=dict(requests=0, usage_known=True),
+                    design=dict(group_request_limit=3,
+                                recovery_probes=verification_candidates(project, [scenario]))))
+            db.transition("task", "owner", "RUNNING", "INTERRUPTED")
+            durable.unknown_reviews()
+            reviews = HumanReviews(db)
+            review, = reviews.list("task", "owner")
+            assert review["status"] == "REVIEW_REQUIRED"
+            assert review["allowed_decisions"] == ["archive", "request_verification"]
+            with pytest.raises(ValueError, match="REVIEW_DECISION_NOT_ALLOWED"):
+                reviews.decide("task", "owner", review, ReviewDecision(
+                    decision="approve", version=1))
+            requested, changed = reviews.decide("task", "owner", review, ReviewDecision(
+                decision="request_verification", version=1))
+            assert changed and requested["status"] == "VERIFICATION_REQUESTED"
+            attempts = tool_attempts(db, "task", "tool")
+            verification = durable.verification_plan(db.durable_state("task", "owner"),
+                                                     attempts, attempts[-1])
+            service = SimpleNamespace(db=db, reviews=reviews, project=lambda _: project,
+                                      _serial=asyncio.Semaphore(1),
+                                      reports=store, environ={})
+            monkeypatch.setattr(httpx, "AsyncHTTPTransport", lambda **_: transport)
+            await TaskService.verify_write(service, durable, review, verification)
+            assert events == ["GET", "POST", "GET"]
+            observed, = reviews.list("task", "owner")
+            assert observed["status"] == "REVIEW_REQUIRED"
+            assert observed["allowed_decisions"] == ["archive"]
+            assert observed["verification"]["requests"] == 1
+            assert observed["verification"]["observations"][0]["http_status"] == [200]
+            assert tool_attempts(db, "task", "tool")[-1]["phase"] == "DISPATCHED"
+            assert not db.get("task", "owner")["summary"].get("complete")
+            return
         restored = DesignCase.model_validate_json(proposed.model_dump_json())
         rebuilt = validate_design_case(project, restored, store, environ={},
                                        observation_namespace=namespace)

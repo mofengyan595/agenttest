@@ -677,6 +677,8 @@ class AgentSession:
         except StepRecoveryBlocked:
             raise
         except Exception as exc:  # a defect is reported to the model, never fatal to the run
+            if (getattr(self.scope, "tool", None) or {}).get("reviewing"):
+                raise
             self.record("run_test_group", phase="error", group_id=group_id,
                         error=type(exc).__name__)
             self.note_tool_error("run_test_group", exc)
@@ -803,6 +805,8 @@ class AgentSession:
         except StepRecoveryBlocked:
             raise
         except Exception as exc:
+            if (getattr(self.scope, "tool", None) or {}).get("reviewing"):
+                raise
             self.record("run_open_obligation", phase="error", candidate_id=candidate_id,
                         error=type(exc).__name__)
             self.note_tool_error("run_open_obligation", exc)
@@ -1137,6 +1141,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     )
     from langchain_core.messages import HumanMessage, ToolMessage
     from langgraph.errors import GraphRecursionError
+    from langgraph.types import Command, interrupt
 
     from agenttest.deep_harness.chat_model import (
         MODEL_CALL_BUDGET,
@@ -1147,6 +1152,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         ModelHarnessError,
         ModelTotals,
     )
+    from agenttest.human_review import PAUSED_FOR_REVIEW, WAITING
     from agenttest.product_durability import GATEWAY_STOP, PAUSED
 
     started = time.monotonic()
@@ -1283,6 +1289,17 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                 if recovery["phase"] == "TOOL_DONE":
                     return ToolMessage.model_validate(saved["tool_result"])
                 frame = dict(key=key, design=saved["design"], armed=True)
+
+                def approve_cached(_design, _operations):
+                    if review_id := saved.get("review_id"):
+                        frame["reviewing"] = True
+                        review = recovery.get("review") or {}
+                        if (review.get("status") != "APPROVED"
+                                or interrupt({"review_id": review_id}) != review_id):
+                            raise StepRecoveryBlocked("REVIEW_DECISION_MISMATCH")
+                        frame["reviewing"] = False
+
+                frame["arm"] = approve_cached
             else:
                 state = deepcopy(dict(tool_key=key, before_summary=scope.summary,
                     session=session.durable_state(), execution=execution.durable_state(),
@@ -1291,12 +1308,35 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     planning_ir=scope.planning_ir.model_dump(mode="json")
                     if scope.planning_ir else None, executable_checks=scope.executable_checks))
 
-                def arm(design):
+                def arm(design, operations):
+                    review = None
+                    if operations:
+                        review_id = fingerprint((key, design["plans"], operations))
+                        state["review_id"] = review_id
+                        review = dict(review_id=review_id, task_id=scope.task_id,
+                            run_id=scope.task_id, thread_id=scope.task_id,
+                            checkpoint_id=checkpoint, tool_call_id=call["id"],
+                            tool_name=call["name"], kind="VALIDATED_TOOL_PLAN",
+                            status=WAITING, version=1, created_at=time.time(),
+                            allowed_decisions=["approve", "reject"], operations=operations,
+                            group_id=design["group_id"], authority=durable.identity,
+                            policy_sha256=scope.project.registry.digest(),
+                            planning_ir_sha256=fingerprint(state["planning_ir"]),
+                            plan_sha256=fingerprint(design["plans"]),
+                            target_sha256=fingerprint(scope.project.target.model_dump()),
+                            evidence=session.evidence_refs(), reason="SENSITIVE_OPERATIONS",
+                            risk="该批次可能改变隔离目标的状态。审批只适用于列出的预检方案。")
                     state.update(design=design, usage=ledger.summary(),
                                  active_seconds=scope.active_seconds())
+                    # The trusted pre-tool state is needed to reconstruct session counters and
+                    # design witnesses when LangGraph re-enters the interrupted tool.
                     durable.publish("TOOL", summary=scope.summary, checkpoint_id=checkpoint,
-                                    state=state)
+                                    state=state, review=review)
                     frame["armed"] = True
+                    if review:
+                        frame["reviewing"] = True
+                        interrupt({"review_id": review_id})
+                        raise StepRecoveryBlocked("REVIEW_RESUME_REQUIRED")
 
                 frame = dict(key=key, arm=arm)
             scope.tool = frame
@@ -1346,6 +1386,8 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     raise ValueError("DURABLE_CHECKPOINT_MISMATCH")
         initial = None if recovery else dict(
             messages=[HumanMessage(content=scope.text)], files=files)
+        if recovery and recovery.get("interrupt_id"):
+            initial = Command(resume={recovery["interrupt_id"]: recovery["review"]["review_id"]})
         try:
             async for outcome in agent.astream(initial, config=config, stream_mode="values",
                                                **options):
@@ -1356,14 +1398,14 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
             stop_reason = GATEWAY_STOP
             raise
         finally:
-            if saver is not None and (stop_reason == GATEWAY_STOP or
+            if saver is not None and (durable.hitl is not None or stop_reason == GATEWAY_STOP or
                                       options.get("interrupt_after")):
                 graph_state = await agent.aget_state(config)
                 if graph_state.next:
                     checkpoint_id = graph_state.config["configurable"]["checkpoint_id"]
                     messages = graph_state.values.get("messages") or []
                     if stop_reason == STOP_ANSWER:
-                        stop_reason = PAUSED
+                        stop_reason = PAUSED_FOR_REVIEW if graph_state.interrupts else PAUSED
 
     catalogue = {}
     try:
@@ -1405,7 +1447,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     except Exception as exc:  # a framework failure is reported, never turned into success
         stop_reason, error = STOP_RUNTIME_ERROR, dict(code=type(exc).__name__,
                                                       message=str(exc)[:300])
-    if stop_reason not in {PAUSED, GATEWAY_STOP} or ledger.usage_unknown:
+    if stop_reason not in {PAUSED, PAUSED_FOR_REVIEW, GATEWAY_STOP} or ledger.usage_unknown:
         checkpoint_id = None
     if stop_reason == STOP_ANSWER:
         if model.totals.calls >= hard_model_calls:

@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import Field
 
 from agenttest.generic_intake import GenericSetup
+from agenttest.human_review import ReviewDecision
 from agenttest.plan_json import bounded_json
 from agenttest.report import fingerprint
 from agenttest.safety import StrictModel
@@ -258,6 +259,40 @@ def install_task_api(app, service):
             raise HTTPException(409, str(exc)) from None
         except ImportError:
             raise HTTPException(409, "DURABLE_CHECKPOINTER_UNAVAILABLE") from None
+
+    @app.get("/api/tasks/{task_id}/reviews")
+    async def task_reviews(task_id: str, request: Request):
+        who = owner(request)
+        lookup(task_id, who)
+        return dict(reviews=enabled().review_records(task_id, who),
+                    recovery=await enabled().recovery_status(task_id, who))
+
+    @app.get("/api/tasks/{task_id}/reviews/{review_id}")
+    def task_review(task_id: str, review_id: str, request: Request):
+        try:
+            return enabled().review_records(task_id, owner(request), review_id)
+        except KeyError:
+            raise HTTPException(404, detail={"code": "REVIEW_NOT_FOUND"}) from None
+
+    @app.post("/api/tasks/{task_id}/reviews/{review_id}/decision")
+    async def decide_review(task_id: str, review_id: str, request: Request):
+        try:
+            who = owner(request, True)
+            decision = await body(request, ReviewDecision)
+        except HTTPException as exc:
+            raise HTTPException(exc.status_code, detail={"code": {
+                403: "REVIEW_SESSION_FORBIDDEN", 422: "REVIEW_DECISION_INVALID",
+            }.get(exc.status_code, "REVIEW_REQUEST_REJECTED")}) from None
+        try:
+            return await enabled().decide_review(task_id, who, review_id, decision)
+        except KeyError:
+            raise HTTPException(404, detail={"code": "REVIEW_NOT_FOUND"}) from None
+        except TaskConflict as exc:
+            raise HTTPException(409, detail={"code": str(exc)}) from None
+        except ImportError:
+            raise HTTPException(409, detail={"code": "DURABLE_CHECKPOINTER_UNAVAILABLE"}) from None
+        except (ValueError, OSError):
+            raise HTTPException(422, detail={"code": "REVIEW_DECISION_INVALID"}) from None
 
     @app.get("/api/tasks/{task_id}/reports/{run_id}")
     def owned_report(task_id: str, run_id: str, request: Request):

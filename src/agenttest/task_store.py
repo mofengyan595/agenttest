@@ -52,6 +52,9 @@ class TaskStore:
                     payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS product_durability (
                     task_id TEXT PRIMARY KEY REFERENCES tasks(id), payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS human_reviews (
+                    task_id TEXT NOT NULL REFERENCES tasks(id), review_id TEXT NOT NULL,
+                    payload TEXT NOT NULL, PRIMARY KEY(task_id, review_id));
                 CREATE TABLE IF NOT EXISTS http_execution (
                     task_id TEXT NOT NULL REFERENCES tasks(id), tool_key TEXT NOT NULL,
                     run_id TEXT NOT NULL, step_id TEXT NOT NULL, attempt INTEGER NOT NULL,
@@ -137,6 +140,10 @@ class TaskStore:
                 " WHERE id=? AND owner=? AND state=? AND version=?", values)
             if result.rowcount != 1:
                 raise TaskConflict("TASK_STATE_OR_VERSION_CONFLICT")
+            if state == "CANCELLED":
+                from agenttest.human_review import HumanReviews
+
+                HumanReviews.cancel_pending(db, task_id)
             row = self._owned_row(db, task_id, owner)
         return self.public(row)
 
@@ -203,9 +210,11 @@ class TaskStore:
                              (task_id,)).fetchone()
         return json.loads(row[0]) if row else None
 
-    def save_durable_state(self, task_id, owner, payload, *, summary=None):
+    def save_durable_state(self, task_id, owner, payload, *, summary=None, review=None):
         """Publish the application boundary and its evidence in one transaction."""
         with self.connect() as db:
+            if review is not None:
+                db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE")
             if self._owned_row(db, task_id, owner)["state"] != "RUNNING":
                 raise TaskConflict("TASK_STATE_OR_VERSION_CONFLICT")
@@ -215,6 +224,10 @@ class TaskStore:
             if summary is not None:
                 db.execute("UPDATE tasks SET summary=? WHERE id=?",
                            (json.dumps(summary, ensure_ascii=False), task_id))
+            if review is not None:
+                from agenttest.human_review import HumanReviews
+
+                HumanReviews.insert(db, review)
 
     def model_usage_blocked(self):
         with self.connect() as db:

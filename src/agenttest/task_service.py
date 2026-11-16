@@ -10,6 +10,7 @@ from agenttest.goal_cli import synthetic_runtime
 from agenttest.goal_derivation import derive_goal
 from agenttest.goal_runtime import run_goal
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger, build_suite, run_suite
+from agenttest.human_review import UNKNOWN, HumanReviews, configuration
 from agenttest.planner_input import validate_user_task
 from agenttest.project_goals import RegisteredProject, check_goal_credentials, load_goal_project
 from agenttest.report import Outcome, ReportStore, fingerprint
@@ -60,6 +61,8 @@ class TaskService:
         self.private_input_guard = private_input_guard or (lambda _: False)
         self.environ = dict(os.environ if environ is None else environ)
         self.durable_execution = self.environ.get("AGENTTEST_DURABLE_EXECUTION") == "1"
+        self.hitl = configuration(self.environ)
+        self.reviews = HumanReviews(db)
         self.durable_resumes = {}
         self._inputs, self._workers = {}, {}
         self._owners = {}
@@ -335,8 +338,17 @@ class TaskService:
             return row
         worker = self._workers.get(task_id)
         if worker:
+            # A verification worker restores INTERRUPTED in its finally block.
+            # The cancellation still owns that transition.
+            verifying = any(review["status"] == "VERIFICATION_REQUESTED"
+                            for review in self.reviews.list(task_id, owner))
             worker.cancel()
             await asyncio.gather(worker, return_exceptions=True)
+            current = self.db.get(task_id, owner)
+            if verifying and current["status"] == "INTERRUPTED":
+                return self.db.transition(task_id, owner, "INTERRUPTED", "CANCELLED",
+                    summary={**current["summary"],
+                             "reason": "CANCELLED_NO_ROLLBACK_OR_REPLAY"})
         # A just-created task can be cancelled before its coroutine first enters try.
         row = self.db.get(task_id, owner)
         if row["status"] not in TERMINAL:
@@ -360,6 +372,7 @@ class TaskService:
 
         try:
             durable = ProductDurability(self, row, owner)
+            durable.unknown_reviews()
             result.update(durable.step_budget())
             payload = await durable.load()
         except (TaskConflict, ImportError) as exc:
@@ -371,6 +384,101 @@ class TaskService:
         return dict(result, resumable=not blocked, checkpoint=bool(payload["checkpoint_id"]),
                     phase=payload["phase"], reason="MODEL_USAGE_REQUIRES_RECONCILIATION"
                     if blocked else None)
+
+    def review_records(self, task_id, owner, review_id=None):
+        row = self.db.get(task_id, owner)
+        if self.hitl is not None and row["status"] == "INTERRUPTED":
+            from agenttest.product_durability import ProductDurability
+
+            ProductDurability(self, row, owner).unknown_reviews()
+            self.reviews.recover_verification(task_id, owner)
+        return self.reviews.list(task_id, owner, review_id)
+
+    async def decide_review(self, task_id, owner, review_id, decision):
+        row = self.db.get(task_id, owner)
+        review = self.review_records(task_id, owner, review_id)
+        if decision.note and self.private_input_guard(decision.note):
+            raise ValueError("REVIEW_NOTE_REJECTED")
+        project = self.project(row["project_id"])
+        vault = CredentialVault(project.target, self.environ)
+        try:
+            if vault.contains_secret(decision.note):
+                raise ValueError("REVIEW_NOTE_REJECTED")
+        finally:
+            vault.close()
+        verification = None
+        if review["status"] == "WAITING_APPROVAL":
+            from agenttest.product_durability import ProductDurability
+
+            if not self.durable_execution or self.hitl is None:
+                raise TaskConflict("HITL_DURABLE_AGENT_REQUIRED")
+            payload = await ProductDurability(self, row, owner).load(for_review=True)
+            if payload.get("review", {}).get("review_id") != review_id:
+                raise TaskConflict("REVIEW_BINDING_CHANGED")
+        elif (review["status"] == UNKNOWN and decision.decision == "request_verification"
+              and decision.decision in review["allowed_decisions"]):
+            from agenttest.product_durability import ProductDurability
+
+            if (not self.durable_execution or self.hitl is None or self._shutting_down
+                    or len(self._workers) >= 8 or task_id in self._workers):
+                raise TaskConflict("REVIEW_VERIFICATION_UNAVAILABLE")
+            durable = ProductDurability(self, row, owner)
+            verification = await durable.verify_review_binding(review)
+        result, changed = self.reviews.decide(task_id, owner, review, decision)
+        if changed and verification:
+            worker = asyncio.create_task(self.verify_write(durable, review, verification))
+            self._workers[task_id] = worker
+            worker.add_done_callback(lambda _: self._workers.pop(task_id, None))
+        return result
+
+    async def verify_write(self, durable, review, verification):
+        """Collect a separate approved observation and preserve the original write outcome."""
+        import httpx
+
+        from agenttest.executor import Executor
+        from agenttest.report import RunReport
+        from agenttest.step_recovery import StepJournal, StepScope
+
+        plan, used, limit, seconds = verification
+        task_id, owner = durable.task_id, durable.owner
+        review_id = review["review_id"]
+        ledger = SuiteLedger(min(limit, used + 1), 0, 0, requests=used)
+        project_id = durable.row["project_id"]
+
+        def guard():
+            if (self.db.get(task_id, owner)["status"] != "RUNNING"
+                    or self.project(project_id).identity() != durable.row["project_identity"]):
+                raise TaskConflict("REVIEW_BINDING_CHANGED")
+
+        result = dict(status="OBSERVATION_UNAVAILABLE")
+        try:
+            async with self._serial:
+                guard()
+                project = self.project(project_id)
+                run_id = fingerprint((task_id, review_id, "verification"))[:32]
+                digest = fingerprint(plan.model_dump())
+                journal = StepJournal(StepScope(self.db, task_id, owner, review_id,
+                    "verification", review_id, run_id, durable.identity, digest), ledger)
+                store = ProgressStore(self.reports.root, lambda *_: None, step_journal=journal)
+                report = RunReport(run_id=run_id, scenario_sha256=digest, contract_sha256="",
+                    environment=project.target.environment, target_origin=project.target.base_url)
+                async with (asyncio.timeout(seconds),
+                            httpx.AsyncHTTPTransport(retries=0, trust_env=False) as transport):
+                    executor = Executor(project.target, project.contract, store,
+                        BudgetTransport(transport, ledger, guard), self.environ,
+                        registry=project.registry, step_journal=journal)
+                    report = await executor.run(plan, report=report)
+                result = dict(status="OBSERVATION_RECORDED", run_id=run_id,
+                    observations=[dict(step_id=step.step_id, outcome=step.outcome.value,
+                        http_status=[attempt.status_code for attempt in step.attempts],
+                        checks=[dict(kind=check.kind, selector=check.selector, passed=check.passed)
+                                for check in step.checks])
+                                  for step in report.steps])
+        except (TaskConflict, OSError, ValueError):
+            result["code"] = "REVIEW_VERIFICATION_STOPPED"
+        finally:
+            result["requests"] = ledger.requests - used
+            self.reviews.finish_verification(task_id, owner, review_id, result)
 
     async def resume(self, task_id, owner):
         row = self.db.get(task_id, owner)
