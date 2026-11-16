@@ -186,6 +186,7 @@ class GenericSetup(StrictModel):
     default_role: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,39}$")
     resource_lifecycles: list[ResourceLifecycle] = Field(default_factory=list, max_length=30)
     negative_post_observations: dict[str, NegativePostObservation] = Field(default_factory=dict)
+    positive_post_observations: dict[str, NegativePostObservation] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def unique_identities(self):
@@ -201,7 +202,8 @@ class GenericSetup(StrictModel):
     def legacy_defaults(self, handler):
         data = handler(self)
         for key in ("assisted", "approve_negative_tests", "allow_negative_value_variants",
-                    "default_role", "resource_lifecycles", "negative_post_observations"):
+                    "default_role", "resource_lifecycles", "negative_post_observations",
+                    "positive_post_observations"):
             if not getattr(self, key):
                 data.pop(key, None)
         for key, default in (("run_timeout", 60.0), ("read_timeout", 5.0)):
@@ -325,7 +327,8 @@ def build_generic_project(key, document, contract, setup, authorized_ips=(), env
             allowed_operations=ids, roles=roles, business_scenario=scenario,
             max_requests=setup.max_requests, resource_lifecycles=setup.resource_lifecycles,
             run_timeout=setup.run_timeout, read_timeout=setup.read_timeout,
-            negative_post_observations=setup.negative_post_observations)
+            negative_post_observations=setup.negative_post_observations,
+            positive_post_observations=setup.positive_post_observations)
         target.credential_inputs = {item.operation_id: item.credential_inputs
                                     for item in selected if item.credential_inputs}
         target.resource_creations = {item.operation_id: item.creation

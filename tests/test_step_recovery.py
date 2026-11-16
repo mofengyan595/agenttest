@@ -65,22 +65,29 @@ def child(root, port, end, method, mode="executor"):
             Thread(target=wait_for_server_commit, daemon=True).start()
         if phase == end and result.method == method:
             os._exit(89)
+        if (phase == "RESPONSE_RECEIVED" and
+                (end, result.method) in {("delete-unknown", "DELETE"), ("verify-crash", "GET")}):
+            os._exit(89)
 
     StepJournal.boundary = interrupt
-    if end == "BEFORE_TOOL_DONE":
+    if end in {"BEFORE_TOOL_DONE", "HITL_BEFORE_INTERRUPT"}:
         from agenttest.product_durability import ProductDurability
 
         publish = ProductDurability.publish
 
         def interrupt_publish(durable, phase, **kwargs):
-            if phase == "TOOL_DONE":
+            if end == "BEFORE_TOOL_DONE" and phase == "TOOL_DONE":
                 os._exit(89)
-            return publish(durable, phase, **kwargs)
+            publish(durable, phase, **kwargs)
+            if end == "HITL_BEFORE_INTERRUPT" and kwargs.get("review"):
+                os._exit(89)
 
         ProductDurability.publish = interrupt_publish
     if mode != "executor":
         asyncio.run(run_product(root, target, scenario, project,
-                                end not in {"no-fault", "approve", "reject", "decide"},
+                                end not in {"no-fault", "approve", "reject", "decide", "rearm",
+                                            "delete-unknown", "verify", "verify-crash", "inspect",
+                                            "inspect-new-deployment"},
                                 hitl=mode == "hitl", decision=end))
         return
     db = TaskStore(root / "tasks.sqlite3")
@@ -138,22 +145,31 @@ async def run_product(root, target, scenario, project, first, *, hitl=False, dec
     svc = TaskService({}, db, ReportStore(root / "reports"), lambda _: None,
         generic_intake=True, designer_factory=lambda _: object(),
         agent_model_factory=lambda _: settings(), model_status=lambda: "CONFIGURED_MODEL",
-        environ=dict(AGENTTEST_DURABLE_EXECUTION="1", AGENTTEST_DURABLE_TARGET_EPOCH="test",
+        environ=dict(AGENTTEST_DURABLE_EXECUTION="1",
+                     AGENTTEST_DURABLE_TARGET_EPOCH=(
+                         "replacement" if decision == "inspect-new-deployment" else "test"),
                      AGENTTEST_HITL="1" if hitl else "0"))
     lookup = svc.project
     svc.project = lambda key: replace(lookup(key), registry=project.registry)
     path = root / "task-id"
     try:
         if first:
+            from agenttest.safety import ResourceLifecycle
+
             _, setup = lifecycle_project()
             setup.base_url = target.base_url
+            if decision.startswith("HITL_UNKNOWN_DELETE"):
+                setup.resource_lifecycles = [ResourceLifecycle(
+                    create_operation="createParcel", delete_operation="deleteParcel",
+                    path_parameter="parcelId", id_selector="$.id",
+                    fresh_resource_basis="Fixture creates a fresh resource unique to this run.")]
             record = svc.intake.save(IntakeInput(name="Parcel lab",
                 document=project.document.decode(), generic=setup, confirmed=True), "operator")
             row = await svc.submit("operator", record["id"], tasks.DEFAULT_ROUND, "request")
             path.write_text(row["id"], encoding="ascii")
         else:
             task_id = path.read_text(encoding="ascii")
-            if decision in {"approve", "reject", "decide"}:
+            if decision in {"approve", "reject", "decide", "delete-unknown"}:
                 review, = svc.review_records(task_id, "operator")
                 data = ReviewDecision(decision="reject" if decision == "reject" else "approve",
                                       version=1, note="审批备注不能扩大授权。")
@@ -164,6 +180,38 @@ async def run_product(root, target, scenario, project, first, *, hitl=False, dec
                     os._exit(89)
             if decision == "reject":
                 print(json.dumps(db.get(task_id, "operator")))
+                return
+            if decision in {"verify", "verify-crash", "inspect", "inspect-new-deployment"}:
+                review, = [r for r in svc.review_records(task_id, "operator")
+                           if r["kind"] == "UNKNOWN_WRITE"]
+                if decision == "inspect-new-deployment":
+                    with pytest.raises(ValueError, match="REVIEW_BINDING_CHANGED"):
+                        await svc.decide_review(task_id, "operator", review["review_id"],
+                            ReviewDecision(decision="request_verification",
+                                           version=review["version"]))
+                elif decision != "inspect":
+                    from copy import deepcopy
+
+                    from agenttest.product_durability import ProductDurability
+
+                    row = db.get(task_id, "operator")
+                    durable = ProductDurability(svc, row, "operator")
+                    payload = db.durable_state(task_id, "operator")
+                    attempts = tool_attempts(db, task_id, payload["state"]["tool_key"])
+                    invalid = deepcopy(payload)
+                    invalid["state"]["design"]["group_request_limit"] = 2
+                    assert durable.verification_plan(invalid, attempts, attempts[-1]) is None
+                    wrong = deepcopy(attempts)
+                    identity = json.loads(wrong[-1]["identity"])
+                    identity["resource_sha256"] = fingerprint("/parcels/other")
+                    wrong[-1]["identity"] = json.dumps(identity)
+                    assert durable.verification_plan(payload, wrong, wrong[-1]) is None
+                    await svc.decide_review(task_id, "operator", review["review_id"],
+                        ReviewDecision(decision="request_verification", version=review["version"]))
+                    await svc._workers[task_id]
+                    review = svc.review_records(task_id, "operator", review["review_id"])
+                print(json.dumps(dict(review=review, recovery=await svc.recovery_status(
+                    task_id, "operator")), ensure_ascii=False))
                 return
             row = await svc.resume(task_id, "operator")
         await svc._workers[row["id"]]
@@ -190,6 +238,10 @@ async def run_product(root, target, scenario, project, first, *, hitl=False, dec
     ("BEFORE_TOOL_DONE", "GET", False, True, 3),
     ("HITL_APPROVE", "POST", False, True, 0),
     ("HITL_REJECT", "POST", False, False, 0),
+    ("HITL_BEFORE_INTERRUPT", "POST", False, True, 0),
+    ("HITL_UNKNOWN_DELETE", "DELETE", False, True, 0),
+    ("HITL_UNKNOWN_DELETE", "DELETE", True, True, 0),
+    ("HITL_UNKNOWN_DELETE_CRASH", "DELETE", False, True, 0),
 ])
 def test_process_exit_at_execution_boundary(
         tmp_path, phase, method, fake_delete, can_resume, before_count):
@@ -246,10 +298,50 @@ def test_process_exit_at_execution_boundary(
             interrupted = subprocess.run([*args, first_phase, method, mode], capture_output=True,
                                          timeout=60, encoding="utf-8", check=False)
             if hitl:
+                if phase == "HITL_BEFORE_INTERRUPT":
+                    assert interrupted.returncode == 89
+                    assert not events
+                    interrupted = subprocess.run([*args, "rearm", method, mode],
+                        capture_output=True, timeout=60, encoding="utf-8", check=True)
                 assert interrupted.returncode == 0, interrupted.stderr or interrupted.stdout
                 paused = json.loads(interrupted.stdout)
                 assert paused["summary"]["agent_runtime"]["stop_reason"] == (
                     "HUMAN_APPROVAL_REQUIRED"), paused["summary"]
+                if phase.startswith("HITL_UNKNOWN_DELETE"):
+                    unknown = subprocess.run([*args, "delete-unknown", method, mode],
+                        capture_output=True, timeout=60, encoding="utf-8", check=False)
+                    assert unknown.returncode == 89, unknown.stderr or unknown.stdout
+                    assert [event[0] for event in events] == ["POST", "DELETE"]
+                    if not fake_delete and phase == "HITL_UNKNOWN_DELETE":
+                        subprocess.run([*args, "inspect", method, mode], capture_output=True,
+                                       timeout=60, encoding="utf-8", check=True)
+                        stale = subprocess.run([*args, "inspect-new-deployment", method, mode],
+                            capture_output=True, timeout=60, encoding="utf-8", check=True)
+                        assert json.loads(stale.stdout)["recovery"]["reason"] == (
+                            "PROJECT_VERSION_CHANGED_RECHECK_REQUIRED")
+                        assert [event[0] for event in events] == ["POST", "DELETE"]
+                    verify = "verify-crash" if phase.endswith("_CRASH") else "verify"
+                    observed = subprocess.run([*args, verify, method, mode], capture_output=True,
+                        timeout=60, encoding="utf-8", check=False)
+                    if verify == "verify-crash":
+                        assert observed.returncode == 89, observed.stderr or observed.stdout
+                        observed = subprocess.run([*args, "inspect", method, mode],
+                            capture_output=True, timeout=60, encoding="utf-8", check=True)
+                    assert observed.returncode == 0, observed.stderr or observed.stdout
+                    payload = json.loads(observed.stdout)
+                    assert not payload["recovery"]["resumable"]
+                    assert payload["review"]["status"] == "REVIEW_REQUIRED"
+                    record = payload["review"]["verification"]
+                    if verify == "verify-crash":
+                        assert record["status"] == "OBSERVATION_INTERRUPTED"
+                    else:
+                        assert record["original_write_outcome"] == "UNKNOWN_OUTCOME"
+                        assert record["resource_effect"] == (
+                            "RESOURCE_STILL_PRESENT" if fake_delete else "ABSENCE_OBSERVED")
+                        assert record["requests"] == 1
+                    assert [event[0] for event in events] == ["POST", "DELETE", "GET"]
+                    assert bool(inventory) is fake_delete
+                    return
                 if can_resume:
                     decided = subprocess.run([*args, "decide", method, mode],
                         capture_output=True, timeout=60, encoding="utf-8", check=False)

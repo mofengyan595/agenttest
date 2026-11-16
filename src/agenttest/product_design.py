@@ -952,7 +952,7 @@ def validate_distinct_setups(project, design):
 
 def validate_design_case(project, case, store, *, environ, transport=None, cleanup_operations=(),
                          requested_checks=(), verify_batch_cleanup=False,
-                         observation_namespace=None):
+                         observation_namespace=None, enable_creation_observations=False):
     """Independent deterministic engine validation; this does not verify natural semantics."""
     from agenttest.executor import Executor
 
@@ -987,6 +987,12 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
         from agenttest.negative_post_observation import add_observations
 
         scenario = add_observations(project, scenario, namespace=observation_namespace)
+        executor.validate(scenario)
+    if (enable_creation_observations and project.target.positive_post_observations
+            and observation_namespace is not None):
+        from agenttest.negative_post_observation import add_creation_observations
+
+        scenario = add_creation_observations(project, scenario, observation_namespace)
         executor.validate(scenario)
     validate_cleanup_dependencies(project, scenario, cleanup_operations)
     # An "absent" expectation (approved 404/410) is only legal once an approved deletion of

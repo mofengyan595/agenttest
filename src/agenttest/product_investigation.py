@@ -5,6 +5,7 @@ import asyncio
 import httpx
 
 from agenttest.report import InvestigationResult, Outcome, fingerprint
+from agenttest.step_recovery import StepRecoveryBlocked
 
 
 async def recheck_read(executor, client, scenario, report, state, budget, policies, vault):
@@ -43,6 +44,8 @@ async def recheck_read(executor, client, scenario, report, state, budget, polici
         probe.reason = "PRODUCT_READ_PROBE_EVALUATED"
     except (httpx.TransportError, TimeoutError):
         probe.reason = "PRODUCT_READ_PROBE_ENVIRONMENT_ERROR"
+    except StepRecoveryBlocked:
+        raise
     except Exception:
         # Exception strings may contain transport input; keep only an allowlisted diagnosis.
         probe.reason = "PRODUCT_READ_PROBE_STOPPED"
@@ -51,3 +54,5 @@ async def recheck_read(executor, client, scenario, report, state, budget, polici
                                - dispatched_before)
         probe.rounds_used = 1
         executor.store.save(report)
+        if executor.step_journal:
+            executor.step_journal.evidence(probe)

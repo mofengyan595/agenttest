@@ -103,7 +103,9 @@ async def test_unconfirmed_execution_epoch_change_and_incompatible_version_fail_
 
 
 @pytest.mark.asyncio
-async def test_gateway_pause_after_tool_preserves_evidence_and_dispatch_accounting(tmp_path):
+@pytest.mark.parametrize("status", [429, 500, 502, 503, 504])
+async def test_gateway_pause_after_tool_preserves_evidence_and_dispatch_accounting(
+        tmp_path, status):
     pytest.importorskip("deepagents")
     pytest.importorskip("langgraph.checkpoint.sqlite.aio")
     fake, tasks, project, _, summary = session(tmp_path)
@@ -128,13 +130,13 @@ async def test_gateway_pause_after_tool_preserves_evidence_and_dispatch_accounti
                         arguments=json.dumps(dict(group_id="group_1"))))
                 ]))]))
         assert any(message["role"] == "tool" for message in body["messages"])
-        statuses.append(429)
-        return httpx.Response(429, json={"error": {"code": "model_concurrency_exceeded"}})
+        statuses.append(status)
+        return httpx.Response(status, json={"error": {"code": "model_concurrency_exceeded"}})
 
     result = await run_agent(scope, tasks, settings(), transport=httpx.MockTransport(gateway))
     assert result.stop_reason == GATEWAY_STOP, result.error
     assert result.checkpoint_id
-    assert statuses == [200, 429, 429, 429]
+    assert statuses == [200, status, status, status]
     assert scope.ledger.model_calls == 4
     assert scope.ledger.known_tokens == 350 and not scope.ledger.usage_unknown
     assert len(summary["cases"]) == len(tasks.calls) == 1

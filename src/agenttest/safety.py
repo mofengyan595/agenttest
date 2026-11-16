@@ -71,6 +71,7 @@ class TargetConfig(StrictModel):
     unauthenticated_checks: dict[str, list[str]] = Field(default_factory=dict)
     resource_creations: dict[str, ResourceCreation] = Field(default_factory=dict)
     negative_post_observations: dict[str, NegativePostObservation] = Field(default_factory=dict)
+    positive_post_observations: dict[str, NegativePostObservation] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def legacy_identity(self, handler):
@@ -85,13 +86,16 @@ class TargetConfig(StrictModel):
             data.pop("resource_creations", None)
         if not self.negative_post_observations:
             data.pop("negative_post_observations", None)
+        if not self.positive_post_observations:
+            data.pop("positive_post_observations", None)
         return data
 
     @model_validator(mode="after")
     def validate_target(self) -> "TargetConfig":
         from agenttest.controlled_inputs import credential_alias
 
-        for writer, observation in self.negative_post_observations.items():
+        for writer, observation in (*self.negative_post_observations.items(),
+                                    *self.positive_post_observations.items()):
             if (self.environment != "isolated" or not self.allow_mutations
                     or writer == observation.operation_id
                     or not {writer, observation.operation_id} <= set(self.allowed_operations)):

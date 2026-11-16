@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
+import httpx
 from prepare_colleague_workspace import prepare
 from run_development_agent import (
     ADAPTIVE_INPUT_BYTES,
@@ -29,7 +30,7 @@ from agenttest.execution_budget import ADAPTIVE, ExecutionBudget
 from agenttest.human_review import ReviewDecision
 from agenttest.llm_planner import OpenAICompatiblePlanner
 from agenttest.product_design import TestDesignModel
-from agenttest.product_durability import PAUSED
+from agenttest.product_durability import GATEWAY_STOP, PAUSED
 from agenttest.product_focus import TestFocusModel
 from agenttest.report import ReportStore
 from agenttest.step_recovery import RESPONSE, StepJournal, tool_attempts
@@ -38,6 +39,33 @@ from agenttest.task_store import TERMINAL, TaskStore
 
 OWNER = "dev_operator"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+
+class GatewayFaultTransport(httpx.AsyncBaseTransport):
+    """Reject one model turn after a durable business-tool receipt on the isolated run."""
+
+    def __init__(self, scope, receipt):
+        self.scope = scope
+        self.receipt = receipt
+        self.inner = None
+
+    async def handle_async_request(self, request):
+        refusals = (json.loads(self.receipt.read_text(encoding="utf-8"))
+                    if self.receipt.is_file() else [])
+        payload = self.scope.svc.db.durable_state(self.scope.task_id, self.scope.owner) or {}
+        if (len(refusals) < 3 and payload.get("phase") == "TOOL_DONE"
+                and payload["state"]["usage"]["requests"] > 0):
+            refusals.append(dict(status=500, checkpoint_id=payload["checkpoint_id"],
+                                 requests=payload["state"]["usage"]["requests"]))
+            self.receipt.write_text(json.dumps(refusals), encoding="utf-8")
+            return httpx.Response(500, json={"error": {"code": "isolated_gateway_fixture"}})
+        self.inner = httpx.AsyncHTTPTransport(retries=0, trust_env=False)
+        return await self.inner.handle_async_request(request)
+
+    async def aclose(self):
+        if self.inner:
+            await self.inner.aclose()
+            self.inner = None
 
 
 async def worker(out, kind, step, task_id, pause):
@@ -84,6 +112,16 @@ async def worker(out, kind, step, task_id, pause):
             total_tokens_ceiling=650000, agent_turns_ceiling=40, agent_tool_calls_ceiling=60,
             seconds_ceiling=900, no_progress_limit=3))
     service.dev_max_seconds = 900
+    if manifest.get("gateway_fault"):
+        import agenttest.product_agent as product_agent
+
+        run_agent = product_agent.run_agent
+
+        async def inject_gateway_fault(scope, *args, **kwargs):
+            transport = GatewayFaultTransport(scope, out / "gateway-fault.json")
+            return await run_agent(scope, *args, **kwargs, transport=transport)
+
+        product_agent.run_agent = inject_gateway_fault
     start = time.perf_counter()
     try:
         if task_id:
@@ -93,6 +131,12 @@ async def worker(out, kind, step, task_id, pause):
             for review in waiting:
                 decision = ReviewDecision(decision=manifest["hitl"], version=review["version"])
                 await service.decide_review(task_id, OWNER, review["review_id"], decision)
+            for review in reviews:
+                if (manifest.get("verify_unknown") and
+                        "request_verification" in review["allowed_decisions"]):
+                    await service.decide_review(task_id, OWNER, review["review_id"],
+                        ReviewDecision(decision="request_verification", version=review["version"]))
+            row = service.db.get(task_id, OWNER)
             if not any(review["status"] == "REVIEW_REQUIRED" for review in reviews):
                 row = service.db.get(task_id, OWNER)
                 if row["status"] == "INTERRUPTED":
@@ -122,12 +166,15 @@ async def worker(out, kind, step, task_id, pause):
         await service.close()
 
 
-async def run(out, kind, port, *, fault=None, fake_delete=False, hitl=None):
+async def run(out, kind, port, *, fault=None, fake_delete=False, hitl=None,
+              observe_positive=False, verify_unknown=False, gateway_fault=False):
     out.mkdir(parents=True)
     base = free_port_block(port)
     epoch = uuid4().hex
     manifest = dict(port=base + 1, target_epoch=epoch, submission=uuid4().hex,
                     kind=kind, text=FRESH[kind], fault=fault, fake_delete=fake_delete, hitl=hitl,
+                    observe_positive=observe_positive, verify_unknown=verify_unknown,
+                    gateway_fault=gateway_fault,
                     source_sha256=source_fingerprint(),
                     head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
     (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
@@ -137,11 +184,12 @@ async def run(out, kind, port, *, fault=None, fake_delete=False, hitl=None):
             "--project", "parcels", "--port", str(base + 1), "--events",
             str(out / "target-events.jsonl"),
             *(["--delete-noop"] if fake_delete else []),
-            *(["--observe-negative-posts"] if kind == "release" else [])],
+            *(["--observe-negative-posts"] if kind == "release" or observe_positive else [])],
             env=env, stdout=target_log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
         try:
             wait_health(base + 1)
-            await prepare(out / "lab", base, env, observe_negative_posts=kind == "release")
+            await prepare(out / "lab", base, env, observe_negative_posts=kind == "release",
+                          observe_positive_posts=observe_positive)
             task_id, pause = "", fault is None and not hitl
             for step in range(18):
                 phase_started = time.perf_counter()
@@ -182,9 +230,8 @@ async def run(out, kind, port, *, fault=None, fake_delete=False, hitl=None):
                 if hitl and any(review["status"] == "WAITING_APPROVAL"
                                 for review in result["reviews"]):
                     continue
-                if not result["recovery"]["resumable"] or (
-                    summary.get("agent_runtime", {}).get("stop_reason") != PAUSED
-                ):
+                stop = summary.get("agent_runtime", {}).get("stop_reason")
+                if not result["recovery"]["resumable"] or stop not in {PAUSED, GATEWAY_STOP}:
                     return
                 if kind == "delete" and result["reports"] or kind == "release" and any(
                     batch.get("cases") for batch in summary.get("obligation_batches", [])
@@ -208,17 +255,24 @@ def main():
     parser.add_argument("--fake-delete", action="store_true")
     parser.add_argument("--hitl", choices=("approve", "reject"))
     parser.add_argument("--break-before-receipt", action="store_true")
+    parser.add_argument("--observe-positive-post", action="store_true")
+    parser.add_argument("--verify-unknown", action="store_true")
+    parser.add_argument("--gateway-fault", action="store_true")
     args = parser.parse_args()
     if args.worker is not None:
         asyncio.run(worker(args.out.resolve(), args.kind, args.worker, args.task_id, args.pause))
     else:
         if bool(args.break_after_method) != bool(args.break_after_status):
             parser.error("a crash position requires both method and HTTP status")
+        if args.observe_positive_post and args.kind != "delete":
+            parser.error("positive correlation is a separate lifecycle fixture")
         fault = (dict(method=args.break_after_method, status=args.break_after_status,
                       phase="RESPONSE_RECEIVED" if args.break_before_receipt else RESPONSE)
                  if args.break_after_method else None)
         asyncio.run(run(args.out.resolve(), args.kind, args.port,
-                        fault=fault, fake_delete=args.fake_delete, hitl=args.hitl))
+                        fault=fault, fake_delete=args.fake_delete, hitl=args.hitl,
+                        observe_positive=args.observe_positive_post,
+                        verify_unknown=args.verify_unknown, gateway_fault=args.gateway_fault))
 
 
 if __name__ == "__main__":

@@ -157,7 +157,11 @@ class ProductDurability:
                     if for_review and not interrupt_id:
                         raise TaskConflict("REVIEW_INTERRUPT_MISSING")
                     if not for_review and review["status"] != "APPROVED":
-                        raise TaskConflict("HUMAN_APPROVAL_REQUIRED")
+                        if interrupt_id or attempts or review["status"] != "WAITING_APPROVAL":
+                            raise TaskConflict("HUMAN_APPROVAL_REQUIRED")
+                        # The application transaction won the race with LangGraph. Re-enter
+                        # the same tool without a decision to materialize its native interrupt.
+                        payload["rebuild_interrupt"] = True
                     payload["review"] = review
                     payload["interrupt_id"] = interrupt_id
             except (KeyError, TypeError, ValueError, sqlite3.Error, OSError) as exc:
@@ -172,7 +176,7 @@ class ProductDurability:
 
         state = payload["state"]
         identity = json_identity(row)
-        if (payload["identity"] != self.identity or identity["method"] != "POST"
+        if (payload["identity"] != self.identity or identity["method"] not in {"POST", "DELETE"}
                 or identity["authority"] != self.identity
                 or self.service.project(self.row["project_id"]).identity()
                 != self.row["project_identity"]):
@@ -188,10 +192,29 @@ class ProductDurability:
             if (candidate["plan_sha256"], candidate["step_id"]) != (
                     identity["plan_sha256"], row["step_id"]):
                 continue
+            if identity["method"] == "DELETE":
+                from agenttest.recovery_observation import deletion_observation
+
+                if candidate.get("method") != "DELETE":
+                    continue
+                recovered = deletion_observation(
+                    self.service.project(self.row["project_id"]), candidate,
+                    attempts, row, identity, json_identity)
+                if recovered:
+                    plan, observation = recovered
+                    return plan, used, limit, time_limit - active, observation, None
+                continue
+            if candidate.get("method") == "DELETE":
+                continue
             prior = next((a for a in attempts if a["phase"] in KNOWN
                          and a["run_id"] == row["run_id"]
                          and a["step_id"] == candidate["prior_step_id"]), None)
             if prior is None:
+                continue
+            prior_identity = json_identity(prior)
+            if (prior_identity["method"], prior_identity["authority"],
+                    prior_identity["plan_sha256"]) != (
+                    "GET", identity["authority"], identity["plan_sha256"]):
                 continue
             receipt = load_receipt(prior)
             try:
@@ -202,7 +225,8 @@ class ProductDurability:
                     and type(count) is int and count == 0):
                 return (Scenario.model_validate(dict(name="Approved correlation observation",
                                                      steps=[candidate["probe"]])),
-                        used, limit, time_limit - active)
+                        used, limit, time_limit - active, None,
+                        candidate["count_selector"] if candidate.get("positive") else None)
         return None
 
     async def verify_review_binding(self, review):
@@ -212,8 +236,13 @@ class ProductDurability:
                 or payload["checkpoint_id"] != review["checkpoint_id"]
                 or fingerprint(payload["state"]) != payload["state_sha256"]):
             raise TaskConflict("REVIEW_BINDING_CHANGED")
-        async with self.saver(create=False) as saver:
-            checkpoint = await saver.aget_tuple(self.config)
+        try:
+            async with self.saver(create=False) as saver:
+                checkpoint = await saver.aget_tuple(self.config)
+        except (KeyError, TypeError, ValueError, sqlite3.Error, OSError) as exc:
+            if isinstance(exc, TaskConflict):
+                raise
+            raise TaskConflict("DURABLE_CHECKPOINT_INVALID") from None
         if checkpoint is None or checkpoint.checkpoint["id"] != payload["checkpoint_id"]:
             raise TaskConflict("DURABLE_CHECKPOINT_MISMATCH")
         attempts = tool_attempts(self.service.db, self.task_id, payload["state"]["tool_key"])
@@ -280,6 +309,9 @@ class ProductDurability:
                 or fingerprint(state) != payload.get("state_sha256")):
             return {}
         attempts = tool_attempts(self.service.db, self.task_id, state["tool_key"])
+        for review in HumanReviews(self.service.db).list(self.task_id, self.owner):
+            if review["kind"] == "UNKNOWN_WRITE":
+                attempts.extend(tool_attempts(self.service.db, self.task_id, review["review_id"]))
         return dict(http_requests_conservatively_used=state["usage"]["requests"] + sum(
             row["phase"] != PREPARED for row in attempts),
             uncertain_dispatches=sum(row["phase"] == DISPATCHED for row in attempts))

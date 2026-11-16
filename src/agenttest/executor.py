@@ -27,6 +27,7 @@ from agenttest.dsl import (
 )
 from agenttest.investigation import InvestigationConfig, ReadOnlyCapabilityRegistry
 from agenttest.policies import NeedsReview, PolicyRegistry, RegisteredPolicy
+from agenttest.recovery_observation import ReadObservation
 from agenttest.report import (
     AttemptEvidence,
     CheckResult,
@@ -150,7 +151,8 @@ class Executor:
             report.policy_authorized = True
         return operations, policies
 
-    async def run(self, scenario: Scenario, *, report: RunReport | None = None) -> RunReport:
+    async def run(self, scenario: Scenario, *, report: RunReport | None = None,
+                  observation: ReadObservation | None = None) -> RunReport:
         scenario = scenario.model_copy(deep=True)
         report = report or RunReport(
             scenario_sha256=fingerprint(scenario.model_dump()),
@@ -189,8 +191,20 @@ class Executor:
             report.completed = True
             self.store.save(report)
             return report
+        steps = scenario.steps
+        if observation:
+            steps = [step for step in scenario.steps if step.id == observation.step_id]
+            if (len(steps) != 1 or not self.step_journal
+                    or operations[steps[0].operation_id].method != "GET"
+                    or operations[steps[0].operation_id].security
+                    or steps[0].role or steps[0].poll or steps[0].read_retries
+                    or policies[steps[0].id].negative or steps[0].body or steps[0].upload
+                    or steps[0].operation_id in self.config.credential_inputs):
+                raise StepRecoveryBlocked("READ_OBSERVATION_NOT_AUTHORIZED")
         # Per-run state and budgets are never shared across executions.
         state: dict[str, Any] = {}
+        if observation:
+            state[observation.source_id] = observation.source_body
         vault = CredentialVault(self.config, self.environ)
         authenticated: set[str] = set()
         budget = {"requests": 0, "last_request": 0.0}
@@ -198,7 +212,7 @@ class Executor:
         from agenttest.lifecycle import CreationJournal
 
         creations = CreationJournal(self.config, report)
-        if self.config.resource_lifecycles:
+        if self.config.resource_lifecycles and not observation:
             from agenttest.lifecycle import LifecycleJournal, lifecycle_plan
 
             try:
@@ -217,7 +231,7 @@ class Executor:
                 follow_redirects=False, limits=httpx.Limits(max_connections=1),
             ) as client:
                 async with asyncio.timeout(self.config.run_timeout):
-                    for step in scenario.steps:
+                    for step in steps:
                         operation = operations[step.operation_id]
                         result = StepResult(
                             step_id=step.id, operation_id=step.operation_id,
@@ -239,7 +253,7 @@ class Executor:
                                 self.store.save(report)
                             body = await self._step(
                                 client, step, operation, state, budget, result, report,
-                                policies[step.id], vault,
+                                policies[step.id], vault, observation=observation,
                             )
                             creations.after(receipt, result, body, vault)
                             if lifecycle:
@@ -271,6 +285,9 @@ class Executor:
                         except Exception:
                             # Do not log exception text: transports may include tokens or bodies.
                             result.outcome, result.reason = Outcome.TOOL_ERROR, "EXECUTION_ERROR"
+                        if observation and result.outcome == Outcome.ASSERTION_FAILED:
+                            result.outcome, result.reason = Outcome.NEEDS_REVIEW, (
+                                "ORIGINAL_DELETE_RESPONSE_UNPROVEN")
                         self.store.save(report)
                         if self.step_journal:
                             self.step_journal.evidence(result)
@@ -281,7 +298,7 @@ class Executor:
                 # Publish the immutable business result before any optional investigation.
                 report.completed = True
                 self.store.save(report)
-                if self.investigation.enabled:
+                if self.investigation.enabled and not observation:
                     if (self.investigation.product_read_probe
                             and report.task_mode == "model_designed"):
                         from agenttest.product_investigation import recheck_read
@@ -349,6 +366,8 @@ class Executor:
             vault.close()
         if not report.reason:
             report.outcome = aggregate(report.steps)
+        if observation:
+            report.outcome, report.reason = Outcome.NEEDS_REVIEW, "RECOVERY_OBSERVATION_ONLY"
         report.completed = True
         try:
             if self.step_journal:
@@ -459,6 +478,7 @@ class Executor:
         self, client: httpx.AsyncClient, step: Step, operation: Operation,
         state: dict, budget: dict, result: StepResult, report: RunReport,
         policy: RegisteredPolicy, vault: CredentialVault,
+        *, observation: ReadObservation | None = None,
     ) -> Any:
         path = operation.path
         path_values = {}
@@ -468,6 +488,9 @@ class Executor:
             if type(value) not in {str, int} or not re.fullmatch(r"[A-Za-z0-9_-]+", str(value)):
                 raise ValidationFailure(Layer.DEPENDENCY, "DEPENDENCY_UNSAFE_PATH_VALUE")
             path = path.replace("{" + name + "}", str(value))
+        if observation and fingerprint(httpx.URL(self.config.base_url + path).path) != (
+                observation.resource_sha256):
+            raise StepRecoveryBlocked("READ_OBSERVATION_RESOURCE_CHANGED")
         headers = {}
         role = self.config.roles.get(step.role)
         is_login = role and step.operation_id == role.login_operation

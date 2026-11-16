@@ -22,14 +22,17 @@ from agenttest.write_effects import CREATION_UNPROVEN, NO_SIDE_EFFECT_PROVEN, fo
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("recover", [False, True, "unknown"])
+@pytest.mark.parametrize("recover", [False, True, "unknown", "positive"])
 async def test_isolated_observation_counts_only_correlated_actual_requests(
         tmp_path, monkeypatch, recover):
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
     from prepare_colleague_workspace import prepare
     from serve_colleague_targets import create_target
 
-    receipt = await prepare(tmp_path, 18000, {}, observe_negative_posts=True)
+    positive = recover == "positive"
+    unknown = recover in {"unknown", "positive"}
+    receipt = await prepare(tmp_path, 18000, {}, observe_negative_posts=not positive,
+                            observe_positive_posts=positive)
     identifier = receipt["projects"]["parcels"]
     database = tmp_path / "workspace" / "project-intake.sqlite3"
     with sqlite3.connect(database) as connection:
@@ -38,20 +41,31 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
     specification = record["document"]
     project = build_generic_project(identifier, specification, load_openapi(specification),
                                     GenericSetup.model_validate(record["generic"]), (), {})
-    assert len(approved_project_scope(project)) == 31
+    assert len(approved_project_scope(project)) == (32 if positive else 31)
     policies = {p.id: p for p in project.registry.definitions()}
-    negative = next(p for p in policies.values() if p.operation_id == "createParcel"
-                    and p.negative and p.negative.name == "quantity")
+    selected = next(p for p in policies.values() if p.operation_id == "createParcel"
+                    and (p.negative is None if positive
+                         else p.negative and p.negative.name == "quantity"))
     body = {"name": "test", "quantity": 2, "meta": {
         "labels": ["blue"], "options": {"tracked": True}}}
-    proposed = DesignCase.model_validate(dict(title="test", kind="negative", plan=dict(
+    proposed = DesignCase.model_validate(dict(title="test", kind="normal" if positive else
+        "negative", plan=dict(
         name="check", steps=[dict(id="submit", operation_id="createParcel", role=None,
-        policy_id=negative.id, arguments=[
+        policy_id=selected.id, arguments=[
             *(dict(location="body", name=name, value=encoded_literal(value),
                    from_step=None, select=None)
               for name, value in body.items()),
             dict(location="headers", name="X-Lab-Correlation", value="a" * 32,
                  from_step=None, select=None)])])))
+    if positive:
+        from agenttest.llm_planner import GenericDraftStep
+
+        deletion = next(p for p in policies.values() if p.operation_id == "deleteParcel"
+                        and not p.negative)
+        proposed.plan.steps.append(GenericDraftStep.model_validate(dict(
+            id="remove", operation_id=deletion.operation_id, policy_id=deletion.id, role=None,
+            arguments=[dict(location="path_parameters", name="parcelId", value=None,
+                            from_step="submit", select="$.id")])))
     events = []
     app = create_target("parcels", environ={}, observe_negative_posts=True)
 
@@ -63,9 +77,11 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
     store = ReportStore(tmp_path / "reports")
     namespace = ("tool", 0) if recover else None
     scenario = validate_design_case(project, proposed, store, environ={},
-                                    observation_namespace=namespace)
-    assert scenario_fingerprint(project, scenario) == scenario_fingerprint(
-        project, validate_design_case(project, proposed, store, environ={}))
+                                    observation_namespace=namespace,
+                                    enable_creation_observations=positive)
+    if not positive:
+        assert scenario_fingerprint(project, scenario) == scenario_fingerprint(
+            project, validate_design_case(project, proposed, store, environ={}))
     report = RunReport(scenario_sha256="", contract_sha256="", task_mode="model_designed",
                        environment="isolated", target_origin=project.target.base_url)
     if recover:
@@ -73,7 +89,7 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
         row, _ = db.create("task", "owner", "submission", identifier, project.identity(),
                            "request", "RUNNING", {})
         authority = "deployment"
-        if recover == "unknown":
+        if unknown:
             from types import SimpleNamespace
 
             from agenttest.product_durability import ProductDurability
@@ -91,7 +107,7 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
             pass
 
         def stop_after_negative(phase, step):
-            boundary = "RESPONSE_RECEIVED" if recover == "unknown" else RESPONSE
+            boundary = "RESPONSE_RECEIVED" if unknown else RESPONSE
             if phase == boundary and step.method == "POST":
                 raise Interrupt()
 
@@ -100,7 +116,7 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
             await Executor(project.target, project.contract, store, transport, {},
                 registry=project.registry, step_journal=journal).run(scenario, report=report)
         assert events == ["GET", "POST"]
-        if recover == "unknown":
+        if unknown:
             from agenttest.human_review import HumanReviews, ReviewDecision, verification_candidates
             from agenttest.step_recovery import tool_attempts
             from agenttest.task_service import TaskService
@@ -135,6 +151,11 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
             assert observed["allowed_decisions"] == ["archive"]
             assert observed["verification"]["requests"] == 1
             assert observed["verification"]["observations"][0]["http_status"] == [200]
+            if positive:
+                assert observed["verification"]["resource_effect"] == "CREATION_OBSERVED"
+                assert observed["verification"]["matching_resources"] == 1
+                assert observed["verification"]["original_write_outcome"] == "UNKNOWN_OUTCOME"
+                assert len(app.state.records) == 1
             assert tool_attempts(db, "task", "tool")[-1]["phase"] == "DISPATCHED"
             assert not db.get("task", "owner")["summary"].get("complete")
             return

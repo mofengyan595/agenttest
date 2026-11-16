@@ -567,6 +567,64 @@ def state_project():
 
 
 @pytest.mark.asyncio
+async def test_durable_read_probe_reuses_its_committed_response(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from agenttest.goal_suite import BudgetTransport, SuiteLedger
+    from agenttest.product_tasks import ProductTasks
+    from agenttest.step_recovery import EVIDENCE, RESPONSE, StepJournal, tool_attempts
+
+    document, config = state_project()
+    proj = build_generic_project("state", document, load_openapi(document), config)
+    db = TaskStore(tmp_path / "tasks.sqlite3")
+    summary = dict(cases=[], agent_runtime=dict(engine="DEEP_AGENTS"))
+    db.create("task", "owner", "submit", "state", proj.identity(), "request", "RUNNING", summary)
+    svc = SimpleNamespace(db=db, reports=ReportStore(tmp_path / "reports"), environ={})
+    dispatches = []
+    marker = {}
+
+    def target(request):
+        dispatches.append((request.method, request.url.path))
+        return httpx.Response(503, json={"state": "unavailable"})
+
+    def arm(design, operations):
+        assert operations is None
+        marker.update(design)
+
+    def scope(cached=None):
+        ledger = SuiteLedger(6, 1, 1)
+        return SimpleNamespace(svc=svc, project=proj, ledger=ledger, task_id="task", owner="owner",
+            summary=dict(cases=[], agent_runtime=dict(engine="DEEP_AGENTS")),
+            transport=BudgetTransport(httpx.MockTransport(target), ledger), guard=lambda: None,
+            state={}, checkpoint=lambda: None, text="检查状态", active_seconds=lambda: 0,
+            durability=SimpleNamespace(hitl=(), identity="isolated"),
+            tool=dict(key="read-tool", arm=arm, design=cached))
+
+    class Crash(BaseException):
+        pass
+
+    def stop_after_receipt(_journal, phase, _result):
+        if phase == RESPONSE:
+            raise Crash()
+
+    candidate = dict(id="probe:web_rule_1", policies=["web_rule_1"], operations=["readState"])
+    tasks = ProductTasks(svc)
+    with monkeypatch.context() as patch:
+        patch.setattr(StepJournal, "boundary", stop_after_receipt)
+        with pytest.raises(Crash):
+            await tasks.supervise_read(scope(), candidate)
+    first, = tool_attempts(db, "task", "read-tool")
+    assert first["phase"] == RESPONSE
+    restored = scope(cached=marker.copy())
+    result = await tasks.supervise_read(restored, candidate)
+    final, = tool_attempts(db, "task", "read-tool")
+    assert result.executed and final["phase"] == EVIDENCE
+    assert final["run_id"] == first["run_id"] == restored.summary["cases"][0]["run_id"]
+    assert restored.summary["cases"][0]["outcome"] == "ASSERTION_FAILED"
+    assert restored.ledger.requests == 1 and dispatches == [("GET", "/state")]
+
+
+@pytest.mark.asyncio
 async def test_read_probe_reuses_one_approved_read_without_writing(tmp_path, monkeypatch):
     requests, methods = [], []
     read_case_row = dict(title="检查当前状态", kind="normal", plan=dict(name="state", steps=[dict(

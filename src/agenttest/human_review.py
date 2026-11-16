@@ -60,17 +60,24 @@ def pending_interrupt(checkpoint, review_id):
 
 def verification_candidates(project, scenarios):
     """Retain the exact approved post-observation, when it requires only one public GET."""
-    from agenttest.negative_post_observation import observations
+    from agenttest.negative_post_observation import creation_observations, observations
+    from agenttest.recovery_observation import deletion_candidates
 
     if project.target.roles:
         return []
-    return [dict(plan_sha256=fingerprint(scenario.model_dump()), step_id=write.id,
-                 prior_step_id=before.id, probe=after.model_dump(mode="json"),
-                 count_selector=rule.count_selector)
-            for scenario in scenarios if not isinstance(scenario, ValueError)
-            for before, write, after, rule in observations(project.target, scenario)
-            if after.role is None and not after.poll and not after.read_retries
-            and after.operation_id not in project.target.credential_inputs]
+    candidates = list(deletion_candidates(project, scenarios))
+    for scenario in scenarios:
+        if isinstance(scenario, ValueError):
+            continue
+        for finder in (observations, creation_observations):
+            for before, write, after, rule in finder(project.target, scenario):
+                if (after.role is None and not after.poll and not after.read_retries
+                        and after.operation_id not in project.target.credential_inputs):
+                    candidates.append(dict(plan_sha256=fingerprint(scenario.model_dump()),
+                        step_id=write.id, prior_step_id=before.id,
+                        probe=after.model_dump(mode="json"), count_selector=rule.count_selector,
+                        positive=finder is creation_observations))
+    return candidates
 
 
 class HumanReviews:
@@ -183,8 +190,11 @@ class HumanReviews:
                 review = json.loads(row["payload"])
                 if review["status"] != "VERIFICATION_REQUESTED":
                     continue
+                attempts = db.execute("SELECT run_id,step_id,attempt,phase FROM http_execution "
+                    "WHERE task_id=? AND tool_key=?", (task_id, review["review_id"]))
                 review.update(status=UNKNOWN, allowed_decisions=["archive"],
                     version=review["version"] + 1,
-                    verification=dict(status="OBSERVATION_INTERRUPTED"))
+                    verification=dict(status="OBSERVATION_INTERRUPTED",
+                                      evidence=[dict(attempt) for attempt in attempts]))
                 db.execute("UPDATE human_reviews SET payload=? WHERE task_id=? AND review_id=?",
                            (json.dumps(review), task_id, review["review_id"]))

@@ -59,6 +59,58 @@ def observations(target, scenario):
             yield before, write, after, rule
 
 
+def add_creation_observations(project, scenario, namespace):
+    """Install an operator-approved correlation read on both sides of a normal POST."""
+    if project.target.roles:
+        return scenario
+    operations = {op.operation_id: op for op in project.contract.operations}
+    policies = {p.id: p for p in project.registry.definitions()}
+    steps = []
+    for original in scenario.steps:
+        rule = project.target.positive_post_observations.get(original.operation_id)
+        policy = policies[original.policy_id]
+        if (rule is None or policy.negative or not policy.assertions.status
+                or policy.assertions.status.codes != [201]):
+            steps.append(original)
+            continue
+        lookup = operations[rule.operation_id]
+        candidates = [p for p in policies.values() if p.operation_id == lookup.operation_id
+                      and p.roles == [None] and not p.negative and not p.poll
+                      and not p.assertions.fields and p.assertions.status
+                      and p.assertions.status.codes == [200]]
+        headers = [name for name in original.headers
+                   if name.casefold() == rule.request_header.casefold()]
+        if (original.role or operations[original.operation_id].method != "POST"
+                or lookup.method != "GET" or lookup.security or len(candidates) != 1
+                or len(headers) != 1 or lookup.operation_id in project.target.credential_inputs):
+            raise NeedsReview("POSITIVE_POST_OBSERVATION_NOT_APPROVED")
+        key = fingerprint((namespace, "creation-outcome", original.id))[:32]
+        nonce = ArgumentBinding(value=key)
+        write = original.model_copy(deep=True)
+        write.headers[headers[0]] = nonce
+        before, after = [Step(id=f"creation_{stage}_{key}", operation_id=rule.operation_id,
+            query={rule.query_parameter: nonce}, policy_id=candidates[0].id)
+            for stage in ("before", "after")]
+        steps.extend((before, write, after))
+    return Scenario(name=scenario.name, steps=steps)
+
+
+def creation_observations(target, scenario):
+    for before, write, after in zip(scenario.steps, scenario.steps[1:], scenario.steps[2:]):
+        rule = target.positive_post_observations.get(write.operation_id)
+        if not rule or before.operation_id != rule.operation_id or after.operation_id != (
+                rule.operation_id):
+            continue
+        token = next((binding for name, binding in write.headers.items()
+                      if name.casefold() == rule.request_header.casefold()), None)
+        if (token is not None and token.from_step is None and isinstance(token.value, str)
+                and before.id == f"creation_before_{token.value}"
+                and after.id == f"creation_after_{token.value}"
+                and before.query == after.query == {rule.query_parameter: token}
+                and before.policy_id == after.policy_id):
+            yield before, write, after, rule
+
+
 def observation_receipts(project, scenario, case):
     """Match the actual on-wire key, approved policy, phase order and zero-count checks."""
     measured = {entry["step_id"]: entry for entry in case.get("evidence", ())}

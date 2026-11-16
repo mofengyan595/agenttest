@@ -1452,6 +1452,8 @@ class ProductTasks:
                     requested_checks=executable_checks,
                     verify_batch_cleanup=bool(group.get("policy_ids")),
                     observation_namespace=(tool["key"], index) if tool else None,
+                    enable_creation_observations=bool(
+                        tool and scope.durability.hitl is not None),
                     environ=svc.environ, transport=bounded_transport))
             except ValueError as exc:
                 preflight.append(exc)
@@ -1994,6 +1996,7 @@ class ProductTasks:
         """READ_PROBE: one approved read-only step; it can never write or replay a write."""
         from agenttest.dsl import validate_plan
         from agenttest.executor import Executor
+        from agenttest.human_review import group_operations
         from agenttest.investigation import InvestigationConfig
         from agenttest.product_design import validate_cleanup_dependencies
         from agenttest.product_obligations import probe_scenario
@@ -2023,10 +2026,23 @@ class ProductTasks:
                                  detail=dict(target=candidate.get("id"),
                                              reason=attempt["reason"]))
         step = scenario.steps[0]
+        journal = None
+        if tool := getattr(scope, "tool", None):
+            case_id = unique_case_id(scope.summary, f"probe_{round_number}")
+            digest = fingerprint(scenario.model_dump())
+            marker = dict(group_id=case_id, plans=[digest], group_request_limit=ledger.max_requests)
+            if tool.get("design") is not None and tool["design"] != marker:
+                raise StepRecoveryBlocked("STEP_APPROVED_GROUP_CHANGED")
+            tool["arm"](marker, group_operations(project, [scenario], scope.durability.hitl))
+            journal = StepJournal(StepScope(svc.db, scope.task_id, scope.owner, tool["key"],
+                case_id, case_id, fingerprint((scope.task_id, tool["key"], case_id))[:32],
+                scope.durability.identity, digest, scope.active_seconds), ledger)
+            store.step_journal = journal
         report = await Workflow(project.document, project.target, project.registry,
             FakeLLM(""), store, transport=scope.transport, environ=svc.environ,
             task_mode="model_designed", user_task=self.supervision_text(scope, candidate),
             prepared_plan=scenario, investigation=InvestigationConfig(enabled=False),
+            step_journal=journal,
             execution_guard=scope.guard,
             plan_derivation=dict(source="SUPERVISION_READ_PROBE", group=step.operation_id),
             budget=WorkflowBudget(max_model_calls=0,

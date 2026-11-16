@@ -1294,6 +1294,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     if review_id := saved.get("review_id"):
                         frame["reviewing"] = True
                         review = recovery.get("review") or {}
+                        if recovery.get("rebuild_interrupt"):
+                            interrupt({"review_id": review_id})
+                            raise StepRecoveryBlocked("REVIEW_RESUME_REQUIRED")
                         if (review.get("status") != "APPROVED"
                                 or interrupt({"review_id": review_id}) != review_id):
                             raise StepRecoveryBlocked("REVIEW_DECISION_MISMATCH")

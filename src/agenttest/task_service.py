@@ -383,7 +383,8 @@ class TaskService:
         blocked = self.db.model_usage_blocked()
         return dict(result, resumable=not blocked, checkpoint=bool(payload["checkpoint_id"]),
                     phase=payload["phase"], reason="MODEL_USAGE_REQUIRES_RECONCILIATION"
-                    if blocked else None)
+                    if blocked else "REVIEW_INTERRUPT_REBUILD_REQUIRED"
+                    if payload.get("rebuild_interrupt") else None)
 
     def review_records(self, task_id, owner, review_id=None):
         row = self.db.get(task_id, owner)
@@ -437,9 +438,9 @@ class TaskService:
 
         from agenttest.executor import Executor
         from agenttest.report import RunReport
-        from agenttest.step_recovery import StepJournal, StepScope
+        from agenttest.step_recovery import EVIDENCE, StepJournal, StepScope, load_receipt
 
-        plan, used, limit, seconds = verification
+        plan, used, limit, seconds, observation, creation_count_selector = verification
         task_id, owner = durable.task_id, durable.owner
         review_id = review["review_id"]
         ledger = SuiteLedger(min(limit, used + 1), 0, 0, requests=used)
@@ -467,13 +468,37 @@ class TaskService:
                     executor = Executor(project.target, project.contract, store,
                         BudgetTransport(transport, ledger, guard), self.environ,
                         registry=project.registry, step_journal=journal)
-                    report = await executor.run(plan, report=report)
+                    report = await executor.run(plan, report=report, observation=observation)
                 result = dict(status="OBSERVATION_RECORDED", run_id=run_id,
                     observations=[dict(step_id=step.step_id, outcome=step.outcome.value,
                         http_status=[attempt.status_code for attempt in step.attempts],
                         checks=[dict(kind=check.kind, selector=check.selector, passed=check.passed)
                                 for check in step.checks])
                                   for step in report.steps])
+                if observation and report.steps and report.steps[0].attempts:
+                    step = report.steps[0]
+                    attempt = step.attempts[-1]
+                    if attempt.error_code is None:
+                        if attempt.status_code in {404, 410} and step.outcome == Outcome.PASS:
+                            result["resource_effect"] = "ABSENCE_OBSERVED"
+                        elif attempt.status_code == 200:
+                            result["resource_effect"] = "RESOURCE_STILL_PRESENT"
+                    result["original_write_outcome"] = "UNKNOWN_OUTCOME"
+                if creation_count_selector:
+                    from agenttest.selectors import select
+                    from agenttest.step_recovery import tool_attempts
+
+                    result["original_write_outcome"] = "UNKNOWN_OUTCOME"
+                    attempts = tool_attempts(self.db, task_id, review_id)
+                    if (report.outcome == Outcome.PASS and len(attempts) == 1
+                            and attempts[0]["phase"] == EVIDENCE):
+                        receipt = load_receipt(attempts[0])
+                        if receipt["replayable"]:
+                            count = select(receipt["body"], creation_count_selector)
+                            if type(count) is int and count >= 0:
+                                result["matching_resources"] = count
+                                if count == 1:
+                                    result["resource_effect"] = "CREATION_OBSERVED"
         except (TaskConflict, OSError, ValueError):
             result["code"] = "REVIEW_VERIFICATION_STOPPED"
         finally:

@@ -5,7 +5,7 @@ from email.utils import parsedate_to_datetime
 
 MAX_RETRY_DELAY = 8.0
 MAX_GATEWAY_RETRIES = 2
-TRANSIENT_STATUSES = frozenset({429, 502, 503, 504})
+TRANSIENT_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 
 def retry_after_seconds(header: str | None) -> float | None:
