@@ -21,6 +21,8 @@
   运行时按确定性判据记为未完成。
 - 最终源码两次独立运行 29/31 与 27/31，没有 31/31；4/5 稳定性目标未达到，NO-GO 不变。
   剩余问题收敛为 `replaceParcel` 负向批次的监督结束条件。
+- `d992dfa` 的远端 CI 全绿：Keyless Python checks #186（四组离线、Ruff、冒烟和
+  Deep Agents 运行时）与 Web Console checks #165。
 - [真实验收与逐项结果](deepagents-hitl-reliability-p3b21.md)
 
 ## 2026-11-16 — P3-B2 持久化人工审批

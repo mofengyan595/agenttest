@@ -225,3 +225,12 @@ HTTP 计靶场实际业务事件，排除健康与契约请求。
 批准义务未测完时结束（`ANSWER` 或 `NO_PROGRESS`）。运行时如实报告缺口，安全约束
 全部保持，但覆盖无法保证。下一里程碑应先在该批次的监督层收紧结束条件，再用
 新窗口独立运行 5 次，其中至少 4 次达到 31/31 并保留清理证据。
+
+### 远端 CI
+
+实现提交 `d992dfa849d26032e7970ac4638fe8389e96d5c2` 的 7 项检查全部通过：
+
+| 工作流 | 运行 | 结论 |
+| --- | --- | --- |
+| Keyless Python checks | [#186](https://github.com/mofengyan595/agenttest/actions/runs/43818140832) | success（Ubuntu/Windows × base/agent 四组离线、Ruff、冒烟，加 Deep Agents 运行时） |
+| Web Console checks | [#165](https://github.com/mofengyan595/agenttest/actions/runs/43818140825) | success（Ubuntu/Windows，类型检查与 Vitest） |
