@@ -150,29 +150,55 @@ NON_REPAIRABLE_FOCUS = frozenset({
 })
 
 
-def focus_repair_payload(project, diagnostic, *, atoms=()):
+def focus_repair_payload(project, diagnostic, *, atoms=(), scope_sources=()):
     """The one structured correction a rejected Focus proposal is allowed to receive.
 
     A structural ``FOCUS_*`` rejection is worth one retry, but several validators raise it
     without naming a field. The payload therefore always carries the approved operation
     vocabulary and the requirement keys the model must fill, so a terse code is still
-    repairable and never costs the whole round.
+    repairable and never costs the whole round. A trusted scope clause is recorded by the
+    server as project scope: it must not appear in ``requirement_map``, so listing it as a key
+    to fill would turn the retry into the same rejection again.
     """
     payload = diagnostic.model_dump(mode="json")
     if not payload.get("fields"):
         payload["fields"] = []
-    detail = payload.get("detail")
-    if not isinstance(detail, dict) or not detail:
-        payload["detail"] = dict(
-            schema="agenttest.focus-repair.v1",
-            code=payload.get("code"),
-            allowed_operations=sorted(getattr(project.target, "allowed_operations", ()))[:16],
-            requirement_keys=sorted({str(atom.get("source_id")) for atom in atoms
-                                     if atom.get("source_id")})[:12],
-            hint=("请严格按错误码重写这次提案：scope.operations 只能用 allowed_operations "
-                  "里的接口，requirement_map 必须为每条原文子句各给一项；"
-                  "不要扩大范围，也不要重复同一个被拒的值。"))
+    scoped = {str(key) for key in scope_sources if key}
+    # The vocabulary and a fallback hint are always present, and a validator that already named
+    # its own fields and hint keeps them: the retry must neither lose the operation list nor be
+    # invited to fill a key the schema forbids.
+    base = dict(
+        schema="agenttest.focus-repair.v1",
+        code=payload.get("code"),
+        allowed_operations=sorted(getattr(project.target, "allowed_operations", ()))[:16],
+        requirement_keys=sorted({str(atom.get("source_id")) for atom in atoms
+                                 if atom.get("source_id")
+                                 and str(atom.get("source_id")) not in scoped})[:12],
+        trusted_scope_clauses=sorted(scoped)[:12],
+        hint=("请严格按错误码重写这次提案：scope.operations 只能用 allowed_operations "
+              "里的接口；requirement_map 只能填 requirement_keys 列出的子句，"
+              "trusted_scope_clauses 里的子句由服务端记为项目范围，不要为它们填条目；"
+              "不要扩大范围，也不要重复同一个被拒的值。"))
+    existing = payload.get("detail")
+    payload["detail"] = dict(base, **(existing if isinstance(existing, dict) else {}))
     return payload
+
+
+def focus_scope_sources(project, summary):
+    """The source clauses the server itself records as project scope.
+
+    Deterministic and cached on the summary: the same set the Focus schema uses to decide which
+    clauses need no ``requirement_map`` entry, so a repair hint never asks for one of them.
+    """
+    cached = summary.get("trusted_scope_clauses")
+    if cached is None:
+        from agenttest.task_completion import project_variant_scope_sources
+
+        cached = project_variant_scope_sources(
+            project, str(summary.get("user_request") or ""),
+            list(summary.get("requirement_sources") or ()))
+        summary["trusted_scope_clauses"] = list(cached)
+    return list(cached or ())
 
 
 def unique_case_id(summary, base_id):
@@ -711,7 +737,8 @@ class ProductTasks:
                                     raise
                                 order_feedback = focus_repair_payload(
                                     project, diagnostic,
-                                    atoms=summary["requirement_sources"])
+                                    atoms=summary["requirement_sources"],
+                                    scope_sources=focus_scope_sources(project, summary))
                                 if negative_literal:
                                     order_feedback["detail"]["negative_literal_hint"] = (
                                         "引用范围说明时，保留对应 source_ref 和 check_ref，"
@@ -1811,7 +1838,8 @@ class ProductTasks:
         # where a reader can audit it without a schema change.
         svc.db.event(scope.task_id, "SUPERVISING", requests=ledger.requests)
         try:
-            result = await run_agent(scope, self, settings, **limits, execution=state)
+            result = await run_agent(scope, self, settings, **limits, execution=state,
+                                     obligations=dict())
         except asyncio.CancelledError:
             summary["agent_runtime"] = {**summary.get("agent_runtime", {}),
                                         "engine": AGENT_ENGINE, "stop_reason": "CANCELLED"}
@@ -1838,6 +1866,7 @@ class ProductTasks:
             for group in summary["groups"] if group.get("policy_ids")]
         summary["complete"] = completion["complete"]
         summary["checks_passed"] = completion["checks_passed"]
+        termination = summary.get("termination") or {}
         summary["reason"] = {
             "MODEL_CALL_LIMIT": "模型调用预算已用尽；已按已获得证据生成确定性任务报告。",
             "TOOL_CALL_LIMIT": "工具调用预算已用尽；已按已获得证据生成确定性任务报告。",
@@ -1853,6 +1882,12 @@ class ProductTasks:
             "DURABLE_MODEL_GATEWAY_UNAVAILABLE": "模型网关暂时不可用，已保存任务恢复位置。",
         }.get(result.stop_reason,
               "自主运行时已结束；完成情况由确定性判据给出，不采用模型总结作为结论。")
+        if termination.get("state") in {"PARTIAL", "BLOCKED"}:
+            # The gate's own account replaces the generic sentence: it names the obligations that
+            # are still open and the concrete blocker or bounded rule that ended the run.
+            summary["reason"] = (
+                f"{termination.get('code')}: {termination.get('detail') or ''}".strip()
+                + "；完成状态由确定性判据给出，不接受模型总结作为完成依据。")
         self.coverage(summary, project=scope.project)
         scope.checkpoint()
         return result

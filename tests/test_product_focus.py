@@ -211,6 +211,57 @@ def test_release_negative_scope_ref_does_not_accept_an_invented_exact_sample():
     assert not validator.is_valid(wire)
 
 
+def test_a_scope_clause_in_the_requirement_map_names_the_key_and_the_expected_set():
+    """A bare code made the model repeat the rejected key on its one allowed retry."""
+    from agenttest.diagnostics import ValidationFailure
+    from agenttest.request_requirements import decode_requirements, request_atoms
+
+    task = "发版前请完整验收整个项目，正常路径和非法入参都按已批准的规则执行。"
+    context = dict(request_atoms=request_atoms(task), trusted_scope_clauses=["request_2"])
+    clause = dict(disposition="required", actions=[], before=[], same_resource=[])
+    accepted = decode_requirements({"request_1": dict(clause)}, context)
+    assert [(item.source_id, item.disposition) for item in accepted] == [
+        ("request_1", "required"), ("request_2", "constraint")]
+    with pytest.raises(ValidationFailure) as caught:
+        decode_requirements({"request_1": dict(clause), "request_2": dict(clause)}, context)
+    diagnostic = caught.value.diagnostic
+    assert diagnostic.code == "FOCUS_SOURCE_CLAUSE_MISSING"
+    assert diagnostic.fields == ["requirement_map.request_2"]
+    assert diagnostic.detail == dict(expected_requirement_keys=["request_1"],
+                                     trusted_scope_clauses=["request_2"])
+
+
+def test_a_focus_repair_hint_never_asks_for_a_trusted_scope_clause():
+    """S3 listed the scope clause again because the hint told it to fill every clause."""
+    from agenttest.diagnostics import Diagnostic, Layer
+    from agenttest.product_tasks import focus_repair_payload, focus_scope_sources
+    from agenttest.request_requirements import request_atoms
+
+    target, _ = project(negative=True)
+    task = "发版前请完整验收整个项目，正常路径和非法入参都按已批准的规则执行。"
+    summary = dict(user_request=task, requirement_sources=request_atoms(task))
+    assert focus_scope_sources(target, summary) == ["request_2"]
+    payload = focus_repair_payload(
+        target, Diagnostic(layer=Layer.MODEL, code="FOCUS_SOURCE_CLAUSE_MISSING"),
+        atoms=summary["requirement_sources"], scope_sources=focus_scope_sources(target, summary))
+    detail = payload["detail"]
+    assert detail["requirement_keys"] == ["request_1"]
+    assert detail["trusted_scope_clauses"] == ["request_2"]
+    assert "requirement_keys 列出的子句" in detail["hint"]
+    assert "不要为它们填条目" in detail["hint"]
+    # A diagnostic that already names the offending key keeps the operation vocabulary too;
+    # losing it turned one repair into an invented source reference in round t2.
+    named = focus_repair_payload(
+        target, Diagnostic(layer=Layer.MODEL, code="FOCUS_SOURCE_CLAUSE_MISSING",
+                           fields=["requirement_map.request_2"],
+                           detail=dict(expected_requirement_keys=["request_1"])),
+        atoms=summary["requirement_sources"], scope_sources=["request_2"])
+    assert named["detail"]["expected_requirement_keys"] == ["request_1"]
+    assert named["detail"]["allowed_operations"]
+    assert named["detail"]["requirement_keys"] == ["request_1"]
+    assert "allowed_operations" in named["detail"]["hint"]
+
+
 @pytest.mark.asyncio
 async def test_focus_gateway_exhaustion_records_each_actual_attempt(tmp_path):
     replies = []

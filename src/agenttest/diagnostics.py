@@ -69,6 +69,13 @@ SAFE_FIELDS = frozenset({
     "filename", "content", "poll", "read_retries", "csv_fixture_id", "poll_policy_id",
 })
 
+# A schema *shape* rejection can only be repaired if the model learns which key it invented or
+# omitted. Extra and missing keys are echoed when they look like identifiers (no spaces, quotes,
+# punctuation, or value-shaped tokens), and never in any other diagnostic family.
+SHAPE_ECHO_TYPES = frozenset({"extra_forbidden", "missing"})
+IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,39}$")
+MAX_ECHOED_KEYS = 4
+
 
 def presentation_language(text):
     """Report the prose language of model text without rewriting or gating it.
@@ -100,10 +107,26 @@ def schema_diagnostic(exc: ValidationError, layer: Layer) -> Diagnostic:
                   "generic_container_limit": "GENERIC_CONTAINER_LIMIT"})
     first = errors[0]["type"] if errors else ""
     suffix = types.get(first, "TYPE_OR_CONSTRAINT")
-    fields = []
+    fields, extra_keys, missing_keys = [], [], []
     for error in errors[:8]:
-        fields.append(".".join(str(p) if type(p) is int and 0 <= p <= 100 else
-                               p if type(p) is str and p in SAFE_FIELDS else "*"
-                               for p in error["loc"]))
-    return Diagnostic(layer=layer, code=layer.value.upper() + "_SCHEMA_" + suffix,
-                      fields=fields)
+        echo = error["type"] in SHAPE_ECHO_TYPES
+        segments = []
+        for part in error["loc"]:
+            if type(part) is int and 0 <= part <= 100:
+                segments.append(str(part))
+            elif type(part) is str and (part in SAFE_FIELDS
+                                        or (echo and IDENTIFIER.match(part))):
+                segments.append(part)
+                if part not in SAFE_FIELDS:
+                    (extra_keys if error["type"] == "extra_forbidden"
+                     else missing_keys).append(part)
+            else:
+                segments.append("*")
+        fields.append(".".join(segments))
+    diagnostic = Diagnostic(layer=layer, code=layer.value.upper() + "_SCHEMA_" + suffix,
+                            fields=fields)
+    if extra_keys:
+        diagnostic.detail = dict(unknown_fields=sorted(set(extra_keys))[:MAX_ECHOED_KEYS])
+    elif missing_keys:
+        diagnostic.detail = dict(missing_fields=sorted(set(missing_keys))[:MAX_ECHOED_KEYS])
+    return diagnostic

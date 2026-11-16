@@ -39,6 +39,12 @@ from agenttest.deep_harness.loop import (
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
+from agenttest.obligation_gate import (
+    ObligationGate,
+    continuation_text,
+    formal_code,
+    repair_constraint,
+)
 from agenttest.product_obligations import (
     executed_evidence,
     negative_dispatch_floor,
@@ -80,7 +86,10 @@ STOP_CANCELLED = "CANCELLED"
 STOP_AUTHORITY_CHANGED = "AUTHORITY_CHANGED"
 STOP_DEADLINE = "DEADLINE"
 
-MAX_GROUP_RUNS = 2          # one broad attempt plus one informed redesign, then stop
+MAX_GROUP_RUNS = 3          # one broad attempt, one informed redesign, one formal repair
+MAX_RUNTIME_REPAIRS = 1     # self-authored repairs per group, from the structured diagnostic
+MAX_DESIGN_NOTE = 300       # model-authored constraint, the design prompt re-sends it
+MAX_REPAIR_NOTE = 900       # runtime-authored repair constraint (structured diagnostic)
 MAX_RESULT_BYTES = 6_000    # one tool result, re-sent on every following model turn
 # Context editing threshold for old tool output. P2 re-sent the first contract/policy/scope
 # reads on every later turn (~20 KB per request by turn 3). Eight thousand approximate tokens
@@ -198,6 +207,7 @@ class AgentSession:
     max_tool_calls: int = 24
     max_model_calls: int = 8
     execution: object | None = None
+    obligations: object | None = None
 
     def __post_init__(self):
         svc = self.scope.svc
@@ -222,6 +232,7 @@ class AgentSession:
         self.group_runs: dict[str, int] = {}
         self.obligation_runs = 0
         self.group_notes: dict[str, str] = {}
+        self.repair_runs: dict[str, int] = {}
         self.generation = 0
         self.seen: dict[str, dict] = {}
         self.stop = "RUNNING"
@@ -233,6 +244,7 @@ class AgentSession:
         self.answer = ""
         self.context_trace: list[dict] = []
         self.budget_trace: list[dict] = []
+        self.gate_log: list[dict] = []
         # Publish the runtime identity before the first action so a cancel/timeout still has
         # an auditable owner even when no tool ever ran.
         self.flush()
@@ -251,14 +263,21 @@ class AgentSession:
     def durable_state(self) -> dict:
         return dict(tool_calls=self.tool_calls, group_runs=self.group_runs,
                     obligation_runs=self.obligation_runs, group_notes=self.group_notes,
+                    repair_runs=self.repair_runs,
                     generation=self.generation, seen=self.seen, context_trace=self.context_trace,
-                    budget_trace=self.budget_trace,
+                    budget_trace=self.budget_trace, gate_log=self.gate_log,
+                    obligations=(self.obligations.public() if self.obligations else None),
                     active_seconds=time.monotonic() - self.started)
 
     def restore(self, state: dict) -> None:
-        for key in ("tool_calls", "group_runs", "obligation_runs", "group_notes",
+        for key in ("tool_calls", "group_runs", "obligation_runs", "group_notes", "repair_runs",
                     "generation", "seen", "context_trace", "budget_trace"):
             setattr(self, key, state[key])
+        # Added after the first durable checkpoints: a resumed run from before the obligation
+        # gate has no gate log and no gate counters, and must not fail on the missing keys.
+        self.gate_log = list(state.get("gate_log") or ())
+        if self.obligations is not None:
+            self.obligations.restore(state.get("obligations"))
         self.started -= state["active_seconds"]
         self.flush()
 
@@ -281,10 +300,13 @@ class AgentSession:
         return dict(engine=ENGINE, stop_reason=self.stop, error=self.error,
                     tool_calls=list(self.tool_calls),
                     group_runs=dict(self.group_runs),
+                    repair_runs=dict(self.repair_runs),
                     attempts=list(self.scope.state.get("attempts") or ()),
                     elapsed_ms=round((time.monotonic() - self.started) * 1000, 3),
                     context_trace=list(self.context_trace),
                     budget_trace=list(self.budget_trace),
+                    obligations=(self.obligations.public() if self.obligations else None),
+                    gate_log=list(self.gate_log),
                     answer=self.answer[:2000],
                     tools=list(TOOL_NAMES))
 
@@ -604,6 +626,56 @@ class AgentSession:
             cleared_tool_results=cleared,
             tool_names=[item["function"]["name"] for item in payload.get("tools", ())]))
 
+    # ------------------------------------------------------------------ obligation gate
+    def gate_decision(self) -> dict:
+        """Ask the deterministic gate whether this run may end; no model text is consulted."""
+        if self.obligations is None:
+            return dict(action="END", state="PARTIAL", code="GATE_DISABLED", detail="")
+        execution_stopped = (self.execution.stop_reason
+                             if self.execution is not None and self.execution.stopped else None)
+        decision = self.obligations.evaluate(
+            budget=self._budget_view(), stop=self.stop,
+            execution_stopped=execution_stopped, runs=self.group_runs,
+            attempt_limit=MAX_GROUP_RUNS)
+        self.flush()
+        return decision
+
+    def obligation_step(self, state: dict) -> dict | None:
+        """The in-loop gate: refuse a closing answer while an approved obligation is open.
+
+        Called after every model turn. A turn that still calls tools is not a closing answer,
+        so the gate only annotates the state (it clears its own ``jump_to`` so a previous
+        refusal cannot become a permanent redirect). A closing turn either gets one deterministic
+        continuation instruction naming the exact next group, or the run is allowed to end with
+        the gate's own terminal recorded on the session.
+        """
+        if self.obligations is None:
+            return None
+        messages = state.get("messages") or ()
+        last = messages[-1] if messages else None
+        if last is None or getattr(last, "tool_calls", None):
+            return {"jump_to": None}
+        decision = self.gate_decision()
+        if decision.get("action") != "CONTINUE":
+            return {"jump_to": None}
+        from langchain_core.messages import HumanMessage
+
+        row = decision.get("next") or {}
+        record = self._last_design_record(row.get("group_id"))
+        diagnostic = self._diagnostic(record) if record is not None and formal_code(
+            self._diagnostic_code(record)) else None
+        text = continuation_text(self.project, row, row.get("policies") or (),
+                                 self._budget_view(), diagnostic=diagnostic)
+        self.record_context_note(text)
+        return {"jump_to": "model", "messages": [HumanMessage(content=text)]}
+
+    def record_context_note(self, text: str) -> None:
+        """Keep the gate's own instruction in the audit trail (never a model claim)."""
+        self.gate_log.append(dict(at=round(time.monotonic() - self.started, 3),
+                                  characters=len(text)))
+        self.gate_log = self.gate_log[-12:]
+        self.flush()
+
     # ------------------------------------------------------------------ actions
     async def run_group(self, group_id: str, design_note: str = "") -> dict:
         """Design, preflight and execute one deterministic group; the only broad action."""
@@ -625,6 +697,15 @@ class AgentSession:
         if runs >= MAX_GROUP_RUNS:
             return _refusal("GROUP_RUN_LIMIT", f"分组 {group_id} 已执行 {runs} 次。", 
                             retryable=False, hint="改用候选义务或结束本轮。")
+        last_code = self._diagnostic_code(self._last_design_record(group_id))
+        if runs >= MAX_GROUP_RUNS - 1 and not formal_code(last_code):
+            # The last attempt is reserved for a formal repair. A semantically rejected batch
+            # has already been redesigned once; a third identical round would only repeat it.
+            return _refusal("GROUP_RUN_LIMIT",
+                            f"分组 {group_id} 已执行 {runs} 次，"
+                            f"且上次不是形式错误（{last_code or 'UNKNOWN'}）。",
+                            retryable=False,
+                            hint="该分组的方案问题需要人工澄清；改用其他义务或结束本轮。")
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
         subject = self._subject()
@@ -642,10 +723,16 @@ class AgentSession:
                 unmeasured=[policy_id for policy_id in related if policy_id not in evidence])
             return refusal_payload
         note = self._note(design_note)
+        repaired = False
         if (runs and group.get("status") in {"NOT_EXECUTED", "REJECTED"}
                 and (not note or note == self.group_notes.get(group_id))):
-            return _refusal("REPAIR_NOTE_REQUIRED", "此分组已经拒绝过一次。",
-                            hint="按上一轮结构化错误给出一条新的设计约束，或选择其他义务。")
+            # A formal rejection never sent a request, so the runtime may repair it itself from
+            # the structured diagnostic instead of waiting for the model to invent a new note.
+            auto = self.formal_repair_note(group_id)
+            if auto is None:
+                return _refusal("REPAIR_NOTE_REQUIRED", "此分组已经拒绝过一次。",
+                                hint="按上一轮结构化错误给出一条新的设计约束，或选择其他义务。")
+            note, repaired = auto, True
         supervision = None
         if note or group.get("status") in {"NOT_EXECUTED", "REJECTED"}:
             round_number = self.tasks.next_supervision_round(self.scope)
@@ -670,8 +757,10 @@ class AgentSession:
         before_requests = self.ledger.requests
         self.group_runs[group_id] = runs + 1
         self.group_notes[group_id] = note
+        if repaired:
+            self.repair_runs[group_id] = self.repair_runs.get(group_id, 0) + 1
         self.record("run_test_group", phase="start", group_id=group_id,
-                    design_note=bool(note), status="STARTED")
+                    design_note=bool(note), runtime_repair=repaired, status="STARTED")
         try:
             await self.tasks.run_group(self.scope, group, supervision=supervision)
         except StepRecoveryBlocked:
@@ -699,6 +788,8 @@ class AgentSession:
                                    code=self._diagnostic_code(record),
                                    fields=self._diagnostic(record).get("fields") or [],
                                    detail=self._diagnostic(record).get("detail") or {},
+                                   attempt=self.group_runs.get(group_id, 0),
+                                   runtime_repair=repaired,
                                    planning_engine=(record or {}).get("actual_planning_engine")
                                    or (record or {}).get("planning_engine")),
                        cases=[self._case_summary(case) for case in cases][:8],
@@ -714,7 +805,10 @@ class AgentSession:
                 message="设计或预检没有通过，未发送业务请求。",
                 fields=self._diagnostic(record).get("fields") or [],
                 detail=detail,
-                retryable=bool(note) is False,
+                # A formal defect is repairable by the runtime itself; anything else needs a new
+                # constraint from the caller. ``retryable`` says which of the two it is.
+                retryable=bool(formal_code(code)
+                               or self.group_runs.get(group_id, 0) < MAX_GROUP_RUNS),
                 hint=detail.get("hint") or self._repair_hint(code))
         elif cases and all(case.get("status") == "REJECTED" for case in cases):
             group["status"] = payload["status"] = "REJECTED"
@@ -759,6 +853,17 @@ class AgentSession:
             "MODEL_OUTPUT_TRUNCATED":
                 "上一版方案超过单次输出上限被截断：把这一组拆成更小的方案（更少的用例或"
                 "更少的步骤）再调用一次。",
+            "JSON_SYNTAX":
+                "上一版方案不是合法 JSON：detail 给出了 position/line/column 和关闭的 reason，"
+                "只修正该处的语法后重新提交，不要重写策略、预期或清理步骤。",
+            "CONSTRUCTION_REFERENCE_INVALID":
+                "方案里有步骤引用了不存在的步骤：from_step 只能指向同一用例中已声明的步骤 id；"
+                "detail 的 allowed_from_steps 是本方案可用的 id，reference 说明引用问题类型。",
+            "MODEL_SCHEMA_EXTRA_FIELD":
+                "方案里出现了 schema 之外的多余字段：detail 的 unknown_fields 给出字段名，"
+                "删除它们后重新提交，保留其余方案内容。",
+            "MODEL_SCHEMA_MISSING_FIELD":
+                "方案缺少 schema 要求的字段：detail 的 missing_fields 给出字段名，补齐后重新提交。",
         }.get(code, "按 code 与 detail 调整设计方案；如无更具体的修复信息，请提供 design_note "
                     "说明一条新的设计约束。预检未通过时不会发送任何业务请求。")
 
@@ -918,9 +1023,43 @@ class AgentSession:
 
     # ------------------------------------------------------------------ helpers
     @staticmethod
-    def _note(value: str) -> str:
+    def _note(value: str, limit: int = MAX_DESIGN_NOTE) -> str:
         text = " ".join(str(value or "").split())
-        return text[:300]
+        return text[:limit]
+
+    def _last_design_record(self, group_id) -> dict | None:
+        rows = [row for row in self.summary.get("design_records") or ()
+                if row.get("group_id") == group_id]
+        return rows[-1] if rows else None
+
+    def formal_repair_note(self, group_id: str) -> str | None:
+        """The runtime's own repair constraint when the last rejection was a formal defect.
+
+        A design that never reached HTTP with invalid JSON, a wrong schema shape or an
+        unconstructible step reference is repaired by re-sending the same approved batch with
+        the structured diagnostic attached. Anything semantic (scope, expectation, an
+        unapproved value) returns ``None`` and still needs the model to state a new constraint.
+        """
+        record = self._last_design_record(group_id)
+        if record is None or not formal_code(self._diagnostic_code(record)):
+            return None
+        if self.repair_runs.get(group_id, 0) >= MAX_RUNTIME_REPAIRS:
+            # One self-authored repair per group: a formal defect that repeats after an exact
+            # constraint is not a formatting problem any more, and re-sending it would only
+            # burn budget on the same bytes.
+            return None
+        group = next((item for item in self.summary.get("groups") or ()
+                      if item.get("id") == group_id), None)
+        if group is None:
+            return None
+        evidence = executed_evidence(self.summary)
+        owned = list(group.get("policy_ids") or ())
+        pending = ([key for key in owned if key not in evidence] if owned else [])
+        if not pending:
+            return None
+        return self._note(repair_constraint(
+            self.project, group, pending, self._diagnostic(record),
+            attempt=self.group_runs.get(group_id, 0) + 1), limit=MAX_REPAIR_NOTE)
 
     def _design_text(self, group: dict, note: str) -> str:
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
@@ -1112,6 +1251,7 @@ class RuntimeResult:
     error: dict | None
     elapsed_ms: float
     checkpoint_id: str | None = None
+    termination: dict | None = None
 
 
 async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
@@ -1120,7 +1260,7 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     tool_calls_ceiling: int | None = None,
                     total_tokens_ceiling: int | None = None,
                     transport=None, model=None, enable_skills: bool = True,
-                    execution=None) -> RuntimeResult:
+                    execution=None, obligations: dict | None = None) -> RuntimeResult:
     """Run one product goal through Deep Agents; deterministic code still owns every verdict.
 
     ``execution`` is the resolved :class:`agenttest.execution_budget.ExecutionState`. When it
@@ -1128,15 +1268,21 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     current allowance, so a round that keeps producing evidence can continue past the initial
     estimate without ever passing the absolute cap. ``model`` exists for offline tests and for
     a deployment that wants to hand in its own configured adapter.
+
+    ``obligations`` enables the obligation-driven termination gate. The product path always
+    passes it; a bare harness call keeps the framework's own stop rule. Its counters
+    (``max_continuations``/``max_stalled``) bound how often a closing answer may be refused.
     """
     from deepagents import create_deep_agent
     from deepagents.backends import StateBackend
     from langchain.agents.middleware import (
+        AgentMiddleware,
         ClearToolUsesEdit,
         ContextEditingMiddleware,
         ModelCallLimitMiddleware,
         ModelRetryMiddleware,
         ToolCallLimitMiddleware,
+        hook_config,
         wrap_tool_call,
     )
     from langchain_core.messages import HumanMessage, ToolMessage
@@ -1159,6 +1305,10 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     session = AgentSession(scope=scope, tasks=tasks, max_turns=max_turns,
                            max_tool_calls=max_tool_calls, max_model_calls=max_model_calls,
                            execution=execution)
+    if obligations is not None:
+        gate_limits = {key: int(value) for key, value in obligations.items()
+                       if key in {"max_continuations", "max_stalled"} and value}
+        session.obligations = ObligationGate(scope.project, session.summary, **gate_limits)
     durable = getattr(scope, "durability", None)
     recovery = getattr(scope, "recovery", None)
     saved = recovery["state"] if recovery else {}
@@ -1246,6 +1396,25 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     per_tool = {"run_test_group": 4, "run_open_obligation": 8, "get_test_scope": 4}
     if execution is not None:
         per_tool = {"get_test_scope": 4}
+
+    class ObligationGateMiddleware(AgentMiddleware):
+        """Refuse a closing answer while an approved obligation still lacks evidence.
+
+        It sits inside the graph's own model loop, so the framework's stop rule is *checked*,
+        not replaced: a turn that calls tools is annotated only, and a closing turn either gets
+        one deterministic continuation instruction or ends. Because a ``jump_to`` stays in the
+        graph state, every non-refusal clears it -- otherwise one refusal would become a
+        permanent redirect.
+        """
+
+        @hook_config(can_jump_to=["model", "end"])
+        def after_model(self, state, runtime):
+            return session.obligation_step(state)
+
+        @hook_config(can_jump_to=["model", "end"])
+        async def aafter_model(self, state, runtime):
+            return session.obligation_step(state)
+
     middleware = [
         # A busy gateway (concurrency limit, timeout, 5xx) is a transport fact, not a decision:
         # one bounded retry keeps an otherwise healthy run alive. Budget and input rejections are
@@ -1259,6 +1428,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
             ClearToolUsesEdit(trigger=CONTEXT_CLEAR_TRIGGER_TOKENS, keep=4,
                               clear_tool_inputs=True, exclude_tools=["read_file"],
                               placeholder=CLEARED_TOOL_RESULT)]),
+        # Last in the list, so its after-model node writes ``jump_to`` *before* the limit
+        # middleware: a spent budget keeps the last word and is never overridden by the gate.
+        *([ObligationGateMiddleware()] if session.obligations is not None else []),
     ]
     stop_reason, error, messages, checkpoint_id = STOP_ANSWER, None, [], None
 
@@ -1465,13 +1637,20 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     session.error = error
     session.answer = _final_answer(messages)[:2000]
     transcript = _turns(messages)
+    # The gate's terminal account is computed after the loop for the same reason the completion
+    # report is: the model's own answer is not a verdict. A run that ends with obligations still
+    # open says so, with the concrete blocker or bounded rule that ended it.
+    termination = (session.obligations.terminate(stop_reason=stop_reason)
+                   if session.obligations is not None else None)
+    if termination is not None:
+        session.summary["termination"] = termination
     session.flush()
     return RuntimeResult(session=session, stop_reason=stop_reason,
                          model_totals=model.totals.public(), call_trace=list(model.call_trace),
                          catalogue=catalogue, enforcement=enforcement,
                          transcript=transcript, answer=session.answer, error=error,
                          elapsed_ms=round((time.monotonic() - started) * 1000, 3),
-                         checkpoint_id=checkpoint_id)
+                         checkpoint_id=checkpoint_id, termination=termination)
 
 
 def report_payload(result: RuntimeResult, *, completion: dict, budget: dict) -> dict:
@@ -1487,6 +1666,8 @@ def report_payload(result: RuntimeResult, *, completion: dict, budget: dict) -> 
         catalogue=result.catalogue, enforcement=result.enforcement,
         transcript=result.transcript, answer=result.answer,
         tool_names=list(TOOL_NAMES),
+        termination=result.termination,
+        obligations=(session.obligations.public() if session.obligations else None),
         task_completion=public_view(completion))
 
 

@@ -630,8 +630,18 @@ def resource_edges(context):
 def decode_requirements(wire, context):
     atoms = {a['source_id']: a for a in context.get('request_atoms', [])}
     scope_sources = set(context.get('trusted_scope_clauses', ()))
-    if type(wire) is not dict or set(wire) != set(atoms) - scope_sources:
-        raise ValidationFailure(Layer.MODEL, 'FOCUS_SOURCE_CLAUSE_MISSING')
+    expected = set(atoms) - scope_sources
+    if type(wire) is not dict or set(wire) != expected:
+        error = ValidationFailure(Layer.MODEL, 'FOCUS_SOURCE_CLAUSE_MISSING')
+        # Name the keys the next proposal must carry, and the scope clauses it must leave out:
+        # a bare code made the model repeat the same rejected key on its one allowed retry.
+        if type(wire) is dict:
+            unknown = [key for key in sorted(wire, key=str) if key not in expected]
+            error.diagnostic.fields = [f'requirement_map.{key}' for key in unknown][:4] or [
+                f'requirement_map.{key}' for key in sorted(expected)][:4]
+        error.diagnostic.detail = dict(expected_requirement_keys=sorted(expected)[:12],
+                                       trusted_scope_clauses=sorted(scope_sources)[:12])
+        raise error
     resources = context.get('existing_resources', {})
     result = []
     for key, value in wire.items():

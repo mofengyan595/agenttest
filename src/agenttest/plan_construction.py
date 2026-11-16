@@ -1,11 +1,14 @@
 """Construct one ordered plan from unordered proposals before all execution validation."""
 
 import json
+import re
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
 
 ENCODING = 'UNORDERED_APPROVED_NODES_V1'
+IDENTIFIER = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,39}$')
+MAX_ECHOED_STEPS = 12
 
 
 def _same_request(left, right):
@@ -56,10 +59,25 @@ def construct_plan(plan, context):
     edges = {key: set() for key in nodes}
     reasons = {}
 
-    def depend(target, source, reason):
+    def safe_ids(values):
+        """Model-authored step ids are echoed only when identifier-shaped and bounded."""
+        rows = []
+        for value in values:
+            if isinstance(value, str) and IDENTIFIER.match(value) and value not in rows:
+                rows.append(value)
+        return rows[:MAX_ECHOED_STEPS]
+
+    def depend(target, source, reason, where=None):
         """Every edge records the approved rule or the model reference that produced it."""
         if source == target:
-            raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
+            error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
+            if where is not None:
+                index, position = where
+                error.diagnostic.fields = [f'plan.steps.{index}.arguments.{position}.from_step']
+            error.diagnostic.detail = dict(reference='SELF_REFERENCE',
+                                           step_id=safe_ids([source])[0] if safe_ids([source])
+                                           else '*')
+            raise error
         edges[target].add(source)
         reasons[(target, source)] = reason
 
@@ -91,12 +109,17 @@ def construct_plan(plan, context):
             if node['id'] != existing[0]['id']:
                 depend(node['id'], existing[0]['id'], 'AUTHENTICATION')
     for index, node in enumerate(nodes.values()):
-        for argument in node['arguments']:
+        for position, argument in enumerate(node['arguments']):
             source = argument.get('from_step')
             if source is not None:
                 if source not in nodes:
-                    raise ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
-                depend(node['id'], source, 'MODEL_REFERENCE')
+                    error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
+                    error.diagnostic.fields = [
+                        f'plan.steps.{index}.arguments.{position}.from_step']
+                    error.diagnostic.detail = dict(
+                        reference='SOURCE_UNKNOWN', allowed_from_steps=safe_ids(nodes))
+                    raise error
+                depend(node['id'], source, 'MODEL_REFERENCE', where=(index, position))
         for prerequisite in policies[node['policy_id']].get('prerequisite_policy_ids', []):
             producers = [n['id'] for n in nodes.values() if n['policy_id'] == prerequisite]
             if not producers:
@@ -392,7 +415,19 @@ def construct_design(wire, context, *, construction_chains=()):
                            for step in case['plan'].get('steps', [])
                            if isinstance(step, dict))
             case_context['planning_ir'] = None if negative else planning_ir
-        plan, record = construct_plan(case['plan'], case_context)
+        try:
+            plan, record = construct_plan(case['plan'], case_context)
+        except ValidationFailure as failure:
+            code = str(getattr(failure.diagnostic, 'code', ''))
+            if not code.startswith('CONSTRUCTION_'):
+                raise
+            # Name the case the rejected construction belongs to: a batch sends several cases
+            # at once, so "step 1 of case 2" is the only place-aware repair hint the model gets.
+            failure.diagnostic.fields = [f'cases.{proposed_index}.{field}' for field in
+                                         failure.diagnostic.fields or ('plan',)][:8]
+            failure.diagnostic.detail = dict(failure.diagnostic.detail or {},
+                                             case_index=proposed_index)
+            raise
         edges = {key: set(value) for key, value in record.pop('node_dependencies').items()}
         record.pop('edge_reasons', None)
         nodes = {node['id']: node for node in plan['steps']}
