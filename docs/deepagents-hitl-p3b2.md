@@ -106,3 +106,11 @@ P3-B1.1 的独立发布位置为 31/31、94 次 HTTP、24 次模型调用和 214
 
 **NO-GO**。进入 P3-B3 前，补齐真实失联写入后已批准读取的验收样本、未知 DELETE
 的同身份核实，以及保持 31 项原范围的完整发布验收。继续执行和清理需要原授权和可信证据。
+
+## Git 与远端 CI
+
+运行时代码随 `e099ddf9722032ada96f0b0e556b85f2d4d37e52` 提交并推送到
+`origin/master`。该提交的 7 个 GitHub Actions 作业均已完成且通过，覆盖
+Windows 和 Linux 的 base/agent、Deep Agents 专项及两个 Web 作业。CI 结果对应
+该运行时提交。 [Python 作业](https://github.com/mofengyan595/agenttest/actions/runs/43803930202) ·
+[Web 作业](https://github.com/mofengyan595/agenttest/actions/runs/43803930289)
