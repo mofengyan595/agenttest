@@ -23,6 +23,8 @@
 - **NO-GO**：稳定性门槛 2/5 < 4/5。未达原因在模型侧（Focus 提案 4 轮 0 请求终态、
   负向批次设计覆盖不足、两轮用量不可知），不在监督机制。下一步用同一冻结源码在
   健康窗口重跑五次批次；若仍不足，再把“负向批次设计覆盖/Focus 提案重试”立为新里程碑。
+- `1653cae` 的远端 CI 全绿：Keyless Python checks #188（Windows/Linux × base/agent
+  四组离线、Ruff、冒烟与 Deep Agents 运行时）与 Web Console checks #167。
 - [真实批次与逐项归因](deepagents-hitl-reliability-p3b22.md)
 
 ## 2026-11-16 — P3-B2.1 可信写入核实与审批恢复
