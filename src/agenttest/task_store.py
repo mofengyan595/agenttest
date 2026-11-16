@@ -52,6 +52,14 @@ class TaskStore:
                     payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS product_durability (
                     task_id TEXT PRIMARY KEY REFERENCES tasks(id), payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS http_execution (
+                    task_id TEXT NOT NULL REFERENCES tasks(id), tool_key TEXT NOT NULL,
+                    run_id TEXT NOT NULL, step_id TEXT NOT NULL, attempt INTEGER NOT NULL,
+                    phase TEXT NOT NULL, identity TEXT NOT NULL, receipt TEXT,
+                    active_seconds REAL NOT NULL,
+                    PRIMARY KEY(task_id, run_id, step_id, attempt));
+                CREATE INDEX IF NOT EXISTS http_execution_tool
+                    ON http_execution(task_id, tool_key);
             """)
 
     def interrupt_unfinished(self):
@@ -290,8 +298,16 @@ class TaskStore:
 
     def save_product_asset(self, run_id, task_id, identity, payload):
         with self.connect() as db:
-            db.execute("INSERT INTO product_assets VALUES (?,?,?,?)", (
-                run_id, task_id, identity, json.dumps(payload, ensure_ascii=False)))
+            encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+            saved = db.execute("INSERT INTO product_assets VALUES (?,?,?,?) "
+                "ON CONFLICT(run_id) DO NOTHING", (run_id, task_id, identity, encoded))
+            if not saved.rowcount:
+                # A worker can exit after retaining a case but before publishing the tool.
+                existing = db.execute("SELECT task_id,identity,payload FROM product_assets "
+                                      "WHERE run_id=?", (run_id,)).fetchone()
+                if (existing["task_id"] != task_id or existing["identity"] != identity
+                        or json.loads(existing["payload"]) != json.loads(encoded)):
+                    raise TaskConflict("PRODUCT_ASSET_IDENTITY_CHANGED")
 
     def product_asset(self, task_id, run_id):
         with self.connect() as db:

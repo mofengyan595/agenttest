@@ -15,7 +15,7 @@ def _empty_lookup(policy, rule):
                     for check in policy.assertions.fields))
 
 
-def add_observations(project, scenario):
+def add_observations(project, scenario, *, namespace=None):
     """Wrap opted-in negative POSTs with two ordinary, independently validated GET steps."""
     operations = {op.operation_id: op for op in project.contract.operations}
     policies = {policy.id: policy for policy in project.registry.definitions()}
@@ -35,10 +35,13 @@ def add_observations(project, scenario):
                 or operations[rule.operation_id].method != "GET"
                 or len(candidates) != 1 or len(headers) != 1):
             raise NeedsReview("NEGATIVE_POST_OBSERVATION_NOT_APPROVED")
-        nonce = ArgumentBinding(value=uuid4().hex)
+        # Each durable case keeps its own observation across worker restarts.
+        key = (uuid4().hex if namespace is None
+               else fingerprint((namespace, original.id))[:32])
+        nonce = ArgumentBinding(value=key)
         write = original.model_copy(deep=True)
         write.headers[headers[0]] = nonce
-        before, after = [Step(id=f"observe_{phase}_{uuid4().hex}",
+        before, after = [Step(id=f"observe_{phase}_{uuid4().hex if namespace is None else key}",
                              operation_id=rule.operation_id, role=write.role,
                              query={rule.query_parameter: nonce}, policy_id=candidates[0].id)
                          for phase in ("before", "after")]

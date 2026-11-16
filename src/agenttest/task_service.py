@@ -18,11 +18,14 @@ from agenttest.task_store import TERMINAL, ServiceLease, TaskConflict, TaskStore
 
 
 class ProgressStore(ReportStore):
-    def __init__(self, root, callback):
+    def __init__(self, root, callback, *, step_journal=None):
         super().__init__(root)
         self.callback = callback
+        self.step_journal = step_journal
 
     def save(self, report):
+        if self.step_journal is not None and self.step_journal.hold_report:
+            return self.root / report.run_id / "report.json"
         super().save(report)
         phase = {"plan": "PLANNING", "validate": "VALIDATING", "execute": "EXECUTING"}.get(
             report.workflow_nodes[-1] if report.workflow_nodes else "", "REPORT")
@@ -356,7 +359,9 @@ class TaskService:
         from agenttest.product_durability import ProductDurability
 
         try:
-            payload = await ProductDurability(self, row, owner).load()
+            durable = ProductDurability(self, row, owner)
+            result.update(durable.step_budget())
+            payload = await durable.load()
         except (TaskConflict, ImportError) as exc:
             return dict(result, reason=str(exc) if isinstance(exc, TaskConflict)
                         else "DURABLE_CHECKPOINTER_UNAVAILABLE")

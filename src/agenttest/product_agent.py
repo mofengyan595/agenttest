@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from copy import deepcopy
 from dataclasses import dataclass
 
 from agenttest.deep_harness.loop import (
@@ -44,6 +45,7 @@ from agenttest.product_obligations import (
     supervision_facts,
 )
 from agenttest.report import fingerprint
+from agenttest.step_recovery import StepRecoveryBlocked
 from agenttest.task_completion import (
     PRE_RELEASE,
     classify_task,
@@ -365,7 +367,8 @@ class AgentSession:
         if self.ledger.requests >= self.ledger.max_requests:
             return _refusal("REQUEST_BUDGET_EXHAUSTED", "本轮 HTTP 请求预算已用尽。",
                             retryable=False, hint="停止并总结已获得的证据。")
-        if self.ledger.model_calls >= self.ledger.max_model_calls:
+        if (self.ledger.model_calls >= self.ledger.max_model_calls
+                and not (getattr(self.scope, "tool", None) or {}).get("design")):
             return _refusal("MODEL_BUDGET_EXHAUSTED", "本轮模型调用预算已用尽。",
                             retryable=False, hint="停止并总结已获得的证据。")
         if sum(row["phase"] != "start" for row in self.tool_calls) >= self.max_tool_calls:
@@ -671,6 +674,8 @@ class AgentSession:
                     design_note=bool(note), status="STARTED")
         try:
             await self.tasks.run_group(self.scope, group, supervision=supervision)
+        except StepRecoveryBlocked:
+            raise
         except Exception as exc:  # a defect is reported to the model, never fatal to the run
             self.record("run_test_group", phase="error", group_id=group_id,
                         error=type(exc).__name__)
@@ -795,6 +800,8 @@ class AgentSession:
                     scoped["why"] = (str(candidate.get("why") or "")
                                      + " 本轮补充约束：" + note)[:400]
                 outcome = await self.tasks.supervise_design(self.scope, scoped)
+        except StepRecoveryBlocked:
+            raise
         except Exception as exc:
             self.record("run_open_obligation", phase="error", candidate_id=candidate_id,
                         error=type(exc).__name__)
@@ -1126,8 +1133,9 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
         ModelCallLimitMiddleware,
         ModelRetryMiddleware,
         ToolCallLimitMiddleware,
+        wrap_tool_call,
     )
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import HumanMessage, ToolMessage
     from langgraph.errors import GraphRecursionError
 
     from agenttest.deep_harness.chat_model import (
@@ -1248,9 +1256,78 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
     ]
     stop_reason, error, messages, checkpoint_id = STOP_ANSWER, None, [], None
 
+    def journal_tools(saver):
+        names = {"run_test_group", "run_open_obligation"}
+
+        @wrap_tool_call
+        async def bind_approved_tool(request, handler):
+            call = request.tool_call
+            if call["name"] not in names:
+                return await handler(request)
+            # A graph task may run tools in parallel. Only one business action can own
+            # the application's recovery marker at this checkpoint.
+            siblings = [item for item in request.state["messages"][-1].tool_calls
+                        if item["name"] in names]
+            if not siblings or call["id"] != siblings[0]["id"]:
+                return ToolMessage(content=_json(_refusal("ONE_BUSINESS_TOOL_PER_CHECKPOINT",
+                    "请在下一轮单独执行此业务工具。")), tool_call_id=call["id"],
+                    name=call["name"])
+            current = await saver.aget_tuple(durable.config)
+            checkpoint = current.checkpoint["id"]
+            key = fingerprint((scope.task_id, checkpoint, call))
+            recover_tool = (recovery and recovery["phase"] in {"TOOL", "TOOL_DONE"}
+                            and checkpoint == recovery["checkpoint_id"])
+            if recover_tool:
+                if key != saved["tool_key"]:
+                    raise StepRecoveryBlocked("STEP_TOOL_IDENTITY_CHANGED")
+                if recovery["phase"] == "TOOL_DONE":
+                    return ToolMessage.model_validate(saved["tool_result"])
+                frame = dict(key=key, design=saved["design"], armed=True)
+            else:
+                state = deepcopy(dict(tool_key=key, before_summary=scope.summary,
+                    session=session.durable_state(), execution=execution.durable_state(),
+                    scope_state=scope.state, runtime_limits=scope.state["runtime_limits"],
+                    agent_model_totals=model.totals.public(), agent_call_trace=model.call_trace,
+                    planning_ir=scope.planning_ir.model_dump(mode="json")
+                    if scope.planning_ir else None, executable_checks=scope.executable_checks))
+
+                def arm(design):
+                    state.update(design=design, usage=ledger.summary(),
+                                 active_seconds=scope.active_seconds())
+                    durable.publish("TOOL", summary=scope.summary, checkpoint_id=checkpoint,
+                                    state=state)
+                    frame["armed"] = True
+
+                frame = dict(key=key, arm=arm)
+            scope.tool = frame
+            try:
+                reply = await handler(request)
+                if frame.get("armed"):
+                    if not isinstance(reply, ToolMessage) or reply.tool_call_id != call["id"]:
+                        raise StepRecoveryBlocked("STEP_TOOL_RESULT_INVALID")
+                    # Publish the complete application state before LangGraph can commit the
+                    # ToolMessage as a pending write and skip re-entering this handler.
+                    done = deepcopy(dict(tool_key=key, session=session.durable_state(),
+                        execution=execution.durable_state(), scope_state=scope.state,
+                        runtime_limits=scope.state["runtime_limits"],
+                        agent_model_totals=model.totals.public(), agent_call_trace=model.call_trace,
+                        planning_ir=scope.planning_ir.model_dump(mode="json")
+                        if scope.planning_ir else None, executable_checks=scope.executable_checks,
+                        active_seconds=scope.active_seconds(), usage=ledger.summary(),
+                        tool_result=reply.model_dump(mode="json")))
+                    durable.publish("TOOL_DONE", summary=scope.summary, checkpoint_id=checkpoint,
+                                    state=done)
+                return reply
+            finally:
+                scope.tool = None
+
+        return bind_approved_tool
+
     async def stream(saver=None):
         nonlocal messages, checkpoint_id, stop_reason
-        agent = build_agent(model, tools, middleware, saver=saver)
+        active_middleware = ([*middleware, journal_tools(saver)]
+                             if saver is not None and execution is not None else middleware)
+        agent = build_agent(model, tools, active_middleware, saver=saver)
         catalogue.update(verify_catalogue(agent))
         # ``recursion_limit`` counts graph node steps, not agent turns: every harness
         # middleware is a node, so a small multiple of the turn budget ends a healthy run
@@ -1307,6 +1384,8 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     await stream(saver)
             finally:
                 vault.close()
+    except StepRecoveryBlocked:
+        raise
     except (ModelHarnessError, GraphRecursionError) as exc:
         if session.stop != "RUNNING":
             stop_reason = session.stop

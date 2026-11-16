@@ -8,6 +8,14 @@ from contextlib import asynccontextmanager
 from agenttest.credentials import CredentialVault
 from agenttest.report import fingerprint
 from agenttest.report_files import pinned_directory
+from agenttest.step_recovery import (
+    DISPATCHED,
+    KNOWN,
+    PREPARED,
+    StepRecoveryBlocked,
+    load_receipt,
+    tool_attempts,
+)
 from agenttest.task_store import TaskConflict
 
 VERSION = "agenttest.durable.v1"
@@ -83,10 +91,13 @@ class ProductDurability:
             ):
                 raise TaskConflict("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW")
             raise TaskConflict("DURABLE_EXECUTION_UNCONFIRMED")
-        if payload.get("phase") not in {"FOCUS", "AGENT"}:
+        phase = payload.get("phase")
+        if phase not in {"FOCUS", "AGENT", "TOOL", "TOOL_DONE"}:
             raise TaskConflict("DURABLE_CHECKPOINT_INVALID")
         summary = self.row["summary"]
-        if fingerprint((summary.get("cases"), summary.get("groups"))) != payload.get("evidence"):
+        if (phase != "TOOL"
+                and fingerprint((summary.get("cases"), summary.get("groups")))
+                != payload.get("evidence")):
             raise TaskConflict("DURABLE_CHECKPOINT_MISMATCH")
         state = payload.get("state")
         if (not isinstance(state, dict) or not isinstance(state.get("usage"), dict)
@@ -94,12 +105,28 @@ class ProductDurability:
             raise TaskConflict("DURABLE_CHECKPOINT_INVALID")
         if time.time() < payload.get("retry_not_before", 0):
             raise TaskConflict("DURABLE_GATEWAY_RETRY_AFTER")
-        if payload["phase"] == "AGENT":
+        if phase == "TOOL":
+            attempts = tool_attempts(self.service.db, self.task_id, state["tool_key"])
+            for row in attempts:
+                if row["phase"] == DISPATCHED:
+                    identity = json_identity(row)
+                    code = ("DURABLE_READ_OUTCOME_REQUIRES_REVIEW" if identity["method"] in
+                            {"GET", "HEAD", "OPTIONS"} else "DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW")
+                    raise StepRecoveryBlocked(code)
+                if row["phase"] in KNOWN and not load_receipt(row).get("replayable"):
+                    raise StepRecoveryBlocked("STEP_RESPONSE_REQUIRES_REVIEW")
+                if row["phase"] not in {PREPARED, *KNOWN}:
+                    raise StepRecoveryBlocked("STEP_LEDGER_INVALID")
+            # Keep accounting for measured activity without including downtime between processes.
+            state["active_seconds"] = max([state["active_seconds"],
+                                          *(row["active_seconds"] for row in attempts)])
+        if phase in {"AGENT", "TOOL", "TOOL_DONE"}:
             from agenttest.task_completion import write_effects_view
 
             project = self.service.project(self.row["project_id"])
             policies = {policy.id: policy for policy in project.registry.definitions()}
-            if write_effects_view(summary, policies).get("counts", {}).get("WRITE_OUTCOME_UNKNOWN"):
+            if phase != "TOOL" and write_effects_view(summary, policies).get(
+                    "counts", {}).get("WRITE_OUTCOME_UNKNOWN"):
                 raise TaskConflict("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW")
             try:
                 async with self.saver(create=False) as saver:
@@ -117,3 +144,28 @@ class ProductDurability:
         if self.path.is_file():
             async with self.saver(create=False) as saver:
                 await saver.adelete_thread(self.task_id)
+
+    def step_budget(self):
+        payload = self.service.db.durable_state(self.task_id, self.owner)
+        if not isinstance(payload, dict) or payload.get("identity") != self.identity:
+            return {}
+        state = payload.get("state")
+        if (payload.get("phase") != "TOOL" or not isinstance(state, dict)
+                or fingerprint(state) != payload.get("state_sha256")):
+            return {}
+        attempts = tool_attempts(self.service.db, self.task_id, state["tool_key"])
+        return dict(http_requests_conservatively_used=state["usage"]["requests"] + sum(
+            row["phase"] != PREPARED for row in attempts),
+            uncertain_dispatches=sum(row["phase"] == DISPATCHED for row in attempts))
+
+
+def json_identity(row):
+    import json
+
+    try:
+        result = json.loads(row["identity"])
+        if isinstance(result, dict):
+            return result
+    except (TypeError, ValueError):
+        pass
+    raise StepRecoveryBlocked("STEP_LEDGER_INVALID")

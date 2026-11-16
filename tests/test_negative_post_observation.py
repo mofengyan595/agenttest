@@ -13,12 +13,17 @@ from agenttest.product_design import DesignCase, validate_design_case
 from agenttest.product_fingerprint import scenario_fingerprint
 from agenttest.product_obligations import approved_project_scope
 from agenttest.product_schema import encoded_literal
-from agenttest.report import ReportStore, RunReport
+from agenttest.report import ReportStore, RunReport, fingerprint
+from agenttest.step_recovery import RESPONSE, StepJournal, StepScope
+from agenttest.task_service import ProgressStore
+from agenttest.task_store import TaskStore
 from agenttest.write_effects import CREATION_UNPROVEN, NO_SIDE_EFFECT_PROVEN, for_case
 
 
 @pytest.mark.asyncio
-async def test_isolated_observation_counts_only_correlated_actual_requests(tmp_path, monkeypatch):
+@pytest.mark.parametrize("recover", [False, True])
+async def test_isolated_observation_counts_only_correlated_actual_requests(
+        tmp_path, monkeypatch, recover):
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
     from prepare_colleague_workspace import prepare
     from serve_colleague_targets import create_target
@@ -55,13 +60,50 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(tmp_p
 
     transport = httpx.MockTransport(send)
     store = ReportStore(tmp_path / "reports")
-    scenario = validate_design_case(project, proposed, store, environ={})
+    namespace = ("tool", 0) if recover else None
+    scenario = validate_design_case(project, proposed, store, environ={},
+                                    observation_namespace=namespace)
     assert scenario_fingerprint(project, scenario) == scenario_fingerprint(
         project, validate_design_case(project, proposed, store, environ={}))
-    report = await Executor(project.target, project.contract, store, transport, {},
-        registry=project.registry).run(scenario, report=RunReport(
-            scenario_sha256="", contract_sha256="", task_mode="model_designed",
-            environment="isolated", target_origin=project.target.base_url))
+    report = RunReport(scenario_sha256="", contract_sha256="", task_mode="model_designed",
+                       environment="isolated", target_origin=project.target.base_url)
+    if recover:
+        db = TaskStore(tmp_path / "recovery.sqlite3")
+        db.create("task", "owner", "submission", identifier, project.identity(),
+                  "request", "RUNNING", {})
+        key = StepScope(db, "task", "owner", "tool", "batch", "case", report.run_id,
+                        "deployment", fingerprint(scenario.model_dump()))
+        journal = StepJournal(key)
+
+        class Interrupt(BaseException):
+            pass
+
+        def stop_after_negative(phase, step):
+            if phase == RESPONSE and step.method == "POST":
+                raise Interrupt()
+
+        journal.boundary = stop_after_negative
+        with pytest.raises(Interrupt):
+            await Executor(project.target, project.contract, store, transport, {},
+                registry=project.registry, step_journal=journal).run(scenario, report=report)
+        assert events == ["GET", "POST"]
+        restored = DesignCase.model_validate_json(proposed.model_dump_json())
+        rebuilt = validate_design_case(project, restored, store, environ={},
+                                       observation_namespace=namespace)
+        assert rebuilt == scenario
+        independent = validate_design_case(project, restored, store, environ={},
+                                           observation_namespace=("tool", 1))
+        assert independent.steps[0].query != rebuilt.steps[0].query
+        journal = StepJournal(key)
+        resumed = ProgressStore(store.root, lambda *_: None, step_journal=journal)
+        report = RunReport(scenario_sha256="", contract_sha256="", task_mode="model_designed",
+            environment="isolated", target_origin=project.target.base_url,
+            run_id=key.run_id, revision=store.read(key.run_id).revision)
+        report = await Executor(project.target, project.contract, resumed, transport, {},
+            registry=project.registry, step_journal=journal).run(rebuilt, report=report)
+    else:
+        report = await Executor(project.target, project.contract, store, transport, {},
+            registry=project.registry).run(scenario, report=report)
     case = dict(evidence=[dict(step_id=result.step_id, operation_id=result.operation_id,
         method=result.method, policy_id=planned.policy_id, role=planned.role,
         outcome=result.outcome.value, executed=bool(result.attempts),

@@ -41,6 +41,7 @@ from agenttest.report import (
 from agenttest.request_validation import RESERVED_HEADERS, public_headers, validate_request
 from agenttest.safety import TargetConfig
 from agenttest.selectors import select
+from agenttest.step_recovery import StepJournal, StepRecoveryBlocked
 from agenttest.verifier import verify
 
 
@@ -96,6 +97,7 @@ class Executor:
         registry: PolicyRegistry | None = None,
         *, investigation: InvestigationConfig | None = None,
         capabilities: ReadOnlyCapabilityRegistry | None = None, analyzer=None,
+        step_journal: StepJournal | None = None,
     ) -> None:
         self.config = config.model_copy(deep=True)
         # Owned cleanup gets its own bounded budget; it is never part of the execution identity
@@ -109,6 +111,7 @@ class Executor:
         self.investigation = (investigation or InvestigationConfig()).model_copy(deep=True)
         self.capabilities = (capabilities or ReadOnlyCapabilityRegistry()).snapshot()
         self.analyzer = analyzer
+        self.step_journal = step_journal
 
     def validate(
         self, scenario: Scenario, *, report: RunReport | None = None,
@@ -161,9 +164,12 @@ class Executor:
             saved = self.store.read(report.run_id)
         except FileNotFoundError:
             saved = None
-        if saved is not None and (saved.steps or saved.completed):
+        if saved is not None and (saved.steps or saved.completed) and not self.step_journal:
             raise ValueError("RUN_NOT_RESUMABLE")
         report.scenario_sha256 = fingerprint(scenario.model_dump())
+        if self.step_journal and (self.step_journal.scope.run_id != report.run_id
+                or self.step_journal.scope.plan_sha256 != report.scenario_sha256):
+            raise StepRecoveryBlocked("STEP_PLAN_IDENTITY_CHANGED")
         report.contract_sha256 = fingerprint(self.contract.model_dump())
         report.target_config_sha256 = fingerprint(self.config.model_dump())
         report.policy_registry_sha256 = self.registry.digest()
@@ -220,8 +226,9 @@ class Executor:
                             policy_sha256=fingerprint(policies[step.id].model_dump()),
                             policy_template_sha256=fingerprint(policies[step.id].model_dump()),
                         )
+                        if self.step_journal:
+                            result.step_run_id = fingerprint((report.run_id, step.id))[:32]
                         report.steps.append(result)
-                        # Journal before sending a mutation. Reports cannot be resumed/replayed.
                         self.store.save(report)
                         try:
                             receipt = creations.before(step, policies[step.id])
@@ -246,6 +253,8 @@ class Executor:
                                             or operation.security):
                                         authenticated.add(step.role)
                             body = None
+                        except StepRecoveryBlocked:
+                            raise
                         except httpx.TransportError as exc:
                             result.outcome = Outcome.TEST_INFRA_ERROR
                             result.reason = type(exc).__name__
@@ -263,6 +272,8 @@ class Executor:
                             # Do not log exception text: transports may include tokens or bodies.
                             result.outcome, result.reason = Outcome.TOOL_ERROR, "EXECUTION_ERROR"
                         self.store.save(report)
+                        if self.step_journal:
+                            self.step_journal.evidence(result)
                         if result.outcome != Outcome.PASS:
                             break
                 if not report.reason:
@@ -288,6 +299,8 @@ class Executor:
                 if lifecycle:
                     await self._bounded_cleanup(client, scenario, report, state, budget,
                                                 policies, vault, lifecycle)
+        except StepRecoveryBlocked:
+            raise
         except asyncio.CancelledError:
             if report.investigations or report.feedback is not None:
                 report.investigation_error = "RUN_CANCELLED"
@@ -338,6 +351,8 @@ class Executor:
             report.outcome = aggregate(report.steps)
         report.completed = True
         try:
+            if self.step_journal:
+                self.step_journal.finish_projection()
             self.store.save(report)
         except OSError:
             if not report.investigations and report.feedback is None:
@@ -353,6 +368,8 @@ class Executor:
                 await self._cleanup_owned(client, scenario, report, state, budget, policies,
                                           vault, lifecycle)
         except asyncio.CancelledError:
+            raise
+        except StepRecoveryBlocked:
             raise
         except TimeoutError:
             report.cleanup_error = "CLEANUP_TIMEOUT"
@@ -395,6 +412,8 @@ class Executor:
                 policy_sha256=fingerprint(policies[step.id].model_dump()),
                 policy_template_sha256=fingerprint(policies[step.id].model_dump()))
             report.lifecycle_cleanup.append(result)
+            if self.step_journal:
+                result.step_run_id = fingerprint((report.run_id, step.id))[:32]
             lifecycle.before(step, operation.method)
             self.store.save(report)
             try:
@@ -404,11 +423,15 @@ class Executor:
                 lifecycle.after(step, result, body, vault)
             except asyncio.CancelledError:
                 raise
+            except StepRecoveryBlocked:
+                raise
             except Exception as exc:
                 # The class name is safe to journal; the message may contain target data.
                 result.reason = "CLEANUP_UNCONFIRMED_NO_REPLAY"
                 report.cleanup_error = f"CLEANUP_FAILED:{type(exc).__name__}"
             self.store.save(report)
+            if self.step_journal:
+                self.step_journal.evidence(result)
 
     def _headers(self, operation: Operation, step: Step) -> dict[str, ArgumentBinding]:
         """Match the plan's header names to the contract's declared spelling."""
@@ -527,7 +550,7 @@ class Executor:
         for poll_attempt in range(attempts):
             status, body = await self._request(
                 client, operation.method, self.config.base_url + path, kwargs,
-                step.read_retries, budget, result, report,
+                step.read_retries, budget, result, report, vault,
             )
             if 300 <= status < 400:
                 raise ExecutionLimit("REDIRECT_BLOCKED")
@@ -580,7 +603,7 @@ class Executor:
 
     async def _request(
         self, client: httpx.AsyncClient, method: str, url: str, kwargs: dict,
-        retries: int, budget: dict, result: StepResult, report: RunReport,
+        retries: int, budget: dict, result: StepResult, report: RunReport, vault,
     ) -> tuple[int, Any]:
         for retry in range(retries + 1):
             if budget["requests"] >= budget.get("max_requests", self.config.max_requests):
@@ -603,6 +626,11 @@ class Executor:
             evidence = AttemptEvidence(attempt=len(result.attempts) + 1, elapsed_ms=0.0)
             evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
             result.attempts.append(evidence)
+            if self.step_journal:
+                cached = self.step_journal.attempt(result, evidence, request, kwargs, vault)
+                if cached is not None:
+                    result.attempts[-1], body = cached
+                    return cached[0].status_code, body
             self.store.save(report)
             started = time.perf_counter()
             try:
@@ -632,21 +660,29 @@ class Executor:
                         except (ValueError, UnicodeError):
                             body = None
                     evidence.error_code = None
+                    if self.step_journal:
+                        evidence.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
+                        self.step_journal.response(result, evidence, body, vault)
                     return response.status_code, body
                 finally:
                     await response.aclose()
             except httpx.TransportError as exc:
                 evidence.error_code = type(exc).__name__
+                if self.step_journal and method not in {"GET", "HEAD", "OPTIONS"}:
+                    raise StepRecoveryBlocked("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW") from None
                 if retry == retries:
                     raise
             except ExecutionLimit as exc:
                 evidence.error_code = str(exc)
+                if self.step_journal and method not in {"GET", "HEAD", "OPTIONS"}:
+                    raise StepRecoveryBlocked("DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW") from None
                 raise
             except BaseException:
                 # Cancellation/process interruption leaves send outcome unknown, never retryable.
                 evidence.error_code = "ATTEMPT_OUTCOME_UNKNOWN"
                 raise
             finally:
-                evidence.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
+                if not self.step_journal or evidence.error_code is not None:
+                    evidence.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
                 self.store.save(report)
         raise ExecutionLimit("RETRIES_EXHAUSTED")

@@ -25,6 +25,7 @@ from agenttest.planner_input import planning_context, validate_user_task
 from agenttest.policies import NeedsReview, PolicyRegistry
 from agenttest.report import Outcome, PlanStepEvidence, ReportStore, RunReport, fingerprint
 from agenttest.safety import StrictModel, TargetConfig
+from agenttest.step_recovery import StepJournal, StepRecoveryBlocked
 
 
 class WorkflowBudget(StrictModel):
@@ -82,6 +83,7 @@ class Workflow:
         prepared_plan: Scenario | None = None,
         plan_derivation: dict | None = None,
         on_validated_plan: Callable[[Scenario], None] | None = None,
+        step_journal: StepJournal | None = None,
     ) -> None:
         if task_mode not in {"natural_language", "operator_plan", "model_designed"}:
             raise ValueError("TASK_MODE_INVALID")
@@ -110,6 +112,7 @@ class Workflow:
         self._prepared_plan = prepared_plan.model_copy(deep=True) if prepared_plan else None
         self._plan_derivation = plan_derivation
         self._on_validated_plan = on_validated_plan
+        self._step_journal = step_journal
 
     async def run(self) -> RunReport:
         report = RunReport(
@@ -119,6 +122,15 @@ class Workflow:
             task_mode=self._task_mode,
             task_satisfied=False if self._task_mode == "natural_language" else None,
         )
+        if self._step_journal:
+            report.run_id = self._step_journal.scope.run_id
+            try:
+                existing = self._store.read(report.run_id)
+                report.revision = existing.revision
+                report.started_at = existing.started_at
+            except FileNotFoundError:
+                if self._step_journal.prior:
+                    raise StepRecoveryBlocked("STEP_REPORT_MISSING") from None
         executor: Executor | None = None
         contract: ContractSummary | None = None
         scenario: Scenario | None = None
@@ -165,7 +177,8 @@ class Workflow:
                 executor = Executor(self._config, contract, self._store, self._transport,
                                     self._environ, registry=self._registry,
                                     investigation=self._investigation,
-                                    capabilities=self._capabilities, analyzer=self._analyzer)
+                                    capabilities=self._capabilities, analyzer=self._analyzer,
+                                    step_journal=self._step_journal)
                 if (self._task_mode == "natural_language"
                         and self._config.business_scenario == "mini_target_composed_v1"):
                     from agenttest.composed_intent import interpret_composed_task
@@ -296,7 +309,11 @@ class Workflow:
             try:
                 await executor.run(scenario, report=report)
                 return {"ready": True}
-            except Exception:
+            except StepRecoveryBlocked:
+                raise
+            except Exception as exc:
+                if self._step_journal:
+                    raise StepRecoveryBlocked(f"STEP_EXECUTOR_{type(exc).__name__}") from exc
                 return reject(Outcome.TOOL_ERROR, "EXECUTOR_ERROR")
 
         async def analyze_or_finish(state: GraphState) -> dict:
@@ -322,16 +339,29 @@ class Workflow:
         builder.add_edge("execute", "analyze_or_finish")
         builder.add_edge("analyze_or_finish", "report")
         builder.add_edge("report", END)
-        graph = builder.compile()
+        # The product's outer graph can re-enter the tool. This workflow keeps its
+        # validated scenario and executor in closures and rebuilds them from the
+        # trusted plan and HTTP journal each time.
+        graph = builder.compile(checkpointer=False if self._step_journal else None)
         graph_completed = False
         cancelled = False
         try:
             # Overrides inherited tracing environment without mutating process globals.
             with tracing_context(enabled=False):
                 async with asyncio.timeout(self._budget.workflow_timeout):
-                    await graph.ainvoke({"ready": True}, config={
+                    config = {
                         "recursion_limit": self._budget.graph_steps, "callbacks": [],
-                    })
+                    }
+                    if self._step_journal:
+                        from langchain_core.runnables.config import set_config_context
+
+                        # The workflow is a separate deterministic graph invocation. Do not
+                        # inherit the outer graph's parent task ID, channels or checkpoint.
+                        with set_config_context(config) as context:
+                            await asyncio.create_task(graph.ainvoke(
+                                {"ready": True}, config=config), context=context)
+                    else:
+                        await graph.ainvoke({"ready": True}, config=config)
             # Publish success only after the entire graph returns, never in its last node.
             report.completed = report.workflow_completed = True
             report.task_satisfied = (report.intent_verified and report.outcome == Outcome.PASS
@@ -343,11 +373,15 @@ class Workflow:
             cancelled = True
             reject(Outcome.TEST_INFRA_ERROR, "WORKFLOW_CANCELLED")
             raise
+        except StepRecoveryBlocked:
+            raise
         except GraphRecursionError:
             reject(Outcome.TEST_INFRA_ERROR, "GRAPH_STEP_LIMIT")
         except TimeoutError:
             reject(Outcome.TEST_INFRA_ERROR, "WORKFLOW_TIMEOUT")
-        except Exception:
+        except Exception as exc:
+            if self._step_journal:
+                raise StepRecoveryBlocked(f"STEP_WORKFLOW_{type(exc).__name__}") from exc
             reject(Outcome.TOOL_ERROR, "WORKFLOW_ERROR")
         finally:
             raw_plan = None

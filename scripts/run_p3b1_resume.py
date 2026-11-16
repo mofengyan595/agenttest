@@ -22,6 +22,7 @@ from run_development_agent import (
     model_settings,
     wait_health,
 )
+from run_p3a3 import source_fingerprint
 from run_p3b_gate import FRESH
 
 from agenttest.execution_budget import ADAPTIVE, ExecutionBudget
@@ -30,6 +31,7 @@ from agenttest.product_design import TestDesignModel
 from agenttest.product_durability import PAUSED
 from agenttest.product_focus import TestFocusModel
 from agenttest.report import ReportStore
+from agenttest.step_recovery import RESPONSE, StepJournal, tool_attempts
 from agenttest.task_service import TaskService
 from agenttest.task_store import TERMINAL, TaskStore
 
@@ -39,6 +41,16 @@ NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 async def worker(out, kind, step, task_id, pause):
     manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("fault") and manifest["source_sha256"] != source_fingerprint():
+        raise RuntimeError("RECOVERY_ACCEPTANCE_SOURCE_CHANGED")
+    fault = manifest.get("fault")
+    if fault and step == 0:
+        def stop_after_response(journal, phase, result):
+            if (phase == RESPONSE and result.method == fault["method"]
+                    and result.attempts[-1].status_code == fault["status"]):
+                os._exit(89)
+
+        StepJournal.boundary = stop_after_response
     health = wait_health(manifest["port"])
     if health.get("instance_id") != manifest["target_epoch"] or not health.get("disposable"):
         raise RuntimeError("LAB_INSTANCE_CHANGED")
@@ -73,6 +85,7 @@ async def worker(out, kind, step, task_id, pause):
         row = (await service.resume(task_id, OWNER) if task_id else
                await service.submit(OWNER, project_id, FRESH[kind], manifest["submission"]))
         task_id = row["id"]
+        (out / "task-id.txt").write_text(task_id, encoding="ascii")
         while row["status"] not in TERMINAL:
             await asyncio.sleep(0.15)
             row = service.db.get(task_id, OWNER)
@@ -93,12 +106,13 @@ async def worker(out, kind, step, task_id, pause):
         await service.close()
 
 
-async def run(out, kind, port):
+async def run(out, kind, port, *, fault=None, fake_delete=False):
     out.mkdir(parents=True)
     base = free_port_block(port)
     epoch = uuid4().hex
     manifest = dict(port=base + 1, target_epoch=epoch, submission=uuid4().hex,
-                    kind=kind, text=FRESH[kind],
+                    kind=kind, text=FRESH[kind], fault=fault, fake_delete=fake_delete,
+                    source_sha256=source_fingerprint(),
                     head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
     (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
     env = dict(os.environ, AGENTTEST_LAB_INSTANCE_ID=epoch, PYTHONUTF8="1")
@@ -106,19 +120,42 @@ async def run(out, kind, port):
         target = subprocess.Popen([sys.executable, str(ROOT / "scripts/serve_colleague_targets.py"),
             "--project", "parcels", "--port", str(base + 1), "--events",
             str(out / "target-events.jsonl"),
+            *(["--delete-noop"] if fake_delete else []),
             *(["--observe-negative-posts"] if kind == "release" else [])],
             env=env, stdout=target_log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
         try:
             wait_health(base + 1)
             await prepare(out / "lab", base, env, observe_negative_posts=kind == "release")
-            task_id, pause = "", True
+            task_id, pause = "", fault is None
             for step in range(18):
+                phase_started = time.perf_counter()
                 with (out / f"phase-{step:02}.log").open("wb") as log:
-                    subprocess.run([sys.executable, "-X", "utf8", str(Path(__file__).resolve()),
+                    child = subprocess.run(
+                        [sys.executable, "-X", "utf8", str(Path(__file__).resolve()),
                         "--out", str(out), "--kind", kind, "--worker", str(step),
                         "--task-id", task_id, *(["--pause"] if pause else [])],
-                        check=True, timeout=930, env=env, stdout=log, stderr=subprocess.STDOUT,
+                        check=False, timeout=930, env=env, stdout=log, stderr=subprocess.STDOUT,
                         creationflags=NO_WINDOW)
+                if fault and step == 0 and child.returncode == 89:
+                    task_id = (out / "task-id.txt").read_text(encoding="ascii").strip()
+                    db = TaskStore(out / "lab/workspace/tasks.sqlite3")
+                    marker = db.durable_state(task_id, OWNER)
+                    row = db.get(task_id, OWNER)
+                    reports = ReportStore(out / "lab/workspace/reports")
+                    attempts = tool_attempts(db, task_id, marker["state"]["tool_key"])
+                    checkpoint = out / "lab/workspace/tasks.checkpoints.sqlite3"
+                    evidence = dict(row=row, attempts=attempts,
+                        checkpoint_id=marker["checkpoint_id"],
+                        checkpoint_bytes=checkpoint.stat().st_size,
+                        worker_elapsed_ms=round(1000 * (time.perf_counter() - phase_started), 3),
+                        tools_before_interrupted_call=len(marker["state"]["session"]["tool_calls"]),
+                        target_health=wait_health(base + 1),
+                        model_usage=marker["state"]["usage"], report_ids=sorted({
+                            r["run_id"] for r in attempts if reports.read(r["run_id"])}))
+                    (out / "interrupted.json").write_text(
+                        json.dumps(evidence, ensure_ascii=False, indent=2), encoding="utf-8")
+                    continue
+                child.check_returncode()
                 result = json.loads((out / f"phase-{step:02}.json").read_text(encoding="utf-8"))
                 task_id = result["task_id"]
                 summary = result["summary"]
@@ -147,11 +184,19 @@ def main():
     parser.add_argument("--worker", type=int)
     parser.add_argument("--task-id", default="")
     parser.add_argument("--pause", action="store_true")
+    parser.add_argument("--break-after-method", choices=("POST", "DELETE"))
+    parser.add_argument("--break-after-status", type=int)
+    parser.add_argument("--fake-delete", action="store_true")
     args = parser.parse_args()
     if args.worker is not None:
         asyncio.run(worker(args.out.resolve(), args.kind, args.worker, args.task_id, args.pause))
     else:
-        asyncio.run(run(args.out.resolve(), args.kind, args.port))
+        if bool(args.break_after_method) != bool(args.break_after_status):
+            parser.error("a crash position requires both method and HTTP status")
+        fault = (dict(method=args.break_after_method, status=args.break_after_status)
+                 if args.break_after_method else None)
+        asyncio.run(run(args.out.resolve(), args.kind, args.port,
+                        fault=fault, fake_delete=args.fake_delete))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable
 from uuid import uuid4
@@ -15,7 +16,7 @@ from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
-from agenttest.product_design import design_groups, propose_design, validate_design_case
+from agenttest.product_design import TestDesign, design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, aggregate, fingerprint
 from agenttest.requirement_ledger import (
     explicit_data_references,
@@ -26,6 +27,7 @@ from agenttest.requirement_ledger import (
     unresolved_http_status_operations,
     unresolved_response_operations,
 )
+from agenttest.step_recovery import StepJournal, StepRecoveryBlocked, StepScope
 from agenttest.task_store import TERMINAL, TaskConflict
 
 DEFAULT_ROUND = "安排一轮测试，优先正常请求、参数边界、已批准的身份检查与跨接口流程，并说明遗漏。"
@@ -119,6 +121,17 @@ DEFAULT_TASK_SECONDS = 600.0
 def task_max_seconds(service):
     """Production stays at 600s; an isolated development runner may set a smaller cap."""
     return float(getattr(service, "dev_max_seconds", DEFAULT_TASK_SECONDS))
+
+
+def restore_design(snapshot):
+    """Restore validated wire data and the compiler's trusted case witnesses."""
+    try:
+        design = TestDesign.model_validate(snapshot["design"])
+        for case, witnesses in zip(design.cases, snapshot["witnesses"], strict=True):
+            case._http_status_steps, case._response_steps, case._data_source_steps = witnesses
+        return design
+    except (KeyError, TypeError, ValueError):
+        raise StepRecoveryBlocked("STEP_DESIGN_SNAPSHOT_INVALID") from None
 
 
 # Focus rejections that must NOT be retried: they mean the proposal contradicts an approved
@@ -377,6 +390,8 @@ class RunScope:
     state: dict = field(default_factory=dict)
     durability: object | None = None
     recovery: dict | None = None
+    tool: dict | None = None
+    active_seconds: Callable[[], float] = lambda: 0.0
 
 
 def resolve_planning_ambiguities(project, planning_ir):
@@ -521,14 +536,20 @@ class ProductTasks:
         context = svc.db.context(task_id, owner)
         recovery = getattr(svc, "durable_resumes", {}).pop(task_id, None)
         resume_phase = recovery["phase"] if recovery else None
+        resume_graph = resume_phase in {"AGENT", "TOOL", "TOOL_DONE"}
         resumed_state = recovery["state"] if recovery else {}
+        if resume_phase == "TOOL":
+            summary = deepcopy(resumed_state["before_summary"])
         transport = None
         executable_checks = []
         started = time.perf_counter()
         previous_seconds = resumed_state.get("active_seconds", 0)
 
+        def active_seconds():
+            return previous_seconds + time.perf_counter() - started
+
         def record_timing():
-            active = previous_seconds + time.perf_counter() - started
+            active = active_seconds()
             summary["timings"] = dict(total_ms=round(active * 1000, 3),
                 planning_ms=round(sum(r.get("elapsed_ms", 0)
                     for r in summary.get("design_records", [])), 3),
@@ -576,9 +597,10 @@ class ProductTasks:
                     from agenttest.product_durability import ProductDurability
 
                     durability = ProductDurability(svc, row, owner)
-                    async with durability.saver(create=resume_phase != "AGENT"):
+                    async with durability.saver(create=not resume_graph):
                         pass
-                    durability.publish("ACTIVE", summary=summary)
+                    if resume_phase not in {"TOOL", "TOOL_DONE"}:
+                        durability.publish("ACTIVE", summary=summary)
                 elif recovery:
                     raise TaskConflict("DURABLE_ENGINE_CHANGED")
                 if engine == AGENT_ENGINE:
@@ -589,7 +611,7 @@ class ProductTasks:
                 remaining = summary["budget"]["max_seconds"] - previous_seconds
                 if remaining <= 0:
                     raise TaskConflict("DURABLE_TASK_DEADLINE")
-                if resume_phase == "AGENT":
+                if resume_graph:
                     from agenttest.planning_ir import PlanningIR
 
                     stored_ir = resumed_state["planning_ir"]
@@ -601,7 +623,7 @@ class ProductTasks:
                             for op in summary["inventory"]["operations"] if op["state"] != "READY"],
                             ask_unauthorized=False)
                         checkpoint()
-                    if (resume_phase != "AGENT"
+                    if (not resume_graph
                             and context.get("current_request", text) != DEFAULT_ROUND
                             and svc.focus_factory is not None):
                         from agenttest.product_focus import (
@@ -1038,8 +1060,9 @@ class ProductTasks:
                         transport=bounded_transport, guard=guard, checkpoint=checkpoint,
                         executable_checks=executable_checks, planning_ir=planning_ir,
                         requirements=design_requirements, durability=durability,
-                        recovery=recovery if resume_phase == "AGENT" else None,
-                        state=resumed_state.get("scope_state", {}))
+                        recovery=recovery if resume_graph else None,
+                        state=deepcopy(resumed_state.get("scope_state", {})),
+                        active_seconds=active_seconds)
                     if engine == AGENT_ENGINE:
                         result = await self.run_deep_agent(scope)
                         if durability and result.checkpoint_id:
@@ -1129,6 +1152,11 @@ class ProductTasks:
             limit = summary.get("budget", {}).get("max_seconds", DEFAULT_TASK_SECONDS)
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       f"本轮达到 {limit:g} 秒时限。")
+        except StepRecoveryBlocked as exc:
+            summary = svc.db.get(task_id, owner)["summary"]
+            summary["failure_detail"] = str(exc)
+            self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
+                      "恢复账本无法确认，保留原报告与复核义务。")
         except Exception as exc:
             record_timing()
             # The type is safe to persist (no target URL, body or credential); without it an
@@ -1155,6 +1183,8 @@ class ProductTasks:
         project, project_record = scope.project, scope.project_record
         guard, checkpoint = scope.guard, scope.checkpoint
         task_id, row = scope.task_id, scope.row
+        tool = getattr(scope, "tool", None)
+        cached = (tool or {}).get("design")
         context, text = scope.context, scope.text
         bounded_transport, executable_checks = scope.transport, scope.executable_checks
         future_groups = list(future_groups)
@@ -1218,7 +1248,7 @@ class ProductTasks:
         group_request_limit = max(ledger.requests,
             ledger.max_requests - reserved_requests)
         if (not group["supported"] or ledger.requests >= ledger.max_requests
-                or ledger.model_calls >= ledger.max_model_calls
+                or not cached and ledger.model_calls >= ledger.max_model_calls
                 or ledger.usage_unknown or svc.db.model_usage_blocked()):
             reason = ("本组依赖超过一次可处理的 12 个接口，需拆分测试范围。"
                 if not group["supported"] else
@@ -1286,9 +1316,11 @@ class ProductTasks:
                                    if r["group_id"] == group["id"]
                                    and r["status"] == "REJECTED"), None)
         try:
-            if instance_inputs and len(group_ir.instances) > group_request_limit - ledger.requests:
+            if (not cached and instance_inputs
+                    and len(group_ir.instances) > group_request_limit - ledger.requests):
                 raise ValidationFailure(Layer.MODEL, "DESIGN_STEP_BUDGET_EXCEEDED")
-            design = await propose_design(project, design_text, group, model,
+            design = (restore_design(cached) if cached else await propose_design(
+                project, design_text, group, model,
                 environ=svc.environ,
                 remaining_requests=group_request_limit - ledger.requests,
                 inventory_total=summary["inventory"]["total"],
@@ -1322,7 +1354,7 @@ class ProductTasks:
                 available_identity_aliases=[r["alias"] for r in svc.intake.record(
                     row["project_id"])["generic"]["roles"]],
                 timeout=getattr(getattr(raw_model, "_settings", None),
-                                "timeout", 30.0) + 1)
+                                "timeout", 30.0) + 1))
             record.update(status="PROPOSED", interpretation=design.interpretation,
                           presentation=presentation_language(
                               design.interpretation))
@@ -1381,6 +1413,9 @@ class ProductTasks:
                 construction = list(raw_model.construction_records or [])
                 record.update(planning_engine_evidence(
                     actual_planning_engine(construction), choice, construction))
+            if cached:
+                record.update(cached["record"])
+                model.stats = ModelCallStats.model_validate(record["model_call"])
             checkpoint()
         for question in design.questions:
             if question.existing_question_ref is not None:
@@ -1403,15 +1438,29 @@ class ProductTasks:
         # Validate the whole group before any login or business write.
         # Independent valid cases may run; rejected cases are never repaired.
         preflight = []
-        for case in ordered_cases:
+        for index, case in enumerate(ordered_cases):
             try:
                 preflight.append(validate_design_case(project, case, svc.reports,
                     cleanup_operations=group["primary"],
                     requested_checks=executable_checks,
                     verify_batch_cleanup=bool(group.get("policy_ids")),
+                    observation_namespace=(tool["key"], index) if tool else None,
                     environ=svc.environ, transport=bounded_transport))
             except ValueError as exc:
                 preflight.append(exc)
+        if tool:
+            planned = [fingerprint(scenario.model_dump()) if not isinstance(scenario, ValueError)
+                       else None for scenario in preflight]
+            if cached:
+                if (group["id"] != cached["group_id"] or planned != cached["plans"]
+                        or group_request_limit != cached["group_request_limit"]):
+                    raise StepRecoveryBlocked("STEP_APPROVED_GROUP_CHANGED")
+            else:
+                tool["arm"](dict(group_id=group["id"], plans=planned, record=record,
+                    design=design.model_dump(mode="json"),
+                    witnesses=[(case._http_status_steps, case._response_steps,
+                                case._data_source_steps) for case in design.cases],
+                    group_request_limit=group_request_limit))
         for index, case in enumerate(ordered_cases):
             # A group can be executed again under the same group id (a retry of the same
             # supervision attempt). Two evidence records may never share a case id: the write
@@ -1497,7 +1546,16 @@ class ProductTasks:
                 svc.db.event(task_id, phase, run_id=run_id,
                              requests=ledger.requests)
 
-            store = ProgressStore(svc.reports.root, progress)
+            step_journal = None
+            if tool:
+                run_id = fingerprint((task_id, tool["key"], case_row["case_id"]))[:32]
+                step_journal = StepJournal(StepScope(
+                    svc.db, task_id, scope.owner, tool["key"], group["id"], case_row["case_id"],
+                    run_id, scope.durability.identity, fingerprint(scenario.model_dump()),
+                    scope.active_seconds), ledger)
+                case_row.update(run_id=run_id, status="RUNNING")
+                checkpoint()
+            store = ProgressStore(svc.reports.root, progress, step_journal=step_journal)
             probe_remaining = max(0, 2 - sum(i.get("requests", 0)
                 for previous in summary["cases"]
                 for i in previous.get("investigations", [])))
@@ -1506,7 +1564,7 @@ class ProductTasks:
             probe_model = (BudgetPlanner(JournalPlanner(
                 svc.product_probe_factory(project), svc.db, task_id), ledger, guard,
                 reserve_encoded=autonomous)
-                if probe_allowed and svc.product_probe_factory else None)
+                if probe_allowed and svc.product_probe_factory and not step_journal else None)
             case_started = time.perf_counter()
             try:
                 report = await Workflow(project.document, project.target,
@@ -1514,6 +1572,7 @@ class ProductTasks:
                     transport=bounded_transport, environ=svc.environ,
                     task_mode="model_designed", user_task=design_text,
                     prepared_plan=scenario, analyzer=probe_model,
+                    step_journal=step_journal,
                     investigation=InvestigationConfig(enabled=probe_allowed,
                         product_read_probe=probe_allowed, feedback=FeedbackBudget(
                             max_requests=probe_remaining,
@@ -1527,6 +1586,8 @@ class ProductTasks:
             finally:
                 case_row["elapsed_ms"] = round(
                     (time.perf_counter() - case_started) * 1000, 3)
+            if step_journal and step_journal.remaining:
+                raise StepRecoveryBlocked("STEP_RECEIPTS_UNPROJECTED")
             # Situation 2 of the absence-expectation rule: if the approved deletion never
             # established "deleted", a failing 404 check is a plan/state problem, not an
             # independent business defect. Only a satisfied precondition keeps it as
