@@ -44,7 +44,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field
 
-from agenttest.llm_planner import ModelSettings
+from agenttest.llm_planner import ModelSettings, provider_request_id, safe_provider_id, timeout_kind
 from agenttest.model_retry import retry_after_seconds
 from agenttest.report import ModelCallStats, fingerprint
 
@@ -323,10 +323,13 @@ class EcnuxChatModel(BaseChatModel):
 
     async def _acall(self, payload: dict) -> tuple[dict, dict, float]:
         settings = self.settings
+        credential = settings.api_key.get_secret_value()
         encoded = self._encode(payload)
         started = time.monotonic()
         stats = self.model_stats
-        stats.model_name, stats.model_sha256 = settings.model, fingerprint(settings.model)
+        stats.model_name = settings.audit_model_name
+        stats.model_sha256 = fingerprint(settings.model)
+        stats.started_at = time.time()
         if self.before_call is not None:
             self.before_call(stats)
         # Count the attempt before dispatch: a timeout may already have reached the gateway,
@@ -339,9 +342,9 @@ class EcnuxChatModel(BaseChatModel):
                 async with client.stream(
                         "POST", settings.base_url + "/chat/completions", content=encoded,
                         headers={"Content-Type": "application/json",
-                                 "Authorization": "Bearer " +
-                                 settings.api_key.get_secret_value()}) as response:
+                                 "Authorization": "Bearer " + credential}) as response:
                     stats.http_status = response.status_code
+                    stats.provider_request_id = provider_request_id(response, credential)
                     raw = bytearray()
                     async for chunk in response.aiter_bytes(chunk_size=16384):
                         raw.extend(chunk)
@@ -358,7 +361,8 @@ class EcnuxChatModel(BaseChatModel):
                             "MODEL_GATEWAY_RATE_LIMIT" if response.status_code == 429 else "",
                             status=response.status_code,
                             retry_after=retry_after_seconds(response.headers.get("Retry-After")))
-        except (httpx.TimeoutException, TimeoutError):
+        except (httpx.TimeoutException, TimeoutError) as exc:
+            stats.timeout_kind = timeout_kind(exc)
             raise ModelHarnessError(MODEL_TIMEOUT) from None
         except httpx.TransportError:
             raise ModelHarnessError(MODEL_CONNECTION_ERROR) from None
@@ -366,6 +370,8 @@ class EcnuxChatModel(BaseChatModel):
             stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
         try:
             data = json.loads(bytes(raw).decode("utf-8"))
+            if isinstance(data, dict):
+                stats.provider_response_id = safe_provider_id(data.get("id"), credential)
             choice = (data.get("choices") or [])[0]
             message = choice["message"]
         except (ValueError, KeyError, IndexError, TypeError):
@@ -436,6 +442,9 @@ class EcnuxChatModel(BaseChatModel):
                     error: str | None) -> None:
         """One authoritative ledger row per attempted call, beside the per-call stat."""
         stats = self.model_stats
+        stats.ended_at = time.time()
+        stats.error_type = error
+        stats.usage_state = stats.observed_usage_state()
         self.totals.calls += stats.calls
         self.totals.input_tokens += stats.input_tokens or 0
         self.totals.output_tokens += stats.output_tokens or 0
@@ -448,14 +457,9 @@ class EcnuxChatModel(BaseChatModel):
         if error:
             self.totals.failed_calls += 1
         self.call_trace.append(dict(
-            index=len(self.call_trace) + 1, calls=stats.calls,
-            http_status=stats.http_status, elapsed_ms=stats.elapsed_ms,
-            request_bytes=stats.request_bytes, response_bytes=stats.response_bytes,
-            input_tokens=stats.input_tokens, output_tokens=stats.output_tokens,
-            total_tokens=stats.total_tokens, request_sha256=stats.request_sha256,
+            stats.model_dump(mode="json"), index=len(self.call_trace) + 1,
             tool_names=[name for name in tool_names if name],
-            tool_count=len(payload.get("tools") or ()), error=error,
-            reason=stats.reason))
+            tool_count=len(payload.get("tools") or ()), error=error))
         if self.on_call is not None:
             self.on_call(stats)
 

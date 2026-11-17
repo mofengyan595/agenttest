@@ -63,6 +63,23 @@ class ValidationFailure(ValueError):
         self.diagnostic = Diagnostic(layer=layer, code=code)
 
 
+def design_failure_kind(diagnostic: dict) -> str:
+    """Classify a rejected proposal without changing the execution or coverage verdict."""
+    code = diagnostic.get("code")
+    if code in {"DESIGN_REQUESTED_CHECKS_MISSING", "DESIGN_SELECTED_SCOPE_NOT_COVERED",
+                "PLANNING_INSTANCE_COVERAGE"}:
+        return "OBLIGATION_NOT_COVERED"
+    if (diagnostic.get("reference") or diagnostic.get("layer") == Layer.DEPENDENCY
+            or code in {"CONSTRUCTION_REFERENCE_INVALID", "CONSTRUCTION_DEPENDENCY_CYCLE"}):
+        return "REFERENCE_ERROR"
+    if diagnostic.get("layer") == Layer.OPENAPI:
+        return "SCHEMA_MISMATCH"
+    if code in {"MODEL_TIMEOUT", "MODEL_CONNECTION_ERROR", "MODEL_SERVICE_ERROR",
+                "MODEL_API_ERROR", "MODEL_GATEWAY_RATE_LIMIT", "MODEL_GATEWAY_CONCURRENCY_LIMIT"}:
+        return "MODEL_SERVICE_ERROR"
+    return "MODEL_CONSTRUCTION_ERROR"
+
+
 SAFE_FIELDS = frozenset({
     "name", "steps", "id", "operation_id", "role", "policy_id", "arguments", "location",
     "value", "from_step", "select", "body", "path_parameters", "query", "upload", "field",

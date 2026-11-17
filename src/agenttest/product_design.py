@@ -977,7 +977,24 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
             step.negative_value = NegativeValue(value=overrides[step.policy_id])
     executor = Executor(project.target, project.contract, store, transport, environ,
                         registry=project.registry)
-    executor.validate(scenario)
+    try:
+        executor.validate(scenario)
+    except ValidationFailure as exc:
+        detail = exc.diagnostic.detail
+        index = detail.get("step_index")
+        if type(index) is int and 0 <= index < len(scenario.steps):
+            step = scenario.steps[index]
+            policy = policies.get(step.policy_id)
+            if (policy and policy.operation_id == step.operation_id
+                    and step.role in policy.roles):
+                detail["obligation_id"] = policy.id
+            if exc.diagnostic.code == "OPENAPI_UNKNOWN_BODY_FIELD":
+                body_indexes = [i for i, argument in enumerate(case.plan.steps[index].arguments)
+                                if argument.location == "body"]
+                exc.diagnostic.fields = [
+                    f"plan.steps.{index}.arguments.{body_indexes[i]}.name"
+                    for i in detail["unknown_body_positions"]]
+        raise
     if verify_batch_cleanup:
         from agenttest.product_preconditions import add_batch_cleanup
 

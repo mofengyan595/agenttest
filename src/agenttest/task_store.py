@@ -240,20 +240,20 @@ class TaskStore:
             "WHERE r.call_id=j.id) AND NOT EXISTS (SELECT 1 FROM model_usage_exceptions e "
             "WHERE e.call_id=j.id) LIMIT 1").fetchone() is not None
 
-    def begin_model_call(self, call_id, task_id):
+    def begin_model_call(self, call_id, task_id, stats=None):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             if self._usage_blocked(db):
                 raise TaskConflict("MODEL_USAGE_REQUIRES_RECONCILIATION")
             db.execute("INSERT INTO model_usage_journal VALUES (?,?,?,?)",
-                       (call_id, task_id, "PENDING", "{}"))
+                       (call_id, task_id, "PENDING", stats.model_dump_json() if stats else "{}"))
 
     def finish_model_call(self, call_id, stats):
-        state = ("NOT_SENT" if stats.calls == 0 else "REFUSED" if stats.refused else
-                 "KNOWN" if stats.total_tokens is not None else "UNKNOWN")
+        state = stats.observed_usage_state()
         with self.connect() as db:
             db.execute("UPDATE model_usage_journal SET state=?,stats=? WHERE id=?",
-                       (state, stats.model_dump_json(), call_id))
+                       (state, stats.model_copy(update={"usage_state": state}).model_dump_json(),
+                        call_id))
 
     def reconcile_model_usage(self, evidence):
         """Operator-only receipt reconciliation; original unknown evidence stays immutable."""

@@ -285,9 +285,10 @@ def _diagnostic_text(diagnostic) -> str:
     if detail.get("unknown_fields"):
         parts.append("多余字段=" + "、".join(str(item) for item in
                                           detail["unknown_fields"][:4]))
-    if detail.get("allowed_from_steps"):
-        parts.append("可用 from_step=" + "、".join(str(item) for item in
-                                               detail["allowed_from_steps"][:MAX_STEP_IDS]))
+    if "allowed_from_steps" in detail:
+        sources = (detail["allowed_from_steps"] or [])[:MAX_STEP_IDS]
+        parts.append("可用 from_step=" + ("、".join(str(item) for item in sources) if sources
+                                        else "无，需提交符合已批准绑定的前置步骤"))
     if detail.get("reference"):
         parts.append(f"引用问题={detail['reference']}")
     fields = [str(item) for item in row.get("fields") or ()]

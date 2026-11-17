@@ -103,6 +103,19 @@ class InvestigationResult(StepResult):
 
 
 class ModelCallStats(BaseModel):
+    local_call_id: str | None = None
+    task_id: str | None = None
+    run_id: str | None = None
+    phase: str | None = None
+    batch: str | None = None
+    attempt: int | None = None
+    started_at: float | None = None
+    ended_at: float | None = None
+    provider_request_id: str | None = None
+    provider_response_id: str | None = None
+    timeout_kind: str | None = None
+    error_type: str | None = None
+    usage_state: Literal["PENDING", "NOT_SENT", "REFUSED", "KNOWN", "UNKNOWN"] | None = None
     diagnostic: Diagnostic | None = None
     calls: int = 0
     model_name: str | None = None
@@ -122,6 +135,13 @@ class ModelCallStats(BaseModel):
     # generated, so a rejected call must not poison the run's "usage unknown" gate; a timeout
     # or a dropped connection still does, because it may have been processed.
     refused: bool = False
+
+    def observed_usage_state(self) -> Literal["NOT_SENT", "REFUSED", "KNOWN", "UNKNOWN"]:
+        if self.calls == 0:
+            return "NOT_SENT"
+        if self.refused:
+            return "REFUSED"
+        return "KNOWN" if self.total_tokens is not None else "UNKNOWN"
 
 
 class FeedbackDecisionEvidence(BaseModel):

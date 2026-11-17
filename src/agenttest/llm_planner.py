@@ -5,6 +5,7 @@ import copy
 import json
 import math
 import os
+import re
 import time
 from contextvars import ContextVar
 from pathlib import Path
@@ -30,6 +31,29 @@ from agenttest.report import ModelCallStats, Outcome, fingerprint
 from agenttest.safety import StrictModel
 
 planner_token_check = ContextVar("planner_token_check", default=None)
+
+PROVIDER_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
+
+
+def safe_provider_id(value, credential: str) -> str | None:
+    """Keep only a bounded opaque ID from the provider, never arbitrary header text."""
+    if isinstance(value, str) and PROVIDER_ID.fullmatch(value) and credential not in value:
+        return value
+    return None
+
+
+def provider_request_id(response: httpx.Response, credential: str) -> str | None:
+    return next((safe for name in ("x-request-id", "request-id")
+                 if (safe := safe_provider_id(response.headers.get(name), credential))), None)
+
+
+def timeout_kind(exc: Exception) -> str:
+    for error, kind in ((httpx.ConnectTimeout, "CONNECT"), (httpx.ReadTimeout, "READ"),
+                        (httpx.WriteTimeout, "WRITE"), (httpx.PoolTimeout, "POOL"),
+                        (TimeoutError, "DEADLINE")):
+        if isinstance(exc, error):
+            return kind
+    return "UNSPECIFIED"
 
 
 class PlannerFailure(Exception):
@@ -98,6 +122,10 @@ class ModelSettings(StrictModel):
     max_output_tokens: int = Field(default=4096, ge=1, le=16_000)
     max_total_tokens: int = Field(default=25_000, ge=1, le=1_000_000)
     max_response_bytes: int = Field(default=200_000, ge=1, le=1_000_000)
+
+    @property
+    def audit_model_name(self) -> str | None:
+        return self.model if self.api_key.get_secret_value() not in self.model else None
 
     @field_validator("base_url")
     @classmethod
@@ -436,8 +464,9 @@ class OpenAICompatiblePlanner:
         return self._settings.max_input_tokens + self._settings.max_output_tokens
 
     async def generate(self, context: dict) -> str:
-        self.stats = ModelCallStats(model_name=self._settings.model,
-                                    model_sha256=fingerprint(self._settings.model))
+        self.stats = ModelCallStats(model_name=self._settings.audit_model_name,
+                                    model_sha256=fingerprint(self._settings.model),
+                                    started_at=time.time())
         started = time.monotonic()
         try:
             return await self._generate(context)
@@ -455,8 +484,9 @@ class OpenAICompatiblePlanner:
             self.stats.diagnostic = exc.diagnostic
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
                                  exc.diagnostic) from None
-        except (httpx.TimeoutException, TimeoutError):
+        except (httpx.TimeoutException, TimeoutError) as exc:
             self.stats.reason = "MODEL_TIMEOUT"
+            self.stats.timeout_kind = timeout_kind(exc)
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TIMEOUT") from None
         except httpx.TransportError:
             self.stats.reason = "MODEL_CONNECTION_ERROR"
@@ -467,7 +497,11 @@ class OpenAICompatiblePlanner:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
                                  self.stats.diagnostic) from None
         finally:
+            self.stats.ended_at = time.time()
             self.stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
+            self.stats.usage_state = self.stats.observed_usage_state()
+            if self.stats.reason != "MODEL_OUTPUT_RECEIVED":
+                self.stats.error_type = self.stats.reason
 
     def prepare_request(self, context: dict) -> bytes:
         """Encode and budget-check the exact request without opening a connection."""
@@ -592,6 +626,7 @@ class OpenAICompatiblePlanner:
 
     async def _generate(self, context: dict) -> str:
         settings = self._settings
+        credential = settings.api_key.get_secret_value()
         encoded = self.prepare_request(context)
         check_tokens = planner_token_check.get()
         if check_tokens is not None:
@@ -604,9 +639,9 @@ class OpenAICompatiblePlanner:
                 async with client.stream("POST", settings.base_url + "/chat/completions",
                                          content=encoded, headers={
                                              "Content-Type": "application/json",
-                                             "Authorization": "Bearer " +
-                                             settings.api_key.get_secret_value()}) as response:
+                                             "Authorization": "Bearer " + credential}) as response:
                     self.stats.http_status = response.status_code
+                    self.stats.provider_request_id = provider_request_id(response, credential)
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
                         self.stats.refused = True
@@ -625,6 +660,8 @@ class OpenAICompatiblePlanner:
                         if len(raw) > settings.max_response_bytes:
                             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_RESPONSE_LIMIT")
         data = bounded_json(raw.decode("utf-8"), settings.max_response_bytes)
+        if isinstance(data, dict):
+            self.stats.provider_response_id = safe_provider_id(data.get("id"), credential)
         usage = data["usage"]
         counts = [usage[k] for k in ("prompt_tokens", "completion_tokens", "total_tokens")]
         if any(type(n) is not int or n < 0 for n in counts) or counts[2] != counts[0] + counts[1]:

@@ -5,6 +5,7 @@ import re
 
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
+from agenttest.policies import dependency_roles_match
 
 ENCODING = 'UNORDERED_APPROVED_NODES_V1'
 IDENTIFIER = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,39}$')
@@ -63,17 +64,14 @@ def construct_plan(plan, context):
         """Model-authored step ids are echoed only when identifier-shaped and bounded."""
         rows = []
         for value in values:
-            if isinstance(value, str) and IDENTIFIER.match(value) and value not in rows:
+            if isinstance(value, str) and IDENTIFIER.fullmatch(value) and value not in rows:
                 rows.append(value)
         return rows[:MAX_ECHOED_STEPS]
 
-    def depend(target, source, reason, where=None):
+    def depend(target, source, reason):
         """Every edge records the approved rule or the model reference that produced it."""
         if source == target:
             error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
-            if where is not None:
-                index, position = where
-                error.diagnostic.fields = [f'plan.steps.{index}.arguments.{position}.from_step']
             error.diagnostic.detail = dict(reference='SELF_REFERENCE',
                                            step_id=safe_ids([source])[0] if safe_ids([source])
                                            else '*')
@@ -108,18 +106,37 @@ def construct_plan(plan, context):
         for node in protected:
             if node['id'] != existing[0]['id']:
                 depend(node['id'], existing[0]['id'], 'AUTHENTICATION')
+    def reference_failure(node, argument, index, position, reference):
+        """Only suggest an earlier, present producer allowed for this exact input slot."""
+        rules = policies[node['policy_id']].get('binding_rules', [])
+        allowed = safe_ids(source['id'] for source in list(nodes.values())[:index]
+            if source['id'] not in inserted
+            and not policies[source['policy_id']].get('negative_test')
+            and not any(source['operation_id'] == auth['login_operation_id']
+                        for auth in context.get('authentication', []))
+            and any(rule['location'] == argument['location']
+                    and (rule['name'].lower() == argument['name'].lower()
+                         if rule['location'] == 'headers' else rule['name'] == argument['name'])
+                    and rule.get('source_policy_id') == source['policy_id']
+                    and rule.get('source_selector', '$') == argument['select']
+                    and dependency_roles_match(source['role'], node['role'],
+                                               rule.get('role_relation'))
+                    for rule in rules))
+        error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
+        error.diagnostic.fields = [f'plan.steps.{index}.arguments.{position}.from_step']
+        error.diagnostic.detail = dict(reference=reference, allowed_from_steps=allowed,
+            step_id=next(iter(safe_ids([node['id']])), '*'), obligation_id=node['policy_id'])
+        return error
+
     for index, node in enumerate(nodes.values()):
         for position, argument in enumerate(node['arguments']):
             source = argument.get('from_step')
             if source is not None:
                 if source not in nodes:
-                    error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
-                    error.diagnostic.fields = [
-                        f'plan.steps.{index}.arguments.{position}.from_step']
-                    error.diagnostic.detail = dict(
-                        reference='SOURCE_UNKNOWN', allowed_from_steps=safe_ids(nodes))
-                    raise error
-                depend(node['id'], source, 'MODEL_REFERENCE', where=(index, position))
+                    raise reference_failure(node, argument, index, position, 'SOURCE_UNKNOWN')
+                if source == node['id']:
+                    raise reference_failure(node, argument, index, position, 'SELF_REFERENCE')
+                depend(node['id'], source, 'MODEL_REFERENCE')
         for prerequisite in policies[node['policy_id']].get('prerequisite_policy_ids', []):
             producers = [n['id'] for n in nodes.values() if n['policy_id'] == prerequisite]
             if not producers:

@@ -11,7 +11,12 @@ import httpx
 from pydantic import ValidationError
 
 from agenttest.credentials import CredentialVault, sensitive_field
-from agenttest.diagnostics import Layer, ValidationFailure, presentation_language
+from agenttest.diagnostics import (
+    Layer,
+    ValidationFailure,
+    design_failure_kind,
+    presentation_language,
+)
 from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
@@ -368,12 +373,10 @@ def planning_engine_evidence(engine, choice, construction):
 class JournalPlanner:
     """A crash or cancellation during a call leaves a durable usage stop, never a retry."""
 
-    def __init__(self, delegate, db, task_id):
+    def __init__(self, delegate, db, task_id, *, phase, batch=None, previous_attempts=0):
         self.delegate, self.db, self.task_id = delegate, db, task_id
-
-    @property
-    def stats(self):
-        return getattr(self.delegate, "stats", ModelCallStats(calls=1))
+        self.phase, self.batch, self.attempt = phase, batch, previous_attempts
+        self.stats = ModelCallStats()
 
     @property
     def token_reservation(self):
@@ -381,11 +384,31 @@ class JournalPlanner:
 
     async def generate(self, context):
         call_id = uuid4().hex
-        self.db.begin_model_call(call_id, self.task_id)
+        self.attempt += 1
+        identity = dict(local_call_id=call_id, task_id=self.task_id, run_id=self.task_id,
+                        phase=self.phase, batch=self.batch, attempt=self.attempt)
+        started_at, started = time.time(), time.monotonic()
+        settings = getattr(self.delegate, "_settings", None)
+        self.db.begin_model_call(call_id, self.task_id, ModelCallStats(
+            **identity, model_name=getattr(settings, "audit_model_name", None),
+            started_at=started_at, usage_state="PENDING"))
         try:
             return await self.delegate.generate(context)
         finally:
+            stats = getattr(self.delegate, "stats", ModelCallStats(calls=1))
+            self.stats = stats.model_copy(update=dict(
+                **identity, started_at=stats.started_at or started_at,
+                ended_at=stats.ended_at or time.time(),
+                elapsed_ms=stats.elapsed_ms or round((time.monotonic() - started) * 1000, 3),
+                usage_state=stats.observed_usage_state()))
             self.db.finish_model_call(call_id, self.stats)
+
+
+def previous_model_attempts(records, batch, retries=()):
+    calls = [record["model_call"] for record in records
+             if record.get("group_id") == batch and record.get("model_call")]
+    calls.extend(record["model_call"] for record in retries if record.get("model_call"))
+    return max(len(calls), max((call.get("attempt") or 0 for call in calls), default=0))
 
 
 @dataclass
@@ -671,7 +694,11 @@ class ProductTasks:
                         if data_references:
                             summary['data_references'] = data_references
                         raw_focus = svc.focus_factory(project)
-                        focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id),
+                        previous_focus = previous_model_attempts(
+                            summary["design_records"], "focus",
+                            summary.get("focus_gateway_retries", []))
+                        focus_model = BudgetPlanner(JournalPlanner(raw_focus, svc.db, task_id,
+                            phase="focus", batch="focus", previous_attempts=previous_focus),
                             ledger, guard, reserve_encoded=engine == AGENT_ENGINE)
                         focus_record = dict(group_id="focus", status="PLANNING")
                         summary["design_records"].append(focus_record)
@@ -1296,7 +1323,10 @@ class ProductTasks:
             return
         svc.db.event(task_id, "PLANNING", requests=ledger.requests)
         raw_model = svc.designer_factory(project)
-        model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id),
+        model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id,
+                              phase="design", batch=group["id"],
+                              previous_attempts=previous_model_attempts(
+                                  summary["design_records"], group["id"])),
                               ledger, guard, reserve_encoded=autonomous)
         record = dict(group_id=group["id"], status="PLANNING")
         suggested = None
@@ -1545,8 +1575,13 @@ class ProductTasks:
                 if isinstance(scenario, ValueError):
                     raise scenario
             except ValueError as exc:
-                case_row.update(status="REJECTED", reason=getattr(
-                    getattr(exc, "diagnostic", None), "code", "PLAN_REJECTED"))
+                diagnostic = getattr(exc, "diagnostic", None)
+                case_row.update(status="REJECTED", reason=getattr(diagnostic, "code",
+                                                                  "PLAN_REJECTED"))
+                if diagnostic is not None:
+                    public = diagnostic.model_dump(mode="json")
+                    case_row["preflight_diagnostic"] = dict(
+                        public, kind=design_failure_kind(public))
                 continue
             # A supervision round exists to add information. If this plan is semantically the
             # same test as an earlier non-passing attempt, running it again would only repeat
@@ -1604,7 +1639,8 @@ class ProductTasks:
             probe_allowed = (probe_remaining > 0 and ledger.requests
                              + len(scenario.steps) < group_request_limit)
             probe_model = (BudgetPlanner(JournalPlanner(
-                svc.product_probe_factory(project), svc.db, task_id), ledger, guard,
+                svc.product_probe_factory(project), svc.db, task_id, phase="probe",
+                batch=case_row["case_id"]), ledger, guard,
                 reserve_encoded=autonomous)
                 if probe_allowed and svc.product_probe_factory and not step_journal else None)
             case_started = time.perf_counter()
@@ -1861,7 +1897,8 @@ class ProductTasks:
         batch_rows = {row["group_id"]: row for row in result.session._group_view()}
         summary["obligation_batches"] = [dict(batch_rows[group["id"]], cases=[
             dict(case_id=case["case_id"], run_id=case.get("run_id"),
-                 write_effects=case.get("write_effects", []))
+                 write_effects=case.get("write_effects", []),
+                 preflight_diagnostic=case.get("preflight_diagnostic"))
             for case in summary["cases"] if case.get("group_id") == group["id"]])
             for group in summary["groups"] if group.get("policy_ids")]
         summary["complete"] = completion["complete"]
@@ -1923,7 +1960,8 @@ class ProductTasks:
                 attempted=[item.get("target") for item in attempts if item.get("target")])
 
         supervisor = RoundSupervisor(BudgetPlanner(JournalPlanner(
-                factory(project), svc.db, scope.task_id), ledger, scope.guard), facts,
+                factory(project), svc.db, scope.task_id, phase="supervision"), ledger, scope.guard),
+            facts,
             design_and_execute=lambda candidate: self.supervise_design(scope, candidate),
             read_probe=lambda candidate: self.supervise_read(scope, candidate),
             ask=lambda candidate, question, reason: self.supervise_ask(scope, candidate,

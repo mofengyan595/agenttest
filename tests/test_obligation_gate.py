@@ -345,7 +345,8 @@ def test_a_construction_reference_failure_carries_the_step_and_allowed_ids():
                                "CONSTRUCTION_NODE_NOT_APPROVED"}
     if diagnostic.code == "CONSTRUCTION_REFERENCE_INVALID":
         assert diagnostic.detail["reference"] == "SOURCE_UNKNOWN"
-        assert "create_seed" in diagnostic.detail["allowed_from_steps"]
+        # The test attempts to bind a model response to a literal-only input.
+        assert diagnostic.detail["allowed_from_steps"] == []
         assert diagnostic.fields == ["plan.steps.1.arguments.0.from_step"]
 
 

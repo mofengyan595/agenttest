@@ -38,6 +38,7 @@ from agenttest.deep_harness.loop import (
 )
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
+from agenttest.diagnostics import design_failure_kind
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
 from agenttest.obligation_gate import (
     ObligationGate,
@@ -481,6 +482,7 @@ class AgentSession:
                                   if runnable else None))
             if group.get("policy_ids"):
                 row["remaining_policy_ids"] = [key for key in related if key not in evidence]
+                row["obligation_coverage"] = self._batch_coverage(group_id, related, evidence)
                 row["minimum_requests"] = negative_dispatch_floor(
                     self.project.target, policies, row["remaining_policy_ids"])
             if status in {"NOT_EXECUTED", "REJECTED"} and runs:
@@ -488,6 +490,14 @@ class AgentSession:
                                      "新的、与既有证据不同的设计约束。")
             rows.append(row)
         return rows
+
+    def _batch_coverage(self, group_id, policy_ids, evidence):
+        rejected = {case["preflight_diagnostic"].get("detail", {}).get("obligation_id")
+                    for case in self.summary.get("cases") or ()
+                    if case.get("group_id") == group_id and case.get("preflight_diagnostic")}
+        return [dict(obligation_id=key, state=(
+            "MEASURED" if key in evidence else "PREFLIGHT_REJECTED" if key in rejected
+            else "NOT_COVERED")) for key in policy_ids]
 
     def scope_view(self) -> dict:
         """Deterministic coverage guidance: what is approved, open, blocked and worth doing."""
@@ -781,13 +791,16 @@ class AgentSession:
         cases = (self.summary.get("cases") or ())[before_cases:]
         self.record("run_test_group", group_id=group_id, status=group.get("status"),
                     cases=len(cases), requests=self.ledger.requests - before_requests)
+        diagnostic = self._diagnostic(record)
         payload = dict(ok=True, group_id=group_id, status=group.get("status"),
                        operations=list(group.get("primary") or ()),
                        design=dict(status=(record or {}).get("status"),
                                    reason=(record or {}).get("reason"),
                                    code=self._diagnostic_code(record),
-                                   fields=self._diagnostic(record).get("fields") or [],
-                                   detail=self._diagnostic(record).get("detail") or {},
+                                   fields=diagnostic.get("fields") or [],
+                                   detail=diagnostic.get("detail") or {},
+                                   failure_kind=design_failure_kind(diagnostic)
+                                   if diagnostic else None,
                                    attempt=self.group_runs.get(group_id, 0),
                                    runtime_repair=repaired,
                                    planning_engine=(record or {}).get("actual_planning_engine")
@@ -796,6 +809,9 @@ class AgentSession:
                        requests=self.ledger.requests - before_requests,
                        budget=self._budget_view(),
                        next_step=dict(tool="get_test_coverage", arguments={}))
+        if group.get("policy_ids"):
+            payload["obligation_coverage"] = self._batch_coverage(
+                group_id, group["policy_ids"], executed_evidence(self.summary))
         if group.get("status") == "NOT_EXECUTED":
             code = self._diagnostic_code(record) or "GROUP_NOT_DESIGNED"
             detail = self._diagnostic(record).get("detail") or {}
@@ -1081,6 +1097,7 @@ class AgentSession:
                     operations=case.get("executed_operations") or [],
                     requests=case.get("http_requests") or 0,
                     failed=failed[:6], reason=(case.get("reason") or "")[:200] or None,
+                    preflight_diagnostic=case.get("preflight_diagnostic"),
                     duplicate_of=case.get("duplicate_of"),
                     absence_expectations=[dict(policy_id=row.get("policy_id"),
                                                satisfied=row.get("satisfied"))
@@ -1357,9 +1374,14 @@ async def run_agent(scope, tasks, settings, *, max_turns: int = 16,
                     "usage_known": MODEL_USAGE_UNKNOWN}[ledger.last_model_stop["dimension"]]
             raise ModelHarnessError(code)
         call_id = uuid4().hex
+        stats.local_call_id = call_id
+        stats.task_id = stats.run_id = scope.task_id
+        stats.phase = "agent"
+        stats.attempt = len(model.call_trace) + 1
         reservations[id(stats)] = ticket, call_id
         if journal is not None and hasattr(journal, "begin_model_call"):
-            journal.begin_model_call(call_id, scope.task_id)
+            journal.begin_model_call(call_id, scope.task_id, stats.model_copy(
+                update={"usage_state": "PENDING"}))
 
     model.on_call = charge
     model.before_call = check_model_budget

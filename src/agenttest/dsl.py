@@ -8,7 +8,8 @@ from urllib.parse import unquote
 from pydantic import Field, field_validator, model_serializer, model_validator
 
 from agenttest.contracts import ContractSummary, Operation
-from agenttest.diagnostics import Layer, ValidationFailure
+from agenttest.credentials import sensitive_field
+from agenttest.diagnostics import IDENTIFIER, Layer, ValidationFailure
 from agenttest.safety import StrictModel, TargetConfig
 from agenttest.selectors import validate_selector
 
@@ -147,6 +148,12 @@ class Scenario(StrictModel):
     steps: list[Step] = Field(min_length=1, max_length=100)
 
 
+def _located_failure(failure, step, index, path, **detail):
+    failure.diagnostic.fields = [f"steps.{index}.{path}"]
+    failure.diagnostic.detail = dict(step_id=step.id, step_index=index, **detail)
+    return failure
+
+
 def validate_plan(
     scenario: Scenario, contract: ContractSummary, config: TargetConfig,
     environ: dict[str, str] | None = None,
@@ -156,7 +163,7 @@ def validate_plan(
         raise ValidationFailure(Layer.DSL, "DSL_STEP_LIMIT", "Step limit exceeded")
     operations = {op.operation_id: op for op in contract.operations if op.operation_id}
     seen: dict[str, Step] = {}
-    for step in scenario.steps:
+    for index, step in enumerate(scenario.steps):
         if step.id in seen:
             raise ValidationFailure(Layer.DSL, "DSL_DUPLICATE_STEP_ID",
                                     "Duplicate step id or unknown operationId")
@@ -187,20 +194,21 @@ def validate_plan(
         if set(controlled) & set(step.body) or controlled and step.upload:
             raise ValidationFailure(Layer.DSL, "DSL_CONTROLLED_INPUT_IS_EXECUTOR_OWNED")
         controlled_payload(operation, controlled, environ)
-        bindings = [*step.path_parameters.values(), *step.query.values(), *step.body.values(),
-                    *step.headers.values()]
-        for binding in bindings:
-            if binding.from_step and binding.from_step not in seen:
-                raise ValidationFailure(
-                    Layer.DEPENDENCY, "DEPENDENCY_FORWARD_OR_UNKNOWN",
-                    "Dependency must reference an earlier step (no cycles)")
-            if binding.from_step:
-                source = seen[binding.from_step]
-                source_role = config.roles.get(source.role)
-                if source_role and source.operation_id == source_role.login_operation:
-                    raise ValidationFailure(
-                        Layer.DEPENDENCY, "DEPENDENCY_AUTH_RESPONSE",
-                        "Authentication responses are not bindable")
+        for location in ("path_parameters", "query", "body", "headers"):
+            for binding in getattr(step, location).values():
+                if binding.from_step and binding.from_step not in seen:
+                    raise _located_failure(ValidationFailure(
+                        Layer.DEPENDENCY, "DEPENDENCY_FORWARD_OR_UNKNOWN",
+                        "Dependency must reference an earlier step (no cycles)"),
+                        step, index, f"{location}.*.from_step")
+                if binding.from_step:
+                    source = seen[binding.from_step]
+                    source_role = config.roles.get(source.role)
+                    if source_role and source.operation_id == source_role.login_operation:
+                        raise _located_failure(ValidationFailure(
+                            Layer.DEPENDENCY, "DEPENDENCY_AUTH_RESPONSE",
+                            "Authentication responses are not bindable"),
+                            step, index, f"{location}.*.from_step")
         is_login = role and step.operation_id == role.login_operation
         if is_login:
             if step.body or step.upload or step.query or step.path_parameters or step.headers:
@@ -300,20 +308,34 @@ def validate_plan(
                 validate_value({step.upload.field: step.upload.content}, body_schema)
             else:
                 properties = body_schema.get("properties", {})
-                if set(step.body) - set(properties):
-                    raise ValidationFailure(
+                unknown_positions = [i for i, name in enumerate(step.body)
+                                     if name not in properties]
+                if unknown_positions:
+                    candidates = sorted(name for name, schema in properties.items()
+                                        if not schema.get("readOnly") and name not in controlled
+                                        and IDENTIFIER.fullmatch(name)
+                                        and not sensitive_field(name, config.sensitive_fields))
+                    raise _located_failure(ValidationFailure(
                         Layer.OPENAPI, "OPENAPI_UNKNOWN_BODY_FIELD",
-                        "Unknown request body field")
+                        "Unknown request body field"), step, index, "body.*",
+                        allowed_body_fields=candidates[:12],
+                        unknown_body_positions=unknown_positions[:8])
                 if set(body_schema.get("required", [])) - set(step.body) - set(controlled):
-                    raise ValidationFailure(
+                    raise _located_failure(ValidationFailure(
                         Layer.OPENAPI, "OPENAPI_BODY_FIELD_REQUIRED",
-                        "Missing required request body field")
+                        "Missing required request body field"), step, index, "body")
                 for name, binding in step.body.items():
                     if properties[name].get("readOnly"):
                         raise ValidationFailure(
                             Layer.DSL, "DSL_READ_ONLY_REQUEST_FIELD",
                             "Read-only request field")
                     if binding.from_step is None:
-                        validate_value(binding.value, properties[name])
+                        try:
+                            validate_value(binding.value, properties[name])
+                        except ValidationFailure as exc:
+                            field = name if IDENTIFIER.fullmatch(name) and not sensitive_field(
+                                name, config.sensitive_fields) else "*"
+                            _located_failure(exc, step, index, f"body.{field}")
+                            raise
         seen[step.id] = step
     return operations
