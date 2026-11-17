@@ -155,6 +155,13 @@ NON_REPAIRABLE_FOCUS = frozenset({
 })
 
 
+# The Focus schema bounds one proposal to 40 requested checks, and one check can violate the
+# scope-clause rule in two fields. Every legal proposal therefore fits; the cap only guards a
+# pathological diagnostic, and whatever it ever cuts is counted in ``omitted``, never dropped.
+MAX_REQUESTED_CHECKS = 40
+MAX_REPAIR_PATHS = 2 * MAX_REQUESTED_CHECKS
+
+
 def focus_repair_payload(project, diagnostic, *, atoms=(), scope_sources=()):
     """The one structured correction a rejected Focus proposal is allowed to receive.
 
@@ -164,14 +171,23 @@ def focus_repair_payload(project, diagnostic, *, atoms=(), scope_sources=()):
     repairable and never costs the whole round. A trusted scope clause is recorded by the
     server as project scope: it must not appear in ``requirement_map``, so listing it as a key
     to fill would turn the retry into the same rejection again.
+
+    P3-B2.4 A1: the hint never suggests changing a literal. Replacing an approved value with a
+    different one is not a repair, so the payload names the edits instead: delete, null, or
+    match the approved value/text.
+
+    Every path the validator found is listed: the Focus schema allows at most
+    ``MAX_REQUESTED_CHECKS`` checks, and one check contributes at most one path per field, so
+    ``MAX_REPAIR_PATHS`` covers every legal proposal. The cap only bounds a pathological input;
+    should it ever be reached, the leftovers are counted in ``omitted`` and covered by the rule
+    the same payload already carries (``violations[].violated_constraint``), never dropped.
     """
     payload = diagnostic.model_dump(mode="json")
     if not payload.get("fields"):
         payload["fields"] = []
     scoped = {str(key) for key in scope_sources if key}
-    # The vocabulary and a fallback hint are always present, and a validator that already named
-    # its own fields and hint keeps them: the retry must neither lose the operation list nor be
-    # invited to fill a key the schema forbids.
+    violations = [item for item in (payload.get("detail") or {}).get("violations") or ()
+                  if isinstance(item, dict)]
     base = dict(
         schema="agenttest.focus-repair.v1",
         code=payload.get("code"),
@@ -183,7 +199,22 @@ def focus_repair_payload(project, diagnostic, *, atoms=(), scope_sources=()):
         hint=("请严格按错误码重写这次提案：scope.operations 只能用 allowed_operations "
               "里的接口；requirement_map 只能填 requirement_keys 列出的子句，"
               "trusted_scope_clauses 里的子句由服务端记为项目范围，不要为它们填条目；"
-              "不要扩大范围，也不要重复同一个被拒的值。"))
+              "不要扩大范围；已批准的取值和原文都必须原样保留，换一个值不是修复。"
+              "按 must_delete 删除字段、按 must_be_null 把字段置为 null、"
+              "按 must_match 改正字段；omitted 里的条目数量按 violations 中同类别的 "
+              "violated_constraint 与 expected_rule 一并处理。"))
+    edits = dict(must_delete=[], must_be_null=[], must_match=[])
+    for item in violations:
+        for key in edits:
+            for value in item.get(key) or ():
+                if value not in edits[key]:
+                    edits[key].append(value)
+    omitted = {key: len(values) - MAX_REPAIR_PATHS for key, values in edits.items()
+               if len(values) > MAX_REPAIR_PATHS}
+    for key in edits:
+        base[key] = edits[key][:MAX_REPAIR_PATHS]
+    if omitted:
+        base["omitted"] = omitted
     existing = payload.get("detail")
     payload["detail"] = dict(base, **(existing if isinstance(existing, dict) else {}))
     return payload

@@ -1,5 +1,134 @@
 # 开发进度
 
+## 2026-11-17 · P3-B2.4 优化版全量离线冻结回归
+
+- 候选工作区冻结：HEAD `f311721`、`git status --porcelain` 11 行（8 改 3 增，全部保留
+  未提交）、git 可见文件 1,701、`checkout_sha256` `fa9956d0e0bc0fcd…`（回归前 = 回归后 =
+  运行后复算），两个新增测试文件按未忽略未跟踪文件计入摘要；启动前无验收进程。
+- 执行 `.\.venv\Scripts\python.exe scripts/run_frozen_regression.py --out
+  .eduwork/frozen-regression-p3b24`：退出码 0、收集并执行 **2,964** 项、**2,948 passed、
+  15 skipped、1 xfailed、0 failed、1 warning**、pytest 耗时 **2,966.13 秒**、墙钟
+  2,977.88 秒（49 分 37.88 秒）。
+- 审计：`collected == reported == 2,964`，重复收集、漏项、额外项、重复执行均为 **0**；
+  before/after 摘要一致。15 个 skipped、1 个 xfailed（历史保留 `strict` 用例）与 1 个
+  `PytestCollectionWarning` 全部保留，未删除或改写。
+- 覆盖：`test_p3b24_diagnostics` 24 项、`test_p3b24_references` 11 项、
+  `test_p3b23_diagnostics` 15 项全部执行通过；A1 载荷完整性与字段路径、A2 标量约束、
+  A3 引用候选与拓扑顺序的定向用例均在其中；`test_obligation_gate` 28、`test_human_review`
+  3、`test_task_gate` 18、`test_step_recovery` 20 项全绿。
+- 与历史 2,436.92 秒相比本次 **慢 529.21 秒（+21.7%）**，新增 35 个用例只解释约 35 秒；
+  不据单次运行对性能或启动器作结论。
+- 结论：全量离线回归 **PASS**，具备进入真实模型验收的条件（需另行授权）。A4、B1、B2 与
+  模型侧 60 秒超时/`UNKNOWN` 用量风险未动；P3-B2.3 的 NO-GO 继续有效；**未进入 P3-B3**。
+  [完整记录](deepagents-hitl-reliability-p3b24.md#12-优化版全量离线冻结回归p3-b24-候选工作区)
+
+## 2026-11-17 · P3-B2.4 A1 修复载荷完整性与字段路径修正
+
+- 操作者确认后只改两处：`focus_repair_payload` 的列举截断、`requested_check_violations`
+  的范围子句路径命名。零模型调用、零业务 HTTP、未跑全量冻结回归、未启动五轮验收，
+  未改接受/拒绝条件、修复轮次（仍 1 轮）、Runtime、HITL、预算、终止、清理、安全门禁与 A4。
+- 路径命名：只命名真正非空的字段（值非空 → `.exact_value`，长度非空 → `.exact_length`，
+  两者都非空 → 同一违规条目两条路径），不再把长度违规写成值违规。
+- 列举边界：上限改为 `MAX_REPAIR_PATHS = 2 × MAX_REQUESTED_CHECKS(40) = 80`，即由已批准
+  检查项数量推出，任何 schema 合法提案都不会被截断；万一越界则输出 `omitted` 剩余条数，
+  并靠同级 `violated_constraint`/`expected_rule` 覆盖，不再静默丢弃。`Diagnostic.fields`
+  的 8 项上限与 `MAX_VIOLATION_PATHS` 未改，载荷内不出现任何取值。
+- v1 原始归档样本：17 处违规的未点名位置由 9 降到 **0**，`must_be_null` 17 条、字段名
+  全部正确，载荷 3,481 字节；归档回放 11 个变体结果不变（A1c、A2b、B2、C2 仍 ACCEPTED，
+  其余仍被拒）。
+- 新增 8 项自动化测试（仅长度违规、双字段违规、合法检查项不被列、`fields` 8 项上限、
+  17 处全覆盖、80 条最宽合法提案、越界 `omitted`、去重且不回显取值）。
+- 定向回归 30 个文件：**512 passed, 1 xfailed**（既有归档 `strict` 用例），Ruff 与
+  `git diff --check` 通过。P3-B2.3 的 NO-GO 继续有效；**未进入 P3-B3**。
+  [完整记录](deepagents-hitl-reliability-p3b24.md#117-a1-修复载荷完整性与字段路径修正已实施)
+
+## 2026-11-17 · P3-B2.4 A3 最小修复与 A1 完整性核查
+
+- 只修 A3（引用候选漏报），并对 A1 的截断诊断做只读核查。零真实模型调用、零业务 HTTP、
+  未跑全量冻结回归、未启动五轮验收，未改动 A4、超时、预算、终止规则与门禁。
+- A3 根因两条：候选只扫数组里更早的节点（但数组位置没有执行含义，后声明生产者本来
+  可以直接引用）；候选判定只读 `binding_rules`，而负向策略的 `binding_rules` 为 `null`，
+  批准事实在 `resource_lifecycles` 的（创建接口, 路径参数, id 选择器）三元组里。
+- 现在候选来自批准身份而非下标：`allowed_from_steps`（合法且可用）+ `direct_from_steps`
+  （已在前面）/ `reordered_from_steps`（声明在后面，引用后构造器自动前置）两个子集，
+  `blocked_from_steps` 带 `CYCLE`／`PREREQUISITE_MISSING` 原因且不进入可用列表；
+  另给一句 `order_constraint`，经既有 `detail.reason` 渲染通道进入运行时修复约束。
+- 归档样本：C1 悬空引用仍拒且候选为空（确实没有生产者）；C4（生产者声明在后、id 写错）
+  由"候选空集"变为 `allowed=reordered=["createBaseParcel"]` 并附顺序约束；C2/C3 合法引用
+  仍 ACCEPTED 且顺序不变。边界：自身引用/不存在来源/其它接口/跨用例/循环/缺前置均不
+  成为可用候选，经策略前序构成的循环仍被拒绝。引用接受/拒绝规则与执行器前序校验未改。
+- A1 完整性核查（只读）：17 个真实违规位置，诊断 `count=17`，但修复载荷只点名 12 条，
+  其中 4 条字段名写成 `exact_value`（实际只违反 `exact_length`），共 9 处未点名。已给出
+  两处最小修正建议（载荷不再按 12 截断、按实际非空字段命名路径），**本轮未实施**，等确认。
+- 新增 `tests/test_p3b24_references.py`（11 项）；`test_p3b23_diagnostics.py` 中把"只列
+  更早节点"写死的断言改为"只列批准来源 + 位置子集"，安全断言（未批准来源不得出现）保留。
+  定向回归 36 个文件 603 passed、1 xfailed（既有归档 `strict` 用例），Ruff 与
+  `git diff --check` 通过，A1/A2 归档回放 11 个变体结果与上一轮一致。
+- P3-B2.3 的 NO-GO 不变；A4、B1/B2/B3 未动；**未进入 P3-B3**。
+  [完整诊断与修复记录](deepagents-hitl-reliability-p3b24.md#11-a3-最小修复引用候选漏报与-a1-诊断完整性核查)
+
+## 2026-11-17 · P3-B2.4 最小修复（A1、A2）
+
+- 只修 A1、A2 两项 P0 缺陷。零真实模型调用、零业务 HTTP、未跑全量冻结回归、未启动
+  五轮验收，未调整模型预算、60 秒超时或任何安全约束；接受/拒绝语义未改。
+- A1：一次 Focus 拒绝现在携带**同一提案里的全部独立违规**。`_decode_output` 不再在
+  `decode_requirements` 失败处短路，而是用与合法路径相同的顺序收集检查级违规，合成
+  一个诊断（主码不变）；`validate_requested_checks` 改为"收集 → 合并 → 抛一次"，同一
+  提案的 17 个违规位置不再只报第 1 个。v1 第 1 次原文现在同时报出
+  `requirement_map.request_2`（must_delete）与 `requested_checks.*`（must_be_null）。
+- A1 修复载荷删掉"不要重复同一个被拒的值"，改为"换一个值不是修复"，并派发
+  `must_delete`／`must_be_null`／`must_match` 显式编辑指令；修复轮数仍只有 1 次，
+  `NON_REPAIRABLE_FOCUS` 与主码派生的可修复判定未改。
+- A2：`DESIGN_INSTANCE_LITERAL_INVALID` 不再对标量约束输出 `required=[]` 与"填写全部
+  必填字段"。现在给出 `field_path`、`violation`、`constraint`、`limit`、
+  `actual_length` 等事实与针对性 hint（25 字符 vs `maxLength=24`：`limit=24`、
+  `actual_length=25`）；覆盖 `minLength`/`maxLength`、`minItems`/`maxItems`、
+  `minimum`/`maximum`/`exclusive*`、`enum`、类型不匹配与对象必填/多余字段。判定仍由
+  `validate_value` 做，25 字符仍被拒、24 字符仍通过，未放宽任何字段约束。
+- 归档原文回放（v1/v2/v4 原始输出，0 次模型）：A1 报 2 类、仅删键仍报取值类 17 处、
+  两处都改对仍 ACCEPTED；v4 仍只报多报键、第二次仍 ACCEPTED；v2 实例 25→26 字符样本
+  精确报长度规则，截到 24 字符后 ACCEPTED。
+- 新增 `tests/test_p3b24_diagnostics.py`（16 项）。定向回归 25 个文件 404 passed、
+  1 xfailed（归档 `strict` 用例，早已存在），Ruff 与 `git diff --check` 通过。
+- 本轮**未动** A3（引用候选漏报后声明节点）、A4（`NO_PROGRESS` 与保留的形式修复）、
+  B1/B2/B3。P3-B2.3 的 NO-GO 结论不变，未进入 P3-B3。
+  [完整诊断与修复记录](deepagents-hitl-reliability-p3b24.md#10-最小修复结果a1a2)
+
+## 2026-11-17 · P3-B2.4 离线根因诊断
+
+- P3-B2.3 的 **NO-GO 保持不变**，0/5 与 3/5 都是真实观测。本轮零真实模型调用、
+  零业务 HTTP、未启动全量回归或新的五轮验收，未修改 60 秒超时与模型调用预算，
+  未删除或放宽任何 Focus 约束。
+- 首次 Focus 请求在两个里程碑里逐字节相同（47,360 字节，`897e1ed2…`），共 10 次
+  观测：P3-B2.2 的 4 次通过、1 次超时；P3-B2.3 的 4 次通过、2 次被拒、1 次超时。
+  因此 3/5 到 0/5 的变化不能归因于 P3-B2.3 的代码修改。
+- 确证 3 项 Harness 缺陷：Focus 单次修正加首错优先（两个独立违规必然判死整轮，
+  v1 原始输出可复现"删掉多报键后立刻出现第二个违规"）、实例输入诊断对标量约束
+  输出 `required=[]`（v2 `ai_5` 25 字符 vs `maxLength=24`）、引用候选只取更早节点
+  而漏报合法来源（后声明节点构造实际被接受）。第四项是 `NO_PROGRESS` 与"每组保留
+  一次形式修复"的规则交互，改变终止行为需另行授权。
+- 模型侧失败占多数：四次 `JSON_SYNTAX/MISSING_COLON` 逐字节复现；预检
+  `OPENAPI_UNKNOWN_BODY_FIELD` 是把测试值写进字段名槽位，两类样本都在两轮里重复出现。
+- 三次超时仍为 `UNKNOWN`，服务端状态与用量不可核实；同一请求在别处 2.8–34.7 秒完成，
+  说明超时不是请求内容所致。
+- 下一步只做 P0 两项修复（Focus 全违规诊断与修正措辞、实例输入诊断约束）并跑定向
+  回归，用归档原文作固定输入；不靠"再跑五轮"验证修复。
+  [完整诊断](deepagents-hitl-reliability-p3b24.md)
+
+## 2026-11-17 · P3-B2.3 冻结验收 NO-GO
+
+- 冻结提交 `f311721`。普通 PowerShell 全量回归收集 2,929 项，2,913 passed、
+  15 skipped、1 xfailed、0 failed、1 warning，耗时 2,436.92 秒。前后摘要一致，
+  用例审计无漏项、额外项或重复。
+- 三个模型探针通过，五轮真实运行全部留档。测到 31/31 的轮次为 **0/5**，
+  各轮覆盖 0、19、21、21、0 项。发布门限为 4/5，P3-B3 未获准。
+- 156 条业务 HTTP 回执、15 项 HITL 批准、15 次资源创建及清理已核实，五轮最终
+  库存均为 0。无越权、未知写入重放或重复负向派发。三轮保留 503 路径的断言失败。
+- 61 个本地调用 ID 全部与使用账本对齐，合计明确用量 481,990 tokens，另三次
+  超时为 `UNKNOWN`。v2 两个未知请求体字段错误均附具体步骤、字段路径和义务。
+- 下一步用保存的原始输出离线核对 Focus 与批次 5/6 的诊断。服务端超时和用量只
+  以获授权的逐请求记录核实。[完整验收结果](deepagents-hitl-reliability-p3b23.md#2026-11-17-冻结真实验收结果)
+
 ## 2026-11-17 · P3-B2.3 最小修复与定向验收
 
 - 在模型 Trace 和现有调用账本写入同一个本地调用 ID。记录阶段、批次、尝试、时间与

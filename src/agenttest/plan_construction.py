@@ -12,6 +12,36 @@ IDENTIFIER = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,39}$')
 MAX_ECHOED_STEPS = 12
 
 
+def argument_matches(rule, argument):
+    """One approved binding rule targets exactly this argument slot."""
+    name = argument.get('name') or ''
+    rule_name = rule.get('name') or ''
+    same_name = (rule_name.lower() == name.lower() if rule.get('location') == 'headers'
+                 else rule_name == name)
+    return (rule.get('location') == argument.get('location') and same_name
+            and rule.get('source_selector', '$') == argument.get('select'))
+
+
+def binding_sources(node, argument, policies, lifecycles):
+    """The approved rules that can supply one argument slot; array position plays no part.
+
+    Two approved sources exist: an explicit binding rule for this (location, name, selector),
+    and the lifecycle identity -- a negative variant that replaces the fresh resource an approved
+    create step made, addressed by the approved (path parameter, id selector) pair. A policy with
+    no binding rule at all (a negative test, for example) therefore still has a provable producer.
+    """
+    rules = [rule for rule in (policies[node['policy_id']].get('binding_rules') or ())
+             if argument_matches(rule, argument)]
+    if rules:
+        return rules, ()
+    if argument.get('location') == 'path_parameters' and argument.get('select'):
+        return (), tuple(lifecycle for lifecycle in lifecycles
+                         if lifecycle.get('path_parameter') == argument.get('name')
+                         and lifecycle.get('id_selector') == argument.get('select'))
+    return rules, ()
+
+
+
 def _same_request(left, right):
     """Two proposals that would send exactly the same request (a replay group member)."""
     fields = ('operation_id', 'role', 'policy_id')
@@ -20,6 +50,21 @@ def _same_request(left, right):
                            default=str)
             == json.dumps(right.get('arguments') or [], sort_keys=True, ensure_ascii=False,
                           default=str))
+
+
+def order_constraint(reordered, blocked):
+    """One short line about quoting a later producer, and about the candidates that are refused."""
+    parts = []
+    if reordered:
+        parts.append("合法来源 " + "、".join(reordered) + " 声明在本步骤之后：直接把它写成 "
+                     "from_step 即可，构造器会把它排到本步骤之前，不需要移动步骤位置")
+    cycle = [item['step_id'] for item in blocked if item['reason'] == 'CYCLE']
+    if cycle:
+        parts.append("、".join(cycle) + " 依赖本步骤，引用它会形成循环，不能作为来源")
+    missing = [item['step_id'] for item in blocked if item['reason'] == 'PREREQUISITE_MISSING']
+    if missing:
+        parts.append("、".join(missing) + " 自身缺少已批准的前置步骤，当前不可引用")
+    return "；".join(parts) + "。" if parts else ""
 
 
 def construct_plan(plan, context):
@@ -106,26 +151,93 @@ def construct_plan(plan, context):
         for node in protected:
             if node['id'] != existing[0]['id']:
                 depend(node['id'], existing[0]['id'], 'AUTHENTICATION')
+
+    ordered_positions = {key: position for position, key in enumerate(nodes)}
+
+    def prerequisite_closure(key, seen=None):
+        """Steps this one must already wait for, through approved policy prerequisites."""
+        seen = set() if seen is None else seen
+        for prerequisite in policies[nodes[key]['policy_id']].get(
+                'prerequisite_policy_ids', ()):
+            for producer in nodes.values():
+                if producer['policy_id'] == prerequisite and producer['id'] not in seen:
+                    seen.add(producer['id'])
+                    prerequisite_closure(producer['id'], seen)
+        return seen
+
+    def reference_block(candidate):
+        """Why a binding-compatible source still cannot be quoted, or None when it can."""
+        if node['id'] in prerequisite_closure(candidate['id']):
+            return 'CYCLE'
+        for prerequisite in policies[candidate['policy_id']].get(
+                'prerequisite_policy_ids', ()):
+            if not any(other['policy_id'] == prerequisite for other in nodes.values()):
+                return 'PREREQUISITE_MISSING'
+        return None
+
     def reference_failure(node, argument, index, position, reference):
-        """Only suggest an earlier, present producer allowed for this exact input slot."""
-        rules = policies[node['policy_id']].get('binding_rules', [])
-        allowed = safe_ids(source['id'] for source in list(nodes.values())[:index]
-            if source['id'] not in inserted
-            and not policies[source['policy_id']].get('negative_test')
-            and not any(source['operation_id'] == auth['login_operation_id']
-                        for auth in context.get('authentication', []))
-            and any(rule['location'] == argument['location']
-                    and (rule['name'].lower() == argument['name'].lower()
-                         if rule['location'] == 'headers' else rule['name'] == argument['name'])
-                    and rule.get('source_policy_id') == source['policy_id']
-                    and rule.get('source_selector', '$') == argument['select']
-                    and dependency_roles_match(source['role'], node['role'],
-                                               rule.get('role_relation'))
-                    for rule in rules))
+        """Every node that may legally supply this argument, split by what quoting it implies.
+
+        Array position carries no execution meaning (see the module docstring), so a producer
+        declared *after* the consumer is a legal source: writing it as ``from_step`` adds the
+        dependency and the constructor orders it first. Advertising only earlier nodes hid
+        exactly that case and answered "none", which invited the model to invent an id. A
+        candidate is called usable only when quoting it cannot loop back to this step and its own
+        approved prerequisites are present; anything else is reported with its reason and is
+        never advertised as usable. No accept/reject rule changes here.
+        """
+        rules, lifecycles = binding_sources(node, argument, policies,
+                                            context.get('resource_lifecycles', ()))
+        direct, reordered, blocked = [], [], []
+        for candidate in nodes.values():
+            key = candidate['id']
+            if (key == node['id'] or key in inserted
+                    or policies[candidate['policy_id']].get('negative_test')
+                    or any(candidate['operation_id'] == auth['login_operation_id']
+                           for auth in context.get('authentication', ()))):
+                continue
+            if lifecycles:
+                matched = any(candidate['operation_id'] == lifecycle['create_operation']
+                              for lifecycle in lifecycles)
+            else:
+                matched = any(rule.get('source_policy_id') == candidate['policy_id']
+                              and dependency_roles_match(candidate['role'], node['role'],
+                                                         rule.get('role_relation'))
+                              for rule in rules)
+            if not matched:
+                continue
+            reason = reference_block(candidate)
+            if reason:
+                blocked.append(dict(step_id=key, reason=reason))
+            elif ordered_positions[key] < index:
+                direct.append(key)
+            else:
+                reordered.append(key)
+        legal = [key for key in nodes if key in direct or key in reordered]
+        usable_blocked = []
+        for item in blocked:
+            identifier = next(iter(safe_ids([item['step_id']])), None)
+            if identifier:
+                usable_blocked.append(dict(step_id=identifier, reason=item['reason']))
         error = ValidationFailure(Layer.MODEL, 'CONSTRUCTION_REFERENCE_INVALID')
         error.diagnostic.fields = [f'plan.steps.{index}.arguments.{position}.from_step']
-        error.diagnostic.detail = dict(reference=reference, allowed_from_steps=allowed,
-            step_id=next(iter(safe_ids([node['id']])), '*'), obligation_id=node['policy_id'])
+        # ``allowed_from_steps`` is every legal, usable producer: quoting one only adds the
+        # dependency, and the constructor orders it first. The two subsets say whether the
+        # proposal already declares it earlier, or whether the order has to move.
+        detail = dict(reference=reference, allowed_from_steps=safe_ids(legal),
+                      step_id=next(iter(safe_ids([node['id']])), '*'),
+                      obligation_id=node['policy_id'],
+                      direct_from_steps=safe_ids(direct),
+                      reordered_from_steps=safe_ids(reordered))
+        if usable_blocked:
+            detail['blocked_from_steps'] = usable_blocked
+        constraint = order_constraint(safe_ids(reordered), usable_blocked)
+        if constraint:
+            # Rendered by the runtime repair note as 原因=..., so the order rule reaches the
+            # model even though that module is out of scope this round.
+            detail['order_constraint'] = constraint
+            detail['reason'] = constraint
+        error.diagnostic.detail = detail
         return error
 
     for index, node in enumerate(nodes.values()):
@@ -145,7 +257,6 @@ def construct_plan(plan, context):
                 raise error
             for producer in producers:
                 depend(node['id'], producer, 'POLICY_PREREQUISITE')
-    ordered_positions = {key: position for position, key in enumerate(nodes)}
 
     def bound_instances():
         """Map each (clause, action occurrence) onto the nodes that realize it.

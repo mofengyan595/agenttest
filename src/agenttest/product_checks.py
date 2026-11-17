@@ -81,11 +81,79 @@ def check_groups(index):
     return list(groups.values())
 
 
-def validate_requested_checks(checks, context, selected):
+# P3-B2.4 A1: one proposal can break several independent rules, and the single allowed repair
+# round can only help if the rejection names all of them. Each rule below states the constraint
+# and the edit it requires, so a repair never has to guess what "fix the error" means.
+MAX_VIOLATION_PATHS = 12
+CHECK_RULES = {
+    "FOCUS_REQUESTED_CHECK_INVALID": (
+        "requested_checks 只能引用 scope 内已批准策略，且 source_quote 必须出现在任务原文里，"
+        "同一策略只能用一次",
+        "删除或改写该条目，使其引用 scope 内的已批准策略与任务原文，且不要重复同一策略"),
+    "FOCUS_INPUT_TEXT_CHANGED": (
+        "引用范围说明子句时 exact_value 与 exact_length 必须为 null；其它情况下取值必须"
+        "原样出现在 source_quote 中",
+        "把该条目的 exact_value 与 exact_length 置为 null（保留 source_ref 与 check_ref）；"
+        "不要换成别的字面值"),
+    "FOCUS_NEGATIVE_FIELD_CHANGED": (
+        "原文用 field=value 指定字段时，取值不能迁到另一个字段",
+        "保留原文指定的字段名，不要改字段"),
+    "FOCUS_NEGATIVE_LENGTH_INVALID": (
+        "exact_length 只能用于字符串型 boundary_outside 负向策略，且不能与 exact_value 同时出现",
+        "删除 exact_length，或改为符合该策略的 exact_value"),
+}
+
+
+def _check_violation(code, paths, *, must_delete=(), must_be_null=(), must_match=()):
+    """One violation record: closed code, field paths, the rule and the edit it requires."""
+    constraint, rule = CHECK_RULES[code]
+    return dict(error_code=code, field_path=paths[0], field_paths=list(paths), count=1,
+                violated_constraint=constraint, expected_rule=rule,
+                must_delete=list(must_delete), must_be_null=list(must_be_null),
+                must_match=[dict(field_path=path, rule=text) for path, text in must_match])
+
+
+def group_violations(violations):
+    """Merge equal codes in first-seen order; the field order inside a code is proposal order."""
+    grouped, index = [], {}
+    for item in violations:
+        entry = index.get(item["error_code"])
+        if entry is None:
+            entry = dict(error_code=item["error_code"], field_path=item["field_path"],
+                         field_paths=[], count=0,
+                         violated_constraint=item["violated_constraint"],
+                         expected_rule=item["expected_rule"],
+                         must_delete=[], must_be_null=[], must_match=[])
+            index[item["error_code"]] = entry
+            grouped.append(entry)
+        entry["field_paths"].extend(item["field_paths"])
+        entry["count"] += item.get("count") or 1
+        for key in ("must_delete", "must_be_null", "must_match"):
+            for value in item.get(key) or ():
+                if value not in entry[key]:
+                    entry[key].append(value)
+    return grouped
+
+
+def grouped_failure(violations, *, code=None):
+    """One diagnostic for all known violations; the first violation keeps today's precedence."""
+    grouped = group_violations(violations)
+    for item in grouped:
+        item["field_paths"] = item["field_paths"][:MAX_VIOLATION_PATHS]
+    error = ValidationFailure(Layer.MODEL, code or grouped[0]["error_code"])
+    error.diagnostic.fields = [path for item in grouped
+                               for path in item["field_paths"]][:8]
+    error.diagnostic.detail = dict(violations=grouped[:4])
+    return error
+
+
+def requested_check_violations(checks, context, selected):
+    """Every independently determinable violation, in proposal order; never raises."""
     from agenttest.task_completion import is_variant_scope_clause
 
     index = {entry["policy_id"]: entry for entry in context.get("approved_checks", [])}
-    seen = set()
+    approved = list(context.get("approved_checks", []))
+    seen, violations = set(), []
     for position, check in enumerate(checks):
         entry = index.get(check.policy_id)
         previous = any(item.get("policy_id") == check.policy_id
@@ -94,13 +162,21 @@ def validate_requested_checks(checks, context, selected):
         if (entry is None or entry["operation_id"] not in selected
                 or check.source_quote not in context["user_task"] and not previous
                 or check.policy_id in seen):
-            raise ValidationFailure(Layer.MODEL, "FOCUS_REQUESTED_CHECK_INVALID")
+            violations.append(_check_violation("FOCUS_REQUESTED_CHECK_INVALID",
+                [f"requested_checks.{position}"],
+                must_delete=[f"requested_checks.{position}"]))
+            continue
         seen.add(check.policy_id)
         if (check.exact_value is not None or check.exact_length is not None) and (
                 is_variant_scope_clause(check.source_quote)):
-            error = ValidationFailure(Layer.MODEL, "FOCUS_INPUT_TEXT_CHANGED")
-            error.diagnostic.fields = [f"requested_checks.{position}.exact_value"]
-            raise error
+            # P3-B2.4 A1: name the fields that are really set. A length-only violation must not
+            # be reported as a value violation, and a violation of both names both.
+            paths = [f"requested_checks.{position}.{name}"
+                     for name in ("exact_value", "exact_length")
+                     if getattr(check, name) is not None]
+            violations.append(_check_violation("FOCUS_INPUT_TEXT_CHANGED", paths,
+                                               must_be_null=paths))
+            continue
         # An explicit field=value request cannot migrate to another field with the same value.
         import re
 
@@ -111,22 +187,37 @@ def validate_requested_checks(checks, context, selected):
         named = {name for name, number in assignments if type(value) in {int, float}
                  and float(number) == value}
         if named and entry.get("name") not in named:
-            raise ValidationFailure(Layer.MODEL, "FOCUS_NEGATIVE_FIELD_CHANGED")
+            violations.append(_check_violation("FOCUS_NEGATIVE_FIELD_CHANGED",
+                [f"requested_checks.{position}.exact_value"]))
+            continue
         if check.exact_length is not None:
             from agenttest.product_inputs import _check_quote
 
-            if (check.exact_value is not None or entry.get("kind") != "boundary_outside"
-                    or entry.get("field_constraints", {}).get("type") != "string"):
-                raise ValidationFailure(Layer.MODEL, "FOCUS_NEGATIVE_LENGTH_INVALID")
-            _check_quote(check.exact_length, {}, check.source_quote)
+            try:
+                if (check.exact_value is not None or entry.get("kind") != "boundary_outside"
+                        or entry.get("field_constraints", {}).get("type") != "string"):
+                    raise ValidationFailure(Layer.MODEL, "FOCUS_NEGATIVE_LENGTH_INVALID")
+                _check_quote(check.exact_length, {}, check.source_quote)
+            except ValidationFailure:
+                violations.append(_check_violation("FOCUS_NEGATIVE_LENGTH_INVALID",
+                    [f"requested_checks.{position}.exact_length"]))
+                continue
         if check.exact_value is not None:
             try:
                 validate_exact_source(literal_data(check.exact_value.value), check.source_quote)
-            except ValidationFailure as exc:
-                approved = list(context.get("approved_checks", []))
-                exc.diagnostic.fields = [f"requested_checks.{position}.exact_value",
-                                         f"approved_checks.{approved.index(entry)}"]
-                raise
+            except ValidationFailure:
+                field = f"requested_checks.{position}.exact_value"
+                violations.append(_check_violation("FOCUS_INPUT_TEXT_CHANGED",
+                    [field, f"approved_checks.{approved.index(entry)}"],
+                    must_match=[(field, "取值必须原样出现在 source_quote 中；"
+                                       "不得用另一个字面值替代")]))
+    return violations
+
+
+def validate_requested_checks(checks, context, selected):
+    violations = requested_check_violations(checks, context, selected)
+    if violations:
+        raise grouped_failure(violations)
 
 
 def validate_exact_source(value, quote):

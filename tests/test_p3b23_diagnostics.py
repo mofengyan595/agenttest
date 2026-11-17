@@ -28,8 +28,10 @@ def parcel_node(key, policy_id="web_rule_7_negative_8", source=None):
     ("createParcelForNegative8", "SOURCE_UNKNOWN"),
     ("replaceQuantityOutOfBound", "SELF_REFERENCE"),
 ])
-def test_v1_reference_hint_only_advertises_a_valid_earlier_producer(reference, reason):
+def test_v1_reference_hint_only_advertises_approved_producers(reference, reason):
     # The source, check ID and policy come from release-v1/model-outputs.jsonl:17.
+    # P3-B2.4 A3: a producer declared later is a legal source too -- quoting it only adds the
+    # dependency -- so it is advertised, and its subset name says the order has to move.
     consumer = parcel_node("replaceQuantityOutOfBound", source=reference)
     seed = parcel_node("createSeed", policy_id="web_rule_3")
     later = parcel_node("laterSeed", policy_id="web_rule_3")
@@ -42,15 +44,24 @@ def test_v1_reference_hint_only_advertises_a_valid_earlier_producer(reference, r
         dict(id="web_rule_3", operation_id="createParcel", roles=[None]),
         dict(id="other", operation_id="createParcel", roles=[None]),
     ])
-    for steps, candidates in (([consumer], []),
-                              ([other, seed, consumer, later], ["createSeed"])):
+    for steps, allowed, direct, reordered in (
+            ([consumer], [], [], []),
+            ([other, seed, consumer, later], ["createSeed", "laterSeed"],
+             ["createSeed"], ["laterSeed"])):
         with pytest.raises(ValidationFailure, match="CONSTRUCTION_REFERENCE_INVALID") as caught:
             construct_plan(dict(name="archived-unknown-reference", steps=steps), context)
         diagnostic = caught.value.diagnostic
-        assert diagnostic.detail == dict(reference=reason, allowed_from_steps=candidates,
-            step_id=consumer["id"], obligation_id=consumer["policy_id"])
+        assert diagnostic.detail["reference"] == reason
+        assert diagnostic.detail["allowed_from_steps"] == allowed
+        assert diagnostic.detail["direct_from_steps"] == direct
+        assert diagnostic.detail["reordered_from_steps"] == reordered
+        assert diagnostic.detail["step_id"] == consumer["id"]
+        assert diagnostic.detail["obligation_id"] == consumer["policy_id"]
+        assert ("order_constraint" in diagnostic.detail) is bool(reordered)
         assert diagnostic.fields == [f"plan.steps.{steps.index(consumer)}.arguments.0.from_step"]
         assert design_failure_kind(diagnostic.model_dump()) == "REFERENCE_ERROR"
+        # ``other`` is an approved operation but not the approved source policy for this slot.
+        assert "otherSeed" not in allowed
 
 
 @pytest.mark.parametrize("source", ["later", "missing", "consumer"])

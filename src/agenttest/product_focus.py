@@ -523,10 +523,17 @@ class TestFocusModel(OpenAICompatiblePlanner):
         if type(wire) is not dict or set(wire) != keys:
             raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_SHAPE_INVALID")
         requirements = []
+        requirement_failure = None
         if 'request_atoms' in context:
             from agenttest.request_requirements import decode_requirements
 
-            requirements = decode_requirements(wire.pop('requirement_map'), context)
+            try:
+                requirements = decode_requirements(wire.pop('requirement_map'), context)
+            except ValidationFailure as exc:
+                # P3-B2.4 A1: a proposal can break independent rules. Keep the rejection and
+                # still evaluate the check-level rules below, so the one allowed repair round is
+                # told every violation instead of only the first one.
+                requirement_failure = exc
         scope, blocked = wire.pop("scope"), wire.pop("blocked_operations")
         if type(scope) is not dict or set(scope) != {"mode", "operations", "question"}:
             raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_SHAPE_INVALID")
@@ -539,6 +546,8 @@ class TestFocusModel(OpenAICompatiblePlanner):
             error = ValidationFailure(Layer.MODEL, "FOCUS_WIRE_FLAGS_INCOMPLETE")
             error.diagnostic.fields = ["scope.operations"] if selected else ["blocked_operations"]
             raise error
+        if requirement_failure is not None:
+            raise focus_violation_failure(requirement_failure, selected, context)
         from agenttest.product_focus_wire import decode_operation_bundles
         from agenttest.product_sources import decode_source_refs, input_sources
 
@@ -580,6 +589,61 @@ class TestFocusModel(OpenAICompatiblePlanner):
 
             validate_requirement_links(selection.requirements, context, selection)
         return selection.model_dump_json()
+
+
+def requirement_violation(diagnostic):
+    """Describe a requirement_map rejection as one structured violation (P3-B2.4 A1)."""
+    fields = list(diagnostic.fields or ())
+    detail = diagnostic.detail or {}
+    extra = [field.split(".", 1)[1] for field in fields if field.startswith("requirement_map.")]
+    expected = [str(key) for key in detail.get("expected_requirement_keys") or ()]
+    if extra:
+        constraint = ("requirement_map 只能包含 expected_requirement_keys 中的子句；"
+                      "trusted_scope_clauses 由服务端记为项目范围，不要为它们填条目")
+        rule = "删除 " + "、".join(f"requirement_map.{key}" for key in extra)
+        must_delete = [f"requirement_map.{key}" for key in extra]
+        must_match = []
+    else:
+        constraint = "requirement_map 必须恰好包含 expected_requirement_keys 中的每一个子句"
+        rule = "补齐 " + "、".join(f"requirement_map.{key}" for key in expected)
+        must_delete = []
+        must_match = [(f"requirement_map.{key}", "按已批准子句填写该项")
+                      for key in expected]
+    return dict(error_code=diagnostic.code,
+                field_path=fields[0] if fields else "requirement_map",
+                field_paths=fields or ["requirement_map"], count=len(fields) or 1,
+                violated_constraint=constraint, expected_rule=rule,
+                must_delete=must_delete, must_be_null=[], must_match=must_match)
+
+
+def focus_violation_failure(failure, selected, context):
+    """One rejection naming every independently determinable violation (P3-B2.4 A1).
+
+    The requirement_map rule is decided first and keeps its code, so the repair gate and the
+    review classification see exactly the code they saw before; the check-level rules are only
+    *added* to the same diagnostic. Nothing is accepted here.
+    """
+    from agenttest.product_checks import RequestedCheck, grouped_failure, requested_check_violations
+    from agenttest.product_focus_wire import decode_operation_bundles
+    from agenttest.product_sources import decode_source_refs, input_sources
+
+    violations = [requirement_violation(failure.diagnostic)]
+    try:
+        selected_ids, details = decode_operation_bundles(selected, context)
+        # The same order the accepted path uses: bundle decode, then source_ref -> source_quote,
+        # then the check rules. Without this step the entries carry no source_quote yet.
+        decode_source_refs(dict(requested_checks=list(details["requested_checks"])),
+                           input_sources(context), context)
+        checks = [RequestedCheck.model_validate(item) for item in details["requested_checks"]]
+    except (ValidationFailure, ValueError):
+        # The operations section is not decodable on its own; only the proven rule is reported.
+        pass
+    else:
+        violations.extend(requested_check_violations(checks, context, selected_ids))
+    error = grouped_failure(violations, code=failure.diagnostic.code)
+    error.diagnostic.detail = {**(failure.diagnostic.detail or {}),
+                               **error.diagnostic.detail}
+    return error
 
 
 def operation_choices(identifiers):
