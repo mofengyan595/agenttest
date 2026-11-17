@@ -218,3 +218,73 @@ request-requirements / requirement-ledger / planning-ir / focus 163 passed + 1 x
 验收证据：`.eduwork/p3b22-frozen-final4/`（最终源码全量回归与 ID 审计）、
 `.eduwork/p3b22-live/release-{r,s,t,u}1…5/`（每轮 `manifest.json`、`phase-*.json`、
 `target-events.jsonl`、`model-outputs.jsonl`）。
+
+## 2026-11-17 优化版冻结复验
+
+**NO-GO。** 这批有 3/5 轮覆盖 31/31 批准义务，低于预先约定的 4/5。P3-B3 未获准进入。
+已完成的优化后离线回归共收集 2,914 个 ID。漏项、额外项、重复收集和重复执行
+均为 0。2,898 passed、15 skipped、1 xfailed、0 failed、1 warning。
+运行耗时 2,308.40 秒，历史记录为 2,887.35 秒，差值为 578.95 秒。
+
+原始证据在 `.eduwork/frozen-regression-performance/`，含 `tests.json`、
+`pytest.log`、`before.json`、`after.json` 和 `result.json`。回归前后快照
+逐字节一致。更新报告前，当前工作区重算的完整摘要也与归档快照一致。
+
+| 复验基线 | 标识 |
+| --- | --- |
+| 基础提交 | `ee01cf6393cd34b5427382ed2a2243c28d83c679` |
+| 回归时工作区 SHA-256 | `fb04fea47355ba45a3130e1142f9ef76b1d4054963b0978cc8f311f9bc4e23ed` |
+| Python 源码 SHA-256 | `104211aa39ea9edb0be8b45b4cafc80a5c97d8bb44e5037219c15af884e2b0d3` |
+| 用例账本 SHA-256 | `64d3a32533b50fb92c3b7338b55ae4f756b6968ee6df3e54b2883273f20c43e2` |
+| 复验公开配置指纹 | `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172` |
+
+回归时补丁保存在 `.eduwork/p3b22-retest-regression.patch`。五处原有工作区
+修改覆盖冻结核验、根目录忽略规则、回归日志、核验专项测试和进度文档。
+本节与进度记录为回归后更新的文档。历史 u1–u5 的结果仍为 **NO-GO（2/5）**。
+历史 u4 在 Focus 提案阶段退出，业务 HTTP 为 0，因而该轮没有 503 断言证据。
+
+普通 PowerShell 已确认 `socket.socketpair()` 和 `asyncio.new_event_loop()`
+正常，受限工具会话连接同机 TCP 回环地址仍返回 `WinError 10013`。普通终端
+首试在健康探针前被 Windows 虚拟环境父进程误拦。启动器只排除本次进程及其
+匹配的虚拟环境父进程后，复验在普通终端完成。使用的命令如下。
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -u .eduwork/p3b22-stability-retest.py --run
+```
+
+入口核验了源码、回归账本和原模型配置。三次 ecnu-max 探针均在 1 秒内返回
+HTTP 200，明确用量分别为 147、65、147 tokens。正式批次于北京时间
+13:20:50 至 13:44:57 逐轮运行，共 24 分 07 秒。五份 manifest 的提交、源码摘要、
+验收目标和 HITL 配置一致，各有独立任务 ID、提交 ID、靶场实例和端口。
+归档的复验时工作区摘要为 `c55c11bba4fb2a3d9e32fdd9b51bbf14b066b518d77f91c8e31eddd0ce279a7c`。
+相对通过全量回归的工作区，启动前只更新了本报告和进度文档。环境使用
+Python 3.11.15、Deep Agents 0.7.35、LangChain 1.4.10、LangGraph 1.2.20。
+
+| 轮次 | 批准义务 | 负向策略 | 业务 HTTP | 清理 / 库存 | 终态与归因 | 终态文件 |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| v1 | 31/31 | 24/24 | 95 | 15 / 0 | `COMPLETE`，第 7 个负向批次曾因引用未知前序步骤被拒，后续覆盖齐全。 | `release-v1/phase-09.json` |
+| v2 | 14/31 | 7/24 | 29 | 1 / 0 | `BLOCKED`，第 3 个负向批次曾返回缺冒号的 JSON，第 4 个批次设计请求 60.016 秒超时，用量未知。 | `release-v2/phase-04.json` |
+| v3 | 0/31 | 0/24 | 0 | 0 / 0 | `NEEDS_REVIEW`，首次 Focus 请求 60.031 秒超时，用量未知。 | `release-v3/phase-00.json` |
+| v4 | 31/31 | 24/24 | 95 | 15 / 0 | `COMPLETE`，第 5 个负向批次曾返回缺冒号的 JSON，后续覆盖齐全。 | `release-v4/phase-08.json` |
+| v5 | 31/31 | 24/24 | 95 | 15 / 0 | `COMPLETE`，全部批准义务有执行证据。 | `release-v5/phase-09.json` |
+
+- 逐轮以冻结目录中的终态 JSON、模型轨迹、SQLite 请求账本、审批和靶场事件
+  对账。314 条业务 HTTP 均落在批准的靶场操作内，四个运行到执行阶段的任务
+  均拒绝五项越权探针。83 条 POST 命中已批准的同组 HITL 记录，共有 30 条批准记录。
+  所有 HTTP 账本条目为第 1 次尝试且有提交证据，没有未知写入自动重放。
+- 79 条负向策略执行记录均为各轮内单次派发。46 次 HTTP 201 创建均有同资源
+  删除和 404 回读证据，37 次负向 HTTP 422 均有无副作用证据。五个靶场库存均为 0。
+- 实际 `readAvailability` HTTP 503 共 11 次（含调查复测）。执行到该操作的
+  四轮都留有 `ASSERTION_FAILED`，预期 HTTP 200、实际 503。v3 未执行该操作。
+  三个 `COMPLETE` 仅表示批准义务覆盖完毕，三个终态的 `strict_complete` 和
+  `checks_passed` 均为 `false`。v2、v3 的 `complete` 均为 `false`。
+- 105 次正式模型调用中有 103 次用量已知，共 827,995 tokens。v2、v3 的两次
+  `MODEL_TIMEOUT` 以 SQLite 账本的 `UNKNOWN` 保留。v2 后继停止和 v3 的零业务
+  请求符合未知用量门槛。现有证据可确认客户端超时和生成错误，尚无法定位服务端
+  超时原因，也没有发现需要修改安全门槛的证据。
+
+原始证据目录为 `.eduwork/p3b22-retest-20261117T052048Z-d4a1f9a3/`。目录根包含
+`batch.jsonl`、`health.jsonl` 和 `positions.jsonl`，各轮目录含 `manifest.json`、
+`phase-*.json`、`model-outputs.jsonl`、`target-events.jsonl` 与
+`lab/workspace/tasks.sqlite3`。后续应先核对这两次超时对应的服务端记录和用量，
+再用已存 JSON 与引用失败样本离线检查现有约束生成和有界修复的覆盖。

@@ -64,7 +64,7 @@ def main():
         str(ROOT / "scripts"), env.get("PYTHONPATH"))))
     with (output / "pytest.log").open("wb") as log:
         child = subprocess.run([sys.executable, "-X", "utf8", "-u", "-m", "pytest", "-q",
-            "-p", "run_frozen_regression", "--tb=short"], cwd=ROOT, env=env,
+            "-p", "run_frozen_regression", "--tb=short", "--durations=20"], cwd=ROOT, env=env,
             stdout=log, stderr=subprocess.STDOUT, check=False)
     after = checkout_identity(ROOT)
     (output / "after.json").write_text(json.dumps(after, indent=2), encoding="utf-8")

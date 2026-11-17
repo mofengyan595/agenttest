@@ -1,10 +1,12 @@
 import json
+import os
 import subprocess
 
 import pytest
 
 from agenttest import llm_planner
 from agenttest.demo import PROJECT_ROOT
+from agenttest.eval_v2.freeze import checkout_identity
 from agenttest.evaluation import TaskSuite, save_evaluation
 from agenttest.evaluation_freeze import EvaluationFreeze
 from agenttest.llm_planner import ModelSettings
@@ -67,6 +69,32 @@ def test_dirty_checkout_cannot_start_real_evaluation(committed):
     (committed / "uncommitted.py").write_text("# new\n", encoding="utf-8")
     with pytest.raises(ValueError, match="clean committed"):
         freeze(committed)
+
+
+def test_checkout_identity_preserves_digest_and_detects_same_size_edits(committed):
+    tracked = committed / "code.py"
+    removed = committed / "removed.txt"
+    removed.write_bytes(b"removed")
+    subprocess.run(["git", "add", "removed.txt"], cwd=committed,
+                   capture_output=True, check=True)
+    removed.unlink()
+    files = {"code.py": tracked.read_bytes()}
+    for index in range(16):
+        name = f"fixture-{index}.bin"
+        files[name] = bytes((0, index, 255))
+        (committed / name).write_bytes(files[name])
+    identity = checkout_identity(committed)
+    assert identity["checkout_sha256"] == fingerprint({
+        name: fingerprint(contents.hex()) for name, contents in files.items()
+    })
+
+    untracked = committed / "fixture-0.bin"
+    original = untracked.stat()
+    untracked.write_bytes(b"new")
+    os.utime(untracked, ns=(original.st_atime_ns, original.st_mtime_ns))
+    changed = checkout_identity(committed)
+    assert changed["worktree_status"] == identity["worktree_status"]
+    assert changed["checkout_sha256"] != identity["checkout_sha256"]
 
 
 def test_historical_results_and_approved_suite_are_preserved(tmp_path):

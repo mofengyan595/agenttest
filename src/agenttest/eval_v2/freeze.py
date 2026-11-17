@@ -1,8 +1,11 @@
 """Append-only evaluation provenance; drift stops calls, never repairs inputs."""
 
+import hashlib
 import json
 import platform
 import sys
+from binascii import hexlify
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,14 +18,23 @@ from agenttest.llm_planner import PlannerDraft
 from agenttest.report import fingerprint
 
 
+def _checkout_file_hash(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    # Keep the historical SHA-256 of the JSON-quoted lowercase hex string.
+    return hashlib.sha256(b'"' + hexlify(path.read_bytes()) + b'"').hexdigest()
+
+
 def checkout_identity(root: Path) -> dict:
+    """Re-read every Git-visible file on each check, with bounded parallel I/O."""
     names = _git(root, "ls-files", "--cached", "--others", "--exclude-standard").splitlines()
-    # Content hashes include untracked implementation files, unlike git diff alone.
-    files = {
-        name: fingerprint((root / name).read_bytes().hex())
-        for name in names
-        if (root / name).is_file()
-    }
+    paths = (root / name for name in names)
+    if len(names) < 16:
+        hashes = dict(zip(names, map(_checkout_file_hash, paths), strict=True))
+    else:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            hashes = dict(zip(names, pool.map(_checkout_file_hash, paths), strict=True))
+    files = {name: digest for name, digest in hashes.items() if digest is not None}
     return {
         "commit": _git(root, "rev-parse", "HEAD"),
         "worktree_status": _git(root, "status", "--porcelain", "--untracked-files=normal"),

@@ -33,4 +33,5 @@ web/playwright-report/
 # suite must stay runnable without them, and the evaluation freeze hashes every untracked
 # file git can see, so a multi-hundred-megabyte venv here would stall every frozen run.
 .venv-deepagents/
+/.venv-lock/
 .eduwork/
