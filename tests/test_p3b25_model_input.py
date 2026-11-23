@@ -14,10 +14,8 @@ from pathlib import Path
 
 import httpx
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
-from test_product_agent import session
+from product_agent_support import session
 
-from agenttest.deep_harness.chat_model import build_chat_model
 from agenttest.llm_planner import ModelSettings
 from agenttest.model_input import (
     MAX_TEXT,
@@ -60,6 +58,14 @@ def settings():
 
 async def wire(payload) -> tuple[str, str]:
     """Run the tool result through the real encoder and return (tool text, wire body)."""
+    pytest.importorskip(
+        "langchain_core",
+        reason="Model wire audit requires the optional Agent dependencies",
+    )
+    from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+
+    from agenttest.deep_harness.chat_model import build_chat_model
+
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:

@@ -11,10 +11,11 @@ import pytest
 
 pytest.importorskip("langgraph", reason="Round supervision runs on the optional agent graph")
 
+from product_agent_support import lifecycle_project, obligation_summary  # noqa: E402
 from test_product_design import case, project, settings  # noqa: E402
 
 from agenttest.contracts import load_openapi  # noqa: E402
-from agenttest.generic_intake import GenericSetup, analyze_contract, build_generic_project  # noqa: E402
+from agenttest.generic_intake import GenericSetup, build_generic_project  # noqa: E402
 from agenttest.product_design import TestDesignModel as DesignModel  # noqa: E402
 from agenttest.product_supervisor import (  # noqa: E402
     NextAction,
@@ -259,14 +260,6 @@ def test_supervisor_model_closes_the_action_and_target_menu():
 # ---------------------------------------------------------------- open obligations
 
 
-def obligation_summary(*operations):
-    return dict(groups=[dict(id="group_1", primary=list(operations), operations=list(operations),
-                            supported=True)],
-                inventory=dict(total=len(operations), operations=[
-                    dict(operation_id=name, state="READY", reason="", next_step="")
-                    for name in operations]), cases=[])
-
-
 def test_one_unexecuted_interface_yields_one_obligation_per_approved_policy():
     from agenttest.product_obligations import approved_scope, candidates, executed_evidence
 
@@ -326,41 +319,6 @@ def test_cleanup_and_probe_executions_count_as_measured_evidence():
     assert reopened[-1]["id"] == "design:web_rule_2"
     assert reopened[-1]["why"] == "该策略已执行但未通过，需要一条新的、仍受批准范围约束的检查。"
     assert reopened[-1]["observed"] == "ASSERTION_FAILED"
-
-
-def lifecycle_project():
-    """Creation, read and deletion of one resource, linked like the real parcels contract."""
-    parcel_id = [dict(name="parcelId", **{"in": "path"}, required=True,
-                      schema=dict(type="string"))]
-    create = dict(operationId="createParcel", summary="创建包裹",
-        requestBody=dict(required=True, content={"application/json": dict(schema=dict(
-            type="object", required=["name", "quantity"], properties=dict(
-                name=dict(type="string", minLength=1, maxLength=20),
-                quantity=dict(type="integer", minimum=1, maximum=3))))}),
-        responses={
-            "201": dict(description="created", links=dict(
-                read=dict(operationId="readParcel",
-                          parameters=dict(parcelId="$response.body#/id")),
-                remove=dict(operationId="deleteParcel",
-                            parameters=dict(parcelId="$response.body#/id")))),
-            "422": dict(description="invalid parameters")})
-    read = dict(operationId="readParcel", summary="查询包裹", parameters=parcel_id,
-                responses={"200": dict(description="ok"), "404": dict(description="missing")})
-    delete = dict(operationId="deleteParcel", summary="删除包裹", parameters=parcel_id,
-                  responses={"204": dict(description="deleted"),
-                             "404": dict(description="missing")})
-    document = json.dumps(dict(openapi="3.0.3", info=dict(title="Parcels API", version="1"),
-        paths={"/parcels": {"post": create},
-               "/parcels/{parcelId}": {"get": read, "delete": delete}}))
-    contract = load_openapi(document)
-    suggestions = analyze_contract(contract)
-    operations = [dict(operation_id=s["operation_id"], alias=s["alias"], statuses=s["statuses"],
-        arguments=[{k: v for k, v in a.items() if k in {"location", "name", "value",
-            "source_operation", "selector", "generated", "needs_input"}}
-            for a in s["arguments"]]) for s in suggestions]
-    setup = GenericSetup.model_validate(dict(base_url="http://127.0.0.1:18998",
-        isolated_confirmed=True, allow_mutations=True, assisted=True, operations=operations))
-    return build_generic_project("parcels", document, contract, setup), setup
 
 
 def test_a_creation_obligation_carries_its_approved_cleanup_policy():
