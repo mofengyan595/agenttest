@@ -282,6 +282,16 @@ def _diagnostic_text(diagnostic) -> str:
                      f"（第{detail.get('position')}个字符）")
     if detail.get("reason"):
         parts.append(f"原因={detail['reason']}")
+    structure = detail.get("expected_structure")
+    if isinstance(structure, dict) and structure.get("kind"):
+        shape = f"结构={structure.get('kind')}/{structure.get('expected')}"
+        if structure.get("after_key"):
+            shape += f"（缺少冒号的键={structure['after_key']}）"
+        if structure.get("at_end"):
+            shape += "（输入在该位置结束）"
+        parts.append(shape)
+    if detail.get("repair"):
+        parts.append("改法=" + str(detail["repair"]).rstrip("。 "))
     if detail.get("unknown_fields"):
         parts.append("多余字段=" + "、".join(str(item) for item in
                                           detail["unknown_fields"][:4]))
@@ -294,7 +304,11 @@ def _diagnostic_text(diagnostic) -> str:
     fields = [str(item) for item in row.get("fields") or ()]
     if fields:
         parts.append("字段=" + "、".join(fields[:4]))
-    return "；".join(parts)
+    # This text is model input. Producers record enum words and paths, but a value or a header
+    # pasted into a free-text slot must not be re-sent, so the assembled line is scrubbed too.
+    from agenttest.model_input import redact
+
+    return redact("；".join(parts))[:600]
 
 
 def repair_constraint(project, group, pending, diagnostic, *, attempt: int) -> str:

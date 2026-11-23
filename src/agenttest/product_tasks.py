@@ -216,7 +216,16 @@ def focus_repair_payload(project, diagnostic, *, atoms=(), scope_sources=()):
     if omitted:
         base["omitted"] = omitted
     existing = payload.get("detail")
-    payload["detail"] = dict(base, **(existing if isinstance(existing, dict) else {}))
+    merged = dict(base, **(existing if isinstance(existing, dict) else {}))
+    # The payload is model input: keep every repair fact, but scrub any credential- or value-
+    # shaped string a validator sentence could carry before it is sent.
+    from agenttest.model_input import safe_detail
+
+    projected, omitted_detail = safe_detail(merged, limit=24, chars=24000,
+                                            items=2 * MAX_REPAIR_PATHS + 4, text=2000)
+    payload["detail"] = projected
+    if omitted_detail:
+        payload["detail"]["omitted_detail"] = omitted_detail
     return payload
 
 
@@ -1477,6 +1486,7 @@ class ProductTasks:
                     "DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW",
                     "DESIGN_CREATE_NOT_CLEANABLE",
                     "DESIGN_SELECTED_CLEANUP_MISSING",
+                    "DESIGN_CLEANUP_READ_BACK_MISSING",
                     "DESIGN_ABSENCE_PRECONDITION_MISSING"}:
                 reason = exc.args[0]
             diagnostic = getattr(exc, "diagnostic", None)
@@ -2380,7 +2390,10 @@ class ProductTasks:
             DESIGN_EXPLICIT_INPUT_NOT_PRESERVED="模型方案没有保留本次指定的输入，此组没有执行。",
             DESIGN_EXPLICIT_INPUT_REQUIRES_SOURCE_REVIEW=(
                 "本次指定了已有资源，但项目配置要求使用前置接口产生的数据。"
-                "请先核对允许的数据来源，此组没有发送请求。"))
+                "请先核对允许的数据来源，此组没有发送请求。"),
+            DESIGN_CLEANUP_READ_BACK_MISSING=(
+                "方案删除了本轮创建的资源，但删除之后没有已批准的缺失回读，无法证明清理完成；"
+                "此组没有发送请求。"))
         for group in summary.get("groups", []):
             if group.get("status") == "NOT_EXECUTED":
                 reason = group.get("reason", "本组尚未形成可执行方案。")

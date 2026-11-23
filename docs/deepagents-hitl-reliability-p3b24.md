@@ -547,3 +547,105 @@ if omitted:
 - A1（17 处载荷完整性与字段路径）、A2（标量约束事实）、A3（引用候选与顺序约束）的定向用例全部在本次全量回归中被收集并执行通过；安全与恢复类用例（`test_obligation_gate`、`test_human_review`、`test_task_gate`、`test_step_recovery`）同样全部通过。
 - 仍未解决、且本轮未动的风险：A4（`NO_PROGRESS` 与"每组一次形式修复"的交互）、B1（`JSON_SYNTAX` 只给字符位置）、B2（`FOCUS_SOURCE_CLAUSE_MISSING` 码名与多报键语义不符）、模型服务侧 60 秒超时与 `UNKNOWN` 用量（三次超时记录仍无服务端对账）。
 - P3-B2.3 的 **NO-GO 继续有效**（本轮没有真实模型证据）；真实模型验收需另行授权，五轮验收与 P3-B3 均未获准。工作区仍为 `HEAD f311721` 之上的未提交状态，本轮未提交任何 commit。
+
+## 13. 真实稳定性验收（P3-B2.4，2026-11-17）
+
+操作者授权三次健康探针 + 连续五轮真实验收。全部沿用既定配置（`ecnu-max`、60 秒请求超时、31 项批准义务、24 项负向策略、隔离 parcels 靶场、持久化、`createParcel` HITL 批准、每任务 120 次业务 HTTP / 64 次模型调用 / 650000 tokens / 900 秒），未改 A4/B1/B2、未改发布门槛、未进入 P3-B3。
+
+### 13.1 冻结现场
+
+| 项目 | 值 |
+| --- | --- |
+| HEAD | `43a60657282999b93a69157e993cb135cc422530` |
+| 工作区 | 1 项未提交历史文档 `M docs/deepagents-hitl-reliability-p3b23.md`（+28 行 NO-GO 记录，整批未变） |
+| `checkout_sha256` | `6ea4b00976aaa9d29cfd5bf3e666325d9c8a729da422bef12b9468f2ac8ea534` |
+| 源码摘要 | `e287b6057674b0177fcb2ce74caac697682acc9852ab9585f028c13a795c233d` |
+| 回归证据 | `tests.json` `23ad03e9…`、`pytest.log` `478aa81b…`、`before == after`、2,964/2,948/15/1 |
+| 逐文件摘要 | 11 个关键源码/测试/配置前缀全部匹配（`0a49079be7670f5e`、`6681f4c64ece9bf7`、`e3361633f2d2587d`、`c56c528963446d77`、`b44a392d89a5f082`、`48cfaeff80bf4180`、`50c7d63cf780c17a`、`b7d1202843886d8b`、`d0fddb6b86ce7ec9`、`68e83d3cd7892c45`、`9947e91bfe89656d`） |
+| 公开配置摘要 | `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172`（与 P3-B2.3 完全一致） |
+| 并行验收进程 | 无（`check_running_processes` 通过） |
+
+启动器 `.eduwork/p3b24-stability-acceptance.py` 在每轮前后重算上述摘要并比对 `.env` 摘要，任一处漂移即中止。首版启动器因探针请求体是 `bytes` 而无法序列化，崩在第一次探针**发送之前**（零模型调用），该次尝试保留在 `.eduwork/p3b24-acceptance-43a6065-aborted-1/`；修正后重新起跑，三次探针才被消耗。
+
+### 13.2 三次健康探针
+
+| # | 本地调用 ID | 请求摘要 | 请求时间 | 耗时 | 可解析 | tokens | 服务端响应 ID |
+| --- | --- | --- | --- | ---: | --- | ---: | --- |
+| 1 | `66f77e39d6574ebb8d26d13cc1b59032` | `3ea045da…`（391 B，`{"ok":true}` 最小 schema） | 14:08:45Z | 1.687 s | 是（`{"ok":true}`） | 65（59+6，KNOWN） | `a91eac7c57864a3c8858253d0a35a86d` |
+| 2 | `c13692d5035f40168f317903e3ef87d9` | 同上（字节完全相同） | 14:08:48Z | 1.500 s | 是 | 65（59+6，KNOWN） | `694d318ca42e46e2be119c4a5b99d9fd` |
+| 3 | `6630c9e3f5b5479d8ae26df2edc81b96` | 同上 | 14:08:50Z | 1.297 s | 是 | 147（142+5，KNOWN） | `80c1fecf-e618-43c6-ae3a-d14a6646232a` |
+
+三次串行、全部 `READY`、`usage_state=KNOWN`、`provider_request_id` 为空（网关未回传）而 `provider_response_id` 均有值；探针不触碰业务靶场（0 次业务 HTTP）。健康检查通过后才启动五轮。
+
+### 13.3 五轮结果
+
+证据：`.eduwork/p3b24-acceptance-43a6065/`（`batch.jsonl`、`health.jsonl`、`positions.jsonl`、`release-v1..v5/`），分级：`.eduwork/p3b24-audit/report.json`。
+
+| 轮 | 批准义务 | 负向策略 | 终态 / 终止原因 | 停止原因 | 账本调用 / tokens | 业务 HTTP | 创建/清理 | 503 | 耗时 |
+| --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: |
+| v1 | **27/31** | 20/24 | `PARTIAL` / `OBLIGATION_STALLED` | `ANSWER` | 48 / 404,570 | 82 | 11 清 11、**3 未证明** | 1 | 305.2 s |
+| v2 | **29/31** | 22/24 | `PARTIAL` / `OBLIGATION_NOT_DISPATCHED` | `NO_PROGRESS` | 43 / 336,635 | 87 | 13 清 13 | 1（+1 复核） | 289.0 s |
+| v3 | **0/31** | 0/24 | `NEEDS_REVIEW`（未进入运行时） | — | 2 / 29,434 | 0 | 0 | 0 | 25.2 s |
+| v4 | **26/31** | 19/24 | `PARTIAL` / `OBLIGATION_ATTEMPTS_EXHAUSTED` | `ANSWER` | 49 / 408,914 | 79 | 14 清 14 | 1（+1 复核） | 326.1 s |
+| v5 | **26/31** | 19/24 | `PARTIAL` / `OBLIGATION_STALLED` | `ANSWER` | 50 / 426,049 | 74 | 10 清 10 | 1 | 280.2 s |
+
+合计：**192 次模型调用、1,605,602 tokens、322 次业务 HTTP、0 次超时、0 次 `UNKNOWN` 用量**；48 次创建全部证明清理，另 3 次有删除回执但缺少回读证明（`CLEANUP_UNPROVEN`）；4 轮各观测到一次真实 `readAvailability` 503。五轮合计 1,241.7 秒（20 分 41.7 秒，含探针与摘要核算），五轮本身 1,225.7 秒。
+
+### 13.4 逐轮安全与清理
+
+- 零越权：五轮业务事件全部落在 `/availability`、`/parcel-observations`、`/parcels` 与 `/parcels/parcel_*` 的批准方法内；`enforcement.boundary_rejected=true`，探针写入/编辑/执行/任务/读取全部被拒。
+- 零未知写入重放：`http_execution` 每行 `attempt=1`、`phase=EVIDENCE_COMMITTED`；`write_effects.replayed=0`。
+- 零未批准 POST：23/23、23/23、20/20 等 POST 均能对上已批准 HITL 组的步骤；33 次审批全部 `APPROVED`，零 `REJECTED`。
+- 负向策略零重复：每个已执行策略恰好一次（`max_per_policy=1`）。
+- 清理：48 次创建-删除全部带回读证明；v1 的 `createParcelB/C/D` 只有删除回执（`DELETE_RECEIPT_WITHOUT_READ_BACK`），靶场末态 `record_count=0`，没有真实残留，但门禁拒绝把它算作已清理——这也是 v1 唯一的安全项失败。
+- 诚实性：五轮 `checks_passed` 均为 `false`，`complete` 均为 `false`；503 以 `ASSERTION_FAILED` 记录且 `cause_confirmed=false`、归入 `undecided`，没有把 503 当成通过。
+
+### 13.5 A1/A2/A3 的真实运行效果
+
+- **A1（已生效，3/5 轮）**：v3、v4、v5 的首次 Focus 提案都以 `FOCUS_SOURCE_CLAUSE_MISSING` 被拒，返回 `agenttest.focus-repair.v1` 载荷：`must_delete`、`must_be_null`、`violations`、318 字符提示（含"按 must_delete…omitted…"新句）。v4/v5 第二次提案即 `SELECTED`——修复成功，和 P3-B2.3 v1 的"修不好直接死"不同。v3 的第二次提案仍被 `FOCUS_INPUT_TEXT_CHANGED` 拒绝，但反馈已是**分组**形态：`fields` 8 项、2 个分组、`count` 合计 15、具体路径 14 条（归档形状的 17 处上限与 `omitted` 机制按设计工作）。
+- **A2（未触发）**：五轮没有出现 `DESIGN_INSTANCE_LITERAL_INVALID` 等标量约束诊断，A2 的真实效果在本批没有样本。
+- **A3（已生效，1 次）**：v5 `negative_batch_7` 第 21 次监督轮，模型把 `from_step` 指向不存在的步骤，返回 `CONSTRUCTION_REFERENCE_INVALID`，`detail` 带 `reference=SOURCE_UNKNOWN`、`allowed_from_steps=[]`、`direct_from_steps=[]`、`reordered_from_steps=[]`、`step_id`、`obligation_id=web_rule_7_negative_8`、`case_index=0`——空候选集被如实说明，没有编造生产者。
+
+### 13.6 判定：NO-GO
+
+门限不变（至少 4/5 轮达到 31/31）。实际 **0/5**，最高 v2 的 29/31，因此 **NO-GO**，五轮证据全部保留，不补跑、不替换样本，未进入 P3-B3。
+
+失败分类：
+
+| 类别 | 证据 |
+| --- | --- |
+| **B 模型提案/JSON 构造失败（主因）** | `JSON_SYNTAX` 在同一分组的同一字符位置反复出现：v1 `negative_batch_2` 位置 2043 连续 7 个监督轮、`negative_batch_3` 位置 1295 连续 6 轮、`batch_7` 2509；v2 位置 1295（6 轮）、1530（5 轮）、2844/2183；v4 3 次、v5 4 次。设计批次生成不出合法 JSON，2–5 项已批准负向策略永远没有执行证据。v3 的 `FOCUS_INPUT_TEXT_CHANGED`（13 处字面值被改写）同属此类。 |
+| **A4（已测量）：有界修复把 B 类失败固化成漏项** | v2 以 `NO_PROGRESS` 结束、v1/v5 以"连续两次结束请求没有新增已测量义务"停止、v4 报 `OBLIGATION_ATTEMPTS_EXHAUSTED`；同一分组的重复形式失败被尝试上限截断，剩余义务停在 `NOT_EXECUTED`。 |
+| **B1（已取证）：`JSON_SYNTAX` 提示只有字符位置** | 修复载荷仅 `{position, line, column}`（`hint` 为空串），模型在 7 个连续监督轮里在同一位置重复同样的错误——提示没有给出任何结构线索。 |
+| **D 已批准的终止行为** | v3 两次 Focus 被拒后零业务请求、`NEEDS_REVIEW`、目标未被触碰；v1 的 3 次"删除无回读"被如实记为 `CLEANUP_UNPROVEN` 并阻止 GO，而不是算作已清理。 |
+| **A Harness 代码缺陷** | 未发现：无崩溃、无越权、无重放、无把未完成标成 `COMPLETE`、无把 503 当成通过。 |
+| **C 模型服务/网关** | 未发生：192 次调用全部 `KNOWN`，0 次超时，0 次 `UNKNOWN`。 |
+| **E 证据不足** | 无：每一项未测义务都有对应分组的拒绝记录、`not_covered` 说明或未派发原因。 |
+
+### 13.7 仍未解决
+
+- **A4**：失败已量化——同一分组的重复形式失败会消耗有限重试，最终把 2–5 项负向策略永久留在 `NOT_EXECUTED`，并以 `ANSWER` 收场（v1/v4/v5 各 5 项以内的漏项）。
+- **B1**：见 §13.6，提示缺结构信息，实测同一错误位置重复 7 轮。
+- **B2**：v3/v4/v5 首次提案全部因 `requirement_map.request_2` 被拒，说明"可信范围子句"这一名字与"多键语义"（`must_delete` 1 项 + `must_be_null` 8 项）仍会让模型误解。
+- **模型服务风险**：本批 0 次超时，仅说明"未复现"，P3-B2.3 的三次 `MODEL_TIMEOUT` 与 `UNKNOWN` 用量仍无服务端对账。
+- **靶场 503**：4/5 轮观测到 `readAvailability` 503（`EXPECTED_200`），按既定规则记为"未证实原因的异常"，既不算通过，也不算 Harness 缺陷。
+
+### 13.8 下一步建议
+
+1. P3-B2.5 先修 **B1**（`JSON_SYNTAX` 给出可操作的结构提示：失败位置附近的期望记号/片段，仍不回显被拒取值）与 **A4**（同一分组重复同一形式失败时，改为一次性明确失败并把义务标成 `NOT_DISPATCHED` 的原因，而不是多轮静默重试后以 `ANSWER` 收场），再考虑 **B2** 的码名/多键语义对齐。
+2. 修完后重新冻结、跑一次全量离线回归，再申请**新的一批**五轮（本轮不自动启动）。
+3. 不进入 P3-B3；P3-B2.3 与 P3-B2.4 的 NO-GO 结论并存保留。
+
+### 13.9 更正（P3-B2.5 复核归档原文后）
+
+- §13.6 的"同一分组的同一字符位置连续 7 个监督轮重复"**不成立**：`phase-NN.json` 的
+  `design_records` 是累计列表，同一条记录被后续每个 phase 文件重复计入。按
+  `model_call.local_call_id` 去重后，本批 61 次设计调用中 `JSON_SYNTAX` 共 14 次
+  （v1 3 / v2 4 / v4 3 / v5 4），其中 13 次的下一次调用即产出合法 JSON，只有 v2
+  `negative_batch_7` 用满三次尝试。
+- 因此"2–5 项负向策略因 JSON 失败永远没有执行证据"也不准确：真正让义务停在
+  `NOT_EXECUTED` 的是**案例级预检拒绝**（四轮 31 个被拒案例中 27 个是
+  `OPENAPI_UNKNOWN_BODY_FIELD` 等语义错误，且拒绝载荷只回 code，不带
+  `preflight_diagnostic` 的结构化事实）以及 v2 `batch_7` 的形式错误耗尽。
+- 判定不变：0/5、NO-GO，五轮证据全部保留。归因与修法见
+  [P3-B2.5 诊断记录](deepagents-hitl-reliability-p3b25.md)。

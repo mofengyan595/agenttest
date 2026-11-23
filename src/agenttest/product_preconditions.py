@@ -29,11 +29,19 @@ from agenttest.planning_ir import ResourcePhase
 
 ABSENCE_STATUSES = frozenset({404, 410})
 ABSENCE_PRECONDITION_MISSING = "DESIGN_ABSENCE_PRECONDITION_MISSING"
+CLEANUP_READ_BACK_MISSING = "DESIGN_CLEANUP_READ_BACK_MISSING"
 PRECONDITION_NOT_ESTABLISHED = "PRECONDITION_NOT_ESTABLISHED"
 PRECONDITION_UNPROVEN = "PRECONDITION_UNPROVEN"
 ESTABLISHED = "ESTABLISHED"
 MISSING = "MISSING"
 UNPROVEN = "UNPROVEN"
+# Cleanup read-back states, one per created resource of a plan.
+PROVEN = "PROVEN"                      # an approved absence read runs after the deletion
+READ_BACK_MISSING = "READ_BACK_MISSING"    # the proof exists but the plan never plans it
+NO_APPROVED_READ = "NO_APPROVED_READ"  # no approved proof exists: nothing can be required
+NO_DELETE = "NO_DELETE"                # out of scope: cleanup selection is another rule
+ABSENCE_READ_BACK = "ABSENCE_READ_BACK"
+AFTER_DELETE = "AFTER_DELETE"
 
 
 def absence_expectation(policy) -> bool:
@@ -161,6 +169,136 @@ def add_batch_cleanup(project, scenario):
         steps.append(Step(id=identifier, operation_id=policy.operation_id, role=delete.role,
                           policy_id=policy.id, path_parameters={rule.path_parameter: bound}))
     return Scenario(name=scenario.name, steps=steps)
+
+
+def _identity(step, name):
+    """The concrete (producer step, selector) address this step consumes, if any."""
+    binding = step.path_parameters.get(name)
+    if binding is None or not binding.from_step:
+        return None
+    return (binding.from_step, binding.select)
+
+
+def approved_absence_read(project, create_policy_id, role, rule, operations, policies):
+    """The one approved absence (404/410) read that can prove this resource is gone.
+
+    The approval must be reachable from the creation: same path as the approved deletion, a
+    ``GET``, one path binding fed by *this* create policy and selector. Anything else is not a
+    proof for this resource, and more than one candidate is ambiguous rather than a licence.
+    """
+    deletion = operations.get(rule.delete_operation)
+    if deletion is None:
+        return None
+    candidates = []
+    for candidate in policies.values():
+        operation = operations.get(candidate.operation_id)
+        if (not absence_expectation(candidate) or operation is None or operation.method != "GET"
+                or operation.path != deletion.path or role not in candidate.roles
+                or len(candidate.binding_rules) != 1):
+            continue
+        binding = candidate.binding_rules[0]
+        if (binding.location == "path_parameters" and binding.name == rule.path_parameter
+                and binding.source_policy_id == create_policy_id
+                and binding.source_selector == rule.id_selector):
+            candidates.append(candidate)
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def cleanup_read_back_report(project, scenario) -> dict:
+    """Which created resources the plan deletes with (and without) an approved proof of absence.
+
+    One row per lifecycle-managed creation the plan actually performs. The row answers the only
+    question the runtime asks after execution -- "can this resource be shown to be gone?" -- and
+    keeps the two failure modes apart:
+
+    * ``READ_BACK_MISSING``: an approved absence read exists for this identity, the plan deletes
+      it, and the plan never runs that read after the deletion. This is the model's own gap, so
+      it is refused before execution;
+    * ``NO_APPROVED_READ``: no approved absence read exists at all. Nothing legal can be
+      required here -- asking for a 404 read that was never approved would send an unapproved
+      request -- so the row is reported and the runtime keeps ``CLEANUP_UNPROVEN``.
+
+    A read before the deletion, or a read bound to a different resource, is not a proof: the
+    first observes the resource still exists, and the second proves another resource is gone.
+    """
+    operations = {op.operation_id: op for op in project.contract.operations}
+    policies = {p.id: p for p in project.registry.definitions()}
+    logins = {role.login_operation for role in project.target.roles.values()
+              if role.login_operation}
+    rules = {rule.create_operation: rule for rule in project.target.resource_lifecycles}
+    rows = []
+    for index, step in enumerate(scenario.steps):
+        rule = rules.get(step.operation_id)
+        policy = policies.get(step.policy_id)
+        operation = operations.get(step.operation_id)
+        if (rule is None or step.operation_id in logins or policy is None
+                or operation is None or policy.negative is not None
+                or operation.method != "POST"):
+            continue
+        # The identity a create owns is always "this step, this selector" -- a creation carries no
+        # path binding of its own, so its address is the one every consumer must copy verbatim.
+        identity = (step.id, rule.id_selector)
+        deletions = [offset for offset, later in enumerate(scenario.steps)
+                     if later.operation_id == rule.delete_operation
+                     and (later_policy := policies.get(later.policy_id)) is not None
+                     and later_policy.negative is None
+                     and _identity(later, rule.path_parameter) == identity]
+        approved = approved_absence_read(project, policy.id, step.role, rule, operations, policies)
+        row = dict(create_step=step.id, create_index=index, create_operation=step.operation_id,
+                   create_policy=policy.id, delete_operation=rule.delete_operation,
+                   path_parameter=rule.path_parameter, proof_kind=ABSENCE_READ_BACK,
+                   read_policy=approved.id if approved is not None else None,
+                   delete_step=None, delete_index=None, read_step=None)
+        if not deletions:
+            row["status"] = NO_DELETE
+        elif approved is None:
+            row.update(status=NO_APPROVED_READ, delete_step=scenario.steps[max(deletions)].id,
+                       delete_index=max(deletions))
+        else:
+            last = max(deletions)
+            reads = [offset for offset, later in enumerate(scenario.steps)
+                     if offset > last and later.policy_id == approved.id
+                     and _identity(later, rule.path_parameter) == identity]
+            row.update(status=PROVEN if reads else READ_BACK_MISSING,
+                       delete_step=scenario.steps[last].id, delete_index=last,
+                       read_step=scenario.steps[reads[-1]].id if reads else None)
+        rows.append(row)
+    return dict(rows=rows,
+                missing=[row for row in rows if row["status"] == READ_BACK_MISSING],
+                proven=[row for row in rows if row["status"] == PROVEN],
+                unprovable=[row for row in rows if row["status"] == NO_APPROVED_READ],
+                undeleted=[row for row in rows if row["status"] == NO_DELETE])
+
+
+def validate_cleanup_read_back(project, scenario) -> dict:
+    """Refuse a cleanup that deletes an owned resource without its approved absence read.
+
+    ``DELETE 204`` is not proof, an empty final inventory is not proof for a single resource,
+    and a read that ran before the deletion or read another resource is not proof either. Only
+    the approved 404/410 read, after the deletion, bound to the identity this plan created,
+    closes the resource. When no such approval exists the plan is *not* refused: the runtime
+    keeps the resource ``CLEANUP_UNPROVEN``, which is honest about a missing capability.
+    """
+    report = cleanup_read_back_report(project, scenario)
+    if not report["missing"]:
+        return report
+    row = report["missing"][0]
+    from agenttest.policies import NeedsReview
+
+    failure = NeedsReview(CLEANUP_READ_BACK_MISSING)
+    failure.diagnostic.fields = [
+        f"plan.steps.{row['delete_index']}.path_parameters.{row['path_parameter']}"]
+    failure.diagnostic.detail = dict(
+        create_step=row["create_step"], delete_step=row["delete_step"],
+        obligation_id=row["read_policy"], read_policy=row["read_policy"],
+        lifecycle_create=row["create_operation"], lifecycle_delete=row["delete_operation"],
+        lifecycle_parameter=row["path_parameter"], proof_kind=ABSENCE_READ_BACK,
+        required_position=AFTER_DELETE, missing=[row["read_policy"]],
+        hint=(f"删除步骤 {row['delete_step']} 之后缺少已批准的缺失回读：在同一身份"
+              f"（{row['path_parameter']} 绑定 {row['create_step']}）上按已批准策略 "
+              f"{row['read_policy']} 补一个位于删除之后的回读，用 404/410 证明该资源已不存在。"
+              "删除返回 204 不能单独算清理完成，最终库存为 0 也不能替代逐资源证明。"))
+    raise failure
 
 
 def precondition_report(project, scenario) -> dict:

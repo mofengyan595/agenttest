@@ -1,5 +1,190 @@
 # 开发进度
 
+## 2026-11-18 · P3-B2.5 全量离线冻结回归
+
+- 授权范围：先做只读顺序核查，通过后执行**一次**全量离线冻结回归并审计；不调真实模型、
+  不发真实业务 HTTP、不跑五轮验收、不提交、不推送、不进入 P3-B3。
+- **顺序核查结论（无缺陷）**："删除之后"就是"删除之后执行"。执行器按下标顺序跑
+  （`executor.py:194/234`），前向引用被拒绝而非重排（`dsl.py:199` `DEPENDENCY_FORWARD_OR_UNKNOWN`，
+  `plan_construction.py:55`），IR 编译期已产出稳定拓扑序（`planning_compiler.py:8`），新检查跑在
+  最终 Scenario 上（`product_design.py:1014-1027`）。真实 lab + Mock 探针：把回读声明在删除前，
+  线上顺序 `POST, GET, DELETE`、回读看到 200、`ASSERTION_FAILED`；声明在删除后则 `POST, DELETE, GET`、
+  看到 404、PASS。位置无关性：不相关步骤放 4 个不同位置判定不变；同操作两次创建各自证明、
+  只给 A 证明时 B 仍拒绝、把 A 的回读绑到 B 时 A 仍拒绝（不串位）。
+- **冻结身份**：HEAD `43a60657282999b93a69157e993cb135cc422530`；Git 可见 1711 文件；
+  清单摘要 `454ec39a…`；工作区 10 修改 + 8 未跟踪；`docs/p3b23` 历史 NO-GO 摘要 `f700932d…` 未变；
+  执行前无并行 python 进程；冻结脚本只写 Git 忽略的 `.eduwork/` 输出目录。
+- **执行（一次）**：`scripts/run_frozen_regression.py --out .eduwork/p3b25-freeze/regression-20261118T141436Z`
+  → `{"exit_code": 0, "same_checkout": true, "audit_exists": true}`。
+- **结果**：`3012 passed, 15 skipped, 1 xfailed, 1 warning in 2268.36s (0:37:48)`；collected 3028 =
+  reported 3028；missing/extra/repeated/nonunique 全为空；before==after（同 commit、同摘要、同 status）。
+  P3-B2.5 新增 64 项全部收集并通过（用例级 23、清理预检 14、B1 13、模型输入 14）。
+  A1/A2/A3 24、生命周期 37、清理/写副作用 16、HITL 27、obligation gate 28、预算 13、账本 6、
+  完成判定 25、产品 Agent/设计/监督者 78、Focus 64（1 既有 strict xfail）、JSON 预算/字面量 46、
+  预检 17，全部 0 失败。15 skip 与 1 xfail 均为既有平台/可选依赖条件。
+- **审计**：无测试绕过、无放宽安全断言、无违规外发（环境无模型凭据变量，脚本强制关闭 tracing，
+  套件离线）。最慢 95.70 s 的 pocketbase 验收用例；单次结果不用于宣称性能变化。
+- **判定**：P3-B2.5 **离线 PASS**，可申请下一批真实模型验收（仍需新授权）。P3-B2.4 历史 NO-GO 不变。
+  [完整记录](deepagents-hitl-reliability-p3b25.md)
+
+## 2026-11-18 · P3-B2.5（续）清理证明预检
+
+- 授权范围：只做 CLEANUP_UNPROVEN 的**最小清理证明预检**（确认契约 → 新拒绝条件 → 离线重放
+  → 脱敏与 hint 审计 → 定向回归）；不扩大清理义务、不改预检其它条件、不改 Runtime 清理判定、
+  不动 HITL/预算/终止/重试/未知写入不重放；不调真实模型、不跑全量冻结回归、不跑五轮验收、
+  不向真实目标发请求。P3-B2.4 历史 NO-GO 不变，不进入 P3-B3。
+- **契约确认**：清理义务来自目标 `resource_lifecycles` 的 `create_operation`；已批准的 absence
+  证明是**已批准策略的 404/410 回读**（v1 为 `web_rule_5_expectation_1`）；关联键计数观测只服务
+  被拒写，不算清理证明；删除与回读的依赖由"回读绑定创建步骤"天然成立；身份经
+  `ArgumentBinding(from_step=create, select=$.id)` → `CreationJournal`/`LifecycleJournal` 传递。
+- **新拒绝条件**（`DESIGN_CLEANUP_READ_BACK_MISSING`，`Layer.POLICY`）：计划里有真实创建 → 该操作
+  有生命周期规则（需要清理）→ 存在**唯一**已批准的 404/410 回读策略（身份与创建对齐）→ 计划里有
+  同身份的删除 → 但删除之后没有该策略的回读。五条同时成立才拒绝；没有批准回读时**不拒绝**
+  （不能要求未批准请求），多于一个候选视为歧义也不拒绝。
+- **诊断**：`fields = plan.steps.<删除步骤>.path_parameters.<参数>`；`detail` 给出 `create_step`/
+  `delete_step`/`obligation_id`=`read_policy`/`lifecycle_create|delete|parameter`/
+  `proof_kind=ABSENCE_READ_BACK`/`required_position=AFTER_DELETE`/`missing` 与应用自写提示
+  （"删除 204 不能单独算清理完成，库存为 0 也不能替代逐资源证明"）。
+- **v1 重放（归档项目 + 归档计划，无网络）**：B/C/D 三案均被拒绝，`read_policy` 为
+  `web_rule_5_expectation_1`；撤掉批准→通过；补删除后 404 回读→通过；回读在删除前→拒绝；
+  回读绑定别的资源→拒绝；改用已批准 200 读→拒绝；交给 `add_batch_cleanup` 补齐→通过。
+- **根因**：v1 的自动补齐本会加 `batch_cleanup_read_2`，但那次运行没有触发批量补齐路径
+  （`verify_batch_cleanup=bool(group["policy_ids"])` 未成立），计划停在删除凭据上。
+- **全归档影响面**（四个验收轮 92 份报告）：48 份已有回读 → 通过；41 份不涉及生命周期；
+  **3 份**（仅 v1 B/C/D）被拒绝 —— 没有误伤其它合法计划。
+- **hint 审计**：`src/agenttest` 共 38 处 hint 赋值，30 处常量、4 处封闭表、1 处批准 Schema 事实
+  插值、1 处参数透传、2 处 `detail["hint"] or _repair_hint` 聚合、1 处本轮新增（只插值步骤 id/
+  参数名/策略 id）；未发现用户原文、模型原文或请求体值进入 hint 的路径。
+- 验证：新增 `tests/test_p3b25_cleanup_read_back.py` 14 项；12 文件 **157 passed**；预检/设计/
+  门禁/Focus/任务 8 文件 **177 passed, 1 xfailed**；Focus/预算/账本/完成判定 6 文件 **111 passed**；
+  `ruff check` 通过；`git diff --check` 干净。另修：`test_negative_post_observation` 正向用例的
+  计划补上已批准回读（该计划原本无清理证明，断言未变）、`test_p3b25_model_input` 确定性用例排除
+  墙钟字段（原用例偶发失败）。
+- 未改变：预检其它条件、Runtime `CLEANUP_UNPROVEN` 判定与 basis、Schema/JSON/Focus 规则、
+  HITL、批准义务、负向策略、预算、60 秒超时、`NO_PROGRESS`、obligation gate、未知写入不重放；
+  业务 HTTP 未增加（拒绝在派发前，`requests == 0`）。
+  [完整记录](deepagents-hitl-reliability-p3b25.md)
+
+## 2026-11-18 · P3-B2.5（续）模型输入安全与完整性专项
+
+- 授权范围：只做模型输入的审计与投影、案例反馈完整性、字段候选诚实性；不动预检接受条件、
+  Runtime 安全策略、历史归档原文；不调真实模型、不跑全量冻结回归、不跑五轮验收。
+- **审计结论（修复前）**：原始诊断确实外发。`payload.cases[].preflight_diagnostic` 与设计层
+  `design.detail`/`error.detail` 是**原样复制**，合成哨兵
+  （`sk-audit…`、`Authorization: Bearer …`、`Bearer …`、`审计测试包裹B`、
+  `AKIAauditSYNTHETIC0001`、`SENTINEL-…`）在工具结果与真实编码的 POST 正文里各出现 5/6 与 4/6。
+  数据流三层：L1 本地 `summary`（原样保留）、L2 工具结果、L3 端点请求；L2 原文即 L3 正文。
+- **修复**：新增 `src/agenttest/model_input.py`（按值投影：事实槽只放行标识符/路径/枚举/整数，
+  文本槽封闭集合 + 凭据脱敏 `[已脱敏]` + 240 字上限，容器/键/序列化均有上限并计数）。
+  接入 `_case_summary`（`preflight_diagnostic` 走案例白名单，全拒时置 `null`）、设计分支
+  `design`/`error`、`obligation_gate._diagnostic_text`、`focus_repair_payload`。
+- **修复后**：L1 仍保留全部哨兵（审计证据不变），L2/L3 中凭据、请求值、字段名槽值全部消失；
+  唯一保留项是应用自写的 `hint` 文本槽里的非凭据短语（内容过滤的固有限度，已记入剩余风险）。
+- **七案例完整性**：旧规则 4 + `omitted_cases: 3`；新规则 4 条完整 + 3 条紧凑行
+  `{case_id, code, repair_kind, compact}`，加 `cases_total`/`compact_cases`，硬上限 16。7 个案例
+  的 `case_id` 与 `code` 都出现在请求体字节里。
+- **字段候选诚实性**：截断列表带 `<key>_total`/`<key>_truncated` 与 `omitted` 计数，提示改成
+  "只列出了部分……未列出的不代表不合法……不要因为没列出来就删掉合法字段"；截断前把出现在失败
+  路径里的名字排前面；未放宽任何 Schema 校验。
+- 验证：新增 `tests/test_p3b25_model_input.py` 14 项（9 项断言真实 POST 字节）；案例级 23 项、
+  B1 13 项；合并 19 个文件 **344 passed, 1 xfailed**；`ruff check` 通过；`git diff --check` 干净。
+- 未改变：预检接受/拒绝、Schema/JSON/Focus 规则、HITL、批准义务、负向策略、预算、60 秒超时、
+  `NO_PROGRESS`、obligation gate、清理判定、未知写入不自动重放。
+  [完整记录](deepagents-hitl-reliability-p3b25.md)
+
+## 2026-11-18 · P3-B2.5（续）案例级预检拒绝反馈
+
+- 授权范围：只修"诊断反馈传递"，不动 JSON/Schema/Focus/HITL/负向策略/预算/超时/`NO_PROGRESS`/
+  obligation gate/清理判定，不实施 A4 提前终止与清理回读前移。
+- **根因**：真实拒绝发生在预检（分组 `DESIGNED`、设计记录 `PROPOSED`），`run_test_group` 的
+  "全部案例被拒"分支 `error` 只有 `{code,message,retryable,hint}`。`product_tasks` 已把
+  `preflight_diagnostic`（`fields`、`allowed_body_fields`、`unknown_body_positions`、
+  `step_id`、`obligation_id`）写进案例行，但没有进入 `error`，模型只读到一个代码。
+- **修复**：新增 `src/agenttest/case_diagnostics.py`（白名单投影 + 六类 `repair_kind` +
+  按 code 的可执行提示），`product_agent` 拒绝分支改用 `rejection_error(...)`。不新增
+  Schema 校验器，只复用预检已写入的事实。
+- **脱敏**：显式白名单（`step_id/obligation_id/step_index/allowed_*/unknown_*/missing_*/
+  allowed_from_steps/parameter_location/expected*/actual_type/constraint/violation/reference/
+  limit/allowed_count`）+ 逐值形状校验 + `SECRET_SHAPED`（`AKIA…`、`sk-…`、长十六进制、
+  `secret/token/password/…` 词根）叠加在标识符模式之上；白名单之外的键一律丢弃。
+- **完整性/体积**：案例 4、字段名 6、下标 6、路径 8；超出写 `omitted`/`omitted_cases`
+  计数；案例顺序=计划顺序；`code` 永不丢失（`reason → diagnostic.code → PLAN_REJECTED`）。
+  真实最坏 1,924 B，单测上限 3,000 B；`_json()` 仍整体保留 `error`。
+- **归档回放**（四轮共 **32** 个被拒案例，此前"31 个"是漏计一行 `_2` 案例的笔误）：
+  `OPENAPI_UNKNOWN_BODY_FIELD` 24、`POLICY_ARGUMENT_MISMATCH` 4、`OPENAPI_OBJECT_FIELDS` 2、
+  `OPENAPI_VALUE_LENGTH` 1、`DESIGN_ABSENCE_PRECONDITION_MISSING` 1；修复后 21 个带字段路径、
+  18 个带合法字段名、5 个仍只有代码 + 类别（预检未记录路径，不臆造）。
+- **语义**：预检接受条件、Runtime 执行行为（`retryable`/重试上限/`NO_PROGRESS`/门禁/预算/
+  超时）均未改变；被拒案例仍 0 次业务 HTTP。
+- 验证：新增 `tests/test_p3b25_case_diagnostics.py` 21 passed；合并 15 个文件 **288 passed,
+  1 xfailed**（既有 strict xfail）；`ruff check src tests` 通过；`git diff --check` 干净；
+  未跑全量冻结回归、未调真实模型、未跑五轮验收。
+- 剩余风险：模型是否真的用上反馈需下一批真实运行才能证明；`POLICY_ARGUMENT_MISMATCH` 的
+  具体差异字段名未记录（补它属预检改动，需先报告）；`payload.cases[].preflight_diagnostic`
+  仍是未过滤原始结构，与新的 `error.cases` 两条通道并存。
+  [完整记录](deepagents-hitl-reliability-p3b25.md)
+
+## 2026-11-18 · P3-B2.5 诊断修复（JSON 修复反馈 + 清理证据调查）
+
+- 证据保护：`HEAD 43a6065`，P3-B2.4 五轮原始证据（318 文件、37.6 MB：Trace、模型原文、
+  SQLite 账本、HTTP 事件、`CLEANUP_UNPROVEN` 记录）只读复核，未改写未删除；三项未提交
+  文档保留。
+- **B1 根因**：61 次设计调用中 14 次 `JSON_SYNTAX`，全部是同一处模型笔误——对象成员写成
+  `"name"` 后直接跟下一个成员，缺冒号与值（位置不同只因落在不同 `arguments` 下标）。修复
+  反馈只给 `position/line/column + reason`，没有"缺什么结构"。归档不保存请求正文，故
+  "约束文本随请求发出"由代码路径 + 新测试证明，不当作已证事实。
+- **修复**：`bounded_json` 的 `JSON_SYNTAX` 诊断扩到 7 个字段（新增
+  `parser_error_type`、`expected_structure{kind,expected,at_end,after_key}`、`repair`），
+  键名只在偏移确实落在键位置且为纯标识符时点名；尾部逗号单独识别为
+  `MEMBER_LIST/NO_TRAILING_COMMA`；`_diagnostic_text` 与 `_repair_hint` 同步呈现。
+  **接受条件零改动**：仍是 `json.loads` 成功即通过，无宽松解析、无尾逗号/单引号容忍。
+- **回放**：两条 P3-B2.4 逐字原文（`tests/fixtures/p3b25/`）命中 `MISSING_COLON` +
+  `after_key=name`，诊断不含任何字面值；`repair_constraint` 实测 538 字符（上限 900）。
+- **清理证据**：v1 `createParcelB/C/D`（`group_1_case_3/4/5`）创建 201、删除 204，唯一的读
+  发生在删除**之前**，`cleanup_evidence=[]`、`cleanup_requests=0`；账本
+  `basis=DELETE_RECEIPT_WITHOUT_READ_BACK`。分类 **B（清理回读没有执行）**，非 A/C/D；
+  `record_count=0` 不改写判定，三项保持 `CLEANUP_UNPROVEN`。
+- **A4 只读分析**：区分形式错误导致的无效调用（JSON 14 次、schema 3 次）、义务确实无法推进
+  （`not_covered` 声明的授权缺口）、已批准终止（v3 零请求 `NEEDS_REVIEW`、v2 `NO_PROGRESS`）、
+  有修复机会却提前结束（v1/v4/v5 的案例级预检拒绝 + 重试上限）。发现真实反馈缺口：全部案例
+  被拒时只回 code，`preflight_diagnostic` 的 `allowed_body_fields`/`unknown_body_positions`
+  没有发给模型（27/31 被拒案例属此类）。给出两方案：方案一只补反馈（安全、预算不变、
+  不保证完成率提升）；方案二改变重复形式错误的终止策略（省 60k–80k tokens，但会砍掉
+  v4/v5 各一次"第三次才成功"，**不得表述为完成率提升**）。本轮不实施 A4。
+- 验证：新增 `tests/test_p3b25_json_repair.py` 13 passed；8 个相关测试文件合并 **174
+  passed**；`ruff check` 通过；`git diff --check` 干净；未跑全量冻结回归、未调真实模型、
+  未访问真实业务靶场。
+- 更正 P3-B2.4 §13.6：累计 `design_records` 导致的"同一位置 7 轮重复"与"JSON 失败直接造成
+  漏项"两处表述不成立（见 p3b24 §13.9）。五轮 0/5 与 **NO-GO 不变**。
+  [完整记录](deepagents-hitl-reliability-p3b25.md)
+
+## 2026-11-17 · P3-B2.4 真实稳定性验收（NO-GO）
+
+- 冻结：`HEAD 43a6065`、工作区仅 `M docs/deepagents-hitl-reliability-p3b23.md`（历史 NO-GO
+  记录，整批未改）、`checkout_sha256 6ea4b009…`、源码 `e287b605…`、公开配置
+  `cecf6dff…`（与 P3-B2.3 一致）。每轮前后重算摘要与 `.env` 摘要，零漂移。
+- 三次 `ecnu-max` 探针串行 `READY`：65 / 65 / 147 tokens，全部 `KNOWN`、可解析、有服务端
+  响应 ID，零业务请求。首版启动器在发送前崩于 `bytes` 序列化（零模型调用），该次尝试
+  保留在 `.eduwork/p3b24-acceptance-43a6065-aborted-1/`。
+- 五轮连续执行（合计 1,241.7 秒，五轮本身 1,225.7 秒）：批准义务覆盖 **27、29、0、26、26
+  / 31**；负向策略 **20、22、0、19、19 / 24**；终态 `PARTIAL/STALLED`、
+  `PARTIAL/NOT_DISPATCHED`（`NO_PROGRESS`）、`NEEDS_REVIEW`、`PARTIAL/ATTEMPTS_EXHAUSTED`、
+  `PARTIAL/STALLED`。
+- 资源：192 次模型调用 / 1,605,602 tokens / 322 次业务 HTTP，**0 超时、0 UNKNOWN**；48 次
+  创建全部证明清理，v1 另 3 次"删除无回读"被如实记为 `CLEANUP_UNPROVEN`；4 轮各观测到
+  一次真实 `readAvailability` 503。零越权、零重放、零未批准 POST、零负向重复执行；五轮
+  `checks_passed` 与 `complete` 均为 false。
+- **A1 生效**：v3/v4/v5 首次 Focus 被拒拿到 `must_delete`/`must_be_null`/`violations` 载荷，
+  v4/v5 第二次提案即通过；v3 的复核反馈是分组形态（`fields` 8、2 组、`count` 15、14 条
+  路径）。**A3 生效**：v5 出现 `CONSTRUCTION_REFERENCE_INVALID`，空候选集
+  （`allowed_from_steps=[]`）被如实说明。**A2 未触发**（无标量约束诊断样本）。
+- 失败归因：B（模型 JSON 构造失败）为主——`JSON_SYNTAX` 在同一分组的同一字符位置连续
+  7 个监督轮重复；A4 已测量（有界重试把 B 类失败固化成 2–5 项 `NOT_EXECUTED`）；B1 已取证
+  （提示只有 `position/line/column`）；D 类安全终止正常；无 A 类缺陷、无 C 类服务故障。
+- **判定 NO-GO（0/5 达到 31/31，门限 4/5）**：保留全部五轮证据，不补跑、不替换样本，未
+  进入 P3-B3。下一步建议先修 B1 与 A4，再重新冻结并申请新一批五轮。
+  [完整记录](deepagents-hitl-reliability-p3b24.md#13-真实稳定性验收p3-b24-2026-11-17)
+
 ## 2026-11-17 · P3-B2.4 优化版全量离线冻结回归
 
 - 候选工作区冻结：HEAD `f311721`、`git status --porcelain` 11 行（8 改 3 增，全部保留

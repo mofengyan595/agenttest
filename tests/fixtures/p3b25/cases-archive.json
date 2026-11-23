@@ -1,0 +1,203 @@
+{
+ "release-v1": [
+  {
+   "case_id": "negative_batch_6_case_1",
+   "title": "替换包裹时 name 长度超出上限应返回 422",
+   "kinds": [
+    "negative"
+   ],
+   "operation_id": null,
+   "group_id": "negative_batch_6",
+   "planned_operations": [
+    "createParcel",
+    "replaceParcel"
+   ],
+   "planned_steps": 2,
+   "planned_policy_ids": [
+    "web_rule_3",
+    "web_rule_7_negative_4"
+   ],
+   "status": "REJECTED",
+   "max_business_requests": 2,
+   "plan_source": "MODEL_SUGGESTION",
+   "task_satisfied": null,
+   "reason": "OPENAPI_UNKNOWN_BODY_FIELD",
+   "preflight_diagnostic": {
+    "layer": "openapi",
+    "code": "OPENAPI_UNKNOWN_BODY_FIELD",
+    "fields": [
+     "plan.steps.0.arguments.1.name"
+    ],
+    "detail": {
+     "step_id": "createForNameTooLong",
+     "step_index": 0,
+     "allowed_body_fields": [
+      "meta",
+      "name",
+      "quantity"
+     ],
+     "unknown_body_positions": [
+      0
+     ],
+     "obligation_id": "web_rule_3"
+    },
+    "kind": "SCHEMA_MISMATCH"
+   }
+  }
+ ],
+ "release-v4": [
+  {
+   "case_id": "negative_batch_1_case_1",
+   "title": "name 字段缺失时创建包裹应返回 422",
+   "kinds": [
+    "negative"
+   ],
+   "operation_id": null,
+   "group_id": "negative_batch_1",
+   "planned_operations": [
+    "createParcel"
+   ],
+   "planned_steps": 1,
+   "planned_policy_ids": [
+    "web_rule_3_negative_1"
+   ],
+   "status": "REJECTED",
+   "max_business_requests": 1,
+   "plan_source": "MODEL_SUGGESTION",
+   "task_satisfied": null,
+   "reason": "POLICY_ARGUMENT_MISMATCH",
+   "preflight_diagnostic": {
+    "layer": "policy",
+    "code": "POLICY_ARGUMENT_MISMATCH",
+    "fields": [],
+    "kind": "MODEL_CONSTRUCTION_ERROR"
+   }
+  },
+  {
+   "case_id": "negative_batch_4_case_2",
+   "title": "改名 name 字段类型错误应返回 422",
+   "kinds": [
+    "negative"
+   ],
+   "operation_id": null,
+   "group_id": "negative_batch_4",
+   "planned_operations": [
+    "createParcel",
+    "changeParcel"
+   ],
+   "planned_steps": 2,
+   "planned_policy_ids": [
+    "web_rule_3",
+    "web_rule_6_negative_2"
+   ],
+   "status": "REJECTED",
+   "max_business_requests": 2,
+   "plan_source": "MODEL_SUGGESTION",
+   "task_satisfied": null,
+   "reason": "OPENAPI_VALUE_LENGTH",
+   "preflight_diagnostic": {
+    "layer": "openapi",
+    "code": "OPENAPI_VALUE_LENGTH",
+    "fields": [
+     "steps.0.body.name"
+    ],
+    "detail": {
+     "step_id": "create_parcel_for_typemismatch",
+     "step_index": 0,
+     "obligation_id": "web_rule_3"
+    },
+    "kind": "SCHEMA_MISMATCH"
+   }
+  }
+ ],
+ "release-v5": [
+  {
+   "case_id": "negative_batch_6_case_1",
+   "title": "替换包裹时名称超长应被拒绝",
+   "kinds": [
+    "negative"
+   ],
+   "operation_id": null,
+   "group_id": "negative_batch_6",
+   "planned_operations": [
+    "createParcel",
+    "replaceParcel"
+   ],
+   "planned_steps": 2,
+   "planned_policy_ids": [
+    "web_rule_3",
+    "web_rule_7_negative_4"
+   ],
+   "status": "REJECTED",
+   "max_business_requests": 2,
+   "plan_source": "MODEL_SUGGESTION",
+   "task_satisfied": null,
+   "reason": "OPENAPI_UNKNOWN_BODY_FIELD",
+   "preflight_diagnostic": {
+    "layer": "openapi",
+    "code": "OPENAPI_UNKNOWN_BODY_FIELD",
+    "fields": [
+     "plan.steps.0.arguments.1.name"
+    ],
+    "detail": {
+     "step_id": "create_for_name_too_long",
+     "step_index": 0,
+     "allowed_body_fields": [
+      "meta",
+      "name",
+      "quantity"
+     ],
+     "unknown_body_positions": [
+      0
+     ],
+     "obligation_id": "web_rule_3"
+    },
+    "kind": "SCHEMA_MISMATCH"
+   }
+  },
+  {
+   "case_id": "negative_batch_6_case_2",
+   "title": "替换包裹时缺少数量应被拒绝",
+   "kinds": [
+    "negative"
+   ],
+   "operation_id": null,
+   "group_id": "negative_batch_6",
+   "planned_operations": [
+    "createParcel",
+    "replaceParcel"
+   ],
+   "planned_steps": 2,
+   "planned_policy_ids": [
+    "web_rule_3",
+    "web_rule_7_negative_5"
+   ],
+   "status": "REJECTED",
+   "max_business_requests": 2,
+   "plan_source": "MODEL_SUGGESTION",
+   "task_satisfied": null,
+   "reason": "OPENAPI_UNKNOWN_BODY_FIELD",
+   "preflight_diagnostic": {
+    "layer": "openapi",
+    "code": "OPENAPI_UNKNOWN_BODY_FIELD",
+    "fields": [
+     "plan.steps.0.arguments.1.name"
+    ],
+    "detail": {
+     "step_id": "create_for_qty_missing",
+     "step_index": 0,
+     "allowed_body_fields": [
+      "meta",
+      "name",
+      "quantity"
+     ],
+     "unknown_body_positions": [
+      0
+     ],
+     "obligation_id": "web_rule_3"
+    },
+    "kind": "SCHEMA_MISMATCH"
+   }
+  }
+ ]
+}

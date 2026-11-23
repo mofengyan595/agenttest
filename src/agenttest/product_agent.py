@@ -29,6 +29,7 @@ import time
 from copy import deepcopy
 from dataclasses import dataclass
 
+from agenttest.case_diagnostics import public_diagnostic, rejection_error
 from agenttest.deep_harness.loop import (
     _final_answer,
     _turns,
@@ -39,6 +40,7 @@ from agenttest.deep_harness.loop import (
 from agenttest.deep_harness.product_tools import ProductSession
 from agenttest.deep_harness.skills import SKILL_ROOT, skill_files, skill_filesystem
 from agenttest.diagnostics import design_failure_kind
+from agenttest.model_input import diagnostic_view
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
 from agenttest.obligation_gate import (
     ObligationGate,
@@ -792,20 +794,27 @@ class AgentSession:
         self.record("run_test_group", group_id=group_id, status=group.get("status"),
                     cases=len(cases), requests=self.ledger.requests - before_requests)
         diagnostic = self._diagnostic(record)
+        # The stored diagnostic is audit evidence; the copy the model reads is projected, so a
+        # producer that recorded a header, a value or a free-text error cannot put it on the wire.
+        view = diagnostic_view(diagnostic)
+        all_rejected = bool(cases) and all(case.get("status") == "REJECTED" for case in cases)
         payload = dict(ok=True, group_id=group_id, status=group.get("status"),
                        operations=list(group.get("primary") or ()),
                        design=dict(status=(record or {}).get("status"),
                                    reason=(record or {}).get("reason"),
                                    code=self._diagnostic_code(record),
-                                   fields=diagnostic.get("fields") or [],
-                                   detail=diagnostic.get("detail") or {},
+                                   fields=view.get("fields") or [],
+                                   detail=view.get("detail") or {},
                                    failure_kind=design_failure_kind(diagnostic)
                                    if diagnostic else None,
                                    attempt=self.group_runs.get(group_id, 0),
                                    runtime_repair=repaired,
                                    planning_engine=(record or {}).get("actual_planning_engine")
                                    or (record or {}).get("planning_engine")),
-                       cases=[self._case_summary(case) for case in cases][:8],
+                       # When every case was refused, the facts that matter are stated once in
+                       # ``error.cases``; repeating them per case row only spends the result budget.
+                       cases=[self._case_summary(case, diagnostic=not all_rejected)
+                              for case in cases][:8],
                        requests=self.ledger.requests - before_requests,
                        budget=self._budget_view(),
                        next_step=dict(tool="get_test_coverage", arguments={}))
@@ -814,26 +823,26 @@ class AgentSession:
                 group_id, group["policy_ids"], executed_evidence(self.summary))
         if group.get("status") == "NOT_EXECUTED":
             code = self._diagnostic_code(record) or "GROUP_NOT_DESIGNED"
-            detail = self._diagnostic(record).get("detail") or {}
             payload["ok"] = False
             payload["error"] = dict(
                 code=code,
                 message="设计或预检没有通过，未发送业务请求。",
-                fields=self._diagnostic(record).get("fields") or [],
-                detail=detail,
+                fields=view.get("fields") or [],
+                detail=view.get("detail") or {},
                 # A formal defect is repairable by the runtime itself; anything else needs a new
                 # constraint from the caller. ``retryable`` says which of the two it is.
                 retryable=bool(formal_code(code)
                                or self.group_runs.get(group_id, 0) < MAX_GROUP_RUNS),
-                hint=detail.get("hint") or self._repair_hint(code))
-        elif cases and all(case.get("status") == "REJECTED" for case in cases):
+                hint=(view.get("detail") or {}).get("hint") or self._repair_hint(code))
+        elif cases and all_rejected:
             group["status"] = payload["status"] = "REJECTED"
             payload["ok"] = False
-            payload["error"] = dict(
-                code=cases[0].get("reason") or "PLAN_REJECTED",
-                message="方案未通过执行前校验，未发送业务请求。",
-                retryable=runs == 0,
-                hint="核对必填参数或绑定后提供新的设计约束，或选择其他可执行义务。")
+            # The stored precheck diagnostic already knows the offending field path, the field
+            # names the approved schema allows and the owning step/obligation. Sending only the
+            # code made the model resubmit the same shape, so the refusal carries those facts.
+            payload["error"] = rejection_error(
+                cases, retryable=runs == 0,
+                message="方案未通过执行前校验，未发送业务请求。")
         return payload
 
     @staticmethod
@@ -863,6 +872,10 @@ class AgentSession:
                 "该目标有已批准的清理删除；创建资源的场景必须计划这一步，否则会遗留资源。",
             "DESIGN_ABSENCE_PRECONDITION_MISSING":
                 "404/410 断言必须在同一资源已批准删除之后；补上删除步骤或去掉该断言。",
+            "DESIGN_CLEANUP_READ_BACK_MISSING":
+                "创建的资源已计划删除，但删除之后没有已批准的缺失回读：在删除步骤之后、用同一"
+                "身份补上 detail 里 obligation_id/read_policy 指定的已批准 404/410 回读；"
+                "DELETE 204 与最终库存为 0 都不算清理证明。",
             "MODEL_JSON_INVALID":
                 "上一版方案不是合法 JSON：detail 给出了 position 和出错附近的 window，"
                 "修正该处后重新提交，不要重复同一段输出。",
@@ -870,8 +883,9 @@ class AgentSession:
                 "上一版方案超过单次输出上限被截断：把这一组拆成更小的方案（更少的用例或"
                 "更少的步骤）再调用一次。",
             "JSON_SYNTAX":
-                "上一版方案不是合法 JSON：detail 给出了 position/line/column 和关闭的 reason，"
-                "只修正该处的语法后重新提交，不要重写策略、预期或清理步骤。",
+                "上一版方案不是合法 JSON：detail 的 position/line/column 给出位置，reason 与"
+                " expected_structure 说明缺什么结构（缺冒号的成员会点名 after_key），repair "
+                "给出可执行的改法；只修正该处语法后重新提交，不要重写策略、预期或清理步骤。",
             "CONSTRUCTION_REFERENCE_INVALID":
                 "方案里有步骤引用了不存在的步骤：from_step 只能指向同一用例中已声明的步骤 id；"
                 "detail 的 allowed_from_steps 是本方案可用的 id，reference 说明引用问题类型。",
@@ -1087,7 +1101,7 @@ class AgentSession:
         return base + (("；补充设计约束：" + note) if note else "")
 
     @staticmethod
-    def _case_summary(case: dict) -> dict:
+    def _case_summary(case: dict, *, diagnostic: bool = True) -> dict:
         failed = [dict(operation_id=step.get("operation_id"), kind=check.get("kind"),
                        expected=check.get("expected"), actual=check.get("actual"))
                   for step in case.get("evidence") or () if step.get("executed")
@@ -1097,7 +1111,8 @@ class AgentSession:
                     operations=case.get("executed_operations") or [],
                     requests=case.get("http_requests") or 0,
                     failed=failed[:6], reason=(case.get("reason") or "")[:200] or None,
-                    preflight_diagnostic=case.get("preflight_diagnostic"),
+                    preflight_diagnostic=(public_diagnostic(case.get("preflight_diagnostic"))
+                                          or None) if diagnostic else None,
                     duplicate_of=case.get("duplicate_of"),
                     absence_expectations=[dict(policy_id=row.get("policy_id"),
                                                satisfied=row.get("satisfied"))

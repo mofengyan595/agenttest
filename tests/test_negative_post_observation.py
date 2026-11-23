@@ -66,6 +66,14 @@ async def test_isolated_observation_counts_only_correlated_actual_requests(
             id="remove", operation_id=deletion.operation_id, policy_id=deletion.id, role=None,
             arguments=[dict(location="path_parameters", name="parcelId", value=None,
                             from_step="submit", select="$.id")])))
+        # A deletion receipt is not a cleanup proof: the approved 404 read has to run after it.
+        proof = next(p for p in policies.values()
+                     if p.operation_id == "readParcel" and not p.negative
+                     and p.assertions.status and p.assertions.status.codes == [404])
+        proposed.plan.steps.append(GenericDraftStep.model_validate(dict(
+            id="confirmGone", operation_id=proof.operation_id, policy_id=proof.id, role=None,
+            arguments=[dict(location="path_parameters", name="parcelId", value=None,
+                            from_step="submit", select="$.id")])))
     events = []
     app = create_target("parcels", environ={}, observe_negative_posts=True)
 

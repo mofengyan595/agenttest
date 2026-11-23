@@ -72,3 +72,31 @@
 ```
 
 此次未启动真实模型验收，未进入 P3-B3。历史超时的服务端根因、真实用量和新诊断下的真实模型提案成功率仍缺证据。HEAD 为 `ee01cf6393cd34b5427382ed2a2243c28d83c679`，变更留在工作区，未暂存或提交。
+
+## 2026-11-17 冻结真实验收结果
+
+**NO-GO：0/5 轮达到 31/31，发布门限为 4/5。P3-B3 未获准。** 五轮全部纳入统计。三次健康探针均为 HTTP 200，用量分别为 147、147、65 tokens。探针用量单列。
+
+- 冻结提交为 `f3117213099e1becd332a2f29e4b97e3a7af16aa`，源码 SHA-256 为 `4e088caa9087059cc5aac917f052c2f8bdad7443fdb58b009de48ebb0af1eadd`。工作区摘要为 `2f04d01b754a5884be991466518be6f2c4910f8d2845a49c635431c16b6090f6`，公开配置摘要为 `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172`。
+- 普通 PowerShell 全量离线回归收集并执行 2,929 项。2,913 passed、15 skipped、1 xfailed、0 failed、1 warning，耗时 2,436.92 秒。回归前后摘要一致，重复收集、漏项、额外项和重复执行均为 0。
+- 五轮真实验收按序完成，启动器的五个退出码均为 0。批次从预检到收尾用时 13 分 50.324 秒，证据保存于 `.eduwork/p3b23-acceptance-f311721/`。离线证据目录为 `.eduwork/frozen-regression-p3b23/`。
+
+| 轮次 | 实测义务 / 负向策略 | 业务 HTTP | 终态与归因 | 模型调用 / 已知 tokens / UNKNOWN 次数 |
+| --- | --- | ---: | --- | --- |
+| v1 | 0/31、0/24 | 0 | `NEEDS_REVIEW`。Focus 首次误填可信范围子句，返回 `FOCUS_SOURCE_CLAUSE_MISSING`。修正尝试仍因 `FOCUS_INPUT_TEXT_CHANGED` 被拒。 | 2 / 29,274 / 0 |
+| v2 | 19/31、12/24 | 48 | `BLOCKED / MODEL_SERVICE_UNAVAILABLE`。两项负向用例分别因未知的请求体字段被预检拒绝，批次 5 请求随后超时。 | 17 / 118,573 / 1 |
+| v3 | 21/31、14/24 | 54 | `PARTIAL / OBLIGATION_NOT_DISPATCHED`，Agent 以 `NO_PROGRESS` 停止。四次 `JSON_SYNTAX/MISSING_COLON` 出现在批次 1、5、5、6，剩余 10 项 `replaceParcel` 负向策略无执行回执。 | 22 / 181,677 / 0 |
+| v4 | 21/31、14/24 | 54 | `BLOCKED / MODEL_SERVICE_UNAVAILABLE`。Focus 首次被拒后修正通过，批次 1 曾报 JSON 语法错误，批次 5 随后超时。 | 19 / 152,466 / 1 |
+| v5 | 0/31、0/24 | 0 | `NEEDS_REVIEW`。首次 Focus 请求超时，未知用量门禁停止后续模型调用。 | 1 / 无已知用量 / 1 |
+
+v1、v5 停在 Focus 阶段，尚未建立终止义务账本。表内的 0/31 按冻结验收范围和零业务执行证据计。五轮的 `complete` 均为 false。进入运行时的三轮 `strict_complete`、`checks_passed` 均为 false。
+
+### 安全、清理与诊断对账
+
+- 156 条业务 HTTP 与持久化回执逐轮对齐，全部为首次尝试并有 `EVIDENCE_COMMITTED` 回执。43 次 POST 均可关联已批准的 HITL 组和步骤，合计 15 项批准记录。零越权、零未知写入重放、零负向策略重复执行。
+- 15 次资源创建均有清理证明，另有 28 次负向 POST 无副作用证明。五个隔离靶场最终库存均为 0。运行时逐轮确认工具边界，未进入运行时的两轮业务请求为 0。
+- 持久化账本共 6 次真实 `readAvailability` 503，另有对应的 3 条用例 `ASSERTION_FAILED` 证据，预期 200。没有将 503 误判为通过。
+- 61 个本地调用 ID 全部与 Trace 中的相同 ID 对齐，并逐条核对任务、请求摘要、状态、错因和用量。58 次明确用量合计 481,990 tokens。其余三次均为 `MODEL_TIMEOUT / DEADLINE`，分别发生于 v2 批次 5（60.032 秒）、v4 批次 5（60.047 秒）及 v5 的 Focus（60.062 秒）。三条记录的 HTTP 状态、网关请求 ID、用量均为空，继续保留 `UNKNOWN`。这些记录只能证实客户端超时，服务端等待与计量仍需逐请求对账。
+- v2 的两项 `OPENAPI_UNKNOWN_BODY_FIELD` 均精确定位到 `plan.steps.0.arguments.1.name`，对应批准义务 `web_rule_3_negative_10`、`web_rule_3_negative_6`，各有具体步骤 ID，且均未派发。当前样本未触发 `CONSTRUCTION_REFERENCE_INVALID`，引用候选修正仍以定向回放和离线回归为证据。
+
+下一步保留这五个位置，并以归档中的 Focus 来源和值错误、批次 5/6 JSON 语法错误开展离线诊断。对于三笔超时，只有获授权的服务端逐请求记录才能补全用量证据。保持审批范围、用量门禁及发布门限。

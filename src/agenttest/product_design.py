@@ -1012,6 +1012,12 @@ def validate_design_case(project, case, store, *, environ, transport=None, clean
         scenario = add_creation_observations(project, scenario, observation_namespace)
         executor.validate(scenario)
     validate_cleanup_dependencies(project, scenario, cleanup_operations)
+    # A deletion receipt is not a cleanup proof: when the target has an approved absence read for
+    # this resource, the plan must actually run it after the deletion (P3-B2.4 measured three
+    # plans that never did, so their cleanup stayed unproven).
+    from agenttest.product_preconditions import validate_cleanup_read_back
+
+    validate_cleanup_read_back(project, scenario)
     # An "absent" expectation (approved 404/410) is only legal once an approved deletion of
     # the same resource has established that phase; otherwise the run would accuse the
     # target of a defect the plan itself created (measured in P0, fixed here).
