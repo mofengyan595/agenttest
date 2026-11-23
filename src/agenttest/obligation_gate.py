@@ -106,13 +106,16 @@ def cleanup_state(project, summary) -> dict:
 
 
 # ---------------------------------------------------------------------- dispatch planning
-def dispatch_plan(project, summary, runs=None, attempt_limit=2) -> dict:
+def dispatch_plan(project, summary, runs=None, attempt_limit=2, *, group_blocker=None) -> dict:
     """Which approved group can still measure a pending obligation, in a fixed order.
 
     Batches own their negative checks (only the owning batch may dispatch one), so a pending
     negative whose batch is exhausted is reported as blocked instead of being re-mapped onto a
     different group or a new resource instance. Order is deterministic: least attempts first,
     then the most pending policies, then the group id.
+
+    Agent callers supply their shared group blocker, which also sees the durable repair counters
+    and latest design evidence. Without an Agent session only the numeric limit is available.
     """
     attempted = {str(key): int(value) for key, value in (runs or {}).items()}
     limit = int(attempt_limit)
@@ -153,11 +156,13 @@ def dispatch_plan(project, summary, runs=None, attempt_limit=2) -> dict:
         not_ready = [key for key in operations_of
                      if (inventory.get(key) or {}).get("state") != "READY"]
         runs = attempted.get(str(group.get("id")), 0)
+        blocker = group_blocker(group) if group_blocker else None
         rows.append(dict(
             group_id=group.get("id"), batch=bool(owned),
             policies=pending[:MAX_PENDING_ROWS], pending=len(pending),
             operations=operations_of, minimum_requests=floor,
             runs=runs, attempts_left=max(0, limit - runs),
+            design_blocker=blocker,
             status=group.get("status"), supported=bool(group.get("supported", True)),
             methods=sorted({(operations[scope[key]["operation_id"]].method
                              if scope[key]["operation_id"] in operations else "?")
@@ -168,10 +173,12 @@ def dispatch_plan(project, summary, runs=None, attempt_limit=2) -> dict:
     rows.sort(key=lambda row: (row["runs"], 1 if row["batch"] else 0, -row["pending"],
                                str(row["group_id"])))
     dispatchable = [row for row in rows if row["supported"] and row["authority_ready"]
-                    and row["attempts_left"] > 0]
-    blocked = [row for row in rows if not (row["supported"] and row["authority_ready"])]
+                    and row["attempts_left"] > 0 and not row["design_blocker"]]
+    count_blockers = {"GROUP_RUN_LIMIT", "REPAIR_NOTE_REQUIRED"}
+    blocked = [row for row in rows if not (row["supported"] and row["authority_ready"])
+               or row["design_blocker"] and row["design_blocker"] not in count_blockers]
     exhausted = [row for row in rows if row["supported"] and row["authority_ready"]
-                 and row["attempts_left"] <= 0]
+                 and (row["attempts_left"] <= 0 or row["design_blocker"] in count_blockers)]
     return dict(groups=rows[:MAX_PENDING_ROWS],
                 dispatchable=dispatchable[:MAX_PENDING_ROWS],
                 blocked=blocked[:MAX_PENDING_ROWS],
@@ -187,6 +194,8 @@ def affordable(row, budget) -> tuple[bool, str]:
     if int(budget.get("model_calls_left") or 0) < 2:
         # one design call plus the turn that reads its result
         return False, "OBLIGATION_MODEL_CALL_BUDGET"
+    if budget.get("tokens_left") == 0:
+        return False, "OBLIGATION_MODEL_TOKEN_BUDGET"
     if int(budget.get("tool_calls_left") or 0) < 2:
         return False, "OBLIGATION_TOOL_CALL_BUDGET"
     seconds = budget.get("seconds_left")
@@ -233,7 +242,7 @@ def decide(*, state: dict, plan: dict, cleanup: dict, budget: dict, stop: str = 
         if plan.get("exhausted"):
             return dict(base, action="END", state="PARTIAL",
                         code="OBLIGATION_ATTEMPTS_EXHAUSTED",
-                        detail="剩余义务所属分组已达到尝试次数上限；保留原批准义务与证据，"
+                        detail="剩余义务所属分组没有可用的设计尝试；保留原批准义务与证据，"
                                "不再重复同一批次。", exhausted=plan["exhausted"])
         return dict(base, action="END", state="BLOCKED",
                     code="OBLIGATION_AUTHORITY_LIMITED",
@@ -469,11 +478,11 @@ class ObligationGate:
     # ------------------------------------------------------------------ decision
     def evaluate(self, *, budget: dict, stop: str = "RUNNING",
                  execution_stopped: str | None = None, runs=None,
-                 attempt_limit: int = 2) -> dict:
+                 attempt_limit: int = 2, group_blocker=None) -> dict:
         """One verdict at the moment the model asks to finish."""
         state = obligation_state(self.project, self.summary)
         plan = dispatch_plan(self.project, self.summary, runs=runs,
-                             attempt_limit=attempt_limit)
+                             attempt_limit=attempt_limit, group_blocker=group_blocker)
         cleanup = cleanup_state(self.project, self.summary)
         decision = decide(
             state=state, plan=plan, cleanup=cleanup, budget=dict(budget), stop=stop,

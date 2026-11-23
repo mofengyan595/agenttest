@@ -1455,6 +1455,7 @@ class ProductTasks:
                 instance_inputs=instance_inputs,
                 instance_feedback=previous_rejection,
                 reference_repair=(supervision or {}).get("reference_repair"),
+                negative_repair=(supervision or {}).get("negative_repair"),
                 must_be_relevant=must_be_relevant,
                 available_identity_aliases=[r["alias"] for r in svc.intake.record(
                     row["project_id"])["generic"]["roles"]],
@@ -1543,17 +1544,18 @@ class ProductTasks:
         if supervision is None and text == DEFAULT_ROUND else design.cases
         # Validate the whole group before any login or business write.
         # Independent valid cases may run; rejected cases are never repaired.
+        def precheck(case, index=None):
+            return validate_design_case(project, case, svc.reports,
+                cleanup_operations=group["primary"], requested_checks=executable_checks,
+                verify_batch_cleanup=bool(group.get("policy_ids")),
+                observation_namespace=(tool["key"], index) if tool else None,
+                enable_creation_observations=bool(tool and scope.durability.hitl is not None),
+                environ=svc.environ, transport=bounded_transport)
+
         preflight = []
         for index, case in enumerate(ordered_cases):
             try:
-                preflight.append(validate_design_case(project, case, svc.reports,
-                    cleanup_operations=group["primary"],
-                    requested_checks=executable_checks,
-                    verify_batch_cleanup=bool(group.get("policy_ids")),
-                    observation_namespace=(tool["key"], index) if tool else None,
-                    enable_creation_observations=bool(
-                        tool and scope.durability.hitl is not None),
-                    environ=svc.environ, transport=bounded_transport))
+                preflight.append(precheck(case, index))
             except ValueError as exc:
                 preflight.append(exc)
         if tool:
@@ -1588,6 +1590,8 @@ class ProductTasks:
                 planned_policy_ids=[s.policy_id for s in case.plan.steps],
                 status="NOT_EXECUTED", max_business_requests=len(case.plan.steps),
                 plan_source="MODEL_SUGGESTION", task_satisfied=None)
+            if negative_checks:
+                case_row["design_call_id"] = model.stats.local_call_id
             if case._http_status_steps:
                 case_row['http_status_steps'] = case._http_status_steps
             if case._response_steps:
@@ -1624,6 +1628,15 @@ class ProductTasks:
                     public = diagnostic.model_dump(mode="json")
                     case_row["preflight_diagnostic"] = dict(
                         public, kind=design_failure_kind(public))
+                    if negative_checks:
+                        from agenttest.negative_batch_repair import witness
+
+                        repair = witness(project, case, exc, (draft for draft, result in
+                            zip(ordered_cases, preflight, strict=True)
+                            if not isinstance(result, ValueError)),
+                            lambda draft: precheck(draft, index), model.stats.local_call_id)
+                        if repair is not None:
+                            case_row["negative_repair"] = repair
                 continue
             # A supervision round exists to add information. If this plan is semantically the
             # same test as an earlier non-passing attempt, running it again would only repeat

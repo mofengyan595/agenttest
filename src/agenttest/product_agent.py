@@ -44,11 +44,13 @@ from agenttest.model_input import diagnostic_view
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
 from agenttest.obligation_gate import (
     ObligationGate,
+    cleanup_state,
     continuation_text,
     formal_code,
     repair_constraint,
 )
 from agenttest.product_obligations import (
+    approved_scope,
     executed_evidence,
     negative_dispatch_floor,
     supervision_facts,
@@ -317,6 +319,7 @@ class AgentSession:
         ledger = self.ledger
         view = dict(requests_left=max(0, ledger.max_requests - ledger.requests),
                     model_calls_left=max(0, ledger.max_model_calls - ledger.model_calls),
+                    tokens_left=max(0, ledger.max_total_tokens - ledger.known_tokens),
                     tool_calls_left=max(0, self.max_tool_calls - len(self.tool_calls)),
                     turns_left=max(0, self.max_turns - len(
                         [row for row in self.tool_calls if row["tool"] in
@@ -441,12 +444,19 @@ class AgentSession:
     def _facts(self, *, remaining: dict | None = None) -> dict:
         attempts = list(self.scope.state.get("attempts") or ())
         mode = (self.summary.get("focus") or {}).get("mode")
+        evidence = executed_evidence(self.summary)
+        unavailable = set()
+        for group in self.summary.get("groups") or ():
+            owned = group.get("policy_ids") or ()
+            if owned:
+                available = self._group_available(group)
+                unavailable.update(key for key in owned if key in evidence or not available)
         return supervision_facts(
             project=self.project, summary=self.summary, text=self.text,
             remaining=remaining or self._budget_view(),
             allow_negatives=(mode != "selected" or self._classification()["kind"] == PRE_RELEASE
                              or self.text == getattr(self.tasks, "DEFAULT_ROUND", None)),
-            attempts=attempts,
+            attempts=attempts, unavailable_policies=unavailable,
             attempted=[item.get("target") for item in attempts if item.get("target")])
 
     def _classification(self) -> dict:
@@ -471,12 +481,15 @@ class AgentSession:
                       if not evidence[policy_id]["passed"]]
             status = group.get("status") or "PENDING"
             runs = self.group_runs.get(group_id, 0)
-            runnable = (bool(group.get("supported", True)) and runs < MAX_GROUP_RUNS
-                        and status not in {"OUTSIDE_FOCUS"}
+            blocker, repair = self._group_admission(group)
+            runnable = (not blocker and self._group_has_budget(group)
                         and not (related and len(measured) == len(related)))
             row = dict(group_id=group_id, operations=members,
                        policy_ids=related,
                        status=status, runs=runs,
+                       attempts_left=max(0, MAX_GROUP_RUNS - runs),
+                       design_blocker=blocker,
+                       remaining_case_repair_available=repair is not None,
                        reason=(group.get("reason") or "")[:200] or None,
                        measured_policy_ids=measured, failed_policy_ids=failed,
                        next_step=(dict(tool="run_test_group",
@@ -487,7 +500,7 @@ class AgentSession:
                 row["obligation_coverage"] = self._batch_coverage(group_id, related, evidence)
                 row["minimum_requests"] = negative_dispatch_floor(
                     self.project.target, policies, row["remaining_policy_ids"])
-            if status in {"NOT_EXECUTED", "REJECTED"} and runs:
+            if runnable and status in {"NOT_EXECUTED", "REJECTED"} and runs:
                 row["retry_hint"] = ("上一次设计被拒绝；如要重试，请在 design_note 中写明一条"
                                      "新的、与既有证据不同的设计约束。")
             rows.append(row)
@@ -645,10 +658,12 @@ class AgentSession:
             return dict(action="END", state="PARTIAL", code="GATE_DISABLED", detail="")
         execution_stopped = (self.execution.stop_reason
                              if self.execution is not None and self.execution.stopped else None)
+        budget = self._budget_view()
+        budget["requests_left"] = max(0, budget["requests_left"] - self._cleanup_reserve())
         decision = self.obligations.evaluate(
-            budget=self._budget_view(), stop=self.stop,
+            budget=budget, stop=self.stop,
             execution_stopped=execution_stopped, runs=self.group_runs,
-            attempt_limit=MAX_GROUP_RUNS)
+            attempt_limit=MAX_GROUP_RUNS, group_blocker=self._group_blocker)
         self.flush()
         return decision
 
@@ -689,6 +704,123 @@ class AgentSession:
         self.flush()
 
     # ------------------------------------------------------------------ actions
+    def _negative_repair(self, group, last_record) -> dict | None:
+        """Use only a same-design, zero-dispatch witness for the sole remaining policy."""
+        evidence = executed_evidence(self.summary)
+        owned = set(group.get("policy_ids") or ())
+        pending = owned - evidence.keys()
+        if len(pending) != 1 or not owned & evidence.keys():
+            return None
+        key, = pending
+        if any(row.get("policy_id") == key for row in
+               self.summary.get("pending_negative_values") or ()):
+            return None
+        call_id = ((last_record or {}).get("model_call") or {}).get("local_call_id")
+        if not call_id or last_record.get("status") != "PROPOSED":
+            return None
+        policy = next((p for p in self.project.registry.definitions() if p.id == key), None)
+        if (policy is None or policy.operation_id not in self.project.target.allowed_operations
+                or not any(row["policy_id"] == key for row in approved_scope(self.project,
+                                                                            self.summary))):
+            return None
+        cases = [case for case in self.summary.get("cases") or ()
+                 if case.get("group_id") == group["id"] and key in (
+                     case.get("planned_policy_ids") or ())]
+        if not cases or any(case.get("run_id") or case.get("http_requests") or case.get("evidence")
+                            for case in cases):
+            return None
+        case = cases[-1]
+        proof = case.get("negative_repair") or {}
+        feedback = proof.get("feedback") or {}
+        source = proof.get("sibling_policy_id")
+        diagnostic = case.get("preflight_diagnostic") or {}
+        if (case.get("status") != "REJECTED" or proof.get("call_id") != call_id
+                or source not in owned or source not in evidence
+                or not any(other.get("case_id") in evidence[source]["cases"]
+                           and other.get("group_id") == group["id"]
+                           and other.get("design_call_id") == call_id
+                           for other in self.summary.get("cases") or ())
+                or feedback.get("policy_id") != key
+                or diagnostic.get("code") != feedback.get("code")
+                or proof.get("policy_fingerprint") != fingerprint(policy.model_dump(mode="json"))
+                or not cleanup_state(self.project, self.summary)["proven"]):
+            return None
+        if feedback.get("role") is not None:
+            from agenttest.project_inventory import identity_ready
+
+            role = self.project.target.roles.get(feedback["role"])
+            if role is None or not identity_ready(role, self.svc.environ):
+                return None
+        return feedback
+
+    def _group_admission(self, group) -> tuple[str | None, dict | None]:
+        """The same attempt/repair decision for every view and entry to an owning group."""
+        if not group.get("supported", True):
+            return "GROUP_UNSUPPORTED", None
+        if group.get("status") == "OUTSIDE_FOCUS":
+            return "GROUP_OUTSIDE_FOCUS", None
+        group_id = group["id"]
+        runs = self.group_runs.get(group_id, 0)
+        if runs >= MAX_GROUP_RUNS:
+            return "GROUP_RUN_LIMIT", None
+        owned = group.get("policy_ids") or ()
+        if owned:
+            operations = {p.id: p.operation_id for p in self.project.registry.definitions()
+                          if p.id in owned}
+            inventory = {row["operation_id"]: row["state"] for row in
+                         (self.summary.get("inventory") or {}).get("operations") or ()}
+            if (operations.keys() != set(owned)
+                    or not set(operations.values()) <= set(self.project.target.allowed_operations)
+                    or inventory and any(inventory.get(op) != "READY"
+                                         for op in operations.values())):
+                return "GROUP_AUTHORITY_LIMITED", None
+            if all(key in executed_evidence(self.summary) for key in owned):
+                return "GROUP_ALREADY_MEASURED", None
+        last = self._last_design_record(group_id)
+        previous = self._diagnostic(last)
+        reference = (runs and owned and group.get("status") in {"NOT_EXECUTED", "REJECTED"}
+                     and (last or {}).get("status") == "REJECTED"
+                     and previous.get("code") == "CONSTRUCTION_REFERENCE_INVALID"
+                     and (previous.get("detail") or {}).get("reference") == "SOURCE_UNKNOWN")
+        spent = self.repair_runs.get(group_id, 0) >= MAX_RUNTIME_REPAIRS
+        if reference and spent:
+            return "REPAIR_NOTE_REQUIRED", None
+        if runs < MAX_GROUP_RUNS - 1:
+            return None, None
+        if spent:
+            return "GROUP_RUN_LIMIT", None
+        repair = self._negative_repair(group, last) if owned else None
+        if repair is None and not formal_code(self._diagnostic_code(last)):
+            return "GROUP_RUN_LIMIT", None
+        return None, repair
+
+    def _group_blocker(self, group):
+        return self._group_admission(group)[0]
+
+    def _group_has_budget(self, group) -> bool:
+        cached = (getattr(self.scope, "tool", None) or {}).get("design") or {}
+        if cached.get("group_id") == group["id"]:
+            # The durable HITL path restores an already charged design. It still validates
+            # the review, authority and HTTP journal at the actual execution boundary.
+            return True
+        left = self._budget_view()
+        minimum = 1
+        if group.get("policy_ids"):
+            evidence = executed_evidence(self.summary)
+            policies = {p.id: p for p in self.project.registry.definitions()}
+            minimum = negative_dispatch_floor(self.project.target, policies, [
+                key for key in group["policy_ids"] if key in policies and key not in evidence])
+        return (self.stop == "RUNNING" and not getattr(self.svc, "_shutting_down", False)
+                and not self.ledger.usage_unknown
+                and not (self.execution is not None and self.execution.stopped)
+                and left["tokens_left"] > 0
+                and left["requests_left"] - self._cleanup_reserve() >= minimum
+                and left["model_calls_left"] > 0 and left["tool_calls_left"] > 0
+                and left["seconds_left"] != 0)
+
+    def _group_available(self, group) -> bool:
+        return self._group_blocker(group) is None and self._group_has_budget(group)
+
     async def run_group(self, group_id: str, design_note: str = "") -> dict:
         """Design, preflight and execute one deterministic group; the only broad action."""
         refusal = self._operable()
@@ -701,24 +833,24 @@ class AgentSession:
                             "group_id 只能来自 get_test_scope 的 groups[].group_id。",
                             valid_group_ids=[item.get("id") for item
                                              in self.summary.get("groups") or ()])
-        if not group.get("supported", True):
+        blocker, negative_repair = self._group_admission(group)
+        if blocker == "GROUP_UNSUPPORTED":
             return _refusal("GROUP_UNSUPPORTED", "该分组依赖超过一次可处理的接口数量。",
                             retryable=False,
                             hint="用 run_open_obligation 逐项处理候选义务。")
         runs = self.group_runs.get(group_id, 0)
-        if runs >= MAX_GROUP_RUNS:
-            return _refusal("GROUP_RUN_LIMIT", f"分组 {group_id} 已执行 {runs} 次。", 
-                            retryable=False, hint="改用候选义务或结束本轮。")
+        if blocker:
+            hint = {
+                "GROUP_ALREADY_MEASURED": "用 get_test_coverage 查看未测义务。",
+                "GROUP_RUN_LIMIT": "第三次仅留给符合条件的修复；当前没有可用的组运行机会。",
+                "REPAIR_NOTE_REQUIRED": "本组确定性修复机会已使用。",
+            }.get(blocker, "分组当前不具备派发条件。请查看覆盖和阻塞原因。")
+            return _refusal(blocker, f"分组 {group_id} 已执行 {runs} 次。",
+                            retryable=False, hint=hint)
+        if negative_repair and not self._group_has_budget(group):
+            return _refusal("BATCH_REPAIR_BUDGET", "剩余预算不足以设计并执行该单项。",
+                            retryable=False, hint="停止并总结已获得的证据。")
         last_record = self._last_design_record(group_id)
-        last_code = self._diagnostic_code(last_record)
-        if runs >= MAX_GROUP_RUNS - 1 and not formal_code(last_code):
-            # The last attempt is reserved for a formal repair. A semantically rejected batch
-            # has already been redesigned once; a third identical round would only repeat it.
-            return _refusal("GROUP_RUN_LIMIT",
-                            f"分组 {group_id} 已执行 {runs} 次，"
-                            f"且上次不是形式错误（{last_code or 'UNKNOWN'}）。",
-                            retryable=False,
-                            hint="该分组的方案问题需要人工澄清；改用其他义务或结束本轮。")
         evidence = executed_evidence(self.summary)
         policies = {policy.id: policy for policy in self.project.registry.definitions()}
         subject = self._subject()
@@ -743,10 +875,7 @@ class AgentSession:
             and last_record is not None and last_record.get("status") == "REJECTED"
             and previous.get("code") == "CONSTRUCTION_REFERENCE_INVALID"
             and (previous.get("detail") or {}).get("reference") == "SOURCE_UNKNOWN")
-        if reference_repair:
-            if self.repair_runs.get(group_id, 0) >= MAX_RUNTIME_REPAIRS:
-                return _refusal("REPAIR_NOTE_REQUIRED", "本组可信引用修复机会已使用。",
-                                retryable=False, hint="选择其他已批准义务或结束本轮。")
+        if reference_repair or negative_repair:
             # Free text cannot be safely merged with a verified binding requirement.
             note, repaired = "", True
         elif retrying and (not note or note == self.group_notes.get(group_id)):
@@ -778,6 +907,9 @@ class AgentSession:
                     policy_id=key, source_quote=self.text[:300]) for key in remaining])
             if reference_repair:
                 supervision["reference_repair"] = previous
+            if negative_repair:
+                supervision["text"] = self._design_text(group, "", policy_ids=remaining)
+                supervision["negative_repair"] = negative_repair
         before_cases = len(self.summary.get("cases") or ())
         before_records = len(self.summary.get("design_records") or ())
         before_requests = self.ledger.requests
@@ -787,6 +919,7 @@ class AgentSession:
             self.repair_runs[group_id] = self.repair_runs.get(group_id, 0) + 1
         self.record("run_test_group", phase="start", group_id=group_id,
                     design_note=bool(note), runtime_repair=repaired, status="STARTED")
+        start = self.tool_calls[-1]
         try:
             await self.tasks.run_group(self.scope, group, supervision=supervision)
         except StepRecoveryBlocked:
@@ -800,6 +933,14 @@ class AgentSession:
             self.observe_progress(trigger="run_test_group_error")
             return _refusal("TOOL_ERROR", f"{type(exc).__name__}: {str(exc)[:200]}",
                             hint="该动作没有完成；读取覆盖后决定是否换一个候选。")
+        finally:
+            if negative_repair:
+                records = (self.summary.get("design_records") or ())[before_records:]
+                call = (records[-1].get("model_call") or {}) if records else {}
+                if call.get("calls") == 0 or not records:
+                    self.repair_runs.pop(group_id, None)
+                    start["runtime_repair"] = repaired = False
+                    self.flush()
         self.generation += 1
         self.observe_progress(trigger="run_test_group")
         record = (self.summary.get("design_records") or [None])[-1] \
@@ -845,8 +986,7 @@ class AgentSession:
                 detail=view.get("detail") or {},
                 # A formal defect is repairable by the runtime itself; anything else needs a new
                 # constraint from the caller. ``retryable`` says which of the two it is.
-                retryable=bool(formal_code(code)
-                               or self.group_runs.get(group_id, 0) < MAX_GROUP_RUNS),
+                retryable=self._group_available(group),
                 hint=(view.get("detail") or {}).get("hint") or self._repair_hint(code))
         elif cases and all_rejected:
             group["status"] = payload["status"] = "REJECTED"
@@ -855,7 +995,7 @@ class AgentSession:
             # names the approved schema allows and the owning step/obligation. Sending only the
             # code made the model resubmit the same shape, so the refusal carries those facts.
             payload["error"] = rejection_error(
-                cases, retryable=runs == 0,
+                cases, retryable=self._group_available(group),
                 message="方案未通过执行前校验，未发送业务请求。")
         return payload
 
@@ -1105,10 +1245,10 @@ class AgentSession:
             self.project, group, pending, self._diagnostic(record),
             attempt=self.group_runs.get(group_id, 0) + 1), limit=MAX_REPAIR_NOTE)
 
-    def _design_text(self, group: dict, note: str) -> str:
-        policies = {policy.id: policy for policy in self.project.registry.definitions()}
-        related = sorted(policy.id for policy in policies.values()
-                         if policy.operation_id in (group.get("primary") or ()))
+    def _design_text(self, group: dict, note: str, *, policy_ids=None) -> str:
+        related = policy_ids if policy_ids is not None else sorted(
+            policy.id for policy in self.project.registry.definitions()
+            if policy.operation_id in (group.get("primary") or ()))
         base = (f"[本轮由自主运行时指定一个已批准分组] 分组 {group.get('id')}；接口："
                 + "、".join(group.get("primary") or ())
                 + "；已批准策略：" + "、".join(related))

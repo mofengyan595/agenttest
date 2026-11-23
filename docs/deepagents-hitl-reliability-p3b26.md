@@ -233,3 +233,80 @@ Windows 通过真实 Python/Git 验证。现有 Linux WSL shell 验证了导出�
 最慢三项为 PocketBase 全分母冷评分及篡改检查 **123.32 秒**、通用参数归档复算 **62.56 秒**、引用诊断归档冷评分 **60.84 秒**。前 20 项及同样出现于第一次运行的 `TestDesign` 收集提示均保留在 pytest 日志。完整默认收集、原 46 项、新增 20 项及冻结身份均通过，已满足下一步提交和 CI 核查的本地条件。尚未提交、推送或触发本候选的远端 CI。真实模型和真实业务 HTTP 均为 0 次，历史 NO-GO 和 P3-B3 准入保持现状。
 
 [第二次冻结前清单](../.eduwork/p3b26-freeze/run-20261123T075739Z/identity-before.json) · [冻结后清单](../.eduwork/p3b26-freeze/run-20261123T075739Z/identity-after.json) · [pytest 日志](../.eduwork/p3b26-freeze/run-20261123T075739Z/regression/pytest.log) · [逐项终态](../.eduwork/p3b26-freeze/run-20261123T075739Z/regression/tests.json) · [完整审计](../.eduwork/p3b26-freeze/run-20261123T075739Z/audit-summary.json) · [计时](../.eduwork/p3b26-freeze/run-20261123T075739Z/timing.json)
+
+## 11. 2026-11-23 · 五轮真实稳定性验收
+
+**NO-GO，3/5 轮满足原完整评分，门槛为 4/5。** v1、v3、v4 达标。v2 在首个 Focus 请求超时后进入 `NEEDS_REVIEW`。v5 缺一项批准负向义务，最终为 `PARTIAL / OBLIGATION_STALLED`。五轮按原位保留，无替换或补跑。P3-B2.3、B2.4、B2.5 的 NO-GO 保持有效，P3-B3 尚未达到准入条件。
+
+### 11.1 冻结边界与健康探针
+
+候选 `47046640fcd7912dd51f5c8a6b8c67fb29e51544` 的本地 HEAD、`origin/master` 和 GitHub `master` 一致。源码与启动脚本 SHA-256 为 `8c285b05ac88ba5e693d9c7dc8e735c5c32035594b326a03a98f649bc089d742`。批次前及批次结束时工作区干净，完整 checkout SHA-256 为 `382ad4aa590b46378bde1224a4d968fdb809a57e5c31008c0e1d57c7aeec2559`。五份 manifest 均记录相同提交和源码摘要，五个任务和隔离靶场实例各自独立。第二次冻结的 3,032 passed、15 skipped、1 xfailed 证据与 [Python CI 5/5](https://github.com/mofengyan595/agenttest/actions/runs/45142894463)、[Web CI 2/2](https://github.com/mofengyan595/agenttest/actions/runs/45142894515) 已逐项核对。
+
+模型公开配置及依赖版本与 P3-B2.5 一致，公开配置摘要为 `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172`。沿用每次模型请求 60 秒和每任务 64 次模型调用、650,000 tokens、120 次业务 HTTP、900 秒的上限，以及 31 项批准义务、24 条批准负向策略、`createParcel` HITL、持久化和原评分器。上批 112 条调用账本均为 KNOWN，零账本异常或例外。批次从探针前至完成冻结核对共 **1,422.625 秒**。
+
+三次探针串行收到可解析的 HTTP 200 `{"ok":true}`，全部 READY / KNOWN，共 **441 tokens**，零业务 HTTP。网关三次均无单独的请求 ID，表中保留本地调用 ID 和服务端响应 ID。
+
+| 次序 | 本地调用 ID | 耗时 | 输入 + 输出 tokens | 服务端响应 ID |
+| --- | --- | ---: | ---: | --- |
+| 1 | `ef617c3e34d54456a4b30ee3ffce28fc` | 1.547 秒 | 142 + 5 = 147 | `d2ab3723-fbca-4ca5-b71c-92c4b5a12d8a` |
+| 2 | `1fd07d80447a4576aa66cd4992ac366f` | 1.328 秒 | 142 + 5 = 147 | `01880649-0bc1-4625-a319-b34cfe281f35` |
+| 3 | `ecbb7d2b21344c8488acfb2acb75ffa3` | 2.219 秒 | 142 + 5 = 147 | `990dd027-81d9-4916-ad98-faa96629d450` |
+
+### 11.2 逐轮评分与安全证据
+
+| 轮次 | 批准义务 | 负向策略 | 请求级 | 状态 / 停止原因 | strict_complete / complete / checks_passed | 模型调用 / KNOWN tokens | 业务 HTTP | 耗时 | 原评分 |
+| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
+| v1 | 31/31 | 24/24 | 24/24 | COMPLETE / OBLIGATIONS_COMPLETE / ANSWER | false / true / false | 31 / 268,056 | 95 | 319.031 秒 | 达标 |
+| v2 | 0/31 已测 | 0/24 | 0/0 | NEEDS_REVIEW / MODEL_TIMEOUT，Focus 阶段 | 未生成 / false / 未生成 | 1 / UNKNOWN | 0 | 75.797 秒 | 未达标 |
+| v3 | 31/31 | 24/24 | 24/24 | COMPLETE / OBLIGATIONS_COMPLETE / ANSWER | false / true / false | 28 / 229,340 | 95 | 309.828 秒 | 达标 |
+| v4 | 31/31 | 24/24 | 24/24 | COMPLETE / OBLIGATIONS_COMPLETE / ANSWER | false / true / false | 33 / 292,228 | 94 | 317.750 秒 | 达标 |
+| v5 | 30/31 | 23/24 | 23/24 | PARTIAL / OBLIGATION_STALLED / ANSWER | false / false / false | 47 / 403,641 | 92 | 365.906 秒 | 未达标 |
+
+v2 未生成终止义务账本，0 是实际派发证据数，31 是冻结目录分母。该次调用在 60.063 秒触发 `DEADLINE`，没有服务端请求 ID 或可解析响应，用量留在 UNKNOWN。四个有业务执行的轮次均保持 `checks_passed=false`，各有一项 `readAvailability` 主用例的 503 `ASSERTION_FAILED`。实际 HTTP 和断言分别统计，复核请求也可能收到 503。
+
+| 轮次 | HITL 批准记录 / POST 与审批逐次匹配 | 创建 / 删除 / 同身份 404 回读 | 实际 503 / 主用例 503 失败 / 全部失败 |
+| --- | ---: | ---: | ---: |
+| v1 | 9 / 25 | 15 / 15 / 15 | 3 / 1 / 2 |
+| v2 | 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| v3 | 8 / 25 | 15 / 15 / 15 | 3 / 1 / 2 |
+| v4 | 8 / 25 | 15 / 15 / 15 | 2 / 1 / 1 |
+| v5 | 8 / 24 | 15 / 15 / 15 | 3 / 1 / 2 |
+
+五轮共 **140 次模型调用、139 次 KNOWN、1 次 UNKNOWN、1,193,265 已知 tokens、376 次业务 HTTP**。99 次 POST 均可绑定到对应审批的 checkpoint、授权、操作与步骤。60 次实际创建各有同身份 DELETE 后的真实 404 回读。v2 无创建，清理字段未生成。业务事件与 SQLite 回执的身份及顺序一致，零无授权请求、未知写入、写入重放或重复 HTTP attempt。没有凭最终库存或 DELETE 204 判定逐资源清理已证明。
+
+### 11.3 P0 与 P1 专项
+
+| 轮次 | 首份原始 Focus `requested_checks` | P0 诊断与下次请求 | 合法映射持久化 / 请求级实测 | P1 触发 / 每组最大 Design 次数 / 每组最大 runtime_repair |
+| --- | ---: | --- | ---: | --- |
+| v1 | 0 | 缺 24，下一份实际请求含诊断，提案补齐 24 | 24 / 24 | 0 / 2 / 0 |
+| v2 | 无可解析响应 | 首个 Focus 超时，未触发 P0 | 0 / 0 | 0 / 0 / 0 |
+| v3 | 24 | 首次即完整 | 24 / 24 | 0 / 2 / 0 |
+| v4 | 0 | 缺 24，下一份实际请求含诊断，提案补齐 24 | 24 / 24 | 0 / 3 / 0 |
+| v5 | 0 | 缺 24，下一份实际请求含诊断，提案补齐 24 | 24 / 23 | 0 / 2 / 0 |
+
+三次 `FOCUS_REQUESTED_CHECKS_MISSING` 后，使用原始 Context 重编下一份请求，三个请求摘要分别匹配各自 SQLite 调用回执。缺项清单与第二次提案逐条对账，`createParcel` 10、`changeParcel` 4、`replaceParcel` 10，均为操作内的合法 `check_ref`，引用 `source_3`。v3 首次也用相同范围子句提交 24 项。本批四份可通过 Focus 的提案均显式建立请求级证据，未发现范围扩大。v5 的请求级结果仍为 23/24，v2 原始 0/0 保留。
+
+五轮共 **0 次** `CONSTRUCTION_REFERENCE_INVALID / SOURCE_UNKNOWN`。上一轮引用诊断传递、已声明候选与批准生产者、`before` 补齐及备注优先级均**未触发**。本批没有验证 P1 的真实修复成功率。每组 Design 最多 3 次，可信 `runtime_repair` 记录为 0，五轮均无 `NO_PROGRESS` 终止。
+
+全部 51 份 Focus / Design 请求均可重编并与账本摘要匹配。审计核查了 3 份 P0 实际反馈和 22 条带诊断的工具消息，未发现真实凭据、凭据模式或被禁止的诊断字段。原始 Agent POST 正文未归档，Agent 侧核查范围为持久化工具消息与模型账本。原始设计拒绝共 8 次 `JSON_SYNTAX`，其中 7 次 `MISSING_COLON`、1 次 `MISSING_COMMA`，下一次同组提案均可解析。案例预检 `OPENAPI_UNKNOWN_BODY_FIELD` 共 4 次（v1 三次、v5 一次）。v3 另有一次 `MODEL_SCHEMA_MISSING_FIELD`，v4 有一次 `DESIGN_NEGATIVE_UNNEEDED_WRITE`。未出现缺回读预检拒绝或清理未证明。
+
+### 11.4 未达标轮次及批次对比
+
+- **v2 · 模型调用期限触发。** 三次探针均正常，正式 Focus 单次请求未在 60 秒内取得响应。证据不足以定位服务端或网络环节。该轮按当前规则停止，UNKNOWN 保留且无账本调和或例外。后续轮次使用各自独立的任务账本。
+- **v5 · 模型提交了错误入参，既有分组规则阻止再次派发。** `negative_batch_3` 首次因 JSON 语法拒绝。第二次设计中的 `web_rule_3_negative_8` 已执行，`web_rule_3_negative_9` 因 `plan.steps.0.arguments.1.name` 的 `OPENAPI_UNKNOWN_BODY_FIELD` 在预检被拒，实际发送 0 次。`meta`、`name`、`quantity` 及字段路径均已进入工具反馈，后续模型回合可见。该组两次已用，上一条整体 Design 记录为 `PROPOSED`，当前规则把第三次留给形式拒绝。整组与委派单项共收到 8 条 `GROUP_RUN_LIMIT`，最终由 `OBLIGATION_STALLED` 结束。剩余一项保留未测。
+- **下一步最小建议。** 在下一次授权的开发任务中，先离线复验组内部分成功后对剩余预检失败项的候选资格与拒绝反馈，检查能否在原授权和上限内表达单项修复。服务侧如可取得可关联的请求记录，再单独核对 v2 的超时来源。当前证据不足以支持增加超时、重试或预算。
+
+| 观测口径 | P3-B2.5 | P3-B2.6 |
+| --- | ---: | ---: |
+| 原完整评分达标 | 2/5，NO-GO | 3/5，NO-GO |
+| 31/31 批准义务 | 4/5 | 3/5 |
+| 请求级实测 24/24 | 2/5 | 3/5 |
+| 已知用量调用 / UNKNOWN | 112 / 0 | 139 / 1 |
+| 已知 tokens / 业务 HTTP | 964,560 / 430 | 1,193,265 / 376 |
+| 逐资源删除后 404 证明 | 65/65 | 60/60 |
+
+以上是两批独立样本的观测差异。P0 的三次反馈与补齐有同轮请求证据，P1 在本批无真实触发。P3-B3 保持未启动。
+
+[冻结与批次记录](../.eduwork/p3b26-acceptance-4704664/batch.jsonl) · [探针](../.eduwork/p3b26-acceptance-4704664/health.jsonl) · [逐轮位置与门禁](../.eduwork/p3b26-acceptance-4704664/positions.jsonl) · [原口径评分与完整审计](../.eduwork/p3b26-acceptance-4704664/audit.json) · [P0/P1、请求摘要与证据路径](../.eduwork/p3b26-acceptance-4704664/audit-p0-p1.json)
+
+每轮同名目录保存 `manifest.json`、`model-outputs.jsonl`、`phase-*.json`、`target-events.jsonl`、`lab/workspace/tasks.sqlite3` 和 `lab/workspace/tasks.checkpoints.sqlite3`。[v1](../.eduwork/p3b26-acceptance-4704664/release-v1/manifest.json) · [v2](../.eduwork/p3b26-acceptance-4704664/release-v2/manifest.json) · [v3](../.eduwork/p3b26-acceptance-4704664/release-v3/manifest.json) · [v4](../.eduwork/p3b26-acceptance-4704664/release-v4/manifest.json) · [v5](../.eduwork/p3b26-acceptance-4704664/release-v5/manifest.json)

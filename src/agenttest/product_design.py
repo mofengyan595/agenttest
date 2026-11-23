@@ -640,7 +640,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          http_status_requirements=(), response_requirements=(),
                          permission_action_scope=None, data_references=(), planning_ir=None,
                          witness_requirements=None, instance_inputs=False, instance_feedback=None,
-                         reference_repair=None):
+                         reference_repair=None, negative_repair=None):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -738,6 +738,11 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                                if identity_ready(role, environ))}
         context["reference_repair"] = reference_repair_view(
             context, reference_repair, project.target.allowed_operations, ready_roles)
+    if negative_repair:
+        if (not context.get("only_required_checks") or [row["policy_id"]
+                for row in context["requested_checks"]] != [negative_repair["policy_id"]]):
+            raise ValidationFailure(Layer.POLICY, "DESIGN_REQUESTED_CHECKS_MISSING")
+        context["negative_repair"] = negative_repair
     vault = CredentialVault(project.target, environ)
     try:
         if vault.contains_secret(context):
@@ -745,6 +750,11 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
         async with asyncio.timeout(timeout):
             raw = await model.generate(context)
         design = TestDesign.model_validate(bounded_json(raw, 200_000))
+        if negative_repair:
+            from agenttest.negative_batch_repair import permits_case
+
+            if not permits_case(design, negative_repair):
+                raise ValidationFailure(Layer.POLICY, "DESIGN_NEGATIVE_REPAIR_SCOPE")
         if must_be_relevant and not design.relevant:
             raise ValueError("DESIGN_SELECTED_SCOPE_NOT_COVERED")
         if design.relevant and not (design.cases or design.questions or design.not_covered):

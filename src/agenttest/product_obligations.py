@@ -379,7 +379,7 @@ def progress(summary):
 
 
 def supervision_facts(*, project, summary, text, remaining, allow_negatives,
-                      attempts=(), attempted=()):
+                      attempts=(), attempted=(), unavailable_policies=()):
     """The complete, narrowed decision payload; no OpenAPI, bodies or historic logs."""
     from agenttest.task_completion import classify_task, subject_scope
 
@@ -403,7 +403,8 @@ def supervision_facts(*, project, summary, text, remaining, allow_negatives,
                 resources=resources(summary),
                 progress=progress(summary),
                 remaining=dict(remaining),
-                candidates=candidates(project, summary, scope, evidence,
+                candidates=candidates(project, summary, [item for item in scope
+                    if item["policy_id"] not in unavailable_policies], evidence,
                                       allow_negatives=allow_negatives, attempted=attempted))
 
 
