@@ -1,95 +1,99 @@
 # AgentTest
 
-**基于 LLM 规划与确定性执行的 API 测试 Agent：用自然语言描述业务目标，把测试步骤、请求、断言和未完成项保留为可核对证据。**
+**An API testing agent built with Deep Agents and a deterministic execution core.**
 
-传统 API 测试不只是发送 HTTP 请求：跨接口流程需要登录、前序资源 ID、角色与资源归属、异步轮询以及明确的业务预期。LLM 可以辅助提出步骤，但不能独自决定**哪些请求被允许发送、断言什么才算通过**。
+用自然语言描述要验证的 API 行为，由 Agent 组织跨接口测试，由可信代码决定**能否执行、如何断言、何时算完成**。支持 OpenAPI 契约、资源依赖、负向测试、人工审批、持久化恢复与可追溯证据。
 
-AgentTest 将自然语言测试拆分为 **模型规划 → 可信校验 → 受控执行 → 确定性断言 → 脱敏报告**。支持导入 OpenAPI 3.0/3.1 文档、在本地网页发起受支持的测试，并将部分验证通过的稳定场景保存为**不再调用模型的固定回归测试**。
+[![Python CI](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml/badge.svg)](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml)
+[![Web CI](https://github.com/mofengyan595/agenttest/actions/workflows/web.yml/badge.svg)](https://github.com/mofengyan595/agenttest/actions/workflows/web.yml)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](pyproject.toml)
+[![Deep Agents](https://img.shields.io/badge/Harness-Deep%20Agents-5B5BD6)](src/agenttest/product_agent.py)
 
-> 适用场景：后端 API 的多接口业务流程、权限和参数边界测试。首次接入需由操作员确认环境、身份、资源关系及业务规则；目前不是零配置、任意系统通用的测试平台。
+[快速开始](#快速开始) · [核心设计](#核心设计) · [实际验证](#实际验证与当前状态) · [接入自己的 API](#接入自己的-api) · [文档导航](#文档导航)
 
-## 运行效果
+> AgentTest 面向已授权的隔离 API 测试环境。首次接入由操作员确认环境、身份、资源关系和业务规则。
 
-![真实模型 + CourseInsight 的分页任务执行记录](docs/images/first-completion-frozen-desktop.png)
+## 看看它能做什么
 
-图中为 **2026-11-05** 一次真实模型 / 真实 CourseInsight 的测试记录：执行分页与健康检查，共 5 次目标 HTTP、2 次模型调用。它只代表该测试任务，不代表项目整体成功率。相应评估见 [首次完成率与失败分析](docs/first-completion-delivery.md)。
+例如，操作员已批准相关接口、身份与清理策略后，可以提交以下任务。
 
-一个受支持的任务示例：
+> 创建一个测试包裹，修改名称，读取并核对修改结果。最后删除这个包裹，确认再次读取返回 404。
 
-> 创建一个测试资源，修改它的名称，读取并核对修改结果，最后删除同一个资源。
-
-执行器会依据已审核的操作与规则处理认证、前序响应 ID 绑定、请求发送及断言；如果缺少可确认的账号、删除权限或预期，会提示补齐或停止，而不是让模型猜测。
+Agent 需要串起 `POST → PATCH → GET → DELETE → GET`。执行内核检查各步是否引用同一资源及相应写入权限，并记录断言与清理证明。缺少授权、可信预期或有效来源时，系统会拒绝相应计划或标记待审。
 
 ## 核心能力
 
-| 能力 | 说明 |
+| 能力 | 已实现的机制 |
 | --- | --- |
-| 自然语言规划 | 根据已导入的 OpenAPI 和已确认业务规则生成受约束的结构化计划 |
-| 跨接口依赖 | 支持前序成功响应绑定、认证顺序、不同角色与资源归属校验 |
-| 确定性执行 | 由 HTTP 执行器处理凭据、参数、请求数量/超时预算、CSV 上传和有界轮询 |
-| 可信断言 | 校验状态码、字段、条数以及批准的业务预期；不把 HTTP 200 直接视为任务完成 |
-| 失败可追溯 | 区分断言失败、环境错误、工具错误与缺少依据，并保留脱敏的请求及检查记录 |
-| 固定回归 | 将符合条件的完整通过场景导出为 pytest 测试，后续不再消耗规划模型 Token |
-| 本地控制台 | 项目接入、测试助手、任务进度、结果详情与已保存测试 |
+| **自主测试编排** | Deep Agents 负责工具调用与步骤推进，Skills 和上下文管理约束规划方式 |
+| **契约驱动** | 支持 OpenAPI 3.0/3.1 的子集，按已确认的接口、角色和策略设计测试 |
+| **跨接口流程** | 前序响应 ID 引用、登录与角色、资源归属、顺序依赖及 CRUD 生命周期 |
+| **可信执行与断言** | Planning IR、Schema 与 Policy 预检，受控 HTTP 执行，代码核对状态、字段与业务预期 |
+| **安全与人工审批** | 目标与操作白名单，请求与 token 预算，需要审批的写操作走 HITL，未知写入不自动重放 |
+| **持久化与恢复** | 可选 SQLite 检查点、HTTP 步骤账本、恢复检查和同一任务身份约束 |
+| **证据与回归** | 分别记录义务覆盖、实际 HTTP、断言、失败与清理，合格场景可导出为无需模型的 pytest 回归 |
+| **本地 Web Console** | 契约导入、任务提交、进度、报告和已保存测试 |
 
-## 系统架构
+## 核心设计
+
+Deep Agents 通过受限工具提交计划。可信执行内核依据批准的契约、角色、策略和执行证据作出判断。
 
 ```mermaid
 flowchart TD
-    User[自然语言测试目标] --> Planner[LLM 结构化规划]
-    Contract[OpenAPI + 操作员批准的规则] --> Gate[Schema / DSL / Policy / Intent 校验]
-    Planner --> Gate
-    Gate -->|允许执行的计划| Executor[确定性 HTTP 执行器]
-    Gate -->|缺少依据或越界| Review[NEEDS_REVIEW / 拒绝执行]
-    Vault[服务端凭据与受控资源配置] --> Executor
-    Executor --> Target[已授权的隔离测试服务]
-    Target --> Verify[确定性断言]
-    Verify --> Report[脱敏报告与证据]
-    Report --> Regression[支持场景的固定 pytest 回归]
+    U[自然语言测试目标] --> H[Deep Agents Harness]
+    S[Skills / Context Engineering] --> H
+    H --> T[受限测试工具]
+    O[OpenAPI + 人工批准的策略与角色] --> V[Planning IR / Schema / Policy 预检]
+    T --> V
+    V -->|授权且有效| A[HITL / 预算 / 恢复门禁]
+    V -->|拒绝或缺失依据| F[结构化诊断与待审]
+    F --> H
+    A --> E[确定性 HTTP Executor]
+    E --> API[已授权的隔离 API]
+    API --> R[断言 / 生命周期清理 / 证据账本]
+    R --> C[覆盖计算与任务完成判定]
+    C --> W[Web Console / 报告 / 固定回归]
+    C --> H
 ```
 
-核心设计是**将模型建议与执行权限分离**：
+1. **规划与授权。** Deep Agents 是唯一的自主 Harness。执行前检查目标和操作白名单、身份、输入来源、调用顺序及断言依据。
+2. **执行与清理。** 执行器持有服务端凭据，经预算和审批门禁后发送请求。删除后的清理证明来自同一资源的 `404/410` 回读。
+3. **完成与断言。** 批准义务覆盖反映执行范围，断言结果反映响应是否符合预期。覆盖完整的任务仍可能记录真实的 `ASSERTION_FAILED`。
 
-1. **Planner** 只从允许的 Operation / Role / Policy 目录中提出计划。结构化输出有助于解析，但不自动赋予业务权限。
-2. **Validator** 检查 OpenAPI 参数、已批准策略、身份、调用顺序、资源来源和任务意图；未知业务预期不能自动生成可信断言。
-3. **Executor** 持有服务端凭据与目标配置，解析前序成功响应引用，在每次请求前检查预算与授权。不会执行模型产生的 Python、Shell、任意 URL 或文件路径。
-4. **Verifier / Report** 执行固定断言，区分通过、失败与未执行。结果有可审计记录，但断言失败不等于已独立确认业务 Bug。
-5. **Regression** 仅对满足当前导出约束的完整通过场景生成固定测试；重新运行仍需匹配相同可信配置，不代表模型再次理解了需求。
+[自主 Harness](src/agenttest/product_agent.py) · [受限工具](src/agenttest/deep_harness/product_tools.py) · [计划构造](src/agenttest/plan_construction.py) · [预检](src/agenttest/product_preconditions.py) · [执行器](src/agenttest/executor.py) · [完成判定](src/agenttest/task_completion.py) · [恢复](src/agenttest/step_recovery.py)
 
-框架使用 Python、FastAPI、HTTPX、Pydantic；LangGraph 用于可选 Agent 工作流，MCP 提供受限工具入口。前端使用 React 19、TypeScript 和 Vite。
-
-**源码阅读入口：**[Workflow](src/agenttest/workflow.py) · [策略与约束](src/agenttest/policies.py) · [执行器](src/agenttest/executor.py) · [断言器](src/agenttest/verifier.py) · [报告](src/agenttest/report.py)。详细设计见 [技术设计](docs/project-technical-summary.md)。
-
-## 五种结果如何理解
+### 五种检查结果
 
 | 结果 | 含义 |
 | --- | --- |
-| `PASS` | 本次**实际执行**的检查满足已确认预期 |
-| `ASSERTION_FAILED` | 断言与响应不符，需要结合证据判断是否为业务缺陷 |
-| `NEEDS_REVIEW` | 缺少输入、规则、可信预期、执行授权或计划依据 |
-| `TEST_INFRA_ERROR` | 环境、连接或传输故障，不能直接算成业务 Bug |
-| `TOOL_ERROR` | 规划/执行工具内部出错 |
+| `PASS` | 实际执行的检查满足已确认预期 |
+| `ASSERTION_FAILED` | 响应与断言不符，需要结合证据定位 |
+| `NEEDS_REVIEW` | 缺少输入、授权、可信预期或计划依据 |
+| `TEST_INFRA_ERROR` | 环境、连接或传输故障 |
+| `TOOL_ERROR` | 规划或执行工具内部出错 |
 
-接口覆盖、步骤通过、完整需求完成、模型首次规划成功是**不同指标**。AgentTest 会报告不能执行的部分，不把未执行的断言补记为通过。
+## 快速开始
 
-## 快速开始：无密钥离线演示
+离线 Demo 使用本机模拟数据。需要 Python 3.11、Node.js 22.12+ 和 Git。首次安装依赖需联网，运行 Demo 无需 Docker、模型密钥或外部业务服务。
 
-环境：**Python 3.11、Node.js 22.12+、Git**。首次安装需要访问包源或已有依赖缓存；安装完成后，模拟演示不需要 Docker、API Key 或真实业务服务。
-
-### Windows PowerShell
+<details>
+<summary><strong>Windows · PowerShell</strong></summary>
 
 ```powershell
 git clone https://github.com/mofengyan595/agenttest.git
-Set-Location agenttest
+cd agenttest
 .\scripts\setup_env.ps1 -Agent
-Set-Location web
+cd web
 npm ci
 npm run build
-Set-Location ..
+cd ..
 .\scripts\start_web.ps1 -Demo
 ```
 
-### Linux
+</details>
+
+<details>
+<summary><strong>Linux</strong></summary>
 
 ```bash
 git clone https://github.com/mofengyan595/agenttest.git
@@ -102,89 +106,73 @@ cd ..
 .venv/bin/python scripts/serve_web_workspace.py --demo
 ```
 
-打开 <http://127.0.0.1:18012>，按 **项目 → 测试助手 → 测试记录** 体验。可上传示例契约 [`examples/trusted-testing/projects/tickets/openapi.json`](examples/trusted-testing/projects/tickets/openapi.json)，选择“工单 · 内存模拟目标”，确认配置后运行受支持的工单需求。
+</details>
 
-**离线演示使用模拟规划和内存 / Mock 目标，验证的是工程链路，不代表真实 LLM 理解效果。**
+打开 [本地工作台](http://127.0.0.1:18012/)，依次查看项目、测试助手和测试记录。可以加载仓库中的 [工单示例 OpenAPI](examples/trusted-testing/projects/tickets/openapi.json)，选择对应内存模拟目标并确认配置。
 
-也可从仓库根目录单独运行 CLI showcase：
+已安装 Agent 依赖后，也可以运行 CLI 演示。
 
 ```powershell
-# Windows，安装 -Agent 依赖后
 .\.venv\Scripts\python.exe -m agenttest showcase --case all --runs-dir runs/readme-demo
 ```
 
-Linux 改用 `.venv/bin/python`。离线演示包含正常流程、预设断言故障、受控调查、Java 风格 Mock 与 MCP stdio；结果会给出 Run ID 和本地报告位置。
+Linux 使用 `.venv/bin/python`。演示包括正常流程、预设断言失败、受控调查、Java 风格 Mock 和 MCP stdio。故障场景中预期看到 `ASSERTION_FAILED`，结果会给出 Run ID 和本地报告位置。
 
-## 连接真实模型与自己的 API
+## 接入自己的 API
 
-1. 准备**已授权的本地或隔离测试环境**，导出 OpenAPI 3.0/3.1 JSON/YAML，并确认接口操作及业务规则。
-2. 在本机未提交的 `.env` 中配置 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `AGENTTEST_MODEL`；密钥只由服务端使用。
-3. 启动正常 Web 服务：Windows 运行 `.\scripts\start_web.ps1`；Linux 运行 `.venv/bin/python scripts/serve_web_workspace.py`。**不要添加 Demo 参数**。
-4. 在“项目”导入契约，核对环境、角色账号、操作白名单、资源依赖、输入来源与断言依据；缺少可信配置时先补齐，不把导入 OpenAPI 等同于授权执行。
-5. 就绪后在“测试助手”输入自然语言测试目标，查看实际请求、断言及未执行原因。需要写入时，必须使用明确授权的隔离资源。
+1. 准备**已授权的本地或隔离环境**和 OpenAPI 3.0/3.1 JSON 或 YAML 契约。
+2. 参考 [环境变量模板](.env.example) 创建本机 `.env`，配置 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `AGENTTEST_MODEL`。凭据由服务端使用。
+3. 启动正常 Web 服务。Windows 运行 `.\scripts\start_web.ps1`，Linux 运行 `.venv/bin/python scripts/serve_web_workspace.py`。
+4. 在项目页面导入契约，确认目标、操作白名单、角色账号、可信输入、请求依赖、业务预期和写入授权。
+5. 在测试助手提交自然语言目标，查看实际请求、断言、未完成义务及清理证据。
 
-新业务域需要操作员进行一次契约和策略接入；普通日常测试不需要逐题手写 DSL。CSV 上传、轮询和固定回归均有受支持子集，详情见 [通用接入](docs/product-intake-guide.md)、[模型配置](docs/model-configuration.md) 和 [固定回归](docs/regression-export.md)。
+[通用接入指南](docs/product-intake-guide.md) · [模型配置](docs/model-configuration.md)
 
-**安全边界**：只允许批准的目标与操作；模型不能扩大白名单或制定新断言；不会自动重放结果不明的写请求。取消任务不能回滚已经发送的业务请求，缺少删除接口时也不会绕过业务规则清理资源。
+## 实际验证与当前状态
 
-## 验证证据与已知限制
+| 验证范围 | 证据与结论 |
+| --- | --- |
+| **离线冻结回归** | P3-B2.5 冻结候选 **3,012 passed、15 skipped、1 xfailed、0 failed**，收集与执行审计一致。[P3-B2.5 报告](docs/deepagents-hitl-reliability-p3b25.md) |
+| **跨平台 CI** | P3-B2.5 提交 `ae61d8a` 的 **7 个作业全部通过**。[Python 5/5](https://github.com/mofengyan595/agenttest/actions/runs/45108364788) · [Web 2/2](https://github.com/mofengyan595/agenttest/actions/runs/45108364746) |
+| **真实模型稳定性** | P3-B2.5 的独立五轮中，**4/5** 轮达到 31/31 批准义务和 24/24 负向策略。原发布评分仅 **2/5 达标，NO-GO**，门槛为 4/5。 |
+| **清理与异常证据** | 五轮中 65 次创建均有同身份删除后的 404 回读证明。无越权或未知写入重放，实际 503 保留为 `ASSERTION_FAILED`。 |
+| **本地开发** | P3-B2.6 已离线验证 Focus 映射完整性与 Design 引用反馈传递。真实复验待进行，现有 NO-GO 仍有效。[P3-B2.6 记录](docs/deepagents-hitl-reliability-p3b26.md) |
 
-### 可直接复现的离线工程演示
+P3-B2.5 的 v1 在连续引用错误后因 `NO_PROGRESS` 停止。P3-B3 尚未启动。
 
-仓库记录的 2026-11-04 `showcase --case all` 结果如下：
+其他历史实验见 [CourseInsight API 联调](docs/courseinsight-colleague-delivery.md) 和 [首次完成率与失败分析](docs/first-completion-delivery.md)。各报告保留其模型、任务集、配置和分母。
 
-| 案例 | 目标 HTTP 请求 | 结果 |
-| --- | ---: | --- |
-| 正常跨接口流程 | 9 | `PASS` |
-| 预设业务故障 | 4 | `ASSERTION_FAILED`（符合故障演示预期） |
-| 故障后的只读调查 | 5 | `ASSERTION_FAILED`（未掩盖原故障） |
-| Java 风格 Mock | 3 | `PASS` |
-| MCP stdio | 9 | `PASS` |
+## 技术栈
 
-此次演示使用 **0 次真实模型调用、0 次真实 Java 请求**；“演示符合预期”不等于故障场景业务通过。
+- **Agent** · Deep Agents、LangGraph、LangChain、工具调用、Skills 和上下文管理
+- **服务端** · Python 3.11、FastAPI、Pydantic、HTTPX、SQLite
+- **Web** · React 19、TypeScript、Vite
+- **测试与交付** · pytest、Ruff、GitHub Actions、Playwright，可选 MCP 接口
 
-### 真实模型 / 真实 API 的历史评估
+## 开发与路线图
 
-- 对 CourseInsight 的一轮冻结验收中，首次完整完成 **3/10** 项，首次实际请求覆盖 **18/26** 个接口；加入明确记录的复验后实际覆盖 **26/26**。接口被请求过，不等于所有语义与输入边界被验证。
-- 后续用 12 条新需求对基线与候选各执行 2 轮，每版共 24 个测试位置。首次完整完成的结果为基线 **10/24**、候选 **5/24**；候选**没有改善**。部分任务受错误验收配置和登录限流影响，不能据此单独评价某一改动的因果效果。
-- 这些是按特定代码、配置和数据冻结的实验，不能当作跨项目通用成功率；旧成绩不随着新版本自动更新。
+开发阶段按改动范围运行定向测试，候选版本集中执行冻结回归。
 
-原始分母、失败位置、用量及环境约束见 [CourseInsight 交付记录](docs/courseinsight-colleague-delivery.md) 和 [首次完成率评估](docs/first-completion-delivery.md)。
-
-**当前限制**：首次接入仍需人工确认；OpenAPI、JSONPath、自然语言意图和 CSV/轮询支持范围有限；不是生产级多租户服务，也不提供跨服务事务回滚、任意目标网络扫描或任意资源自动清理。模型生成计划的正确性需要通过真实任务继续评估。
-
-## 开发检查与目录
-
-```bash
-# Python 后端（已激活项目 .venv）
-python scripts/check_full.py --jobs 4
-python -m ruff check .
-
-# 前端（web/ 目录）
-npm test
-npm run build
-npm run test:e2e
+```powershell
+.\.venv\Scripts\python.exe scripts/check_dev.py --area product --jobs 3
+.\.venv\Scripts\python.exe -m ruff check .
 ```
 
-全量入口先收集全部默认测试，再用四个独立进程执行并核对每个测试的终态；报告写入
-`runs/full-checks/`。`python -m pytest -q` 仍可串行运行同一套测试。日常局部修改按
-[开发快检说明](docs/development-checks.md)选择范围；全量耗时及限制见
-[验证性能记录](docs/validation-performance.md)。
+在 `web/` 下运行 `npm test` 和 `npm run build`。浏览器 E2E 有额外的环境和服务要求。[开发检查](docs/development-checks.md) · [Web 测试说明](docs/web-console.md)
 
-`test:e2e` 有额外浏览器和服务准备条件，按 [Web 测试说明](docs/web-console.md) 执行；不能把未启动环境导致的跳过当作通过。
+- [x] 受控规划、OpenAPI / Policy 校验、确定性 HTTP、断言与报告
+- [x] Deep Agents Harness、Skills、上下文管理、检查点与步骤恢复、HITL
+- [x] 义务覆盖与清理证明、模型反馈诊断、脱敏、离线评测与固定回归基础
+- [ ] 真实稳定性发布门槛（当前 **NO-GO**）
+- [ ] P3-B3 · Web 长任务、人工审批与断点恢复体验
+- [ ] 跨项目评测、多模型对比与产品化
 
-```text
-agenttest/
-├── src/agenttest/           规划、契约、策略、执行、断言与报告
-├── web/                     React + TypeScript 本地工作台
-├── examples/                OpenAPI、受控目标与固定回归样例
-├── scripts/                 环境安装、启动和验证命令
-├── docs/                    技术设计、接入说明与历史评估
-├── tests/                   Python 测试
-└── pyproject.toml           核心依赖与可选 Agent / MCP 依赖
-```
+## 文档导航
 
-- [通用项目接入](docs/product-intake-guide.md) · [真实模型配置](docs/model-configuration.md)
-- [技术设计与安全边界](docs/project-technical-summary.md) · [固定 pytest 回归](docs/regression-export.md)
-- [Web 工作台](docs/web-intake-guide.md) · [开发检查](docs/development-checks.md)
-- [CourseInsight 真实联调](docs/courseinsight-colleague-delivery.md) · [完整评估与失败分析](docs/first-completion-delivery.md)
+| 想了解什么 | 从这里开始 |
+| --- | --- |
+| API 与真实模型配置 | [通用接入](docs/product-intake-guide.md) · [模型配置](docs/model-configuration.md) |
+| Deep Agents 与整体架构 | [技术设计](docs/project-technical-summary.md) · [Skills 与上下文](docs/deepagents-skills-context-p3a.md) |
+| 断点恢复、审批与可靠性 | [持久化执行](docs/deepagents-durable-execution-p3b1.md) · [P3-B2.5](docs/deepagents-hitl-reliability-p3b25.md) · [P3-B2.6](docs/deepagents-hitl-reliability-p3b26.md) |
+| 可复用测试和实验 | [固定 pytest 回归](docs/regression-export.md) · [实验分析](docs/first-completion-delivery.md) |
+| Web 与开发进度 | [Web 使用指南](docs/web-intake-guide.md) · [开发进度](docs/progress.md) |

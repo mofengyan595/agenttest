@@ -11,7 +11,7 @@ from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import OpenAICompatiblePlanner
 from agenttest.onboarding import _public_metadata
 from agenttest.plan_json import bounded_json
-from agenttest.product_checks import RequestedCheck, validate_requested_checks
+from agenttest.product_checks import MAX_REQUESTED_CHECKS, RequestedCheck, validate_requested_checks
 from agenttest.product_design import design_groups
 from agenttest.product_inputs import (
     InputQuestion,
@@ -237,7 +237,8 @@ class FocusSelection(StrictModel):
     blocked_operation_ids: list[str] = Field(default_factory=list, max_length=1000)
     input_requirements: list[InputRequirement] = Field(default_factory=list, max_length=40)
     input_questions: list[InputQuestion] = Field(default_factory=list, max_length=8)
-    requested_checks: list[RequestedCheck] = Field(default_factory=list, max_length=40)
+    requested_checks: list[RequestedCheck] = Field(default_factory=list,
+                                                 max_length=MAX_REQUESTED_CHECKS)
     expectation_questions: list[ExpectationQuestion] = Field(default_factory=list, max_length=8)
     source_conflicts: list[str] = Field(default_factory=list, max_length=1000)
     requirement_ledger: list[dict] = Field(default_factory=list, max_length=1000)
@@ -489,6 +490,7 @@ class TestFocusModel(OpenAICompatiblePlanner):
                       field for field in fields if field.get("source_dependency")]),
                   "approved_checks": public_check_groups(context.get("approved_checks", [])),
                   "input_sources": sources, "literal_texts": literal_texts(sources)}
+        public.pop("focus_ready_operations", None)
         if context.get('boundary_links'):
             public['boundary_links'] = [{k: v for k, v in link.items()
                 if k not in {'policy_id', 'source_quote'}} for link in context['boundary_links']]
@@ -547,7 +549,8 @@ class TestFocusModel(OpenAICompatiblePlanner):
             error.diagnostic.fields = ["scope.operations"] if selected else ["blocked_operations"]
             raise error
         if requirement_failure is not None:
-            raise focus_violation_failure(requirement_failure, selected, context)
+            raise focus_violation_failure(requirement_failure, selected, context,
+                                          mode=scope["mode"])
         from agenttest.product_focus_wire import decode_operation_bundles
         from agenttest.product_sources import decode_source_refs, input_sources
 
@@ -576,7 +579,8 @@ class TestFocusModel(OpenAICompatiblePlanner):
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
         approved = (context["approved_ids"] if selection.mode == "all_ready"
                     else selection.operation_ids)
-        validate_requested_checks(selection.requested_checks, context, approved)
+        validate_requested_checks(selection.requested_checks, context, approved,
+                                  mode=selection.mode)
         selection.input_requirements = validate_requirements(selection.input_requirements,
             context, approved, requested_checks=selection.requested_checks,
             clauses=selection.requirements)
@@ -616,7 +620,7 @@ def requirement_violation(diagnostic):
                 must_delete=must_delete, must_be_null=[], must_match=must_match)
 
 
-def focus_violation_failure(failure, selected, context):
+def focus_violation_failure(failure, selected, context, *, mode):
     """One rejection naming every independently determinable violation (P3-B2.4 A1).
 
     The requirement_map rule is decided first and keeps its code, so the repair gate and the
@@ -629,17 +633,18 @@ def focus_violation_failure(failure, selected, context):
 
     violations = [requirement_violation(failure.diagnostic)]
     try:
-        selected_ids, details = decode_operation_bundles(selected, context)
-        # The same order the accepted path uses: bundle decode, then source_ref -> source_quote,
-        # then the check rules. Without this step the entries carry no source_quote yet.
-        decode_source_refs(dict(requested_checks=list(details["requested_checks"])),
-                           input_sources(context), context)
-        checks = [RequestedCheck.model_validate(item) for item in details["requested_checks"]]
+        selected_ids, checks = [], []
+        if mode == "selected":
+            selected_ids, details = decode_operation_bundles(selected, context)
+            # Use the same decoding order as the accepted path. The check rules need source_quote.
+            decode_source_refs(dict(requested_checks=list(details["requested_checks"])),
+                               input_sources(context), context)
+            checks = [RequestedCheck.model_validate(item) for item in details["requested_checks"]]
     except (ValidationFailure, ValueError):
         # The operations section is not decodable on its own; only the proven rule is reported.
         pass
     else:
-        violations.extend(requested_check_violations(checks, context, selected_ids))
+        violations.extend(requested_check_violations(checks, context, selected_ids, mode=mode))
     error = grouped_failure(violations, code=failure.diagnostic.code)
     error.diagnostic.detail = {**(failure.diagnostic.detail or {}),
                                **error.diagnostic.detail}
@@ -735,8 +740,10 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         "input_questions", [])
     context["previous_input_requirements"] = (task_context.get("previous_result") or {}).get(
         "input_requirements", [])
-    context["unavailable_operations"] = [o for o in (inventory or {}).get("operations", [])
-                                         if o["state"] != "READY"]
+    inventory_operations = (inventory or {}).get("operations", [])
+    context["focus_ready_operations"] = [o["operation_id"] for o in inventory_operations
+                                         if o["state"] == "READY"]
+    context["unavailable_operations"] = [o for o in inventory_operations if o["state"] != "READY"]
     unavailable = {o['operation_id'] for o in context['unavailable_operations']}
     # Schema facts for held inputs are separate from approved executable input slots.
     context['unavailable_input_fields'] = [dict(operation_id=op.operation_id,
@@ -773,7 +780,8 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
         if any(not any(f["operation_id"] == key and f.get("source_dependency")
                        for f in context["input_fields"]) for key in selection.source_conflicts):
             raise ValidationFailure(Layer.MODEL, "FOCUS_SOURCE_CHOICE_INVALID")
-        validate_requested_checks(selection.requested_checks, context, selected)
+        validate_requested_checks(selection.requested_checks, context, selected,
+                                  mode=selection.mode)
         selection.input_requirements = validate_requirements(selection.input_requirements,
             context, selected, requested_checks=selection.requested_checks,
             clauses=selection.requirements)

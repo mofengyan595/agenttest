@@ -639,7 +639,8 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
                          allow_optional_negatives=True, request_requirements=(),
                          http_status_requirements=(), response_requirements=(),
                          permission_action_scope=None, data_references=(), planning_ir=None,
-                         witness_requirements=None, instance_inputs=False, instance_feedback=None):
+                         witness_requirements=None, instance_inputs=False, instance_feedback=None,
+                         reference_repair=None):
     context = design_context(project, text, group, remaining_requests, inventory_total)
     if task_context:
         context["user_task"] = task_context.get("current_request", text)
@@ -699,7 +700,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
         raise ValueError("DESIGN_REQUESTED_CHECK_NOT_APPROVED")
     context["requested_checks"] = [r for r in requested_checks
         if r["policy_id"] in approved and approved[r["policy_id"]].operation_id in group["primary"]]
-    from agenttest.product_checks import partition_requested_checks
+    from agenttest.product_checks import partition_requested_checks, reference_repair_view
 
     _, unauthorized_values = partition_requested_checks(project, context["requested_checks"],
         input_requirements=input_requirements, input_questions=[dict(
@@ -730,6 +731,13 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
         context["instance_inputs"] = True
         context["instance_feedback"] = instance_feedback
         context["design_note"] = (task_context or {}).get("design_note")
+    elif reference_repair and context.get("only_required_checks"):
+        from agenttest.project_inventory import identity_ready
+
+        ready_roles = {None, *(alias for alias, role in project.target.roles.items()
+                               if identity_ready(role, environ))}
+        context["reference_repair"] = reference_repair_view(
+            context, reference_repair, project.target.allowed_operations, ready_roles)
     vault = CredentialVault(project.target, environ)
     try:
         if vault.contains_secret(context):

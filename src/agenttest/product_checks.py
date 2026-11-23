@@ -1,5 +1,6 @@
 """Source-backed requests for existing negative capabilities, never new execution authority."""
 
+import re
 from copy import deepcopy
 
 from pydantic import Field, model_serializer
@@ -8,6 +9,17 @@ from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import LiteralValue, literal_data
 from agenttest.report import fingerprint
 from agenttest.safety import StrictModel
+
+MAX_REQUESTED_CHECKS = 40
+MISSING_REQUESTED_CHECKS = "FOCUS_REQUESTED_CHECKS_MISSING"
+# Supplement the server's scope classification with a closed current release statement.
+# An anchor with additional words may contain an exclusion even if it mentions the whole project.
+_UNQUALIFIED_RELEASE = re.compile(
+    r"(?:请)?\s*(?:上线|发布|发版|投产)前\s*(?:请)?\s*"
+    r"(?:完整|全量|整套)?\s*(?:验收|检查|测试)\s*(?:整个项目|全项目|全部接口|整个服务)"
+    r"|(?:请)?\s*(?:完整|全量|整套)\s*(?:上线|发布|发版|投产)前\s*(?:验收|检查|测试)"
+    r"|(?:run\s+(?:a\s+)?)?(?:full|complete|comprehensive)\s+pre-?release"
+    r"(?:\s+(?:check|test|validation|acceptance))?", re.IGNORECASE)
 
 
 class ExactNegativeValue(StrictModel):
@@ -86,6 +98,11 @@ def check_groups(index):
 # and the edit it requires, so a repair never has to guess what "fix the error" means.
 MAX_VIOLATION_PATHS = 12
 CHECK_RULES = {
+    MISSING_REQUESTED_CHECKS: (
+        "整项目发布范围内需为每项已批准且就绪的负向策略显式提交 requested_checks 映射",
+        "使用 selected，在 missing_checks 指定的 operation_id 的 requested_checks 中补齐"
+        "对应 check_ref 和 source_ref。exact_value 填 null，适用时 exact_length 也填 null。"
+        "保留已有合法条目；不要为可信范围子句新增 requirement_map 条目"),
     "FOCUS_REQUESTED_CHECK_INVALID": (
         "requested_checks 只能引用 scope 内已批准策略，且 source_quote 必须出现在任务原文里，"
         "同一策略只能用一次",
@@ -128,6 +145,8 @@ def group_violations(violations):
             grouped.append(entry)
         entry["field_paths"].extend(item["field_paths"])
         entry["count"] += item.get("count") or 1
+        if item["error_code"] == MISSING_REQUESTED_CHECKS:
+            entry["missing_checks"] = item["missing_checks"]
         for key in ("must_delete", "must_be_null", "must_match"):
             for value in item.get(key) or ():
                 if value not in entry[key]:
@@ -143,11 +162,72 @@ def grouped_failure(violations, *, code=None):
     error = ValidationFailure(Layer.MODEL, code or grouped[0]["error_code"])
     error.diagnostic.fields = [path for item in grouped
                                for path in item["field_paths"]][:8]
-    error.diagnostic.detail = dict(violations=grouped[:4])
+    # With the completeness rule there can be six codes: A1's independent requirement rule,
+    # the four existing check rules and the missing mappings. Keep all six on that path.
+    limit = 6 if any(item["error_code"] == MISSING_REQUESTED_CHECKS for item in grouped) else 4
+    error.diagnostic.detail = dict(violations=grouped[:limit])
     return error
 
 
-def requested_check_violations(checks, context, selected):
+def missing_requested_checks(context, submitted):
+    """Return only proven gaps from the server's current project scope and ready catalog."""
+    from agenttest.model_input import IDENTIFIER, SECRET
+    from agenttest.product_focus_wire import operation_checks
+    from agenttest.product_sources import input_sources
+    from agenttest.task_completion import is_variant_scope_clause
+
+    scoped = context.get("trusted_scope_clauses", [])
+    atoms = context.get("request_atoms", [])
+    # The server recognizes the release anchor and the qualifier. Extra clauses may narrow
+    # scope or refer to a different round, so leave their interpretation to the existing path.
+    if (len(scoped) != 1 or len(atoms) != 2 or any(atom["future"] for atom in atoms)
+            or not {"managed_authentication", "unavailable_operations", "pending_checks"}
+            <= context.keys()):
+        return []
+    if not any(atom["source_id"] != scoped[0] and _UNQUALIFIED_RELEASE.fullmatch(atom["text"])
+               for atom in atoms):
+        return []
+    quotes = [atom["text"] for atom in atoms if atom["source_id"] == scoped[0]
+              and is_variant_scope_clause(atom["text"])]
+    if len(quotes) != 1:
+        return []
+    source_ref = next((source["source_id"] for source in input_sources(context)
+                       if source["origin"] == "current_clause" and source["text"] == quotes[0]),
+                      None)
+    if source_ref is None:
+        return []
+
+    ready = set(context["approved_ids"])
+    # Live Focus always records positive inventory evidence. Frozen contexts recorded the
+    # complete inventory's non-ready operations instead.
+    if "focus_ready_operations" in context:
+        ready.intersection_update(context["focus_ready_operations"])
+    ready.difference_update(row["operation_id"] for row in context["unavailable_operations"])
+    identities = {row["identity"] for row in context["managed_authentication"]
+                  if row["credential_status"] == "READY"}
+    pending = {(row["operation_id"], row["role"]) for row in context["pending_checks"]}
+    required = {}
+    index = context.get("approved_checks", [])
+    if len({entry["policy_id"] for entry in index}) != len(index):
+        return []
+    for operation, entries in operation_checks(index).items():
+        if operation not in ready:
+            continue
+        for reference, entry in entries.items():
+            roles = entry.get("roles")
+            if not roles or any(role is not None and (role not in identities
+                    or (operation, role) in pending) for role in roles):
+                continue
+            if not IDENTIFIER.fullmatch(operation) or SECRET.search(operation):
+                return []
+            required[entry["policy_id"]] = dict(operation_id=operation, check_ref=reference,
+                                                source_ref=source_ref)
+    if len(required) > MAX_REQUESTED_CHECKS:
+        return []  # A complete proposal cannot fit the existing Focus contract.
+    return [row for policy_id, row in required.items() if policy_id not in submitted]
+
+
+def requested_check_violations(checks, context, selected, *, mode=None):
     """Every independently determinable violation, in proposal order; never raises."""
     from agenttest.task_completion import is_variant_scope_clause
 
@@ -178,8 +258,6 @@ def requested_check_violations(checks, context, selected):
                                                must_be_null=paths))
             continue
         # An explicit field=value request cannot migrate to another field with the same value.
-        import re
-
         value = (literal_data(check.exact_value.value) if check.exact_value is not None
                  else entry.get("invalid_value"))
         assignments = re.findall(r"(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\s*[=＝]\s*"
@@ -211,11 +289,15 @@ def requested_check_violations(checks, context, selected):
                     [field, f"approved_checks.{approved.index(entry)}"],
                     must_match=[(field, "取值必须原样出现在 source_quote 中；"
                                        "不得用另一个字面值替代")]))
+    if mode in ("selected", "all_ready") and (missing := missing_requested_checks(context, seen)):
+        violation = _check_violation(MISSING_REQUESTED_CHECKS,
+                                     ["scope.operations.*.requested_checks"])
+        violations.append(dict(violation, count=len(missing), missing_checks=missing))
     return violations
 
 
-def validate_requested_checks(checks, context, selected):
-    violations = requested_check_violations(checks, context, selected)
+def validate_requested_checks(checks, context, selected, *, mode=None):
+    violations = requested_check_violations(checks, context, selected, mode=mode)
     if violations:
         raise grouped_failure(violations)
 
@@ -426,6 +508,72 @@ def negative_prerequisite_policies(context, identifier):
              and methods.get(p["operation_id"]) == "DELETE"
              and sources(p["id"]) and sources(p["id"]) <= before}
     return before, after
+
+
+def reference_repair_view(context, diagnostic, allowed_operations, ready_roles):
+    """Project a rejected reference and resolve possible producers in the current batch."""
+    from agenttest.credentials import sensitive_field
+    from agenttest.model_input import IDENTIFIER, SECRET, safe_detail, safe_fields, safe_selector
+    from agenttest.plan_construction import argument_matches
+    from agenttest.policies import dependency_roles_match
+
+    def identifier(value):
+        return isinstance(value, str) and IDENTIFIER.fullmatch(value) and not SECRET.search(value)
+
+    detail = diagnostic["detail"]
+    facts = ("reference", "case_index", "step_id", "obligation_id",
+             "allowed_from_steps", "direct_from_steps", "reordered_from_steps")
+    rejected, _ = safe_detail({key: detail[key] for key in facts if key in detail},
+                              items=12, chars=3000)
+    view = dict(code=diagnostic["code"], fields=safe_fields(diagnostic.get("fields")),
+                detail=rejected)
+    binding = detail.get("rejected_binding") or {}
+    if identifier(binding.get("from_step")):
+        rejected["from_step"] = binding["from_step"]
+    if select := safe_selector(binding.get("select")):
+        rejected["select"] = select
+    location, name = binding.get("location"), binding.get("name")
+    producers = []
+    policies = {p["id"]: p for p in context["policies"]}
+    consumer = policies.get(rejected.get("obligation_id"))
+    role = binding.get("consumer_role")
+    if (consumer and consumer["id"] in {row["policy_id"] for row in context["requested_checks"]}
+            and "consumer_role" in binding and role in consumer["roles"] and role in ready_roles
+            and location in ("body", "path_parameters", "query", "headers")
+            and identifier(name) and not sensitive_field(name)):
+        rejected["binding"] = dict(location=location, name=name)
+        before, _ = negative_prerequisite_policies(context, consumer["id"])
+        baseline = policies.get(consumer.get("binding_rules_from_policy"), consumer)
+        for rule in baseline.get("binding_rules", []):
+            policy_id = rule.get("source_policy_id")
+            select = safe_selector(rule.get("source_selector", "$"))
+            if policy_id not in before or not select or not argument_matches(
+                    rule, dict(location=location, name=name, select=select)):
+                continue
+            producer = policies.get(policy_id)
+            if (not producer or producer.get("negative_test") or not identifier(policy_id)
+                    or not identifier(producer["operation_id"])
+                    or producer["operation_id"] not in allowed_operations):
+                continue
+            prerequisites, _ = negative_prerequisite_policies(context, policy_id)
+            if {consumer["id"], policy_id} & prerequisites:
+                continue
+            for source_role in producer["roles"]:
+                if (source_role in ready_roles and (source_role is None or identifier(source_role))
+                        and dependency_roles_match(source_role, role, rule.get("role_relation"))):
+                    candidate = dict(operation_id=producer["operation_id"], policy_id=policy_id,
+                                     role=source_role, selector=select)
+                    if candidate not in producers:
+                        producers.append(candidate)
+    view["approved_producers"] = producers[:12]
+    view["hint"] = ("allowed_from_steps 仅列出上一份方案在本用例已声明的可用节点；"
+                    "引用 reordered_from_steps 中的节点时，构造器会将其排到使用步骤之前。"
+                    "若没有可用节点且 approved_producers 有合法生产者，先在同一用例的 before 中"
+                    "声明该操作、策略和角色的步骤，再用该步骤 id 作 from_step，"
+                    "使用其 selector 作 select。"
+                    "批准策略 ID 本身不是步骤 id。不得引用其他用例或已清理资源。"
+                    "没有批准生产者时不得虚构节点、引用或资源标识。保留已批准的清理与回读。")
+    return view
 
 
 def prerequisite_steps(schema, identifiers):

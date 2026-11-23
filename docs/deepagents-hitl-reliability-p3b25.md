@@ -831,3 +831,115 @@ P3-B2.4 的真实拒绝发生在**预检**而不是设计阶段：`negative_batc
 
 具备申请下一批真实模型验收的条件（仅指"可以申请"）：本轮没有调用任何真实模型、没有向真实
 目标发请求、没有执行五轮验收，这些仍需新的显式授权。
+
+## 15. 真实稳定性验收（2026-11-23）
+
+**NO-GO。** 五轮中 4/5 达到 **31/31 批准义务、24/24 批准负向策略**，且逐资源清理有证据。
+沿用 P3-B2.4 完整发布评分，只有 **2/5** 达标。v2、v5 实际执行了 24 条批准负向策略，
+但 Focus 的请求级检查是 0/0，未达到原评分器的 24/24 请求级覆盖项。v1 有 10 项义务未执行。
+发布门槛仍为至少 4/5，不建议进入 P3-B3。
+
+### 15.1 冻结身份与启动条件
+
+- 验收提交为 `ae61d8ad12bb9aa32f6a96c9456031eb46fe44f8`。启动时本地 `master`、`origin/master`
+  与 GitHub 实际默认分支一致，工作区干净。相对 `dadc615` 的后续提交仅调整测试依赖隔离。
+- 源码与启动脚本摘要为 `d764808a936f207350321926d16e2db0c58c7bacdd9fe5183bedcfa14ff49ed2`，
+  Git 可见文件摘要为 `84be7ad148eea4cba1a078f10a41f147c0478f4de694f7fd4a48d5e5d2874c0a`。
+  五轮前后均通过校验。原冻结清单仍支持 3,012 passed、15 skipped、1 xfailed、0 failed，
+  共 3,028 项。确切提交的 [Keyless Python checks 5/5](https://github.com/mofengyan595/agenttest/actions/runs/45108364788)
+  与 [Web Console checks 2/2](https://github.com/mofengyan595/agenttest/actions/runs/45108364746) 均已通过。
+- 公开配置摘要 `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172` 与
+  P3-B2.4 一致。依赖版本逐项相同，未发现并发回归、验收或靶场进程，loopback 检查通过。
+  既定凭据由本地配置读取，配置文件在批次内摘要一致。未输出秘密或开启第三方 tracing。
+- 五轮沿用同一个发版请求、隔离 parcels 靶场、31 项批准义务、24 条负向策略、`createParcel`
+  HITL 及持久化。请求超时 60 秒，每任务上限为 64 次模型调用、650,000 tokens、120 次业务 HTTP、
+  900 秒。运行预算、断言、Prompt、`NO_PROGRESS` 和未知写入门禁在批次中未调整。
+  五个任务 ID 与五个靶场实例均独立，原有启动器按序执行，每个位置保留一次。
+
+### 15.2 三次 ecnu-max 健康探针
+
+同一请求体串行发送三次，均返回 HTTP 200，解析为 `{"ok":true}`，状态均为 READY、用量均为
+KNOWN。探针合计 277 tokens、0 次业务 HTTP。网关未返回请求 ID，响应 ID 都有记录。时间为北京时间。
+
+| 轮 | 时间 | 本地调用 ID | 耗时 | 输入 + 输出 tokens | 服务端响应 ID |
+| --- | --- | --- | ---: | ---: | --- |
+| 1 | 12:58:42.966 | `0bd512d615624bc79b355b7ce0303dfd` | 1.781 s | 142 + 5 = 147 | `fd86dc57-d3e8-4424-bc3b-cc1fad025f4d` |
+| 2 | 12:58:49.446 | `bca26984d0a746c5ab75d98199a847f7` | 0.859 s | 59 + 6 = 65 | `ebd7cf6abb1e4b1398cde977b523507f` |
+| 3 | 12:58:55.649 | `b9ecba7d6481400a884fb6ecf8dfdcc2` | 0.218 s | 59 + 6 = 65 | `d8a9154a13f645319d60352a3d58c4f2` |
+
+### 15.3 五轮结果与安全对账
+
+表中“请求级”沿用历史发布评分的 `executed_requested_checks / requested_check_denominator`。
+“负向策略”按实际执行回执去重。“503 / 断言失败”分别计 SQLite 实际 HTTP 和用例失败，
+每轮另一次 503 为复核请求。HITL 列为批准记录数与成功绑定审批的 POST 数。
+
+| 轮 | 批准义务 | 负向策略 | 请求级 | 终止状态 / 代码 / 停止原因 | strict_complete / complete / checks_passed | 模型调用 / KNOWN tokens | 业务 HTTP | HITL | 创建 / 删除 / 404 回读 | 503 / 断言失败 | 耗时 | 原评分 |
+| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| v1 | 21/31 | 14/24 | 14/24 | `PARTIAL / OBLIGATION_NOT_DISPATCHED / NO_PROGRESS` | false / false / false | 21 / 184,374 | 54 | 5 / 15 | 5 / 5 / 5 | 2 / 1 | 218.140 s | 未达标 |
+| v2 | 31/31 | 24/24 | 0/0 | `COMPLETE / OBLIGATIONS_COMPLETE / ANSWER` | false / true / false | 24 / 203,940 | 94 | 8 / 25 | 15 / 15 / 15 | 2 / 1 | 340.172 s | 未达标 |
+| v3 | 31/31 | 24/24 | 24/24 | `COMPLETE / OBLIGATIONS_COMPLETE / ANSWER` | false / true / false | 22 / 185,608 | 94 | 8 / 25 | 15 / 15 / 15 | 2 / 1 | 340.172 s | 达标 |
+| v4 | 31/31 | 24/24 | 24/24 | `COMPLETE / OBLIGATIONS_COMPLETE / ANSWER` | false / true / false | 21 / 182,328 | 94 | 8 / 25 | 15 / 15 / 15 | 2 / 1 | 455.297 s | 达标 |
+| v5 | 31/31 | 24/24 | 0/0 | `COMPLETE / OBLIGATIONS_COMPLETE / ANSWER` | false / true / false | 24 / 208,310 | 94 | 8 / 25 | 15 / 15 / 15 | 2 / 1 | 357.063 s | 未达标 |
+
+- 五个启动器退出码均为 0。批次从探针前到末次校验完成耗时 1,753.172 秒，五轮自身合计
+  1,710.844 秒。正式验收 112 次模型调用、964,560 tokens，0 次超时、0 次 UNKNOWN、0 次网关异常。
+  112 个独立调用 ID 在 SQLite 账本与 Trace 一一对齐，核对阶段、请求摘要、状态及用量。
+- 430 条业务 HTTP 与 SQLite 回执按方法、资源路径摘要及顺序对齐。全部是首次尝试、均为
+  `EVIDENCE_COMMITTED`。115 条 POST 经 checkpoint、授权摘要、工具调用键及步骤核对，
+  全部绑定 37 项已批准的 HITL 记录。零越权、零未知写入、零重放、零负向策略重复派发。
+- 逐条核对 65 次创建的身份、删除回执和其后同一身份的已批准 GET。65 条回读实际都返回 404，
+  没有 410，`CLEANUP_UNPROVEN`、清理失败及未决写入均为 0。另有 50 条负向 POST 无副作用证明。
+  五个靶场终态库存均为 0。库存和 DELETE 204 单独均未计入清理证明。
+- 每轮均从隔离靶场实收 `readAvailability` HTTP 503，并保留主用例的 `ASSERTION_FAILED`
+  （预期 200）。五轮主用例各失败一次，另各有一次实收 503 的复核。义务覆盖记录实测结果，
+  `complete` 只在覆盖和清理齐全时为 true。已确认的 503 断言失败使五轮的
+  `strict_complete` 和 `checks_passed` 均为 false。历史发布评分以真实检出该断言失败为一项验收证据。
+
+### 15.4 四项修复与 P3-B2.4 对照
+
+| 观察项 | P3-B2.4 | P3-B2.5 | 证据范围 |
+| --- | --- | --- | --- |
+| JSON 结构修复 | 55 次设计调用，14 次 `JSON_SYNTAX`，均为 `MISSING_COLON`。同组下一份提案 11 次成为合法 JSON、2 次仍有语法错、1 次没有后续。同组语法错误最长连续 2 次。v2 `negative_batch_7` 的 2 项未执行，期间同时发生缺字段。 | 41 次设计调用，0 次 `JSON_SYNTAX`，0 项因此未执行。 | 以调用 ID 去重，按同组紧接的下一提案归类。P3-B2.5 无真实修复样本，结构化提示和下一次修复的运行效果仍未验证。 |
+| 案例级预检 | 31 条负向案例预检拒绝，含 24 条 `OPENAPI_UNKNOWN_BODY_FIELD`。 | 0 条案例级预检拒绝。 | 允许字段、错误路径、提示、截断、串位和修复后的预检通过率在本批均无触发样本。 |
+| 清理证明预检 | 51 次创建，48 次有回读证明，3 次只有删除回执。 | `DESIGN_CLEANUP_READ_BACK_MISSING` 触发 0 次。65 次创建均有可关联的 DELETE 204 与后续 GET 404，未证明项为 0。 | 清理结果可验证。缺回读拒绝、提示与模型补齐流程在本批没有真实触发。 |
+| 模型输入投影 | 历史本地回放曾复现原始诊断字段外发路径，见 §12。 | 核对 74 条持久化工具消息，其中 5 条带拒绝诊断。4 条后续有模型回合。另将 46 次 Focus/Design 输入离线重编码，对上 46/46 个真实请求摘要。 | 所审样本的诊断投影未检出禁止键、未经允许的请求值、凭据或原始错误文本。Agent 全量 POST 正文未归档，结论以 checkpoint 的工具消息、后续回合和设计请求摘要为限。没有投放敏感哨兵。 |
+
+P3-B2.4 的批准义务实测为 27、29、0、26、26，P3-B2.5 为 21、31、31、31、31。
+前者 0/5 达 31/31，后者 4/5 达 31/31。两批使用相同的目标、门槛和公开预算，
+模型调用和业务执行量分别为 192 / 322 与 112 / 430。本批样本组合不同，差值无法单独归因于 B1、
+案例级反馈或清理预检；三条路径都没有在本批触发。
+
+### 15.5 剩余阻塞与归因
+
+- **模型输出与规划。** v1 `negative_batch_5` 三次 `CONSTRUCTION_REFERENCE_INVALID / SOURCE_UNKNOWN`
+  均拒绝了指向未声明产生者的引用。三个工具反馈均保留错误路径、空的候选列表、精确义务及提示，
+  前两次之后仍收到同类建模失败。该组 4 项缺失，紧随其后的两个分组尚未派发，另缺 6 项。
+  v1 另有一次 `UNKNOWN_CANDIDATE_ID` 工具拒绝。v5 同组出现一次 `DESIGN_OMISSION_SHAPE_INVALID`，
+  后续同组方案通过并完成，未留下漏项。
+- **Focus 与评分覆盖。** 五轮 Focus 均在首个提案选中范围，无 Focus 拒绝。v2、v5 的原始 Focus
+  为请求子句生成了 18 项 `response_checks`，三个负向操作的
+  `scope.operations[*].requested_checks` 均为空。随后按批准策略目录执行 24/24，评分所需的
+  请求级覆盖仍为 0/0。这是最主要的剩余发布阻塞，证据位于两轮 Focus 原文、阶段摘要和执行回执。
+- **按设计终止。** v1 因 `NO_PROGRESS` 保留剩余义务，并如实标为 `PARTIAL`。其他四轮实测完成并保留
+  503 断言失败。
+- **Harness 与模型服务。** 本批未发现 Runtime 崩溃、越权、写入重放或错误完成标记，也未观测网关异常。
+  缺少触发样本的三项反馈维持待真实验证。本批结果未改变 P3-B2.3 与 P3-B2.4 的历史 NO-GO。
+
+### 15.6 证据索引
+
+证据根目录为 `.eduwork/p3b25-acceptance-ae61d8a/`。批次级证据为 `batch.jsonl`、
+`health.jsonl`、`positions.jsonl`、`audit.json` 和 `p3b24-comparison.json`。
+`audit.json` 的 SHA-256 为 `c2764384a2989701f6908e156f30b2812b0ee1b08c4184383b42e1e6247df470`。
+每轮目录内的 `manifest.json` 是运行清单，`model-outputs.jsonl` 保留原始 Focus/Design Trace，
+`target-events.jsonl` 保存实际靶场事件，`lab/workspace/tasks.sqlite3` 是模型、HTTP、HITL 账本，
+`lab/workspace/tasks.checkpoints.sqlite3` 是持久化消息与工具 Trace。
+
+| 目录 | 最终阶段 Trace | SQLite 任务 ID |
+| --- | --- | --- |
+| `release-v1/` | `phase-05.json` | `df4f0426ae124bcab5ebbead3be9dc86` |
+| `release-v2/` | `phase-08.json` | `646ac0fed7c94ae58d4a2ba4051ff481` |
+| `release-v3/` | `phase-08.json` | `0d945f19013841c9ad2f31c97ddd4083` |
+| `release-v4/` | `phase-08.json` | `88be0c443f2544e896e1cc7a3d7f3cbd` |
+| `release-v5/` | `phase-08.json` | `f754f758f5da49db9f4634ff1359dd04` |
+
+本批已停止。五轮均保留，未追加或替换样本。本批未修改 A4、B2、预算或重试规则，未启动下一批或 P3-B3。

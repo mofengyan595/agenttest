@@ -12,6 +12,8 @@ Stored evidence is never modified — only the copy the model reads.
 import json
 import re
 
+from agenttest.selectors import SELECTOR
+
 REDACTED = "[已脱敏]"
 MAX_KEYS = 12        # matches the bound ``Diagnostic.detail`` already has
 MAX_ITEMS = 10       # list/dict entries per fact
@@ -64,6 +66,13 @@ def safe_path(value) -> str | None:
         return None
     parts = value.split(".")
     if parts and all(PATH_PART.match(part) for part in parts) and not SECRET.search(value):
+        return value
+    return None
+
+
+def safe_selector(value) -> str | None:
+    if (isinstance(value, str) and len(value) <= 200 and SELECTOR.fullmatch(value)
+            and not SECRET.search(value)):
         return value
     return None
 

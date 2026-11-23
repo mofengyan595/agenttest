@@ -709,7 +709,8 @@ class AgentSession:
         if runs >= MAX_GROUP_RUNS:
             return _refusal("GROUP_RUN_LIMIT", f"分组 {group_id} 已执行 {runs} 次。", 
                             retryable=False, hint="改用候选义务或结束本轮。")
-        last_code = self._diagnostic_code(self._last_design_record(group_id))
+        last_record = self._last_design_record(group_id)
+        last_code = self._diagnostic_code(last_record)
         if runs >= MAX_GROUP_RUNS - 1 and not formal_code(last_code):
             # The last attempt is reserved for a formal repair. A semantically rejected batch
             # has already been redesigned once; a third identical round would only repeat it.
@@ -736,8 +737,19 @@ class AgentSession:
             return refusal_payload
         note = self._note(design_note)
         repaired = False
-        if (runs and group.get("status") in {"NOT_EXECUTED", "REJECTED"}
-                and (not note or note == self.group_notes.get(group_id))):
+        retrying = runs and group.get("status") in {"NOT_EXECUTED", "REJECTED"}
+        previous = self._diagnostic(last_record)
+        reference_repair = (retrying and bool(group.get("policy_ids"))
+            and last_record is not None and last_record.get("status") == "REJECTED"
+            and previous.get("code") == "CONSTRUCTION_REFERENCE_INVALID"
+            and (previous.get("detail") or {}).get("reference") == "SOURCE_UNKNOWN")
+        if reference_repair:
+            if self.repair_runs.get(group_id, 0) >= MAX_RUNTIME_REPAIRS:
+                return _refusal("REPAIR_NOTE_REQUIRED", "本组可信引用修复机会已使用。",
+                                retryable=False, hint="选择其他已批准义务或结束本轮。")
+            # Free text cannot be safely merged with a verified binding requirement.
+            note, repaired = "", True
+        elif retrying and (not note or note == self.group_notes.get(group_id)):
             # A formal rejection never sent a request, so the runtime may repair it itself from
             # the structured diagnostic instead of waiting for the model to invent a new note.
             auto = self.formal_repair_note(group_id)
@@ -764,6 +776,8 @@ class AgentSession:
                 text=self._design_text(group, note),
                 approved_negative_checks=[supplied.get(key) or dict(
                     policy_id=key, source_quote=self.text[:300]) for key in remaining])
+            if reference_repair:
+                supervision["reference_repair"] = previous
         before_cases = len(self.summary.get("cases") or ())
         before_records = len(self.summary.get("design_records") or ())
         before_requests = self.ledger.requests

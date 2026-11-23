@@ -3,8 +3,10 @@
 import json
 import re
 
+from agenttest.credentials import sensitive_field
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.llm_planner import GenericPlannerDraft
+from agenttest.model_input import SECRET, safe_selector
 from agenttest.policies import dependency_roles_match
 
 ENCODING = 'UNORDERED_APPROVED_NODES_V1'
@@ -229,6 +231,13 @@ def construct_plan(plan, context):
                       obligation_id=node['policy_id'],
                       direct_from_steps=safe_ids(direct),
                       reordered_from_steps=safe_ids(reordered))
+        if reference == 'SOURCE_UNKNOWN':
+            name = argument['name']
+            detail['rejected_binding'] = dict(
+                from_step=next(iter(safe_ids([argument['from_step']])), None),
+                select=safe_selector(argument.get('select')), location=argument['location'],
+                name=(name if IDENTIFIER.fullmatch(name) and not SECRET.search(name)
+                      and not sensitive_field(name) else None), consumer_role=node['role'])
         if usable_blocked:
             detail['blocked_from_steps'] = usable_blocked
         constraint = order_constraint(safe_ids(reordered), usable_blocked)

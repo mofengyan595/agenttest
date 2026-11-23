@@ -21,6 +21,7 @@ from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
+from agenttest.product_checks import MAX_REQUESTED_CHECKS
 from agenttest.product_design import TestDesign, design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, aggregate, fingerprint
 from agenttest.requirement_ledger import (
@@ -158,7 +159,6 @@ NON_REPAIRABLE_FOCUS = frozenset({
 # The Focus schema bounds one proposal to 40 requested checks, and one check can violate the
 # scope-clause rule in two fields. Every legal proposal therefore fits; the cap only guards a
 # pathological diagnostic, and whatever it ever cuts is counted in ``omitted``, never dropped.
-MAX_REQUESTED_CHECKS = 40
 MAX_REPAIR_PATHS = 2 * MAX_REQUESTED_CHECKS
 
 
@@ -1454,6 +1454,7 @@ class ProductTasks:
                     and not any(item.get("policy_ids") for item in summary["groups"])),
                 instance_inputs=instance_inputs,
                 instance_feedback=previous_rejection,
+                reference_repair=(supervision or {}).get("reference_repair"),
                 must_be_relevant=must_be_relevant,
                 available_identity_aliases=[r["alias"] for r in svc.intake.record(
                     row["project_id"])["generic"]["roles"]],
