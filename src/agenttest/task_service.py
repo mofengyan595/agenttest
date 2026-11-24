@@ -11,6 +11,7 @@ from agenttest.goal_derivation import derive_goal
 from agenttest.goal_runtime import run_goal
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger, build_suite, run_suite
 from agenttest.human_review import UNKNOWN, HumanReviews, configuration
+from agenttest.model_timing import ModelCancellation
 from agenttest.planner_input import validate_user_task
 from agenttest.project_goals import RegisteredProject, check_goal_credentials, load_goal_project
 from agenttest.report import Outcome, ReportStore, fingerprint
@@ -342,7 +343,7 @@ class TaskService:
             # The cancellation still owns that transition.
             verifying = any(review["status"] == "VERIFICATION_REQUESTED"
                             for review in self.reviews.list(task_id, owner))
-            worker.cancel()
+            worker.cancel(ModelCancellation.USER)
             await asyncio.gather(worker, return_exceptions=True)
             current = self.db.get(task_id, owner)
             if verifying and current["status"] == "INTERRUPTED":
@@ -637,7 +638,7 @@ class TaskService:
         self._shutting_down = True
         workers = list(self._workers.values())
         for worker in workers:
-            worker.cancel()
+            worker.cancel(ModelCancellation.SHUTDOWN)
         await asyncio.gather(*workers, return_exceptions=True)
         for task_id, owner in self._owners.items():
             row = self.db.get(task_id, owner)

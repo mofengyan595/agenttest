@@ -255,6 +255,13 @@ class TaskStore:
                        (state, stats.model_copy(update={"usage_state": state}).model_dump_json(),
                         call_id))
 
+    def latest_model_call(self, task_id):
+        """Read the last locally journaled call for the task's interruption report."""
+        with self.connect() as db:
+            row = db.execute("SELECT state,stats FROM model_usage_journal WHERE task_id=? "
+                             "ORDER BY rowid DESC LIMIT 1", (task_id,)).fetchone()
+        return dict(json.loads(row["stats"]), usage_state=row["state"]) if row else None
+
     def reconcile_model_usage(self, evidence):
         """Operator-only receipt reconciliation; original unknown evidence stays immutable."""
         from agenttest.usage_reconciliation import ProviderUsageReceipt

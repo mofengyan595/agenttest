@@ -1,6 +1,5 @@
 """Bounded model test design using existing model transport and trusted policy catalogs."""
 
-import asyncio
 import re
 from copy import deepcopy
 from dataclasses import replace
@@ -12,6 +11,7 @@ from agenttest.credentials import CredentialVault
 from agenttest.diagnostics import Layer, ValidationFailure
 from agenttest.dsl import Scenario
 from agenttest.llm_planner import GenericPlannerDraft, OpenAICompatiblePlanner
+from agenttest.model_timing import model_deadline
 from agenttest.onboarding import _public_metadata
 from agenttest.plan_json import bounded_json
 from agenttest.planner_input import planning_context
@@ -747,7 +747,7 @@ async def propose_design(project, text, group, model, *, environ, remaining_requ
     try:
         if vault.contains_secret(context):
             raise ValueError("DESIGN_CONTEXT_CONTAINS_CREDENTIAL")
-        async with asyncio.timeout(timeout):
+        async with model_deadline(timeout, "DESIGN_DEADLINE"):
             raw = await model.generate(context)
         design = TestDesign.model_validate(bounded_json(raw, 200_000))
         if negative_repair:

@@ -46,6 +46,7 @@ from pydantic import BaseModel, Field
 
 from agenttest.llm_planner import ModelSettings, provider_request_id, safe_provider_id, timeout_kind
 from agenttest.model_retry import retry_after_seconds
+from agenttest.model_timing import ModelCallTelemetry
 from agenttest.report import ModelCallStats, fingerprint
 
 # Closed error taxonomy; a caller can branch on these without parsing prose.
@@ -321,12 +322,14 @@ class EcnuxChatModel(BaseChatModel):
             raise ModelHarnessError(MODEL_TOKEN_BUDGET)
         return encoded
 
-    async def _acall(self, payload: dict) -> tuple[dict, dict, float]:
+    async def _acall(self, payload: dict, stats: ModelCallStats, *,
+                     telemetry_started: float) -> tuple[dict, dict, float]:
         settings = self.settings
         credential = settings.api_key.get_secret_value()
         encoded = self._encode(payload)
         started = time.monotonic()
-        stats = self.model_stats
+        telemetry = stats.telemetry
+        telemetry.mark("request_prepared", started=telemetry_started)
         stats.model_name = settings.audit_model_name
         stats.model_sha256 = fingerprint(settings.model)
         stats.started_at = time.time()
@@ -339,18 +342,23 @@ class EcnuxChatModel(BaseChatModel):
             async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                          follow_redirects=False,
                                          timeout=settings.timeout) as client:
+                telemetry.mark("dispatch_started", started=telemetry_started)
                 async with client.stream(
                         "POST", settings.base_url + "/chat/completions", content=encoded,
                         headers={"Content-Type": "application/json",
                                  "Authorization": "Bearer " + credential}) as response:
+                    telemetry.mark("headers_received", started=telemetry_started)
                     stats.http_status = response.status_code
                     stats.provider_request_id = provider_request_id(response, credential)
                     raw = bytearray()
                     async for chunk in response.aiter_bytes(chunk_size=16384):
+                        if chunk:
+                            telemetry.mark("first_body_chunk", started=telemetry_started)
                         raw.extend(chunk)
                         stats.response_bytes = len(raw)
                         if len(raw) > self.max_response_bytes:
                             raise ModelHarnessError(MODEL_RESPONSE_LIMIT)
+                    telemetry.mark("body_complete", started=telemetry_started)
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
                         stats.refused = True
@@ -363,44 +371,52 @@ class EcnuxChatModel(BaseChatModel):
                             retry_after=retry_after_seconds(response.headers.get("Retry-After")))
         except (httpx.TimeoutException, TimeoutError) as exc:
             stats.timeout_kind = timeout_kind(exc)
+            telemetry.transport_timeout(stats.timeout_kind)
             raise ModelHarnessError(MODEL_TIMEOUT) from None
         except httpx.TransportError:
+            telemetry.interruption_source = "UNKNOWN"
             raise ModelHarnessError(MODEL_CONNECTION_ERROR) from None
         finally:
             stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
         try:
             data = json.loads(bytes(raw).decode("utf-8"))
+            telemetry.mark("json_parsed", started=telemetry_started)
             if isinstance(data, dict):
                 stats.provider_response_id = safe_provider_id(data.get("id"), credential)
             choice = (data.get("choices") or [])[0]
             message = choice["message"]
         except (ValueError, KeyError, IndexError, TypeError):
+            if "json_parsed" not in telemetry.stages_ms:
+                telemetry.usage_evidence = "RESPONSE_PARSE_FAILED"
             raise ModelHarnessError(MODEL_INVALID_RESPONSE, "envelope") from None
         return data, message, stats.elapsed_ms
 
-    def _usage(self, data: dict) -> dict | None:
+    def _usage(self, data: dict, stats: ModelCallStats, *, started: float) -> dict | None:
         """Validate the provider's usage block; a missing or inconsistent block is UNKNOWN."""
+        if stats.telemetry is not None:
+            stats.telemetry.observe_usage(data, started=started)
         usage = data.get("usage") or {}
         counts = [usage.get(key) for key in ("prompt_tokens", "completion_tokens",
                                              "total_tokens")]
         if any(type(value) is not int or value < 0 for value in counts):
-            self.model_stats.reason = "MODEL_USAGE_UNKNOWN"
+            stats.reason = "MODEL_USAGE_UNKNOWN"
             return None
         if counts[2] != counts[0] + counts[1]:
-            self.model_stats.reason = "MODEL_USAGE_UNKNOWN"
+            stats.reason = "MODEL_USAGE_UNKNOWN"
             return None
         settings = self.settings
         if (counts[0] > settings.max_input_tokens or counts[1] > settings.max_output_tokens
                 or counts[2] > settings.max_total_tokens):
             raise ModelHarnessError(MODEL_TOKEN_BUDGET)
-        self.model_stats.input_tokens = counts[0]
-        self.model_stats.output_tokens = counts[1]
-        self.model_stats.total_tokens = counts[2]
+        stats.input_tokens = counts[0]
+        stats.output_tokens = counts[1]
+        stats.total_tokens = counts[2]
         return {"input_tokens": counts[0], "output_tokens": counts[1],
                 "total_tokens": counts[2]}
 
-    def _message(self, data: dict, message: dict, index: int) -> AIMessage:
-        usage = self._usage(data)
+    def _message(self, data: dict, message: dict, index: int,
+                 stats: ModelCallStats, *, started: float) -> AIMessage:
+        usage = self._usage(data, stats, started=started)
         choice = data["choices"][0]
         finish = choice.get("finish_reason")
         if finish == "length":
@@ -411,8 +427,8 @@ class EcnuxChatModel(BaseChatModel):
         if self.settings.api_key.get_secret_value() in content:
             raise ModelHarnessError(MODEL_SECRET_OUTPUT)
         calls = parse_tool_calls(message, index)
-        self.model_stats.output_sha256 = fingerprint(content)
-        self.model_stats.reason = "MODEL_OUTPUT_RECEIVED"
+        stats.output_sha256 = fingerprint(content)
+        stats.reason = "MODEL_OUTPUT_RECEIVED"
         return AIMessage(content=content, tool_calls=calls,
                          response_metadata={"finish_reason": finish,
                                             "model": data.get("model")},
@@ -424,27 +440,33 @@ class EcnuxChatModel(BaseChatModel):
         tools = kwargs.get("tools")
         payload = self._payload(messages, tools if isinstance(tools, list) else None,
                                kwargs.get("tool_choice"))
-        self.model_stats = ModelCallStats()
+        stats = ModelCallStats(telemetry=ModelCallTelemetry())
+        self.model_stats = stats
+        started = time.monotonic()
         tool_names: list[str] = []
         error = None
         try:
-            data, message, _elapsed = await self._acall(payload)
-            result = self._message(data, message, 0)
+            data, message, _elapsed = await self._acall(payload, stats, telemetry_started=started)
+            result = self._message(data, message, 0, stats, started=started)
             tool_names = [call.get("name") for call in result.tool_calls or ()]
             return ChatResult(generations=[ChatGeneration(message=result)])
         except ModelHarnessError as exc:
             error = exc.code
             raise
+        except asyncio.CancelledError as exc:
+            stats.telemetry.cancelled(exc)
+            raise
         finally:
-            self._accumulate(payload, tool_names, error)
+            self._accumulate(payload, tool_names, error, stats, started=started)
 
     def _accumulate(self, payload: dict, tool_names: list[str],
-                    error: str | None) -> None:
+                    error: str | None, stats: ModelCallStats, *, started: float) -> None:
         """One authoritative ledger row per attempted call, beside the per-call stat."""
-        stats = self.model_stats
         stats.ended_at = time.time()
         stats.error_type = error
         stats.usage_state = stats.observed_usage_state()
+        stats.finish_telemetry(started=started)
+        self.model_stats = stats
         self.totals.calls += stats.calls
         self.totals.input_tokens += stats.input_tokens or 0
         self.totals.output_tokens += stats.output_tokens or 0

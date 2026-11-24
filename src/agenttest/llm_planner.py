@@ -26,6 +26,7 @@ from pydantic_core import PydanticCustomError
 from agenttest.diagnostics import Diagnostic, Layer, ValidationFailure, schema_diagnostic
 from agenttest.dsl import ArgumentBinding, Scenario, Step
 from agenttest.model_retry import retry_after_seconds
+from agenttest.model_timing import ModelCallTelemetry, model_deadline
 from agenttest.plan_json import bounded_json
 from agenttest.report import ModelCallStats, Outcome, fingerprint
 from agenttest.safety import StrictModel
@@ -63,16 +64,22 @@ class PlannerFailure(Exception):
         self.diagnostic = diagnostic or Diagnostic(layer=Layer.MODEL, code=reason)
 
 
-async def provider_error_diagnostic(response, stats):
+async def provider_error_diagnostic(response, stats, *, started: float):
     """Classify bounded provider errors using closed schema keywords, never raw messages."""
     raw = bytearray()
     try:
         async for chunk in response.aiter_bytes(chunk_size=4096):
+            if stats.telemetry is not None and chunk:
+                stats.telemetry.mark("first_body_chunk", started=started)
             raw.extend(chunk)
             stats.response_bytes = len(raw)
             if len(raw) > 8192:
                 return None
+        if stats.telemetry is not None:
+            stats.telemetry.mark("body_complete", started=started)
         data = bounded_json(raw.decode("utf-8"), 8192)
+        if stats.telemetry is not None:
+            stats.telemetry.mark("json_parsed", started=started)
         error = data.get("error") if isinstance(data, dict) else None
         message = error.get("message") if isinstance(error, dict) else None
         if response.status_code == 429:
@@ -464,44 +471,52 @@ class OpenAICompatiblePlanner:
         return self._settings.max_input_tokens + self._settings.max_output_tokens
 
     async def generate(self, context: dict) -> str:
-        self.stats = ModelCallStats(model_name=self._settings.audit_model_name,
-                                    model_sha256=fingerprint(self._settings.model),
-                                    started_at=time.time())
+        stats = ModelCallStats(model_name=self._settings.audit_model_name,
+                               model_sha256=fingerprint(self._settings.model),
+                               started_at=time.time(), telemetry=ModelCallTelemetry())
+        self.stats = stats
         started = time.monotonic()
         try:
-            return await self._generate(context)
+            return await self._generate(context, stats, started=started)
         except PlannerFailure as exc:
-            self.stats.reason = exc.reason
-            self.stats.diagnostic = exc.diagnostic
+            stats.reason = exc.reason
+            stats.diagnostic = exc.diagnostic
             raise
         except ValidationError as exc:
             diagnostic = schema_diagnostic(exc, Layer.MODEL)
-            self.stats.reason = "MODEL_INVALID_RESPONSE"
-            self.stats.diagnostic = diagnostic
+            stats.reason = "MODEL_INVALID_RESPONSE"
+            stats.diagnostic = diagnostic
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE", diagnostic) from None
         except ValidationFailure as exc:
-            self.stats.reason = "MODEL_INVALID_RESPONSE"
-            self.stats.diagnostic = exc.diagnostic
+            stats.reason = "MODEL_INVALID_RESPONSE"
+            stats.diagnostic = exc.diagnostic
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
                                  exc.diagnostic) from None
         except (httpx.TimeoutException, TimeoutError) as exc:
-            self.stats.reason = "MODEL_TIMEOUT"
-            self.stats.timeout_kind = timeout_kind(exc)
+            stats.reason = "MODEL_TIMEOUT"
+            stats.timeout_kind = timeout_kind(exc)
+            stats.telemetry.transport_timeout(stats.timeout_kind)
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TIMEOUT") from None
+        except asyncio.CancelledError as exc:
+            stats.telemetry.cancelled(exc)
+            raise
         except httpx.TransportError:
-            self.stats.reason = "MODEL_CONNECTION_ERROR"
+            stats.telemetry.interruption_source = "UNKNOWN"
+            stats.reason = "MODEL_CONNECTION_ERROR"
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_CONNECTION_ERROR") from None
         except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):
-            self.stats.reason = "MODEL_INVALID_RESPONSE"
-            self.stats.diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_ENVELOPE_INVALID")
+            stats.reason = "MODEL_INVALID_RESPONSE"
+            stats.diagnostic = Diagnostic(layer=Layer.MODEL, code="MODEL_ENVELOPE_INVALID")
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_INVALID_RESPONSE",
-                                 self.stats.diagnostic) from None
+                                 stats.diagnostic) from None
         finally:
-            self.stats.ended_at = time.time()
-            self.stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
-            self.stats.usage_state = self.stats.observed_usage_state()
-            if self.stats.reason != "MODEL_OUTPUT_RECEIVED":
-                self.stats.error_type = self.stats.reason
+            stats.ended_at = time.time()
+            stats.elapsed_ms = round((time.monotonic() - started) * 1000, 3)
+            stats.usage_state = stats.observed_usage_state()
+            stats.finish_telemetry(started=started)
+            if stats.reason != "MODEL_OUTPUT_RECEIVED":
+                stats.error_type = stats.reason
+            self.stats = stats
 
     def prepare_request(self, context: dict) -> bytes:
         """Encode and budget-check the exact request without opening a connection."""
@@ -624,28 +639,33 @@ class OpenAICompatiblePlanner:
         self.stats.request_sha256 = fingerprint(payload)
         return encoded
 
-    async def _generate(self, context: dict) -> str:
+    async def _generate(self, context: dict, stats: ModelCallStats, *, started: float) -> str:
         settings = self._settings
         credential = settings.api_key.get_secret_value()
         encoded = self.prepare_request(context)
+        telemetry = stats.telemetry
+        telemetry.mark("request_prepared", started=started)
         check_tokens = planner_token_check.get()
         if check_tokens is not None:
-            check_tokens(self.stats.input_token_upper_bound + settings.max_output_tokens)
-        async with asyncio.timeout(settings.timeout):
+            check_tokens(stats.input_token_upper_bound + settings.max_output_tokens)
+        async with model_deadline(settings.timeout, "REQUEST_DEADLINE", telemetry=telemetry):
             async with httpx.AsyncClient(
                     transport=self._transport, trust_env=False,
                     follow_redirects=False, timeout=settings.timeout) as client:
-                self.stats.calls = 1
+                stats.calls = 1
+                telemetry.mark("dispatch_started", started=started)
                 async with client.stream("POST", settings.base_url + "/chat/completions",
                                          content=encoded, headers={
                                              "Content-Type": "application/json",
                                              "Authorization": "Bearer " + credential}) as response:
-                    self.stats.http_status = response.status_code
-                    self.stats.provider_request_id = provider_request_id(response, credential)
+                    telemetry.mark("headers_received", started=started)
+                    stats.http_status = response.status_code
+                    stats.provider_request_id = provider_request_id(response, credential)
                     if response.status_code != 200:
                         infra = response.status_code == 429 or response.status_code >= 500
-                        self.stats.refused = True
-                        diagnostic = await provider_error_diagnostic(response, self.stats)
+                        stats.refused = True
+                        diagnostic = await provider_error_diagnostic(
+                            response, stats, started=started)
                         if response.status_code == 429 and diagnostic is None:
                             diagnostic = Diagnostic(layer=Layer.MODEL,
                                 code="MODEL_GATEWAY_RATE_LIMIT", detail={"retry_after":
@@ -655,18 +675,27 @@ class OpenAICompatiblePlanner:
                             "MODEL_SERVICE_ERROR" if infra else "MODEL_API_ERROR", diagnostic)
                     raw = bytearray()
                     async for chunk in response.aiter_bytes(chunk_size=16384):
+                        if chunk:
+                            telemetry.mark("first_body_chunk", started=started)
                         raw.extend(chunk)
-                        self.stats.response_bytes = len(raw)
+                        stats.response_bytes = len(raw)
                         if len(raw) > settings.max_response_bytes:
                             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_RESPONSE_LIMIT")
-        data = bounded_json(raw.decode("utf-8"), settings.max_response_bytes)
+                    telemetry.mark("body_complete", started=started)
+        try:
+            data = bounded_json(raw.decode("utf-8"), settings.max_response_bytes)
+        except ValueError:
+            telemetry.usage_evidence = "RESPONSE_PARSE_FAILED"
+            raise
+        telemetry.mark("json_parsed", started=started)
         if isinstance(data, dict):
-            self.stats.provider_response_id = safe_provider_id(data.get("id"), credential)
+            stats.provider_response_id = safe_provider_id(data.get("id"), credential)
+        telemetry.observe_usage(data, started=started)
         usage = data["usage"]
         counts = [usage[k] for k in ("prompt_tokens", "completion_tokens", "total_tokens")]
         if any(type(n) is not int or n < 0 for n in counts) or counts[2] != counts[0] + counts[1]:
             raise ValidationFailure(Layer.MODEL, "MODEL_USAGE_INVALID")
-        self.stats.input_tokens, self.stats.output_tokens, self.stats.total_tokens = counts
+        stats.input_tokens, stats.output_tokens, stats.total_tokens = counts
         if (counts[0] > settings.max_input_tokens or counts[1] > settings.max_output_tokens
                 or counts[2] > settings.max_total_tokens):
             raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_TOKEN_BUDGET")
@@ -678,11 +707,13 @@ class OpenAICompatiblePlanner:
         if len(data["choices"]) != 1:
             raise ValidationFailure(Layer.MODEL, "MODEL_CHOICE_INVALID")
         content = self._message_content(choice)
-        self.stats.output_sha256 = fingerprint(content)
+        stats.output_sha256 = fingerprint(content)
         if settings.api_key.get_secret_value() in content:
             raise PlannerFailure(Outcome.TOOL_ERROR, "MODEL_SECRET_OUTPUT")
+        # The synchronous decoder reads this call's usage when annotating failures.
+        self.stats = stats
         result = self._decode_output(content, context)
-        self.stats.reason = "MODEL_OUTPUT_RECEIVED"
+        stats.reason = "MODEL_OUTPUT_RECEIVED"
         return result
 
     def _message_content(self, choice: dict) -> str:

@@ -188,7 +188,7 @@ async def test_task_service_sends_missing_checks_on_its_one_focus_retry(tmp_path
         if len(requests) == 1:
             check = checks[0]
             check["exact_value"] = dict(value=f"{unapproved} Authorization: Bearer {credential}")
-            checks[:] = [check]
+            del checks[2:]
         return response(wire)
 
     def no_target(request):
@@ -214,9 +214,13 @@ async def test_task_service_sends_missing_checks_on_its_one_focus_retry(tmp_path
         literal, gaps = repair["detail"]["violations"]
         assert literal["must_be_null"] == ["requested_checks.0.exact_value"]
         assert gaps["error_code"] == MISSING_REQUESTED_CHECKS
-        assert gaps["count"] == len(index) - 1
+        assert gaps["count"] == len(index) - 2
         assert gaps["missing_checks"] == [dict(operation_id="insertJob", check_ref=f"check_{n}",
-            source_ref="source_3") for n in range(2, len(index) + 1)]
+            source_ref="source_3") for n in range(3, len(index) + 1)]
+        assert repair["detail"]["required_scope_mode"] == "selected"
+        assert repair["detail"]["keep_requested_checks"] == [
+            dict(operation_id="insertJob", check_ref="check_2", source_ref="source_3")]
+        assert "Retain each keep_requested_checks entry" in requests[1]["messages"][0]["content"]
         assert "omitted_detail" not in repair["detail"]
         assert all(value not in json.dumps(requests) for value in (unapproved, credential,
                    settings().api_key.get_secret_value(), "Authorization: Bearer"))
@@ -225,3 +229,25 @@ async def test_task_service_sends_missing_checks_on_its_one_focus_retry(tmp_path
         assert not target_requests
     finally:
         await svc.close()
+
+
+@pytest.mark.parametrize("damage", ["duplicate", "scope_mode", "source", "length"])
+def test_focus_repair_keeps_only_independently_proven_scope_checks(damage):
+    context, source = release_context()
+    wire = wire_with_checks(source, "check_1", "check_2")
+    wire["requirement_map"]["request_2"] = deepcopy(wire["requirement_map"]["request_1"])
+    checks = wire["scope"]["operations"]["createParcel"]["requested_checks"]
+    if damage == "duplicate":
+        checks.append(dict(checks[0]))
+    elif damage == "scope_mode":
+        wire["scope"].update(mode="all_ready", operations={})
+    elif damage == "source":
+        checks[0]["source_ref"] = "unknown"
+    else:
+        checks[0]["exact_length"] = 1
+    with pytest.raises(ValidationFailure, match="FOCUS_SOURCE_CLAUSE_MISSING") as caught:
+        decode(wire, context)
+    detail = caught.value.diagnostic.detail
+    assert detail["required_scope_mode"] == "selected"
+    assert detail["keep_requested_checks"] == ([] if damage == "scope_mode" else [
+        dict(operation_id="createParcel", check_ref="check_2", source_ref=source)])

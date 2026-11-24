@@ -21,6 +21,7 @@ from agenttest.fixed_plan import FixedPlanSnapshot
 from agenttest.goal_suite import BudgetPlanner, BudgetTransport, SuiteLedger
 from agenttest.llm_planner import PlannerFailure
 from agenttest.model_retry import TRANSIENT_STATUSES, retry_delay
+from agenttest.model_timing import model_deadline
 from agenttest.product_checks import MAX_REQUESTED_CHECKS
 from agenttest.product_design import TestDesign, design_groups, propose_design, validate_design_case
 from agenttest.report import ModelCallStats, Outcome, aggregate, fingerprint
@@ -708,7 +709,7 @@ class ProductTasks:
                     stored_ir = resumed_state["planning_ir"]
                     planning_ir = PlanningIR.model_validate(stored_ir) if stored_ir else None
                     executable_checks = resumed_state["executable_checks"]
-                async with asyncio.timeout(remaining):
+                async with model_deadline(remaining, "TASK_DEADLINE"):
                     if context.get("current_request", text) == DEFAULT_ROUND:
                         self.note_unready(project, summary, [op["operation_id"]
                             for op in summary["inventory"]["operations"] if op["state"] != "READY"],
@@ -1243,11 +1244,15 @@ class ProductTasks:
                     await durability.prune()
         except asyncio.CancelledError:
             record_timing()
+            if latest := svc.db.latest_model_call(task_id):
+                summary["latest_model_call"] = latest
             self.stop(task_id, owner, summary, ledger,
                       "INTERRUPTED" if svc._shutting_down else "CANCELLED",
                       "已停止后续动作；已发送请求不自动回滚或重放。")
         except TimeoutError:
             record_timing()
+            if latest := svc.db.latest_model_call(task_id):
+                summary["latest_model_call"] = latest
             limit = summary.get("budget", {}).get("max_seconds", DEFAULT_TASK_SECONDS)
             self.stop(task_id, owner, summary, ledger, "INTERRUPTED",
                       f"本轮达到 {limit:g} 秒时限。")

@@ -12,7 +12,7 @@ import pytest
 from test_product_agent import scripted, session, tool_turn
 from test_product_design import settings
 
-from agenttest.product_agent import run_agent
+from agenttest.product_agent import report_payload, run_agent
 from agenttest.product_durability import GATEWAY_STOP, PAUSED, ProductDurability
 from agenttest.report import ReportStore, fingerprint
 from agenttest.task_service import TaskService
@@ -140,6 +140,16 @@ async def test_gateway_pause_after_tool_preserves_evidence_and_dispatch_accounti
     assert scope.ledger.model_calls == 4
     assert scope.ledger.known_tokens == 350 and not scope.ledger.usage_unknown
     assert len(summary["cases"]) == len(tasks.calls) == 1
+    trace = report_payload(result, completion={}, budget={})["call_trace"]
+    assert trace[0]["telemetry"]["usage_evidence"] == "VALIDATED"
+    latest = svc.db.latest_model_call(scope.task_id)
+    assert latest["local_call_id"] == trace[-1]["local_call_id"]
+    assert latest["telemetry"] == trace[-1]["telemetry"]
+    assert latest["usage_state"] == "REFUSED"
+    scope.durability.publish("AGENT", summary=summary, checkpoint_id=result.checkpoint_id,
+        state=dict(usage=scope.ledger.summary(), agent_call_trace=trace))
+    loaded = await ProductDurability(svc, svc.db.get(scope.task_id, OWNER), OWNER).load()
+    assert loaded["state"]["agent_call_trace"] == trace
 
 
 @pytest.mark.asyncio

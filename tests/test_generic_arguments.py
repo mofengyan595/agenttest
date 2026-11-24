@@ -180,11 +180,12 @@ async def test_unknown_model_usage_stops_remaining_positions_without_retry(monke
 
     from agenttest.argument_slot_check import check_slots, verify_slots
     from agenttest.demo import PROJECT_ROOT
-    from agenttest.report import Outcome
+    from agenttest.report import ModelCallStats, Outcome
 
-    async def unavailable(self, public):
+    async def unavailable(self, public: dict, stats: ModelCallStats, *, started: float) -> str:
         self.prepare_request(public)
-        self.stats.calls, self.stats.http_status = 1, 503
+        stats.telemetry.mark("request_prepared", started=started)
+        stats.calls, stats.http_status = 1, 503
         raise PlannerFailure(Outcome.TEST_INFRA_ERROR, "MODEL_SERVICE_ERROR")
 
     monkeypatch.setattr(OpenAICompatiblePlanner, "_generate", unavailable)

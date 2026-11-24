@@ -1,6 +1,5 @@
 """A bounded semantic focus selection over the approved document index, before test design."""
 
-import asyncio
 import re
 from typing import Literal
 
@@ -415,6 +414,15 @@ requirement_map entry or independent action. Its source_ref can select approved
 negative checks with exact_value=null and (when present) exact_length=null.
 """
 
+FOCUS_KEEP_CHECKS_PROMPT = """
+If previous_error.detail contains required_scope_mode, keep the confirmed whole-project scope
+in that mode. Retain each keep_requested_checks entry in its operation's requested_checks,
+add the missing_checks, and apply the listed edits. These are independently verified scope
+references, not acceptance of the earlier proposal or authority for any other entry.
+Submit the complete proposal again, using only the approved policy defaults for these scope
+references (exact_value=null and, where present, exact_length=null).
+"""
+
 
 class TestFocusModel(OpenAICompatiblePlanner):
     def prepare_request(self, context):
@@ -513,7 +521,11 @@ class TestFocusModel(OpenAICompatiblePlanner):
                 for key, value in public["previous_result"].items() if key != "executed_policy_ids"}
         from agenttest.report import fingerprint
 
-        return self._encode_request(schema, public, FOCUS_PROMPT,
+        repair = (context.get("previous_error") or {}).get("detail") or {}
+        prompt = FOCUS_PROMPT
+        if repair.get("required_scope_mode"):
+            prompt += FOCUS_KEEP_CHECKS_PROMPT
+        return self._encode_request(schema, public, prompt,
                                     "agenttest_focus_" + fingerprint(schema)[:12])
 
     def _decode_output(self, content, context):
@@ -549,8 +561,10 @@ class TestFocusModel(OpenAICompatiblePlanner):
             error.diagnostic.fields = ["scope.operations"] if selected else ["blocked_operations"]
             raise error
         if requirement_failure is not None:
-            raise focus_violation_failure(requirement_failure, selected, context,
-                                          mode=scope["mode"])
+            failure = focus_violation_failure(requirement_failure, selected, context,
+                                              mode=scope["mode"])
+            add_focus_repair_checks(failure, selected, context, mode=scope["mode"])
+            raise failure
         from agenttest.product_focus_wire import decode_operation_bundles
         from agenttest.product_sources import decode_source_refs, input_sources
 
@@ -579,8 +593,12 @@ class TestFocusModel(OpenAICompatiblePlanner):
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
         approved = (context["approved_ids"] if selection.mode == "all_ready"
                     else selection.operation_ids)
-        validate_requested_checks(selection.requested_checks, context, approved,
-                                  mode=selection.mode)
+        try:
+            validate_requested_checks(selection.requested_checks, context, approved,
+                                      mode=selection.mode)
+        except ValidationFailure as failure:
+            add_focus_repair_checks(failure, selected, context, mode=selection.mode)
+            raise
         selection.input_requirements = validate_requirements(selection.input_requirements,
             context, approved, requested_checks=selection.requested_checks,
             clauses=selection.requirements)
@@ -649,6 +667,51 @@ def focus_violation_failure(failure, selected, context, *, mode):
     error.diagnostic.detail = {**(failure.diagnostic.detail or {}),
                                **error.diagnostic.detail}
     return error
+
+
+def add_focus_repair_checks(failure, selected, context, *, mode):
+    """Keep only independently verified policy defaults tied to the trusted release clause."""
+    from agenttest.product_checks import (
+        MAX_REQUESTED_CHECKS,
+        RequestedCheck,
+        missing_requested_checks,
+    )
+    from agenttest.product_focus_wire import decode_operation_bundles
+    from agenttest.product_sources import decode_source_refs, input_sources
+
+    if mode not in {"selected", "all_ready"}:
+        return
+    required = missing_requested_checks(context, set())
+    if not required:
+        return
+    kept = []
+    sources = input_sources(context)
+    empty = dict.fromkeys(context["approved_ids"])
+    for row in required if mode == "selected" and selected.keys() == empty.keys() else ():
+        operation = row["operation_id"]
+        bundle = selected[operation]
+        if type(bundle) is not dict or bundle.get("existing_resource"):
+            continue
+        checks = bundle.get("requested_checks")
+        if type(checks) is not list or len(checks) > MAX_REQUESTED_CHECKS:
+            continue
+        matches = [check for check in checks if type(check) is dict
+                   and check.get("check_ref") == row["check_ref"]]
+        if len(matches) != 1 or matches[0].get("source_ref") != row["source_ref"]:
+            continue
+        try:
+            _, decoded = decode_operation_bundles(
+                {**empty, operation: {**bundle, "requested_checks": matches}}, context)
+            data = {"requested_checks": decoded["requested_checks"]}
+            decode_source_refs(data, sources, context)
+            check = RequestedCheck.model_validate(data["requested_checks"][0])
+            validate_requested_checks([check], context, [operation])
+        except (ValidationFailure, ValueError):
+            continue
+        if check.exact_value is None and check.exact_length is None:
+            kept.append(row)
+    failure.diagnostic.detail.update(required_scope_mode="selected",
+                                     keep_requested_checks=kept)
 
 
 def operation_choices(identifiers):
@@ -760,7 +823,9 @@ async def select_focus(project, model, task_context, *, environ, notes="", timeo
     try:
         if vault.contains_secret(context):
             raise ValueError("FOCUS_CONTEXT_CONTAINS_CREDENTIAL")
-        async with asyncio.timeout(timeout):
+        from agenttest.model_timing import model_deadline
+
+        async with model_deadline(timeout, "FOCUS_DEADLINE"):
             raw = await model.generate(context)
         selection = FocusSelection.model_validate(bounded_json(raw, 200_000))
         if vault.contains_secret(selection.model_dump()):

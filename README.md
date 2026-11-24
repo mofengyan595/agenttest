@@ -132,13 +132,12 @@ Linux 使用 `.venv/bin/python`。演示包括正常流程、预设断言失败�
 
 | 验证范围 | 证据与结论 |
 | --- | --- |
-| **离线冻结回归** | P3-B2.5 冻结候选 **3,012 passed、15 skipped、1 xfailed、0 failed**，收集与执行审计一致。[P3-B2.5 报告](docs/deepagents-hitl-reliability-p3b25.md) |
-| **跨平台 CI** | P3-B2.5 提交 `ae61d8a` 的 **7 个作业全部通过**。[Python 5/5](https://github.com/mofengyan595/agenttest/actions/runs/45108364788) · [Web 2/2](https://github.com/mofengyan595/agenttest/actions/runs/45108364746) |
-| **真实模型稳定性** | P3-B2.5 的独立五轮中，**4/5** 轮达到 31/31 批准义务和 24/24 负向策略。原发布评分仅 **2/5 达标，NO-GO**，门槛为 4/5。 |
-| **清理与异常证据** | 五轮中 65 次创建均有同身份删除后的 404 回读证明。无越权或未知写入重放，实际 503 保留为 `ASSERTION_FAILED`。 |
-| **本地开发** | P3-B2.6 已离线验证 Focus 映射完整性与 Design 引用反馈传递。真实复验待进行，现有 NO-GO 仍有效。[P3-B2.6 记录](docs/deepagents-hitl-reliability-p3b26.md) |
+| **离线冻结回归** | P3-B2.8 第三次冻结 **3087 passed、15 skipped、1 xfailed、0 failed**，3103 项均有唯一终态。前两次冻结失败记录保留。[P3-B2.8 报告](docs/deepagents-model-reliability-p3b28.md) |
+| **跨平台 CI** | 查看对应提交的 GitHub Actions 作业结果。[Keyless Python checks](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml) · [Web Console checks](https://github.com/mofengyan595/agenttest/actions/workflows/web.yml) |
+| **真实模型稳定性** | P3-B2.8 真实模型验收尚未开始。P3-B2.7 两批独立验收均为 **1/5、NO-GO**，原评分门槛为 4/5。[P3-B2.7 报告](docs/deepagents-hitl-reliability-p3b27.md) |
+| **已离线验证** | P3-B2.8 P0 在 Focus 修复反馈中提示保留已验证的合法映射，P1 记录客户端实际观察到的模型调用阶段、取消来源和用量证据。[P3-B2.8 报告](docs/deepagents-model-reliability-p3b28.md) |
 
-P3-B2.5 的 v1 在连续引用错误后因 `NO_PROGRESS` 停止。P3-B3 尚未启动。
+P3-B3 尚未启动。
 
 其他历史实验见 [CourseInsight API 联调](docs/courseinsight-colleague-delivery.md) 和 [首次完成率与失败分析](docs/first-completion-delivery.md)。各报告保留其模型、任务集、配置和分母。
 

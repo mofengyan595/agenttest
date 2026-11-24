@@ -15,6 +15,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, model_serializer
 
 from agenttest.diagnostics import Diagnostic
+from agenttest.model_timing import ModelCallTelemetry
 from agenttest.report_files import pinned_directory, writer_lock
 
 MAX_REPORT_BYTES = 2_000_000
@@ -117,6 +118,7 @@ class ModelCallStats(BaseModel):
     error_type: str | None = None
     usage_state: Literal["PENDING", "NOT_SENT", "REFUSED", "KNOWN", "UNKNOWN"] | None = None
     diagnostic: Diagnostic | None = None
+    telemetry: ModelCallTelemetry | None = None
     calls: int = 0
     model_name: str | None = None
     model_sha256: str | None = None
@@ -135,6 +137,21 @@ class ModelCallStats(BaseModel):
     # generated, so a rejected call must not poison the run's "usage unknown" gate; a timeout
     # or a dropped connection still does, because it may have been processed.
     refused: bool = False
+
+    @model_serializer(mode="wrap")
+    def serialize_telemetry(self, handler):
+        data = handler(self)
+        if self.telemetry is None:
+            data.pop("telemetry", None)
+        return data
+
+    def finish_telemetry(self, *, started: float) -> None:
+        if (telemetry := self.telemetry) is None:
+            return
+        telemetry.mark("call_ended", started=started)
+        if self.observed_usage_state() == "UNKNOWN" and telemetry.usage_evidence is None:
+            telemetry.usage_evidence = ("UNKNOWN" if "body_complete" in telemetry.stages_ms
+                                        else "INCOMPLETE_RESPONSE")
 
     def observed_usage_state(self) -> Literal["NOT_SENT", "REFUSED", "KNOWN", "UNKNOWN"]:
         if self.calls == 0:

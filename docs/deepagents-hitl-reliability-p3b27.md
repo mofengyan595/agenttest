@@ -120,3 +120,157 @@ pytest 保留一条既有的 `TestDesign` 收集警告，来自测试模块导�
 冻结前后 **1,718 个 Git 可见文件零漂移**。清单包含 363 个源码和脚本文件、225 个测试文件、233 个配置文件、825 个文档文件和 72 个其他文件，另列实际 Git 工作区状态及 3 个未跟踪候选文件。checkout SHA-256 前后一致，为 `2c591aa40840d725d77dc2f251fa3b2ce63a2becd25c13ff4d76e6bf3b5ee98b`。历史验收与旧冻结归档摘要一致，第一次 P3-B2.6 离线 FAIL 及 P3-B2.3 至 P3-B2.6 历史真实验收 NO-GO 均保留。冻结结束后仅更新本报告和进度记录。 [冻结前清单](../.eduwork/p3b27-freeze/run-20261123T115951Z/identity-before.json) · [冻结后清单](../.eduwork/p3b27-freeze/run-20261123T115951Z/identity-after.json)
 
 Ruff 和 `git diff --check` 通过。本地离线证据满足进入提交与 CI 核查的条件。本轮停在冻结回归和审计，未提交、推送、调用真实模型、访问真实业务靶场或进入 P3-B3。
+
+## 2026-11-23 · 五轮真实稳定性验收
+
+**NO-GO，1/5 达标，门槛为 4/5。** v1 达到原完整评分。v2、v3、v4 各有一次已确认的模型超时，v5 有一次缺少响应和错误分类的 UNKNOWN。四轮都按现行门禁结束，尚有批准义务待执行。原评分器未变，五轮全部保留。 [原口径评分与完整审计](../.eduwork/p3b27-acceptance-f3733c1/audit.json)
+
+### 冻结边界与健康探针
+
+候选 `f3733c14c5da6b33cfc7a9a70812566f72dd7c85` 开始前在本地 HEAD、`origin/master` 和 GitHub `master` 一致，工作区干净。运行前后 checkout SHA-256 同为 `09f116e204a46476ef0293ef6a400e054c405c383df5bba7d0ab393ca2c98a96`，源码与启动脚本 SHA-256 同为 `41a4a08f88ee9dbb42f5b9894ad31820cc708a8125f657eec950f48756949854`。离线冻结 3,049 passed、15 skipped、1 xfailed，准确提交的 Python 5/5 和 Web 2/2。 [Python CI](https://github.com/mofengyan595/agenttest/actions/runs/45178445552) · [Web CI](https://github.com/mofengyan595/agenttest/actions/runs/45178445448) · [冻结完整性](../.eduwork/p3b27-acceptance-f3733c1/integrity.json)
+
+模型配置 SHA-256 仍为 `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172`。五个任务和靶场实例均独立，批准目录与上批同位置逐项对账一致。沿用原始发布目标、503 注入、60 秒模型超时配置、64 次模型调用、650,000 tokens、120 次业务 HTTP 和 900 秒任务上限。每组至多 3 次，可信修复至多 1 次。北京时间 21:31:31 至 22:12:30，共 2,459.328 秒。 [批次配置与状态](../.eduwork/p3b27-acceptance-f3733c1/batch.jsonl) · [位置与安全门禁](../.eduwork/p3b27-acceptance-f3733c1/positions.jsonl)
+
+| 探针 | 终态 / 用量 | 耗时 | tokens | 服务端响应 ID |
+| --- | --- | ---: | ---: | --- |
+| 1 | READY / KNOWN | 1.313 秒 | 147 | `ca964ab8-63e7-4089-ac36-2bf21bbd39f0` |
+| 2 | READY / KNOWN | 0.531 秒 | 65 | `7233ab00cfd54304bd2d3d8127e5f8ce` |
+| 3 | READY / KNOWN | 1.062 秒 | 147 | `5aafce84-46a9-41b9-adf9-2e14c6c4c1a1` |
+
+三次 HTTP 200 响应均可解析，网关未提供独立请求 ID。359 个探针 tokens 单独计量。 [探针请求与账本](../.eduwork/p3b27-acceptance-f3733c1/health.jsonl)
+
+### 五轮原评分与安全证据
+
+| 轮次 | 批准义务 | 负向策略 | 请求级 | 终止状态 / 原因 | strict_complete / complete / checks_passed | 模型调用 / 已知 tokens / UNKNOWN | 业务 HTTP | 耗时（秒） | 原评分 |
+| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
+| v1 | 31/31 | 24/24 | 24/24 | COMPLETE / OBLIGATIONS_COMPLETE / ANSWER | false / true / false | 27 / 227,518 / 0 | 94 | 490.875 | 达标 |
+| v2 | 21/31 | 14/24 | 14/24 | BLOCKED / MODEL_SERVICE_UNAVAILABLE / MODEL_ERROR | false / false / false | 27 / 217,973 / 1 | 54 | 389.641 | 未达标 |
+| v3 | 21/31 | 14/24 | 14/24 | BLOCKED / MODEL_SERVICE_UNAVAILABLE / MODEL_ERROR | false / false / false | 16 / 119,850 / 1 | 54 | 402.297 | 未达标 |
+| v4 | 23/31 | 16/24 | 16/24 | BLOCKED / MODEL_SERVICE_UNAVAILABLE / MODEL_ERROR | false / false / false | 28 / 234,648 / 1 | 66 | 502.718 | 未达标 |
+| v5 | 17/31 | 10/24 | 10/24 | BLOCKED / MODEL_SERVICE_UNAVAILABLE / MODEL_ERROR | false / false / false | 18 / 142,743 / 1 | 38 | 595.203 | 未达标 |
+
+| 轮次 | HITL 批准记录 / POST 与审批绑定 | 实际创建 / 删除 / 同身份 404 | 实际 503 / 503 导致的 ASSERTION_FAILED |
+| --- | ---: | ---: | ---: |
+| v1 | 9 / 25 | 15 / 15 / 15 | 2 / 1 |
+| v2 | 6 / 15 | 5 / 5 / 5 | 2 / 1 |
+| v3 | 5 / 15 | 5 / 5 / 5 | 2 / 1 |
+| v4 | 6 / 17 | 11 / 11 / 11 | 2 / 1 |
+| v5 | 4 / 11 | 1 / 1 / 1 | 2 / 1 |
+
+全部 306 条业务事件的身份与顺序和 SQLite 回执一致。83 条 POST 匹配已批准的工具调用、checkpoint、操作及授权。37 次实际创建均由逐资源的相同身份 DELETE 后 404 证明清理。零越权请求、重复负向策略或 HTTP attempt、未知写入、写入重放、缺回读或待复核写入。五轮分别保留一个 `readAvailability` 主用例的 503 断言失败。v1 满足原完整评分，并保留 `checks_passed=false`、`strict_complete=false`。
+
+本批四条 UNKNOWN 均未调和、未豁免，也未填为 0。
+
+| 轮次 | 模型请求与本地调用 ID | 原始账本证据 |
+| --- | --- | --- |
+| v2 | Design `negative_batch_5` 第 1 次，`b20ea1f7ddeb4c3e8649566f51d799b9` | `DEADLINE / MODEL_TIMEOUT`，60.062 秒。无 HTTP 状态或服务端响应 ID |
+| v3 | Agent 第 10 次，`900d170e99384ae294cb2b2b3615c68c` | `READ / MODEL_TIMEOUT`，122.938 秒。此路径采用 HTTPX 读超时，60 秒是原超时配置，账本值是整条调用耗时。无 HTTP 状态或服务端响应 ID |
+| v4 | Design `negative_batch_6` 第 1 次，`f98cc31b1b5f411b9a170e1ecd6cfad1` | `DEADLINE / MODEL_TIMEOUT`，60.062 秒。无 HTTP 状态或服务端响应 ID |
+| v5 | Design `negative_batch_4` 第 1 次，`fa75b056a6b14e19a393e5842a7c81d6` | UNKNOWN，账本耗时 318.656 秒，无可核对的响应、错误分类或超时类型。外层记录 `MODEL_USAGE_UNKNOWN`，未计入已确认超时 |
+
+上述证据能定位失败的调用阶段，无法进一步区分服务端与网络等待的来源。v2/v3/v4/v5 分别保留 10、10、8、14 项未测义务。
+
+### P3-B2.7 实际触发与 P0/P1 兼容性
+
+- `OPENAPI_UNKNOWN_BODY_FIELD` 出现 10 次，分布为 v1 三次、v2 三次、v4 四次。v2 的 `negative_batch_2` 为 `_negative_5` 留下一项合法基线见证，与同一次设计已执行的 `_negative_4` 对应。`_negative_5` 在同组第二次普通 Design 后实际执行一次，未使用新增第三次机会。五轮实际编码请求中 `negative_repair` 为 0，`runtime_repair` 为 0。**P3-B2.7 第三次可信修复路径未触发，真实传递率与修复成功率尚无样本。**
+- 五轮实际同组最大 Design 次数分别为 2、2、1、3、3。v4 `negative_batch_5` 与 v5 `negative_batch_1` 在第二次出现 JSON 语法拒绝后实际发送了第三次 Design，沿用既有形式修复资格。`GROUP_RUN_LIMIT` 为 0。六次可读 scope 快照累计 48 条分组行，未发现已阻塞分组仍被推荐。现场未尝试第四次，各组均未越过上限。
+- 五轮各执行一次 `createParcel / web_rule_3_negative_9`。五条实际请求的审计投影均确认 `body.meta` 缺失，按原批准 `required_missing / OPENAPI_BODY_FIELD_REQUIRED` 变异收到 422。每条 POST 有原绑定审批，本批没有通过额外写入来完成此策略。
+- P0 在 v2、v5 各触发一次 `FOCUS_REQUESTED_CHECKS_MISSING`。下一次实际 Focus 请求的摘要均匹配账本，缺少的 24 项均补齐。v1、v3 首次提交完整映射。v4 首次提交 24 项但因 `FOCUS_INPUT_TEXT_CHANGED` 被拒，第二次合法接纳 24 项。五轮皆持久化 24 条批准范围内的显式映射，实测覆盖分别为 24、14、14、16、10 /24。
+- 未出现 `CONSTRUCTION_REFERENCE_INVALID / SOURCE_UNKNOWN`，P1 引用反馈、合法生产者与选择器的真实修复路径未触发。51 条 Focus/Design 账本记录中，50 条有可重编码的请求并与账本摘要匹配，v5 的 UNKNOWN 缺完整请求上下文。已对账的 50 条请求和 15 条工具诊断中未发现凭据或禁止字段。原始 Agent 请求正文未归档。 [P0/P1 与请求对账](../.eduwork/p3b27-acceptance-f3733c1/audit-p0-p1.json) · [P3-B2.7、清理身份与实际变异](../.eduwork/p3b27-acceptance-f3733c1/audit-p3b27.json)
+
+### 三批对比
+
+| 观测口径 | P3-B2.5 | P3-B2.6 | P3-B2.7 |
+| --- | ---: | ---: | ---: |
+| 原完整评分达标 | 2/5，NO-GO | 3/5，NO-GO | 1/5，NO-GO |
+| 批准义务 31/31 | 4/5 | 3/5 | 1/5 |
+| 请求级实测 24/24 | 2/5 | 3/5 | 1/5 |
+| 已确认模型超时 / UNKNOWN | 0 / 0 | 1 / 1 | 3 / 4 |
+| Design 拒绝 / 案例预检拒绝 | 4 / 0 | 10 / 4 | 12 / 10 |
+| `GROUP_RUN_LIMIT` 工具拒绝 | 0 | 8 | 0 |
+| `NO_PROGRESS` / `OBLIGATION_STALLED` 终止 | 1 / 0 | 0 / 1 | 0 / 0 |
+| HITL 批准记录 / 匹配 POST | 37 / 115 | 33 / 99 | 30 / 83 |
+| 创建 / 同身份删除后 404 | 65 / 65 | 60 / 60 | 37 / 37 |
+| 模型调用 / 已知 tokens / 业务 HTTP | 112 / 964,560 / 430 | 140 / 1,193,265 / 376 | 116 / 942,732 / 306 |
+
+Design 拒绝按调用阶段计，Focus 拒绝和案例预检分开统计。P3-B2.7 多轮因模型用量证据缺失提前终止，吞吐与开销差异只能作为本批观测。没有现场样本证明新增第三次修复已改善成功率。原 P3-B2.3 至 P3-B2.6 的结论和档案均保留。此次未补跑、未修改代码、未提交推送，P3-B3 尚未启动。 [同口径复算](../.eduwork/p3b27-acceptance-f3733c1/comparison-verified.json)
+
+每个轮次目录保存 `manifest.json`、`model-outputs.jsonl`、各阶段报告、`target-events.jsonl`、`lab/workspace/tasks.sqlite3` 和 `lab/workspace/tasks.checkpoints.sqlite3`。 [v1](../.eduwork/p3b27-acceptance-f3733c1/release-v1/manifest.json) · [v2](../.eduwork/p3b27-acceptance-f3733c1/release-v2/manifest.json) · [v3](../.eduwork/p3b27-acceptance-f3733c1/release-v3/manifest.json) · [v4](../.eduwork/p3b27-acceptance-f3733c1/release-v4/manifest.json) · [v5](../.eduwork/p3b27-acceptance-f3733c1/release-v5/manifest.json) · [批次启动日志](../.eduwork/p3b27-acceptance-f3733c1/launcher.log)
+
+## 2026-11-23 · 第二批真实稳定性复验
+
+**第二批独立评分为 1/5、NO-GO，第一批仍为 1/5、NO-GO。** 第二批 v1 达标，v2、v3、v4 在 Focus 验收失败后进入 `NEEDS_REVIEW`，v5 因 Design 超时停止。超时从第一批的 3 次降至 1 次，UNKNOWN 从 4 次降至 1 次。本批的三个 Focus 失败都有 HTTP 200 和明确用量。 [第二批原评分](../.eduwork/p3b27-retest-f3733c1/audit.json)
+
+### 冻结与探针
+
+开始前，本地 HEAD、`origin/master` 与 GitHub `master` 均为 `f3733c14c5da6b33cfc7a9a70812566f72dd7c85`，准确提交的 CI 7/7 仍为 success。与第一批相比只有两份报告追加，已提交候选重算 SHA-256 仍为 `09f116e204a46476ef0293ef6a400e054c405c383df5bba7d0ab393ca2c98a96`。含首次报告追加的实际工作区摘要在第二批运行前后均为 `595888e770b13f71038b88c554d32e36d9775fc8de60877e5c02d2dc57772ee8`。源码与启动脚本摘要仍为 `41a4a08f88ee9dbb42f5b9894ad31820cc708a8125f657eec950f48756949854`，公开模型配置摘要仍为 `cecf6dff2dccf853e1da5327457631243d9d9271f0575d1c6a823261aca52172`。 [第二批冻结记录](../.eduwork/p3b27-retest-f3733c1/batch.jsonl)
+
+未发现并行验收。复用第一批探针、五轮执行脚本、安全门禁及冻结评分器，原目标、60 秒超时配置、预算、批准目录、故障注入、HITL 与恢复规则一致。十个任务和靶场实例跨两批各自独立，第一批 324 个证据文件摘要一致。第二批北京时间 22:32:15 至 22:54:22，共 1,327.531 秒。 [两批独立性与证据核对](../.eduwork/p3b27-retest-f3733c1/audit-integrity.json)
+
+| 探针 | 状态 / 用量 | 耗时 | tokens | 服务端响应 ID |
+| --- | --- | ---: | ---: | --- |
+| 1 | READY / KNOWN | 1.704 秒 | 147 | `037b0d55-f3dd-44da-b91f-9d66a732181c` |
+| 2 | READY / KNOWN | 1.532 秒 | 147 | `560822e0-ca24-45f6-9187-120351932f83` |
+| 3 | READY / KNOWN | 1.343 秒 | 65 | `e1b10261421e48848bad48bf77af6900` |
+
+三个响应均为可解析的 HTTP 200，网关未提供独立请求 ID。探针 359 tokens 与正式验收分开计量。 [探针记录](../.eduwork/p3b27-retest-f3733c1/health.jsonl)
+
+### 五轮原评分
+
+| 轮次 | 批准义务 | 负向策略 | 请求级 | 终态 | 原评分 | 模型调用 | 已知 tokens | UNKNOWN | HTTP |
+| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: |
+| v1 | 31/31 | 24/24 | 24/24 | COMPLETE / OBLIGATIONS_COMPLETE | 达标 | 32 | 268,285 | 0 | 94 |
+| v2 | 0/31 | 0/24 | 0/0 | NEEDS_REVIEW / Focus 缺 1 项映射 | 未达标 | 2 | 30,204 | 0 | 0 |
+| v3 | 0/31 | 0/24 | 0/0 | NEEDS_REVIEW / Focus 缺 24 项映射 | 未达标 | 2 | 28,338 | 0 | 0 |
+| v4 | 0/31 | 0/24 | 0/0 | NEEDS_REVIEW / Focus 缺 23 项映射 | 未达标 | 2 | 28,783 | 0 | 0 |
+| v5 | 19/31 | 12/24 | 12/24 | BLOCKED / MODEL_SERVICE_UNAVAILABLE | 未达标 | 17 | 131,238 | 1 | 48 |
+
+v2–v4 的 31 项分母来自固定批准目录，实际派发为 0，产品未生成终止义务账本和 `strict_complete`。请求级按原始 0/0 保留。v1 `complete=true`，`strict_complete=false`；v5 两项均为 false。v1、v5 各实际收到 2 次 503，其中各有 1 次主用例 `ASSERTION_FAILED`，`checks_passed=false`。v2–v4 无业务请求或断言结果。 [五轮位置与终态](../.eduwork/p3b27-retest-f3733c1/positions.jsonl)
+
+v1 有 9 条批准，25 条 POST 均匹配；15 次创建均有同身份删除后的 404。v5 有 5 条批准，13 条 POST 均匹配；5 次创建均有同身份删除后的 404。其余轮次没有写入或资源需要清理。142 条业务 HTTP 的顺序和身份与回执一致，零越权、重复负向派发、未知写入或重放，零缺失回读。 [审批与证据核对](../.eduwork/p3b27-retest-f3733c1/audit.json)
+
+### 模型调用可靠性
+
+| 轮次 | Focus / Design / Agent 调用 | 确认超时阶段 |
+| --- | ---: | --- |
+| v1 | 1 / 12 / 19 | 无 |
+| v2 | 2 / 0 / 0 | 无，两个 Focus 请求均 HTTP 200 |
+| v3 | 2 / 0 / 0 | 无，两个 Focus 请求均 HTTP 200 |
+| v4 | 2 / 0 / 0 | 无，两个 Focus 请求均 HTTP 200 |
+| v5 | 2 / 6 / 9 | Design `negative_batch_5` 第 1 次 |
+
+第二批 55 次模型调用中，54 次 HTTP 200 且用量 KNOWN，计 486,848 tokens。Focus、Design、Agent 的请求字节数中位数分别为 47,360、34,079、30,235，耗时中位数分别为 13.406、13.961、1.531 秒。每次调用的请求大小、耗时、HTTP 状态、响应 ID、阶段和用量均单独保留。 [两批逐调用账本审计](../.eduwork/p3b27-retest-f3733c1/model-reliability-audit.json)
+
+| 批次与轮次 | 调用位置 | 请求大小（字节） | 账本耗时 | 状态 |
+| --- | --- | ---: | ---: | --- |
+| 第一批 v2 | 第 27 次调用，Design `negative_batch_5` 第 1 次 | 39,301 | 60.062 秒 | DEADLINE / UNKNOWN |
+| 第一批 v3 | 第 16 次调用，Agent 第 10 次 | 46,219 | 122.938 秒 | READ / UNKNOWN |
+| 第一批 v4 | 第 28 次调用，Design `negative_batch_6` 第 1 次 | 38,500 | 60.062 秒 | DEADLINE / UNKNOWN |
+| 第一批 v5 | 第 18 次调用，Design `negative_batch_4` 第 1 次 | 35,375 | 318.656 秒 | 原因未定 / UNKNOWN |
+| 第二批 v5 | 第 17 次调用，Design `negative_batch_5` 第 1 次 | 38,456 | 60.078 秒 | DEADLINE / UNKNOWN |
+
+上述五条均无 HTTP 状态或服务端请求、响应 ID。`negative_batch_5` 在两批均是该组首个 Design 超时，请求大小相差 845 字节，任务内调用序号分别为 27 和 17。第二批 v5 的上一条 Design（`negative_batch_4`）为 35,375 字节，42.500 秒后收到 HTTP 200 且用量 KNOWN；字节数与第一批未归因调用相同，请求摘要不同。第二批 28 次 Agent 调用未复现 READ 超时，第一批有 65 次 Agent 调用。仅凭这两批无法定位服务端、网络或 Harness 计时环节。
+
+### Focus、引用与剩余义务修复
+
+- P0 缺项诊断出现 6 次，涉及 4 轮。v2、v4、v5 的诊断都经请求摘要核实传入下一次实际 Focus。v2 从缺 24 项变为缺 1 项；v4 从缺 1 项变为缺 23 项；v5 从缺 10 项补到完整 24 项。v3 首次提交了 24 条原始映射，但因来源子句缺失被拒；第二次缺 24 项，按原修复流程停止。v1 首次即接受 24 项。只有 v1、v5 有持久化映射，均在批准范围内。
+- **P1 在 v1 真实触发并完成修复。** `negative_batch_7` 第一次 Design 的 `SOURCE_UNKNOWN` 指向未在用例内声明的创建步骤。第二次实际编码请求保留了可信诊断、批准生产者 `createParcel / web_rule_3` 及 `parcelId ← $.id`，请求摘要匹配账本。模型在两个用例各自的 `before` 声明了合法生产者，并完成该批义务。该轮仅记一次 `runtime_repair`。
+- **P3-B2.7 新增第三次可信修复未触发。** v5 的两个 `OPENAPI_UNKNOWN_BODY_FIELD` 拒绝为 `_negative_5`、`_negative_9` 生成了基线见证。两组各只有一次 Design，任务随后在另一组超时停止。未发送 `negative_repair` 请求。`web_rule_3_negative_9` 仅在 v1 实际执行，省略 `body.meta` 后收到已批准的 422；v5 仍未覆盖。五轮无 `GROUP_RUN_LIMIT` 或第四次组运行，所见候选与准入记录未出现冲突。
+- 27 条 Focus/Design 编码请求均与调用账本对齐，七条带诊断的工具消息通过脱敏核查，未发现凭据或禁止字段。 [P0/P1 专项](../.eduwork/p3b27-retest-f3733c1/audit-p0-p1.json) · [剩余义务、身份及清理专项](../.eduwork/p3b27-retest-f3733c1/audit-p3b27.json)
+
+### 两批比较与后续判断
+
+| 同口径指标 | 第一批 | 第二批 |
+| --- | ---: | ---: |
+| 原评分 / 31/31 / 请求级 24/24 | 1/5 · 1/5 · 1/5 | 1/5 · 1/5 · 1/5 |
+| 确认超时 / UNKNOWN | 3 / 4 | 1 / 1 |
+| Focus / Design / 案例预检拒绝 | 3 / 12 / 10 | 7 / 4 / 4 |
+| `GROUP_RUN_LIMIT` / `NO_PROGRESS` / `OBLIGATION_STALLED` | 0 / 0 / 0 | 0 / 0 / 0 |
+| P0 缺项轮次 / 补齐轮次 | 2 / 2 | 4 / 1 |
+| P1 执行修复 / P3-B2.7 新路径触发 | 0 / 0 | 1 / 0 |
+| HITL 批准 / 匹配 POST / 同身份清理 404 | 30 / 83 / 37 | 14 / 38 / 20 |
+| 模型调用 / 已知 tokens / 业务 HTTP | 116 / 942,732 / 306 | 55 / 486,848 / 142 |
+
+第二批再次出现相似输入规模的 `negative_batch_5` Design 超时，说明第一批的超时现象可复现。另三轮有完整的服务响应，直接阻塞是 Focus 提案未通过来源或映射校验。两批候选相同，较少调用与较早停止有关。当前证据不足以把超时归因到网关波动或 Harness 缺陷。建议 P3-B2.8 先做只读诊断，按调用 ID 和时间窗核对 `negative_batch_5` 超时及第一批无分类 UNKNOWN，再独立检查 Focus 修复后遗失已声明映射的过程。现有超时、重试和评分门槛继续保留。 [第二批同口径汇总](../.eduwork/p3b27-retest-f3733c1/comparison.json)
+
+两批各自保留 1/5、NO-GO，历史 P3-B2.3 至 P3-B2.6 原记录完整。第二批的 manifest、模型输出、Trace、HTTP 回执、SQLite 和 checkpoint 保存在同名轮次目录。本轮仅追加报告，未补跑、提交推送或进入 P3-B3。 [v1](../.eduwork/p3b27-retest-f3733c1/release-v1/manifest.json) · [v2](../.eduwork/p3b27-retest-f3733c1/release-v2/manifest.json) · [v3](../.eduwork/p3b27-retest-f3733c1/release-v3/manifest.json) · [v4](../.eduwork/p3b27-retest-f3733c1/release-v4/manifest.json) · [v5](../.eduwork/p3b27-retest-f3733c1/release-v5/manifest.json)

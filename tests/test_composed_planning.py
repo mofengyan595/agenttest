@@ -38,6 +38,25 @@ def explicit_fixtures(suite, source, path):
 
 
 @pytest.mark.asyncio
+async def test_cold_rescore_preserves_telemetry_report_and_digest(tmp_path):
+    from agenttest.composed_planning import PlanningRow
+
+    suite = selected("P005")
+    fixtures = explicit_fixtures(suite, "mock_transport", tmp_path / "fixtures.json")
+    output = tmp_path / "run"
+    await run_planning(suite, PlanningConfig(), output, root=PROJECT_ROOT,
+                       responses_path=fixtures)
+
+    row = PlanningRow.model_validate_json((output / "P005.json").read_bytes())
+    report = RunReport.model_validate_json(
+        (output / "reports" / row.run_id / "report.json").read_bytes())
+    assert row.model_stats.telemetry is not None
+    assert row.model_stats == report.model_call
+    assert report_digest(report) == row.report_sha256
+    assert verify_planning(output)["rescored_cases"] == 1
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("source", ["fake", "mock_transport"])
 async def test_actual_sources_full_catalog_no_oracle_fallback_and_rescore(
     tmp_path, source, monkeypatch
