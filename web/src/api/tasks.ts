@@ -259,6 +259,12 @@ interface WitnessedRequirement {
 export const taskTerminal = (state: string) =>
   ["FINISHED", "NEEDS_REVIEW", "CANCELLED", "INTERRUPTED"].includes(state);
 
+export interface TaskRecovery {
+  status: string;
+  resumable: boolean;
+  reason?: string | null;
+}
+
 export async function call<T>(
   path: string,
   csrf?: string,
@@ -358,6 +364,7 @@ export const taskApi = {
   projects: () => call<{ projects: ProjectChoice[] }>("/api/projects"),
   list: () => call<{ tasks: GoalTask[] }>("/api/tasks"),
   read: (id: string) => call<GoalTask>(`/api/tasks/${id}`),
+  recovery: (id: string) => call<TaskRecovery>(`/api/tasks/${id}/recovery`),
   timeline: (id: string) =>
     call<{ events: TaskEvent[] }>(`/api/tasks/${id}/timeline`),
   saved: () => call<{ tests: SavedTest[] }>("/api/saved-tests"),

@@ -72,6 +72,37 @@ test("cancelled result appears after reload while the full project catalog is st
   expect(screen.queryByText("web_cancelled")).not.toBeInTheDocument();
 });
 
+test.each([
+  [{ resumable: true }, 200, "已具备恢复资格。"],
+  [{ resumable: false, reason: "HUMAN_APPROVAL_REQUIRED" }, 200, "当前不可恢复。等待任务所有者审批。"],
+  [{ resumable: false, reason: "DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW" }, 200, "当前不可恢复。写入结果未知，需要人工复核。"],
+  [{ resumable: true, reason: "REVIEW_INTERRUPT_REBUILD_REQUIRED" }, 200, "需先恢复审批暂停点，之后仍须由任务所有者审批。"],
+  [{}, 503, "暂时无法核对恢复资格，请刷新查看。"],
+])("shows the server recovery result %j without starting an action", async (recovery, status, message) => {
+  const task: GoalTask = {
+    id: "c".repeat(32), project_id: "interrupted", project_identity: "v1",
+    request_sha256: "d".repeat(64), status: "INTERRUPTED", plan_version: 1, created_at: 1,
+    summary: { mode: "MODEL_DESIGNED", complete: false, cases: [] },
+  };
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === "/api/task-session") return response({ csrf_token: "local" });
+    if (url === "/api/projects") return response({ projects: [] });
+    if (url === "/api/project-intake") return response({ projects: [], profiles: [] });
+    if (url === "/api/tasks") return response({ tasks: [task] });
+    if (url === "/api/saved-tests") return response({ tests: [] });
+    if (url === `/api/tasks/${task.id}`) return response(task);
+    if (url.endsWith("/timeline")) return response({ events: [] });
+    if (url.endsWith("/recovery")) return response({ status: task.status, ...recovery }, status);
+    throw new Error("Unexpected request");
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<MemoryRouter initialEntries={[`/tasks?task=${task.id}`]}><GoalTasks /></MemoryRouter>);
+  expect(await screen.findByText(message)).toBeVisible();
+  expect(fetchMock).toHaveBeenCalledWith(`/api/tasks/${task.id}/recovery`,
+    expect.objectContaining({ method: "GET" }));
+  expect(screen.queryByRole("button", { name: /批准|恢复执行/ })).not.toBeInTheDocument();
+});
+
 test("saved tests load independently of a slow project intake catalog", async () => {
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
     if (url === "/api/task-session") return response({ csrf_token: "local" });

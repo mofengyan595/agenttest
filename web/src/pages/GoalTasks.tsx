@@ -9,6 +9,7 @@ import {
   type IntakeCatalog,
   type SavedTest,
   type TaskEvent,
+  type TaskRecovery,
 } from "../api/tasks";
 import { outcomes } from "../status";
 import type { Outcome } from "../api/types";
@@ -40,6 +41,37 @@ const states: Record<string, string> = {
   CANCELLED: "已取消",
   INTERRUPTED: "已中断",
 };
+
+const recoveryReasons: Record<string, string> = {
+  HUMAN_APPROVAL_REQUIRED: "等待任务所有者审批。",
+  DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW: "写入结果未知，需要人工复核。",
+  MODEL_USAGE_REQUIRES_RECONCILIATION: "需先核对模型用量。",
+  PROJECT_VERSION_CHANGED_RECHECK_REQUIRED: "项目配置或目标部署已变化，需重新核对。",
+};
+
+function RecoveryNotice({ taskId }: { taskId: string }) {
+  const [recovery, setRecovery] = useState<TaskRecovery | null | undefined>();
+  useEffect(() => {
+    let active = true;
+    taskApi.recovery(taskId).then((status) => {
+      if (active) setRecovery(status);
+    }).catch(() => {
+      if (active) setRecovery(null);
+    });
+    return () => { active = false; };
+  }, [taskId]);
+
+  if (recovery === undefined) return <p>正在核对恢复资格…</p>;
+  if (!recovery) return <p>暂时无法核对恢复资格，请刷新查看。</p>;
+  if (recovery.status !== "INTERRUPTED") return <p>任务状态已变化，请刷新查看。</p>;
+  if (recovery.reason === "REVIEW_INTERRUPT_REBUILD_REQUIRED") {
+    return <p>需先恢复审批暂停点，之后仍须由任务所有者审批。</p>;
+  }
+  return <p>
+    {recovery.resumable === true ? "已具备恢复资格。" : "当前不可恢复。"}
+    {recovery.reason && (recoveryReasons[recovery.reason] || `服务端状态 ${recovery.reason}。`)}
+  </p>;
+}
 
 export function GoalTasks({
   recordsOnly = false,
@@ -654,9 +686,10 @@ export function GoalTasks({
                     </p>
                   )}
                   {selected.status === "INTERRUPTED" && (
-                    <p>
-                      请核对服务、账号和项目版本。已发送请求可能完成，系统不会自动重试或重放写入。
-                    </p>
+                    <>
+                      <RecoveryNotice key={selected.id} taskId={selected.id} />
+                      <p>已发送请求可能完成，系统不会自动重放写入。</p>
+                    </>
                   )}
                   {selected.status === "CANCELLED" && (
                     <p>已发送请求可能完成；取消不会回滚或重新发送请求。</p>
