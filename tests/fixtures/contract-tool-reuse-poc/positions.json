@@ -1,0 +1,339 @@
+{
+  "subjects": {
+    "A01": {
+      "id": "web_rule_3_negative_5",
+      "mode": "negative",
+      "fixed": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "proposal": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      }
+    },
+    "A02": {
+      "id": "web_rule_3_negative_7",
+      "mode": "negative",
+      "fixed": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "proposal": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 1,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "open_slot": [
+        "body",
+        "quantity"
+      ]
+    },
+    "A03": {
+      "id": "web_rule_3_negative_10",
+      "mode": "negative",
+      "fixed": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "proposal": {
+        "headers": {
+          "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      }
+    },
+    "A04": {
+      "id": "web_rule_7_negative_5",
+      "mode": "negative",
+      "fixed": {
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "proposal": {
+        "body": {
+          "name": "parcel-poc",
+          "quantity": 2,
+          "meta": {
+            "labels": [
+              "green"
+            ],
+            "options": {
+              "tracked": true
+            }
+          }
+        }
+      },
+      "setup": {
+        "web_rule_3": {
+          "headers": {
+            "X-Lab-Correlation": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "body": {
+            "name": "owned-parcel",
+            "quantity": 2,
+            "meta": {
+              "labels": [
+                "green"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "B01": {
+      "id": "asset_limit_high",
+      "mode": "negative",
+      "fixed": {},
+      "proposal": {
+        "query": {
+          "limit": 5
+        }
+      },
+      "open_slot": [
+        "query",
+        "limit"
+      ]
+    },
+    "B02": {
+      "id": "asset_title_missing",
+      "mode": "negative",
+      "fixed": {
+        "headers": {
+          "X-Audit-Key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "body": {
+          "title": "asset-poc",
+          "notes": "known"
+        }
+      },
+      "proposal": {
+        "headers": {
+          "X-Audit-Key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "body": {
+          "title": "asset-poc",
+          "notes": "known"
+        }
+      }
+    },
+    "B03": {
+      "id": "asset_notes_null",
+      "mode": "negative",
+      "fixed": {
+        "headers": {
+          "X-Audit-Key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "body": {
+          "title": "asset-poc",
+          "notes": "known"
+        }
+      },
+      "proposal": {
+        "headers": {
+          "X-Audit-Key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "body": {
+          "title": "asset-poc",
+          "notes": "known"
+        }
+      }
+    },
+    "B04": {
+      "id": "asset_rating_high",
+      "mode": "negative",
+      "fixed": {
+        "body": {
+          "rating": 3
+        }
+      },
+      "proposal": {
+        "body": {
+          "rating": 3
+        }
+      },
+      "setup": {
+        "asset_register": {
+          "headers": {
+            "X-Audit-Key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "body": {
+            "title": "asset-poc",
+            "notes": "owned"
+          }
+        }
+      }
+    }
+  },
+  "controls": {
+    "A05": [
+      "A02",
+      "unapproved_value",
+      4
+    ],
+    "A06": [
+      "A01",
+      "extra_change",
+      null
+    ],
+    "A07": [
+      "A04",
+      "missing_producer",
+      null
+    ],
+    "A08": [
+      "A01",
+      "wrong_role",
+      "foreign"
+    ],
+    "A09": [
+      "A04",
+      "no_approval",
+      null
+    ],
+    "A10": [
+      "A04",
+      "missing_cleanup",
+      null
+    ],
+    "B05": [
+      "B02",
+      "unapproved_policy",
+      null
+    ],
+    "B06": [
+      "B04",
+      "ambiguous_producer",
+      null
+    ],
+    "B07": [
+      "B04",
+      "wrong_role",
+      "viewer"
+    ],
+    "B08": [
+      "B04",
+      "unapproved_value",
+      0
+    ],
+    "B09": [
+      "B02",
+      "external_ref",
+      null
+    ],
+    "B10": [
+      "B04",
+      "different_instance",
+      null
+    ]
+  },
+  "seed": 31826,
+  "max_candidate_count": 16,
+  "count_by_mode": {
+    "positive": 8,
+    "negative": 8
+  },
+  "versions": {
+    "schemathesis": "4.32.4",
+    "hypothesis": "6.170.8",
+    "pytest": "9.1.1",
+    "jsonschema": "4.26.0",
+    "openapi-spec-validator": "0.9.0",
+    "httpx": "0.28.1",
+    "ruff": "0.17.0"
+  },
+  "python": [
+    3,
+    11,
+    15
+  ],
+  "network_budget": 0,
+  "model_budget": 0
+}

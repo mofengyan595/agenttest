@@ -1,0 +1,7 @@
+{
+  ".eduwork/c1.2-focus-pairs/frozen/parcel.project.json": "4c4bdbec9ed40e66c5c180732535f7e8c6f3d926b7897135d566105fb6e0cd7b",
+  "requirements-comparison.lock": "4960d96e3510a5cfa76c55c32df258c3f8b6864bb675a1c3e1faafe807b38bd9",
+  "tests/fixtures/contract-tool-reuse-poc/assets.json": "b86a3c3b87ba8ffb1cf5863be4261aaf313bb3d7c7731ef9b488c84c13a55acc",
+  "tests/fixtures/contract-tool-reuse-poc/positions.json": "9e9a3912e4d5583279d259fe762d3ac9ee66f3022c24b2e0036fa70fa60dea94",
+  "tests/fixtures/contract-tool-reuse-poc/oracle.json": "77ee93903b8cadaecfd374cae3f964ed6681a93c79c7f9fd14ac23e4b30b1a9a"
+}

@@ -1,0 +1,832 @@
+{
+  "registration": {
+    "schema_version": "agenttest.registered-project.v1",
+    "id": "poc-assets",
+    "contract": "contract.json",
+    "target": "target.json",
+    "policies": "policies.json",
+    "goals": "goals.json"
+  },
+  "document": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Synthetic asset registry",
+      "version": "1"
+    },
+    "paths": {
+      "/assets": {
+        "get": {
+          "operationId": "listAssets",
+          "responses": {
+            "200": {
+              "description": "Listed"
+            },
+            "422": {
+              "description": "Invalid approved input",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                      }
+                    },
+                    "required": [
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            }
+          ]
+        },
+        "post": {
+          "operationId": "registerAsset",
+          "responses": {
+            "201": {
+              "description": "Created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 99
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Invalid approved input",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                      }
+                    },
+                    "required": [
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "X-Audit-Key",
+              "in": "header",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{32}$"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetInput"
+                }
+              }
+            }
+          }
+        }
+      },
+      "/assets/{assetId}": {
+        "patch": {
+          "operationId": "updateAsset",
+          "responses": {
+            "200": {
+              "description": "Updated"
+            },
+            "422": {
+              "description": "Invalid approved input",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                      }
+                    },
+                    "required": [
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "assetId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rating": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 4
+                    }
+                  },
+                  "required": [
+                    "rating"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "operationId": "deleteAsset",
+          "responses": {
+            "204": {
+              "description": "Removed"
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "assetId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              }
+            }
+          ]
+        },
+        "get": {
+          "operationId": "readAsset",
+          "responses": {
+            "200": {
+              "description": "Created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 99
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Absent"
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "assetId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              }
+            }
+          ]
+        }
+      },
+      "/asset-observations": {
+        "get": {
+          "operationId": "countAssets",
+          "responses": {
+            "200": {
+              "description": "Observed",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 99
+                      }
+                    },
+                    "required": [
+                      "count"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "assetBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "key",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{32}$"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "AssetInput": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20
+            }
+          },
+          "required": [
+            "title",
+            "notes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "securitySchemes": {
+        "assetBearer": {
+          "type": "http",
+          "scheme": "bearer"
+        }
+      }
+    }
+  },
+  "target": {
+    "base_url": "http://127.0.0.1:65530",
+    "environment": "isolated",
+    "allow_mutations": true,
+    "business_scenario": "poc_assets",
+    "min_request_interval": 0.0,
+    "roles": {
+      "viewer": {
+        "bearer_env": "POC_ASSET_VIEWER"
+      },
+      "editor": {
+        "bearer_env": "POC_ASSET_EDITOR"
+      }
+    },
+    "allowed_operations": [
+      "listAssets",
+      "registerAsset",
+      "updateAsset",
+      "deleteAsset",
+      "readAsset",
+      "countAssets"
+    ],
+    "resource_lifecycles": [
+      {
+        "create_operation": "registerAsset",
+        "delete_operation": "deleteAsset",
+        "id_selector": "$.id",
+        "path_parameter": "assetId",
+        "fresh_resource_basis": "Synthetic registration returns a fresh owned identifier."
+      }
+    ],
+    "negative_post_observations": {
+      "registerAsset": {
+        "operation_id": "countAssets",
+        "request_header": "X-Audit-Key",
+        "query_parameter": "key",
+        "count_selector": "$.count",
+        "basis": "Synthetic receipts count every registration bearing this audit key."
+      }
+    }
+  },
+  "policies": [
+    {
+      "id": "asset_list",
+      "operation_id": "listAssets",
+      "roles": [
+        "viewer"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            200
+          ]
+        },
+        "fields": []
+      },
+      "binding_rules": [
+        {
+          "location": "query",
+          "name": "limit",
+          "literal_schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        }
+      ],
+      "closed_arguments": true
+    },
+    {
+      "id": "asset_limit_high",
+      "operation_id": "listAssets",
+      "roles": [
+        "viewer"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            422
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.code",
+            "operator": "equals",
+            "expected": "LIMIT_OUTSIDE"
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "query",
+          "name": "limit",
+          "literal_schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        }
+      ],
+      "closed_arguments": true,
+      "negative": {
+        "base_policy_id": "asset_list",
+        "location": "query",
+        "name": "limit",
+        "kind": "boundary_outside",
+        "violation_codes": [
+          "OPENAPI_VALUE_BOUND"
+        ],
+        "value": 6
+      }
+    },
+    {
+      "id": "asset_register",
+      "operation_id": "registerAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            201
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.id",
+            "operator": "exists",
+            "expected": null
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "headers",
+          "name": "X-Audit-Key",
+          "literal_schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        {
+          "location": "body",
+          "name": "title",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16
+          }
+        },
+        {
+          "location": "body",
+          "name": "notes",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          }
+        }
+      ],
+      "closed_arguments": true
+    },
+    {
+      "id": "asset_title_missing",
+      "operation_id": "registerAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            422
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.code",
+            "operator": "equals",
+            "expected": "TITLE_REQUIRED"
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "headers",
+          "name": "X-Audit-Key",
+          "literal_schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        {
+          "location": "body",
+          "name": "title",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16
+          }
+        },
+        {
+          "location": "body",
+          "name": "notes",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          }
+        }
+      ],
+      "closed_arguments": true,
+      "negative": {
+        "base_policy_id": "asset_register",
+        "location": "body",
+        "name": "title",
+        "kind": "required_missing",
+        "violation_codes": [
+          "OPENAPI_BODY_FIELD_REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "asset_notes_null",
+      "operation_id": "registerAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            422
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.code",
+            "operator": "equals",
+            "expected": "NOTES_TYPE"
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "headers",
+          "name": "X-Audit-Key",
+          "literal_schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        {
+          "location": "body",
+          "name": "title",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16
+          }
+        },
+        {
+          "location": "body",
+          "name": "notes",
+          "literal_schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          }
+        }
+      ],
+      "closed_arguments": true,
+      "negative": {
+        "base_policy_id": "asset_register",
+        "location": "body",
+        "name": "notes",
+        "kind": "type_mismatch",
+        "violation_codes": [
+          "OPENAPI_VALUE_TYPE"
+        ],
+        "value": null
+      }
+    },
+    {
+      "id": "asset_update",
+      "operation_id": "updateAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            200
+          ]
+        },
+        "fields": []
+      },
+      "binding_rules": [
+        {
+          "location": "path_parameters",
+          "name": "assetId",
+          "source_policy_id": "asset_register",
+          "source_selector": "$.id",
+          "role_relation": "same"
+        },
+        {
+          "location": "body",
+          "name": "rating",
+          "literal_schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        }
+      ],
+      "closed_arguments": true
+    },
+    {
+      "id": "asset_rating_high",
+      "operation_id": "updateAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            422
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.code",
+            "operator": "equals",
+            "expected": "RATING_OUTSIDE"
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "path_parameters",
+          "name": "assetId",
+          "source_policy_id": "asset_register",
+          "source_selector": "$.id",
+          "role_relation": "same"
+        },
+        {
+          "location": "body",
+          "name": "rating",
+          "literal_schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        }
+      ],
+      "closed_arguments": true,
+      "negative": {
+        "base_policy_id": "asset_update",
+        "location": "body",
+        "name": "rating",
+        "kind": "boundary_outside",
+        "violation_codes": [
+          "OPENAPI_VALUE_BOUND"
+        ],
+        "value": 5
+      }
+    },
+    {
+      "id": "asset_delete",
+      "operation_id": "deleteAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            204
+          ]
+        },
+        "fields": []
+      },
+      "binding_rules": [
+        {
+          "location": "path_parameters",
+          "name": "assetId",
+          "source_policy_id": "asset_register",
+          "source_selector": "$.id",
+          "role_relation": "same"
+        }
+      ],
+      "closed_arguments": true
+    },
+    {
+      "id": "asset_absence",
+      "operation_id": "readAsset",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            404
+          ]
+        },
+        "fields": []
+      },
+      "binding_rules": [
+        {
+          "location": "path_parameters",
+          "name": "assetId",
+          "source_policy_id": "asset_register",
+          "source_selector": "$.id",
+          "role_relation": "same"
+        }
+      ],
+      "closed_arguments": true
+    },
+    {
+      "id": "asset_count",
+      "operation_id": "countAssets",
+      "roles": [
+        "editor"
+      ],
+      "business_scenario": "poc_assets",
+      "assertions": {
+        "reviewed": true,
+        "source": "POC_ASSET_FIXTURE_V1",
+        "status": {
+          "codes": [
+            200
+          ]
+        },
+        "fields": [
+          {
+            "select": "$.count",
+            "operator": "equals",
+            "expected": 0
+          }
+        ]
+      },
+      "binding_rules": [
+        {
+          "location": "query",
+          "name": "key",
+          "literal_schema": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        }
+      ],
+      "closed_arguments": true
+    }
+  ]
+}

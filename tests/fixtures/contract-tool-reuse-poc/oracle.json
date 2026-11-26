@@ -1,0 +1,374 @@
+{
+  "approved": {
+    "A01": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/parcels",
+          "status": 422,
+          "role": null
+        },
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        }
+      ],
+      "change": [
+        "body",
+        "quantity",
+        "missing"
+      ],
+      "policies": [
+        "web_rule_2",
+        "web_rule_3_negative_5",
+        "web_rule_2"
+      ]
+    },
+    "A02": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/parcels",
+          "status": 422,
+          "role": null
+        },
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        }
+      ],
+      "change": [
+        "body",
+        "quantity",
+        "value",
+        0
+      ],
+      "policies": [
+        "web_rule_2",
+        "web_rule_3_negative_7",
+        "web_rule_2"
+      ]
+    },
+    "A03": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/parcels",
+          "status": 422,
+          "role": null
+        },
+        {
+          "method": "GET",
+          "path": "/parcel-observations",
+          "status": 200,
+          "role": null,
+          "response": {
+            "count": 0
+          }
+        }
+      ],
+      "change": [
+        "body",
+        "meta",
+        "value",
+        "wrong-type"
+      ],
+      "policies": [
+        "web_rule_2",
+        "web_rule_3_negative_10",
+        "web_rule_2"
+      ]
+    },
+    "A04": {
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/parcels",
+          "status": 201,
+          "role": null,
+          "response": {
+            "id": 17,
+            "name": "owned-parcel",
+            "quantity": 2,
+            "meta": {
+              "labels": [
+                "green"
+              ],
+              "options": {
+                "tracked": true
+              }
+            }
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/parcels/17",
+          "status": 422,
+          "role": null
+        },
+        {
+          "method": "DELETE",
+          "path": "/parcels/17",
+          "status": 204,
+          "role": null
+        },
+        {
+          "method": "GET",
+          "path": "/parcels/17",
+          "status": 404,
+          "role": null
+        }
+      ],
+      "change": [
+        "body",
+        "quantity",
+        "missing"
+      ],
+      "binding": [
+        "path_parameters",
+        "parcelId",
+        "$.id"
+      ],
+      "policies": [
+        "web_rule_3",
+        "web_rule_7_negative_5",
+        "web_rule_4",
+        "web_rule_5_expectation_1"
+      ]
+    },
+    "B01": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/assets",
+          "status": 422,
+          "role": "viewer",
+          "response": {
+            "code": "LIMIT_OUTSIDE"
+          }
+        }
+      ],
+      "change": [
+        "query",
+        "limit",
+        "value",
+        6
+      ],
+      "policies": [
+        "asset_limit_high"
+      ]
+    },
+    "B02": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/asset-observations",
+          "status": 200,
+          "role": "editor",
+          "response": {
+            "count": 0
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/assets",
+          "status": 422,
+          "role": "editor",
+          "response": {
+            "code": "TITLE_REQUIRED"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/asset-observations",
+          "status": 200,
+          "role": "editor",
+          "response": {
+            "count": 0
+          }
+        }
+      ],
+      "change": [
+        "body",
+        "title",
+        "missing"
+      ],
+      "policies": [
+        "asset_count",
+        "asset_title_missing",
+        "asset_count"
+      ]
+    },
+    "B03": {
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/asset-observations",
+          "status": 200,
+          "role": "editor",
+          "response": {
+            "count": 0
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/assets",
+          "status": 422,
+          "role": "editor",
+          "response": {
+            "code": "NOTES_TYPE"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/asset-observations",
+          "status": 200,
+          "role": "editor",
+          "response": {
+            "count": 0
+          }
+        }
+      ],
+      "change": [
+        "body",
+        "notes",
+        "value",
+        null
+      ],
+      "policies": [
+        "asset_count",
+        "asset_notes_null",
+        "asset_count"
+      ]
+    },
+    "B04": {
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/assets",
+          "status": 201,
+          "role": "editor",
+          "response": {
+            "id": 23
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/assets/23",
+          "status": 422,
+          "role": "editor",
+          "response": {
+            "code": "RATING_OUTSIDE"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/assets/23",
+          "status": 204,
+          "role": "editor"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/23",
+          "status": 404,
+          "role": "editor"
+        }
+      ],
+      "change": [
+        "body",
+        "rating",
+        "value",
+        5
+      ],
+      "binding": [
+        "path_parameters",
+        "assetId",
+        "$.id"
+      ],
+      "policies": [
+        "asset_register",
+        "asset_rating_high",
+        "asset_delete",
+        "asset_absence"
+      ]
+    }
+  },
+  "controls": {
+    "A05": "NEGATIVE_VALUE_BOUNDARY_DIRECTION_CHANGED",
+    "A06": "OPENAPI_UNKNOWN_BODY_FIELD",
+    "A07": "CONSTRUCTION_REFERENCE_INVALID",
+    "A08": "CONSTRUCTION_NODE_NOT_APPROVED",
+    "A09": "HUMAN_APPROVAL_REQUIRED",
+    "A10": "DESIGN_SELECTED_CLEANUP_MISSING",
+    "B05": "CONSTRUCTION_NODE_NOT_APPROVED",
+    "B06": "CONSTRUCTION_REFERENCE_INVALID",
+    "B07": "CONSTRUCTION_NODE_NOT_APPROVED",
+    "B08": "NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED",
+    "B09": "External OpenAPI references are not allowed",
+    "B10": "UNAPPROVED_INPUT_BINDING"
+  },
+  "open_slots_C0": [
+    "A02",
+    "B01"
+  ],
+  "auxiliary": {
+    "same_status_wrong_code": [
+      "B03",
+      "ASSERTION_FAILED"
+    ],
+    "budget": [
+      "B04",
+      0
+    ],
+    "unknown_write": [
+      "A04",
+      "DURABLE_WRITE_OUTCOME_REQUIRES_REVIEW"
+    ],
+    "integer": [
+      "A02",
+      2,
+      2.0
+    ],
+    "normal_response": [
+      "B04",
+      201
+    ]
+  }
+}

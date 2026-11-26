@@ -1,0 +1,8 @@
+{
+  "position": "A04",
+  "response_index": 0,
+  "field": "id",
+  "original": 17,
+  "corrected": "17",
+  "basis": "Pre-run static check: frozen parcel OpenAPI declares response id and parcelId as strings. The rendered path, policies, roles, binding selector, statuses and assertions are identical. The original oracle is retained."
+}

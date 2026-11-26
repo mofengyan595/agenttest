@@ -14,3 +14,7 @@ docs/evidence/planning-stability-20261106/recheck/*.json text eol=lf
 scripts/audit_requirement_witness_comparison.py text eol=lf
 scripts/audit_planning_stability.py text eol=lf
 scripts/run_requirement_witness_comparison.mjs text eol=lf
+
+# Preserve the byte-level digests recorded by the contract tool comparison.
+tests/fixtures/contract-tool-reuse-poc/*.json text eol=lf
+requirements-comparison.lock -text
