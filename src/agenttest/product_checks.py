@@ -169,10 +169,8 @@ def grouped_failure(violations, *, code=None):
     return error
 
 
-def missing_requested_checks(context, submitted):
-    """Return only proven gaps from the server's current project scope and ready catalog."""
-    from agenttest.model_input import IDENTIFIER, SECRET
-    from agenttest.product_focus_wire import operation_checks
+def release_check_source(context):
+    """Resolve the current, data-free qualifier of a proven closed release request."""
     from agenttest.product_sources import input_sources
     from agenttest.task_completion import is_variant_scope_clause
 
@@ -183,18 +181,35 @@ def missing_requested_checks(context, submitted):
     if (len(scoped) != 1 or len(atoms) != 2 or any(atom["future"] for atom in atoms)
             or not {"managed_authentication", "unavailable_operations", "pending_checks"}
             <= context.keys()):
-        return []
+        return None
     if not any(atom["source_id"] != scoped[0] and _UNQUALIFIED_RELEASE.fullmatch(atom["text"])
                for atom in atoms):
-        return []
+        return None
     quotes = [atom["text"] for atom in atoms if atom["source_id"] == scoped[0]
               and is_variant_scope_clause(atom["text"])]
     if len(quotes) != 1:
-        return []
-    source_ref = next((source["source_id"] for source in input_sources(context)
-                       if source["origin"] == "current_clause" and source["text"] == quotes[0]),
-                      None)
-    if source_ref is None:
+        return None
+    return next((source for source in input_sources(context)
+                 if source["origin"] == "current_clause" and source["text"] == quotes[0]), None)
+
+
+def requested_check_readiness(operation, roles, ready, identities, pending):
+    if operation not in ready:
+        return "OPERATION_NOT_READY"
+    if not roles or any(role is not None and role not in identities for role in roles):
+        return "IDENTITY_NOT_READY"
+    if any(role is not None and (operation, role) in pending for role in roles):
+        return "POLICY_PENDING"
+    return None
+
+
+def missing_requested_checks(context, submitted):
+    """Return only proven gaps from the server's current project scope and ready catalog."""
+    from agenttest.model_input import IDENTIFIER, SECRET
+    from agenttest.product_focus_wire import operation_checks
+
+    source = release_check_source(context)
+    if source is None:
         return []
 
     ready = set(context["approved_ids"])
@@ -211,17 +226,13 @@ def missing_requested_checks(context, submitted):
     if len({entry["policy_id"] for entry in index}) != len(index):
         return []
     for operation, entries in operation_checks(index).items():
-        if operation not in ready:
-            continue
         for reference, entry in entries.items():
-            roles = entry.get("roles")
-            if not roles or any(role is not None and (role not in identities
-                    or (operation, role) in pending) for role in roles):
+            if requested_check_readiness(operation, entry.get("roles"), ready, identities, pending):
                 continue
             if not IDENTIFIER.fullmatch(operation) or SECRET.search(operation):
                 return []
             required[entry["policy_id"]] = dict(operation_id=operation, check_ref=reference,
-                                                source_ref=source_ref)
+                                                source_ref=source["source_id"])
     if len(required) > MAX_REQUESTED_CHECKS:
         return []  # A complete proposal cannot fit the existing Focus contract.
     return [row for policy_id, row in required.items() if policy_id not in submitted]
@@ -348,10 +359,17 @@ def duplicates_boundary_check(requirement, value, checks, context, clauses):
     return len(matches) == 1
 
 
-def partition_requested_checks(project, checks, *, input_requirements=(), input_questions=()):
-    """Keep exact-value authorization local; unrelated approved work remains executable."""
+def validate_requested_variant(check, policy, operations):
+    """Apply the original exact-value override gate without requiring a wire source."""
     from agenttest.negative import select_negative_approval
 
+    if check.exact_value is not None or check.exact_length is not None:
+        select_negative_approval(policy.negative, operations[policy.operation_id],
+            requested_invalid_value(check, policy), override=True)
+
+
+def partition_requested_checks(project, checks, *, input_requirements=(), input_questions=()):
+    """Keep exact-value authorization local; unrelated approved work remains executable."""
     policies = {p.id: p for p in project.registry.definitions()}
     operations = {o.operation_id: o for o in project.contract.operations}
     executable, pending = [], []
@@ -368,9 +386,7 @@ def partition_requested_checks(project, checks, *, input_requirements=(), input_
                 reason="NEGATIVE_LITERAL_NOT_PRESERVED"))
             continue
         try:
-            if check.exact_value is not None or check.exact_length is not None:
-                select_negative_approval(policy.negative, operations[policy.operation_id],
-                    requested_invalid_value(check, policy), override=True)
+            validate_requested_variant(check, policy, operations)
         except ValueError as exc:
             pending.append(dict(policy_id=policy.id, operation_id=policy.operation_id,
                 field=policy.negative.name, requested_value=requested_invalid_value(check, policy),

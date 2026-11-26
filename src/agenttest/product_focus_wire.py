@@ -8,6 +8,13 @@ from agenttest.product_inputs import constrain_focus_inputs, focus_input_groups,
 from agenttest.report import fingerprint
 
 BUNDLE_KEYS = ("input_requirements", "input_questions", "requested_checks", "expectation_questions")
+COMPILED_CHECKS = "_compiled_requested_checks"
+COMPILED_RELEASE_PROTOCOL = "compiled_release_v1"
+
+
+def bundle_keys(context):
+    return tuple(key for key in BUNDLE_KEYS
+                 if COMPILED_CHECKS not in context or key != "requested_checks")
 
 
 def operation_checks(index):
@@ -40,6 +47,9 @@ def public_check_groups(index):
 def constrain_operation_bundles(schema, context):
     """Share equivalent field schemas across the complete operation index."""
     templates = {key: schema["properties"].pop(key) for key in BUNDLE_KEYS}
+    compiled = COMPILED_CHECKS in context
+    if compiled:
+        templates.pop("requested_checks")
     shared, operation_properties = {}, {}
     index = context.get("approved_checks", [])
     local_checks = operation_checks(index)
@@ -58,8 +68,9 @@ def constrain_operation_bundles(schema, context):
         fields = [f for f in all_fields if not f.get("source_dependency")]
         local = dict(properties=deepcopy(templates), **{"$defs": schema["$defs"]})
         constrain_focus_inputs(local, focus_input_groups(fields))
-        constrain_requested_checks(local, dict(approved_checks=[
-            c for c in index if c["operation_id"] == operation]))
+        if "requested_checks" in templates:
+            constrain_requested_checks(local, dict(approved_checks=[
+                c for c in index if c["operation_id"] == operation]))
         expectation = deepcopy(schema["$defs"]["ExpectationQuestion"])
         props = expectation["properties"]
         props["kind"] = dict(type="string", enum=["business_rule"])
@@ -98,7 +109,7 @@ def constrain_operation_bundles(schema, context):
         )
 
         constrain_input_sources(local["properties"], context, operation, fields)
-        item = local["properties"]["requested_checks"].get("items")
+        item = local["properties"].get("requested_checks", {}).get("items")
         if item:
             for branch in item.get("anyOf", [item]):
                 identifiers = branch["properties"].pop("policy_id")["enum"]
@@ -109,9 +120,11 @@ def constrain_operation_bundles(schema, context):
             constrain_numeric_check_sources(local["properties"]["requested_checks"],
                                             local_checks[operation], context)
             constrain_scope_check_sources(local["properties"]["requested_checks"], context)
-        if standalone:
+        if standalone and "requested_checks" in templates:
             local['properties']['requested_checks'] = dict(type='array', maxItems=0)
-        normal = dict(type='boolean', enum=[False]) if standalone else dict(type='boolean')
+        normal = dict(type='boolean')
+        if compiled or standalone:
+            normal["enum"] = [compiled]
         properties = {**local['properties'], 'test_normal': normal}
         if len(fields) != len(all_fields):
             properties['existing_resource'] = dict(type='boolean')
@@ -123,7 +136,7 @@ def constrain_operation_bundles(schema, context):
             schema["$defs"][name] = bundle
             shared[key] = name
         operation_ref = {"$ref": "#/$defs/" + shared[key]}
-        operation_properties[operation] = (operation_ref if operation in mandatory
+        operation_properties[operation] = (operation_ref if compiled or operation in mandatory
             else dict(anyOf=[dict(type="null"), operation_ref]))
     return dict(type="object", additionalProperties=False,
                 properties=operation_properties, required=list(operation_properties))
@@ -133,14 +146,21 @@ def decode_operation_bundles(operations, context):
     if type(operations) is not dict or set(operations) != set(context["approved_ids"]):
         raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_FLAGS_INCOMPLETE")
     fields = {input_slot(field): field for field in context.get("input_fields", [])}
-    checks = operation_checks(context.get("approved_checks", []))
+    keys = bundle_keys(context)
+    checks = (operation_checks(context.get("approved_checks", []))
+              if "requested_checks" in keys else {})
     result = {key: [] for key in (*BUNDLE_KEYS, "source_conflicts", "normal_operation_ids")}
     selected = []
     for operation, bundle in operations.items():
         if bundle is None:
             continue
+        if COMPILED_CHECKS in context and isinstance(bundle, dict):
+            if "requested_checks" in bundle:
+                raise ValidationFailure(Layer.MODEL, "FOCUS_COMPILED_CHECKS_CONFLICT")
+            if bundle.get("existing_resource") is True:
+                raise ValidationFailure(Layer.MODEL, "FOCUS_COMPILED_SCOPE_CONFLICT")
         if type(bundle) is not dict or set(bundle) - {'existing_resource'} != {
-                *BUNDLE_KEYS, 'test_normal'}:
+                *keys, 'test_normal'}:
             raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_SELECTION_INVALID")
         if type(bundle["test_normal"]) is not bool:
             raise ValidationFailure(Layer.MODEL, "FOCUS_NORMAL_SCOPE_INVALID")
@@ -159,7 +179,7 @@ def decode_operation_bundles(operations, context):
             raise error
         if existing:
             result["source_conflicts"].append(operation)
-        for key in BUNDLE_KEYS:
+        for key in keys:
             if type(bundle[key]) is not list:
                 raise ValidationFailure(Layer.MODEL, "FOCUS_WIRE_SELECTION_INVALID")
             for supplied in bundle[key]:

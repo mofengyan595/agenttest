@@ -1,0 +1,27 @@
+{
+  "requested_checks": {
+    "createParcel": ["web_rule_3_negative_1", "web_rule_3_negative_10", "web_rule_3_negative_2", "web_rule_3_negative_3", "web_rule_3_negative_4", "web_rule_3_negative_5", "web_rule_3_negative_6", "web_rule_3_negative_7", "web_rule_3_negative_8", "web_rule_3_negative_9"],
+    "changeParcel": ["web_rule_6_negative_1", "web_rule_6_negative_2", "web_rule_6_negative_3", "web_rule_6_negative_4"],
+    "replaceParcel": ["web_rule_7_negative_1", "web_rule_7_negative_10", "web_rule_7_negative_2", "web_rule_7_negative_3", "web_rule_7_negative_4", "web_rule_7_negative_5", "web_rule_7_negative_6", "web_rule_7_negative_7", "web_rule_7_negative_8", "web_rule_7_negative_9"]
+  },
+  "source_ref": "source_3",
+  "role": null,
+  "approved_denominator": 31,
+  "archives": {
+    "p3b27-acceptance-f3733c1": {"qualifies": 1, "rounds": [
+      ["SELECTED"], ["FOCUS_REQUESTED_CHECKS_MISSING", "SELECTED"], ["SELECTED"],
+      ["FOCUS_INPUT_TEXT_CHANGED", "SELECTED"], ["FOCUS_REQUESTED_CHECKS_MISSING", "SELECTED"]
+    ]},
+    "p3b27-retest-f3733c1": {"qualifies": 1, "rounds": [
+      ["SELECTED"], ["FOCUS_REQUESTED_CHECKS_MISSING", "FOCUS_REQUESTED_CHECKS_MISSING"],
+      ["FOCUS_SOURCE_CLAUSE_MISSING", "FOCUS_REQUESTED_CHECKS_MISSING"],
+      ["FOCUS_REQUESTED_CHECKS_MISSING", "FOCUS_REQUESTED_CHECKS_MISSING"],
+      ["FOCUS_REQUESTED_CHECKS_MISSING", "SELECTED"]
+    ]},
+    "p3b28-acceptance-bec965f": {"qualifies": 0, "rounds": [
+      ["FOCUS_INPUT_TEXT_CHANGED", "FOCUS_REQUESTED_CHECKS_MISSING"],
+      ["FOCUS_SOURCE_CLAUSE_MISSING", "SELECTED"], ["SELECTED"], ["SELECTED"],
+      ["FOCUS_REQUESTED_CHECKS_MISSING", "SELECTED"]
+    ]}
+  }
+}

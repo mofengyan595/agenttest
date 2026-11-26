@@ -1,0 +1,69 @@
+{
+  "contract": {
+    "openapi": "3.0.3",
+    "info": {"title": "Observatory queries", "version": "1"},
+    "paths": {
+      "/readings/query": {"post": {
+        "operationId": "queryReadings",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["limit", "label"], "properties": {
+            "limit": {"type": "integer", "minimum": 1, "maximum": 9},
+            "label": {"type": "string", "minLength": 2, "maxLength": 5}
+          }
+        }}}},
+        "responses": {"200": {"description": "query result"}, "422": {"description": "approved invalid input"}}
+      }},
+      "/ledger": {"get": {
+        "operationId": "readLedger",
+        "parameters": [{"name": "limit", "in": "query", "required": true,
+          "schema": {"type": "integer", "minimum": 1, "maximum": 9}}],
+        "responses": {"200": {"description": "ledger entries"}, "422": {"description": "approved invalid input"}}
+      }},
+      "/pulse": {"get": {
+        "operationId": "readPulse", "responses": {"200": {"description": "available"}}
+      }}
+    }
+  },
+  "roles": ["observer", "curator", "auditor"],
+  "bases": [
+    ["reading_observer", "queryReadings", "observer", "body", ["limit", "label"]],
+    ["reading_curator", "queryReadings", "curator", "body", ["limit", "label"]],
+    ["ledger_auditor", "readLedger", "auditor", "query", ["limit"]],
+    ["pulse_public", "readPulse", null, "query", []]
+  ],
+  "negatives": [
+    ["reading_limit", "reading_observer", "limit", "boundary_outside", 0, "OPENAPI_VALUE_BOUND", true],
+    ["reading_label", "reading_observer", "label", "boundary_outside", "too-long", "OPENAPI_VALUE_LENGTH", true],
+    ["reading_missing", "reading_observer", "label", "required_missing", null, "OPENAPI_BODY_FIELD_REQUIRED", false],
+    ["reading_null", "reading_observer", "label", "type_mismatch", null, "OPENAPI_VALUE_TYPE", false],
+    ["curator_limit", "reading_curator", "limit", "boundary_outside", 0, "OPENAPI_VALUE_BOUND", false],
+    ["ledger_limit", "ledger_auditor", "limit", "boundary_outside", 0, "OPENAPI_VALUE_BOUND", false]
+  ],
+  "cases": [
+    {"id": "closed_release", "text": "上线前完整验收整个项目。正常路径和非法入参都按已批准的规则执行。", "status": "COMPILED", "mapped": ["reading_limit", "reading_label", "reading_missing", "reading_null", "curator_limit", "ledger_limit"], "executable": 6},
+    {"id": "local_observer", "selected": [["queryReadings", "observer"]], "status": "COMPILED", "mapped": ["reading_limit", "reading_label", "reading_missing", "reading_null"], "executable": 0},
+    {"id": "same_operation_distinct_roles", "selected": [["queryReadings", "observer"], ["queryReadings", "curator"]], "status": "COMPILED", "mapped": ["reading_limit", "reading_label", "reading_missing", "reading_null", "curator_limit"], "executable": 0},
+    {"id": "zero_negative", "selected": [["readPulse", null]], "status": "COMPILED", "mapped": [], "executable": 0},
+    {"id": "normal_only", "selected": [["queryReadings", "observer"]], "include_negatives": false, "status": "COMPILED", "mapped": [], "executable": 0},
+    {"id": "typed_overrides", "selected": [["queryReadings", "observer"]], "values": {"reading_limit": {"exact_value": {"value": -2}}, "reading_label": {"exact_length": 11}, "reading_null": {"exact_value": {"value": null}}, "reading_missing": {"exact_value": null}}, "status": "COMPILED", "mapped": ["reading_limit", "reading_label", "reading_missing", "reading_null"], "executable": 0},
+    {"id": "fixed_override_denied", "selected": [["queryReadings", "curator"]], "values": {"curator_limit": {"exact_value": {"value": -2}}}, "status": "NEEDS_REVIEW", "mapped": ["curator_limit"], "executable": 0, "reason": "NEGATIVE_VALUE_VARIANT_NOT_AUTHORIZED"},
+    {"id": "omission_is_not_null", "selected": [["queryReadings", "observer"]], "values": {"reading_missing": {"exact_value": {"value": null}}}, "status": "NEEDS_REVIEW", "mapped": ["reading_limit", "reading_label", "reading_missing", "reading_null"], "executable": 0, "reason": "NEGATIVE_MISSING_FIELD_HAS_NO_REPLACEMENT_VALUE"},
+    {"id": "current_and_future", "text": "发版前完整验收整个项目。正常路径和非法入参都按已批准的规则执行。下次再测账本。", "status": "NEEDS_MODEL", "mapped": [], "executable": 0, "reason": "SCOPE_NOT_PROVEN"},
+    {"id": "withdraw", "text": "发版前完整验收整个项目，但撤回账本。正常路径和非法入参都按已批准的规则执行。", "status": "NEEDS_MODEL", "mapped": [], "executable": 0, "reason": "SCOPE_NOT_PROVEN"},
+    {"id": "negation", "text": "发版前完整验收整个项目但不测试访客。正常路径和非法入参都按已批准的规则执行。", "status": "NEEDS_MODEL", "mapped": [], "executable": 0, "reason": "SCOPE_NOT_PROVEN"},
+    {"id": "ambiguous_identity", "text": "让查看者和另外一个查看者测试 queryReadings 的异常。", "status": "NEEDS_MODEL", "mapped": [], "executable": 0, "reason": "SCOPE_NOT_PROVEN"},
+    {"id": "conflicting_source", "text": "只测试账本，撤回观测查询。", "selected": [["queryReadings", "observer"]], "status": "CONFLICT", "mapped": [], "executable": 0, "reason": "STRUCTURED_SCOPE_WITH_OPEN_TEXT"},
+    {"id": "role_not_ready", "selected": [["queryReadings", "curator"]], "not_ready_roles": ["curator"], "status": "NEEDS_REVIEW", "mapped": ["curator_limit"], "executable": 0, "reason": "IDENTITY_NOT_READY"},
+    {"id": "pending_check", "selected": [["readLedger", "auditor"]], "pending": [["readLedger", "auditor"]], "status": "NEEDS_REVIEW", "mapped": ["ledger_limit"], "executable": 0, "reason": "POLICY_PENDING"},
+    {"id": "outside_whitelist", "selected": [["unlistedOperation", "observer"]], "status": "CONFLICT", "mapped": [], "executable": 0, "reason": "OPERATION_NOT_ALLOWED"},
+    {"id": "multiple_instances_same_role", "selected": [["queryReadings", "observer", "first"], ["queryReadings", "observer", "second"]], "status": "NEEDS_REVIEW", "mapped": [], "executable": 0, "reason": "INSTANCE_NOT_UNIQUE"},
+    {"id": "stale_confirmation", "selected": [["queryReadings", "observer"]], "stale": true, "status": "CONFLICT", "mapped": [], "executable": 0, "reason": "CONFIRMATION_SNAPSHOT_CHANGED"},
+    {"id": "unconfirmed", "selected": [["queryReadings", "observer"]], "unconfirmed": true, "status": "NEEDS_REVIEW", "mapped": [], "executable": 0, "reason": "SCOPE_CONFIRMATION_REQUIRED"}
+  ],
+  "metamorphic_policy_sets": {
+    "reverse": ["reading_limit", "reading_label", "reading_missing", "reading_null", "curator_limit", "ledger_limit"],
+    "renamed": ["revised_limit", "reading_label", "reading_missing", "reading_null", "curator_limit", "ledger_limit"],
+    "add": ["reading_limit", "reading_label", "reading_missing", "reading_null", "curator_limit", "ledger_limit", "ledger_missing"],
+    "remove": ["reading_limit", "reading_label", "reading_missing", "reading_null", "curator_limit"]
+  }
+}

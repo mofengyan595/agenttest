@@ -145,6 +145,10 @@ def restore_design(snapshot):
 # value or leaks a credential. Asking the model again would invite it to guess the approved
 # value, which is exactly what the authority guards forbid.
 NON_REPAIRABLE_FOCUS = frozenset({
+    "FOCUS_CHECK_PROTOCOL_UNSUPPORTED",
+    "FOCUS_COMPILED_AUTHORITY_CONFLICT",
+    "FOCUS_COMPILED_CHECKS_CONFLICT",
+    "FOCUS_COMPILED_SCOPE_CONFLICT",
     "FOCUS_CONTEXT_CONTAINS_CREDENTIAL",
     "FOCUS_INPUT_FIELD_CHANGED",
     "FOCUS_INPUT_NUMBER_CHANGED",
@@ -611,9 +615,17 @@ class ProductTasks:
             svc._inputs[row["id"]] = (project.registration.id, text, False, ledger)
             svc._owners[row["id"]] = owner
             self.inputs.add(row["id"])
-            svc.db.save_context(row["id"], owner, dict(text=text, current_request=current_request,
+            task_context = dict(text=text, current_request=current_request,
                 requests=[*previous_requests, current_request], previous_result=previous_result,
-                usage=ledger.summary()))
+                usage=ledger.summary())
+            candidate_project = svc.environ.get("AGENTTEST_FOCUS_COMPILED_RELEASE_PROJECT")
+            if candidate_project == project.registration.id:
+                from agenttest.product_focus_wire import COMPILED_RELEASE_PROTOCOL
+
+                # Pin the planning protocol to this task. Existing approved assets and project
+                # authority retain their original bindings when the deployment switch changes.
+                task_context["focus_check_protocol"] = COMPILED_RELEASE_PROTOCOL
+            svc.db.save_context(row["id"], owner, task_context)
             svc.db.event(row["id"], state)
             if state == "QUEUED":
                 svc._enqueue(row["id"], owner)
@@ -760,6 +772,7 @@ class ProductTasks:
                                         available_identity_aliases=[r["alias"] for r in
                                             project_record.get("generic", {}).get("roles", [])],
                                         order_feedback=order_feedback,
+                                        focus_record=focus_record,
                                         timeout=getattr(getattr(raw_focus, "_settings", None),
                                                         "timeout", 90.0) + 1)
                                 except PlannerFailure as exc:
