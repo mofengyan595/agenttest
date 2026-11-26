@@ -451,7 +451,8 @@ class JournalPlanner:
 
 def previous_model_attempts(records, batch, retries=()):
     calls = [record["model_call"] for record in records
-             if record.get("group_id") == batch and record.get("model_call")]
+             if record.get("group_id") == batch and record.get("model_call")
+             and record.get("design_compilation", {}).get("status") not in {"APPLIED", "REJECTED"}]
     calls.extend(record["model_call"] for record in retries if record.get("model_call"))
     return max(len(calls), max((call.get("attempt") or 0 for call in calls), default=0))
 
@@ -625,6 +626,10 @@ class ProductTasks:
                 # Pin the planning protocol to this task. Existing approved assets and project
                 # authority retain their original bindings when the deployment switch changes.
                 task_context["focus_check_protocol"] = COMPILED_RELEASE_PROTOCOL
+            from agenttest.product_design_compiler import PROTOCOL, SWITCH
+
+            if svc.environ.get(SWITCH) == project.registration.id:
+                task_context["design_compilation_protocol"] = PROTOCOL
             svc.db.save_context(row["id"], owner, task_context)
             svc.db.event(row["id"], state)
             if state == "QUEUED":
@@ -1380,12 +1385,10 @@ class ProductTasks:
             checkpoint()
             return
         svc.db.event(task_id, "PLANNING", requests=ledger.requests)
-        raw_model = svc.designer_factory(project)
-        model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id,
-                              phase="design", batch=group["id"],
-                              previous_attempts=previous_model_attempts(
-                                  summary["design_records"], group["id"])),
-                              ledger, guard, reserve_encoded=autonomous)
+        from agenttest.product_design_compiler import PROTOCOL, SOURCE, compile_missing_check
+
+        raw_model = model = None
+        stats = ModelCallStats(usage_state="NOT_SENT")
         record = dict(group_id=group["id"], status="PLANNING")
         suggested = None
         if supervision is None and text == DEFAULT_ROUND:
@@ -1441,44 +1444,64 @@ class ProductTasks:
             if (not cached and instance_inputs
                     and len(group_ir.instances) > group_request_limit - ledger.requests):
                 raise ValidationFailure(Layer.MODEL, "DESIGN_STEP_BUDGET_EXCEEDED")
-            design = (restore_design(cached) if cached else await propose_design(
-                project, design_text, group, model,
-                environ=svc.environ,
-                remaining_requests=group_request_limit - ledger.requests,
-                inventory_total=summary["inventory"]["total"],
-                pending_checks=summary["inventory"].get("pending_checks", []),
-                handled_questions=(summary["questions"]
-                    if context.get("current_request", text) != DEFAULT_ROUND
-                    else []),
-                task_context=proposal_context,
-                allow_new_questions="focus" not in summary,
-                normal_operation_ids=required_normal_operations,
-                input_requirements=summary.get("focus", {}).get(
-                    "input_requirements", []),
-                requested_checks=executable_checks,
-                request_requirements=group_requirements,
-                witness_requirements=group_witness_requirements,
-                planning_ir=group_ir,
-                permission_action_scope=summary.get('permission_action_scope'),
-                data_references=summary.get('data_references', []),
-                http_status_requirements=summary.get(
-                    'http_status_requirements', []),
-                response_requirements=summary.get('response_requirements', []),
-                pending_negative_values=summary.get("pending_negative_values", []),
-                project_notes=project_record.get("business_notes", ""),
-                group_http_budget=suggested,
-                allow_optional_negatives=(not instance_inputs and summary.get(
-                    "focus", {}).get("mode") != "selected" and not negative_checks
-                    and not any(item.get("policy_ids") for item in summary["groups"])),
-                instance_inputs=instance_inputs,
-                instance_feedback=previous_rejection,
-                reference_repair=(supervision or {}).get("reference_repair"),
-                negative_repair=(supervision or {}).get("negative_repair"),
-                must_be_relevant=must_be_relevant,
-                available_identity_aliases=[r["alias"] for r in svc.intake.record(
-                    row["project_id"])["generic"]["roles"]],
-                timeout=getattr(getattr(raw_model, "_settings", None),
-                                "timeout", 30.0) + 1))
+            design = None
+            if cached:
+                design = restore_design(cached)
+            elif (autonomous and context.get("design_compilation_protocol") == PROTOCOL
+                  and group.get("policy_ids")):
+                compilation = record["design_compilation"] = dict(
+                    protocol=PROTOCOL, status="REJECTED",
+                    requested_policy_ids=[row["policy_id"] for row in executable_checks])
+                design, reason = compile_missing_check(scope, group, executable_checks,
+                                                       supervision or {})
+                compilation.update(status="APPLIED" if design is not None else "FALLBACK",
+                                   reason=reason)
+                if design is not None:
+                    record["plan_source"] = SOURCE
+            if design is None:
+                raw_model = svc.designer_factory(project)
+                model = BudgetPlanner(JournalPlanner(raw_model, svc.db, task_id,
+                    phase="design", batch=group["id"], previous_attempts=previous_model_attempts(
+                        summary["design_records"][:-1], group["id"])), ledger, guard,
+                    reserve_encoded=autonomous)
+                design = await propose_design(
+                    project, design_text, group, model,
+                    environ=svc.environ,
+                    remaining_requests=group_request_limit - ledger.requests,
+                    inventory_total=summary["inventory"]["total"],
+                    pending_checks=summary["inventory"].get("pending_checks", []),
+                    handled_questions=(summary["questions"]
+                        if context.get("current_request", text) != DEFAULT_ROUND
+                        else []),
+                    task_context=proposal_context,
+                    allow_new_questions="focus" not in summary,
+                    normal_operation_ids=required_normal_operations,
+                    input_requirements=summary.get("focus", {}).get(
+                        "input_requirements", []),
+                    requested_checks=executable_checks,
+                    request_requirements=group_requirements,
+                    witness_requirements=group_witness_requirements,
+                    planning_ir=group_ir,
+                    permission_action_scope=summary.get('permission_action_scope'),
+                    data_references=summary.get('data_references', []),
+                    http_status_requirements=summary.get(
+                        'http_status_requirements', []),
+                    response_requirements=summary.get('response_requirements', []),
+                    pending_negative_values=summary.get("pending_negative_values", []),
+                    project_notes=project_record.get("business_notes", ""),
+                    group_http_budget=suggested,
+                    allow_optional_negatives=(not instance_inputs and summary.get(
+                        "focus", {}).get("mode") != "selected" and not negative_checks
+                        and not any(item.get("policy_ids") for item in summary["groups"])),
+                    instance_inputs=instance_inputs,
+                    instance_feedback=previous_rejection,
+                    reference_repair=(supervision or {}).get("reference_repair"),
+                    negative_repair=(supervision or {}).get("negative_repair"),
+                    must_be_relevant=must_be_relevant,
+                    available_identity_aliases=[r["alias"] for r in svc.intake.record(
+                        row["project_id"])["generic"]["roles"]],
+                    timeout=getattr(getattr(raw_model, "_settings", None),
+                                    "timeout", 30.0) + 1)
             record.update(status="PROPOSED", interpretation=design.interpretation,
                           presentation=presentation_language(
                               design.interpretation))
@@ -1531,7 +1554,11 @@ class ProductTasks:
         finally:
             record["elapsed_ms"] = round(
                 (time.perf_counter() - design_started) * 1000, 3)
-            record["model_call"] = model.stats.model_dump(mode="json")
+            if model is not None:
+                stats = model.stats
+            record["model_call"] = stats.model_dump(mode="json")
+            if "design_compilation" in record:
+                record["design_compilation"]["design_calls"] = stats.calls
             if hasattr(raw_model, 'construction_records'):
                 record['plan_construction'] = raw_model.construction_records
                 record['construction_ms'] = raw_model.construction_elapsed_ms
@@ -1540,7 +1567,7 @@ class ProductTasks:
                     actual_planning_engine(construction), choice, construction))
             if cached:
                 record.update(cached["record"])
-                model.stats = ModelCallStats.model_validate(record["model_call"])
+                stats = ModelCallStats.model_validate(record["model_call"])
             checkpoint()
         for question in design.questions:
             if question.existing_question_ref is not None:
@@ -1576,6 +1603,10 @@ class ProductTasks:
                 preflight.append(precheck(case, index))
             except ValueError as exc:
                 preflight.append(exc)
+        compiled = record.get("plan_source") == SOURCE
+        if compiled:
+            record["design_compilation"]["preflight_passed"] = all(
+                not isinstance(result, ValueError) for result in preflight)
         if tool:
             from agenttest.human_review import group_operations, verification_candidates
 
@@ -1607,9 +1638,9 @@ class ProductTasks:
                 planned_steps=len(case.plan.steps),
                 planned_policy_ids=[s.policy_id for s in case.plan.steps],
                 status="NOT_EXECUTED", max_business_requests=len(case.plan.steps),
-                plan_source="MODEL_SUGGESTION", task_satisfied=None)
-            if negative_checks:
-                case_row["design_call_id"] = model.stats.local_call_id
+                plan_source=SOURCE if compiled else "MODEL_SUGGESTION", task_satisfied=None)
+            if negative_checks and not compiled:
+                case_row["design_call_id"] = stats.local_call_id
             if case._http_status_steps:
                 case_row['http_status_steps'] = case._http_status_steps
             if case._response_steps:
@@ -1646,13 +1677,13 @@ class ProductTasks:
                     public = diagnostic.model_dump(mode="json")
                     case_row["preflight_diagnostic"] = dict(
                         public, kind=design_failure_kind(public))
-                    if negative_checks:
+                    if negative_checks and not compiled:
                         from agenttest.negative_batch_repair import witness
 
                         repair = witness(project, case, exc, (draft for draft, result in
                             zip(ordered_cases, preflight, strict=True)
                             if not isinstance(result, ValueError)),
-                            lambda draft: precheck(draft, index), model.stats.local_call_id)
+                            lambda draft: precheck(draft, index), stats.local_call_id)
                         if repair is not None:
                             case_row["negative_repair"] = repair
                 continue
@@ -1729,8 +1760,10 @@ class ProductTasks:
                             max_requests=probe_remaining,
                             max_model_calls=probe_remaining)),
                     execution_guard=guard,
-                    plan_derivation=dict(source="MODEL_DESIGN", group=group["id"],
-                        model_request_sha256=model.stats.request_sha256),
+                    plan_derivation=(dict(source=SOURCE, group=group["id"],
+                        approved_policy_ids=group["policy_ids"], design_calls=0) if compiled else
+                        dict(source="MODEL_DESIGN", group=group["id"],
+                             model_request_sha256=stats.request_sha256)),
                     budget=WorkflowBudget(max_model_calls=0,
                         workflow_timeout=min(300.,
                             project.target.run_timeout + 220))).run()

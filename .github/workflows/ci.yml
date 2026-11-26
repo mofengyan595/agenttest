@@ -117,4 +117,5 @@ jobs:
           python -m pytest -q tests/test_product_agent.py tests/test_task_completion.py \
             tests/test_planning_flow_instances.py tests/test_focus_order_ambiguity.py \
             tests/test_mixed_planning_round3.py tests/test_product_durability.py \
-            tests/test_step_recovery.py
+            tests/test_step_recovery.py tests/test_focus_compiler.py \
+            tests/test_focus_takeover.py tests/test_product_design_compiler.py

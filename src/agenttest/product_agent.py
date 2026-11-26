@@ -973,6 +973,9 @@ class AgentSession:
                        requests=self.ledger.requests - before_requests,
                        budget=self._budget_view(),
                        next_step=dict(tool="get_test_coverage", arguments={}))
+        if record and "design_compilation" in record:
+            payload["design"].update(source=record.get("plan_source", "MODEL_SUGGESTION"),
+                                     compilation=record["design_compilation"])
         if group.get("policy_ids"):
             payload["obligation_coverage"] = self._batch_coverage(
                 group_id, group["policy_ids"], executed_evidence(self.summary))
