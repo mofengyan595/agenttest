@@ -406,6 +406,95 @@ Ruff、`git diff --check` 通过。首次冻结证据目录的 19 个文件、P3
 
 冻结前后 checkout SHA-256 均为 `8eb6fba84a9cf87a764a9cc9dbad6d54c0ec527e24f2b831185d2e25d53ae060`。1722 个 Git 可见文件全部纳入清单，源码、测试、配置与文档在回归期间零漂移。实际凭据、SQLite、模型原文及运行证据均未纳入候选。前两次完整冻结、往返修复和替身修复证据及受保护历史档案的文件摘要一致。P3-B2.7 两批真实验收仍各为 **1/5、NO-GO**。[冻结前清单](../.eduwork/p3b28-freeze/run-20261124T064454Z/identity-before.json) · [冻结后清单](../.eduwork/p3b28-freeze/run-20261124T064454Z/identity-after.json)
 
+## 2026-11-24 · 五轮真实稳定性验收
+
+**原评分 0/5，NO-GO，门槛为 4/5。** 五轮各执行一次，五轮均通过既有安全门禁。Focus 一次修复成功 2/3，三份修复请求列出的 38 项合法映射全部保留。两次 Design 超时被定位为客户端内层请求 deadline，一次 Agent 连接错误的具体来源仍未确定。P3-B3 准入条件未满足。原评分（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit.json`）
+
+### 冻结身份与探针
+
+开始前，本地 HEAD、`origin/master` 与 GitHub `master` 均为 `bec965fba0d7f5c039812cf94d7567b765747af3`，工作区干净，准确提交的 Python 和 Web CI 共 7/7 success。实际 checkout SHA-256 为 `b9dc6ce2cd99a2043f9992e6fdc546e024f9752df53f22297c5c4c141efe127e`，与通过离线冻结的 1722 文件清单相比只有三份文档差异。从探针到第五轮结束，实际 checkout 摘要一致，公开模型及协议摘要与 P3-B2.7 两批一致。沿用 ecnu-max、60 秒模型超时、原预算、HITL、执行脚本与原评分器。五轮使用各自独立的 task ID、提交标识、靶场实例和端口。北京时间 16:21:55 至 16:39:58，共 1,083.750 秒。受保护的历史验收、失败冻结及修复归档复核一致。批次身份（本地归档 `.eduwork/p3b28-acceptance-bec965f/batch.jsonl`） · 完整性核对（本地归档 `.eduwork/p3b28-acceptance-bec965f/integrity-before-reports.json`） · [Python CI](https://github.com/mofengyan595/agenttest/actions/runs/45351163398) · [Web CI](https://github.com/mofengyan595/agenttest/actions/runs/45351163405)
+
+| 探针 | 状态 / 用量 | 耗时 | tokens | 服务端响应 ID |
+| --- | --- | ---: | ---: | --- |
+| 1 | READY / KNOWN | 6.141 秒 | 65 | `0e6968d94b71496e827790f5b4e9705f` |
+| 2 | READY / KNOWN | 8.422 秒 | 65 | `ae0e914349754792af486214980f70d6` |
+| 3 | READY / KNOWN | 3.703 秒 | 147 | `4251db40-5032-46b5-9a3b-5683848af260` |
+
+三次响应均为 HTTP 200，响应可解析，未提供独立请求 ID。`telemetry.stages_ms` 均记录八个阶段，`usage_evidence=VALIDATED`，`interruption_source=null`。探针消耗 277 tokens，与正式五轮分开计量。探针及阶段耗时（本地归档 `.eduwork/p3b28-acceptance-bec965f/health.jsonl`）
+
+### 五轮原评分与安全证据
+
+| 轮次 | 批准义务 | 负向策略 | 请求级实测 | 产品终态及停止原因 | 原评分 | Focus / Design / Agent 调用 | 已知 tokens | UNKNOWN | 业务 HTTP |
+| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: |
+| v1 | 0/31 | 0/24 | 0/0 | `NEEDS_REVIEW`，Focus 缺 10 项 | 未达标 | 2 / 0 / 0 | 30,973 | 0 | 0 |
+| v2 | 21/31 | 14/24 | 14/24 | `PARTIAL / OBLIGATION_NOT_DISPATCHED`，`NO_PROGRESS` | 未达标 | 2 / 9 / 13 | 212,207 | 0 | 54 |
+| v3 | 7/31 | 0/24 | 0/24 | `PARTIAL / OBLIGATION_NOT_DISPATCHED`，`NO_PROGRESS` | 未达标 | 1 / 4 / 5 | 61,527 | 1 | 8 |
+| v4 | 27/31 | 20/24 | 20/24 | `BLOCKED / MODEL_SERVICE_UNAVAILABLE`，`MODEL_ERROR` | 未达标 | 1 / 12 / 15 | 234,083 | 1 | 80 |
+| v5 | 8/31 | 1/24 | 1/24 | `BLOCKED / MODEL_SERVICE_UNAVAILABLE`，`MODEL_ERROR` | 未达标 | 2 / 3 / 7 | 83,790 | 1 | 11 |
+
+v1 的 31 项分母来自冻结批准目录，Focus 被拒后未派发业务请求，产品未生成终止义务账本、`strict_complete` 或 `checks_passed`。v2 至 v5 的 `complete`、`strict_complete`、`checks_passed` 各为 false。四轮各收到 2 条真实 HTTP 503，主检查各保留 1 条 `ASSERTION_FAILED`，合计 8 条 503 和 4 条断言失败。五轮状态与证据链接（本地归档 `.eduwork/p3b28-acceptance-bec965f/positions.jsonl`） · 逐轮评分与回执（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit.json`）
+
+| 安全证据 | v1 | v2 | v3 | v4 | v5 | 合计 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| HITL 批准记录 | 0 | 5 | 1 | 7 | 2 | 15 |
+| POST 与审批、步骤和身份匹配 | 0 | 15 | 1 | 21 | 2 | 39 |
+| 创建 / 同身份 DELETE 后 GET 404 | 0 / 0 | 5 / 5 | 1 / 1 | 13 / 13 | 1 / 1 | 20 / 20 |
+
+153 条业务请求的身份和顺序均与账本一致。各轮库存归零，20 次创建均有逐资源及同身份 404 回读。零越权、重复派发负向策略、未知写入或写入重放。36 条可匹配账本的 Focus/Design 编码请求和 16 条工具诊断通过脱敏核对，138 个验收证据文件中未发现本次模型实际凭据。Agent 原始请求正文未归档。安全与取证核对（本地归档 `.eduwork/p3b28-acceptance-bec965f/evidence-verification.json`） · 分组、清理身份与实际负向值（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit-p3b27.json`）
+
+### P0 Focus 映射保留与兼容性
+
+8 次 Focus 请求均能从归档上下文重编码，并与账本摘要匹配。三份修复请求均包含 `selected` 范围约束、`request_2` 的可信范围声明和 `request_1` 的必填约束。逐项 `operation_id`、`check_ref`、`source_ref`，必须修改的字段路径以及新增、保留和最终缺项集合均保存于专项审计。三份修复请求的保留集与缺项集均无重叠，模型没有切换范围模式。逐调用与逐项映射审计（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit-p3b28.json`）
+
+| 轮次 | 首次提交 / 可验证合法项 | 首次缺项诊断 | 修复请求保留 / 补齐 | 第二份提案与结果 |
+| --- | ---: | ---: | ---: | --- |
+| v1 | 24 / 14 | 0 | 14 / 0 | 保留 14。反馈以 `must_be_null` 标记另 10 项的值或长度，模型省略这些条目，最终缺 10 项，被拒 |
+| v2 | 24 / 24 | 0 | 24 / 0 | 保留 24，删除多余的 `requirement_map.request_2`，通过 |
+| v3 | 24 / 24 | 0 | 未触发 | 首次通过。24 项使用可解析且原校验接受的 `source_2` |
+| v4 | 24 / 24 | 0 | 未触发 | 首次通过 |
+| v5 | 0 / 0 | 24 | 0 / 24 | 新增 24，全部通过原校验 |
+
+P3-B2.7 第二批 v2、v3、v4 的缺项变化为 24→1、0→24、1→23。该批 v3 还在修复时切换了范围模式，v4 的原 23 项中仅 1 项保留。本批 3 次修复中，2 次通过，38/38 项明确标记保留的映射全部出现于第二份提案。与两批历史分别 3/3 和 1/4 的修复结果相比，本批提供了 `keep_requested_checks` 一次实际成功保留完整集合的证据，样本不足以证明成功率普遍提高。v1 表明条目字段修正仍可能被模型处理成整项省略。
+
+v2 至 v5 各持久化 24 条显式请求级映射，均在原批准范围内。P3-B2.6 P0 的缺项门禁在 v5 完成了一次真实修复，在 v1 正确拒绝最终缺项。未出现 `CONSTRUCTION_REFERENCE_INVALID / SOURCE_UNKNOWN`，P3-B2.6 P1 引用修复未触发。P3-B2.7 的新增第三次剩余义务修复未触发，也未产生部分预检见证。v4 有一次 `GROUP_RUN_LIMIT`，当时该分组未在最近候选快照中建议执行，未发现准入矛盾。各组实际 Design 最多 3 次，未消耗新增剩余义务修复额度。v2、v4 各一次实测 `web_rule_3_negative_9`，确实省略 `body.meta` 并获得预期 422。P3-B2.6 兼容性（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit-p0-p1.json`） · 分组门禁审计（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit-p3b27.json`）
+
+### P1 调用阶段与取消来源
+
+76 条正式调用的阶段时间、来源、用量证据、HTTP 状态、ID、请求字节和 `elapsed_ms` 在 Trace、SQLite、任务报告逐条一致。30 条调用在可读取的耐久状态副本中有同值遥测，4 个进入 Agent 的轮次均核对了对应图 checkpoint；其余调用没有可核对的独立 checkpoint 遥测副本。73 条用量经校验，3 条 UNKNOWN 的三个 token 字段均为空。逐调用遥测（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit-p3b28.json`） · 一致性汇总（本地归档 `.eduwork/p3b28-acceptance-bec965f/evidence-verification.json`）
+
+| 调用位置和本地 ID | 请求字节 | 耗时 | `timeout_kind` | `interruption_source` | `usage_evidence` |
+| --- | ---: | ---: | --- | --- | --- |
+| v3 Design `negative_batch_1` 第 3 次，`59a0ad06e223415abcb23732414aaa3d` | 33,652 | 60.031 秒 | `DEADLINE` | `REQUEST_DEADLINE` | `INCOMPLETE_RESPONSE` |
+| v4 Design `negative_batch_7` 第 2 次，`4caeb5d0f29a4245bd7ed0b5c12fe9c0` | 36,140 | 60.031 秒 | `DEADLINE` | `REQUEST_DEADLINE` | `INCOMPLETE_RESPONSE` |
+| v5 Agent 第 7 次，`ed3cfefacdff4b82aa772735103cd4b3` | 32,451 | 17.078 秒 | 空 | `UNKNOWN` | `INCOMPLETE_RESPONSE` |
+
+三条均记录 `request_prepared`、`dispatch_started`、`call_ended`，均无响应头、正文阶段、HTTP 状态或服务端 ID。两条 Design 在内层 60 秒截止点结束。v5 的原错误是 `MODEL_CONNECTION_ERROR`，无明确超时类型，保留在 UNKNOWN 用量中并与两条确认超时分别计数。客户端进入派发阶段只能证明本地调用已开始，无法从该阶段判断请求是否抵达网关，或服务端排队及推理耗时。
+
+历史重复超时的 `negative_batch_5` 本批进行了五次 Design，五次均收到 HTTP 200 且用量 KNOWN。v4 首次为 38,456 字节，与 P3-B2.7 第二批该组超时请求的字节数相同，本批在 9.171 秒收到完整响应后因 JSON 语法被拒，第二次通过。v2 三次均收到完整回复，随后分别因额外字段、JSON 语法、JSON 语法被拒，终止于 `NO_PROGRESS`。v3 在 `negative_batch_1` 已遇到一次缺字段和一次 JSON 语法拒绝，第三次请求超时后停止，24 项负向义务未派发。响应、超时与组尝试证据（本地归档 `.eduwork/p3b28-acceptance-bec965f/audit.json`）
+
+### 历史对比与后续判断
+
+| 指标 | P3-B2.7 第一批 | P3-B2.7 第二批 | P3-B2.8 |
+| --- | ---: | ---: | ---: |
+| 原评分达标 | 1/5 | 1/5 | 0/5 |
+| 31/31 义务 / 请求级实测 24/24 | 1/5 · 1/5 | 1/5 · 1/5 | 0/5 · 0/5 |
+| 确认超时 | 3 | 1 | 2 |
+| UNKNOWN | 4 | 1 | 3 |
+| Focus 拒绝 | 3 | 7 | 4 |
+| Design 拒绝 | 12 | 4 | 13 |
+| 案例预检拒绝 | 10 | 4 | 5 |
+| Focus 修复成功 / 触发 | 3/3 | 1/4 | 2/3 |
+| `GROUP_RUN_LIMIT` / `NO_PROGRESS` / `OBLIGATION_STALLED` | 0 / 0 / 0 | 0 / 0 / 0 | 1 / 2 / 0 |
+| P3-B2.6 引用修复 / P3-B2.7 新路径 | 0 / 0 | 1 / 0 | 0 / 0 |
+| HITL 批准 / 匹配 POST / 同身份清理回读 | 30 / 83 / 37 | 14 / 38 / 20 | 15 / 39 / 20 |
+| 模型调用 | 116 | 55 | 76 |
+| 已知 tokens | 942,732 | 486,848 | 622,580 |
+| 业务 HTTP | 306 | 142 | 153 |
+
+本批覆盖与开销受停止阶段影响，三批的计数差异不足以归因于代码，也不足以据此判断模型性能提升。建议优先用两条 `REQUEST_DEADLINE` 和一条 `MODEL_CONNECTION_ERROR` 的调用时间窗核对网关及网络日志。三个异常请求均缺服务端 ID，服务端原因仍未确定。Focus 下一步可用 v1 回放检验反馈是否能以稳定的 `operation_id / check_ref / source_ref` 明确表达「保留条目并将指定字段置空」。若同类省略在后续样本中持续发生，再评估限定字段的 Patch-based Repair。现有证据未确认新的确定性 Harness 缺陷，也未支持上调超时或重试次数。同口径汇总（本地归档 `.eduwork/p3b28-acceptance-bec965f/comparison.json`）
+
+本批完整证据保存在独立目录。未补跑、修改执行配置、提交推送或启动 P3-B3。P3-B2.7 两批各 1/5、NO-GO 与 P3-B2.8 前两次离线冻结 FAIL 均保留。v1（本地归档 `.eduwork/p3b28-acceptance-bec965f/release-v1/manifest.json`） · v2（本地归档 `.eduwork/p3b28-acceptance-bec965f/release-v2/manifest.json`） · v3（本地归档 `.eduwork/p3b28-acceptance-bec965f/release-v3/manifest.json`） · v4（本地归档 `.eduwork/p3b28-acceptance-bec965f/release-v4/manifest.json`） · v5（本地归档 `.eduwork/p3b28-acceptance-bec965f/release-v5/manifest.json`）
+
 | 最慢用例 | call 耗时 |
 | --- | ---: |
 | PocketBase 全分母冷复算 | 101.49 秒 |

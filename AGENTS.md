@@ -2,6 +2,12 @@
 
 Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK.md` before any changes.
 
+## Development direction
+
+- Before starting development, read the [long-term roadmap](docs/ROADMAP.md) and [verified progress](docs/progress.md). Identify the long-term direction and finish the smallest authorized milestone within scope.
+- Preserve the long-term product positioning. Update the roadmap with the reason and evidence for major architecture or priority changes. Record delivered progress in `docs/progress.md` and keep experiments and acceptance evidence in their stage reports.
+- A failed experiment gates its own claims and release scope. Continue product work with independently verified safety prerequisites. Historical objectives and authorizations below apply to their recorded stages.
+
 ## Hard rules
 1. **Independent repo**: never modify or commit changes to `mofengyan595/courseinsight-cloud`. It is a test target, not part of this codebase.
 2. Work on the **smallest next milestone** from the verified progress. Stage 1 and the Stage 2 minimal workflow are complete; do not reinitialize or repeat them.
@@ -16,7 +22,7 @@ Project: AgentTest, an independent Python API-testing platform. Read `CODEX_TASK
 11. LangGraph / MCP SDK versions are changing: consult current official docs before implementing. MCP Python SDK **v2** uses `MCPServer` rather than older `FastMCP`; do not copy older v1 imports into a v2 project.
 12. After each stage: run checks, show command outputs, note incomplete tests, update `docs/progress.md` and give next exact milestone. Do not claim tests executed if not run.
 
-## Current milestone
+## Historical milestone (P2.1, preserved)
 The 2026-11-12 P2.1 milestone fixes the reliability defects that kept P2's autonomous loop from
 completing, without adding a second harness or agent loop. See
 docs/deepagents-reliability-p21.md. Deep Agents stays the only main Agent runtime; LangChain

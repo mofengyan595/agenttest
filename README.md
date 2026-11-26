@@ -118,6 +118,8 @@ cd ..
 
 Linux 使用 `.venv/bin/python`。演示包括正常流程、预设断言失败、受控调查、Java 风格 Mock 和 MCP stdio。故障场景中预期看到 `ASSERTION_FAILED`，结果会给出 Run ID 和本地报告位置。
 
+工单接入、请求证据、固定 pytest 回归，以及隔离靶场上的清理、审批和恢复示例见[产品演示基线](docs/product-demo-and-delivery-baseline.md)。
+
 ## 接入自己的 API
 
 1. 准备**已授权的本地或隔离环境**和 OpenAPI 3.0/3.1 JSON 或 YAML 契约。
@@ -133,11 +135,13 @@ Linux 使用 `.venv/bin/python`。演示包括正常流程、预设断言失败�
 | 验证范围 | 证据与结论 |
 | --- | --- |
 | **离线冻结回归** | P3-B2.8 第三次冻结 **3087 passed、15 skipped、1 xfailed、0 failed**，3103 项均有唯一终态。前两次冻结失败记录保留。[P3-B2.8 报告](docs/deepagents-model-reliability-p3b28.md) |
-| **跨平台 CI** | 查看对应提交的 GitHub Actions 作业结果。[Keyless Python checks](https://github.com/mofengyan595/agenttest/actions/workflows/ci.yml) · [Web Console checks](https://github.com/mofengyan595/agenttest/actions/workflows/web.yml) |
-| **真实模型稳定性** | P3-B2.8 真实模型验收尚未开始。P3-B2.7 两批独立验收均为 **1/5、NO-GO**，原评分门槛为 4/5。[P3-B2.7 报告](docs/deepagents-hitl-reliability-p3b27.md) |
+| **跨平台 CI** | P3-B2.8 提交 `bec965f` 的 Python 和 Web 作业 **7/7 success**。[Keyless Python checks](https://github.com/mofengyan595/agenttest/actions/runs/45351163398) · [Web Console checks](https://github.com/mofengyan595/agenttest/actions/runs/45351163405) |
+| **真实模型稳定性** | P3-B2.8 五轮真实验收已完成，原评分 **0/5、NO-GO**，五轮安全审计均通过。P3-B2.7 两批各 **1/5、NO-GO**。原发布门槛维持 4/5。[P3-B2.8 实测](docs/deepagents-model-reliability-p3b28.md#2026-11-24--五轮真实稳定性验收) · [P3-B2.7 报告](docs/deepagents-hitl-reliability-p3b27.md) |
 | **已离线验证** | P3-B2.8 P0 在 Focus 修复反馈中提示保留已验证的合法映射，P1 记录客户端实际观察到的模型调用阶段、取消来源和用量证据。[P3-B2.8 报告](docs/deepagents-model-reliability-p3b28.md) |
 
-P3-B3 尚未启动。
+复杂自主发布目前属于实验能力。产品主线和高级可靠性研究采用独立里程碑，共用原执行内核。P3-B2.9 和完整 P3-B3 尚未启动。上表的历史回归和 CI 成绩归属于 P3-B2.8，当次交付的检查以其提交对应的 GitHub Actions 记录为准。
+
+本阶段修复了负向请求二次校验丢失必填 Header 的问题。C1.1 是默认关闭的离线 Focus 候选，C1.2 的真实验证尚未完成。C2 在包裹和资产登记两个契约的产品工具入口，各为一个已批准的缺必填字段位置省去一次内层 Design，按项目启用且默认关闭。Schemathesis 仅用于可选离线对照，原 PoC 保持 18/20。阶段报告提及的 `.eduwork/` 是本地证据目录，仓库提供报告、合成夹具和离线测试。[Header 修复](docs/negative-request-context-fix.md) · [C1.1](docs/deterministic-focus-compiler-c11.md) · [C1.2](docs/deterministic-focus-compiler-c12.md) · [C2](docs/deterministic-design-compiler-c2.md) · [契约工具 PoC](docs/contract-tool-reuse-poc.md)
 
 其他历史实验见 [CourseInsight API 联调](docs/courseinsight-colleague-delivery.md) 和 [首次完成率与失败分析](docs/first-completion-delivery.md)。各报告保留其模型、任务集、配置和分母。
 
@@ -149,6 +153,8 @@ P3-B3 尚未启动。
 - **测试与交付** · pytest、Ruff、GitHub Actions、Playwright，可选 MCP 接口
 
 ## 开发与路线图
+
+[长期开发路线图](docs/ROADMAP.md)记录产品定位、六项建设方向和阶段依赖。当前已交付范围见[开发进度](docs/progress.md)。
 
 开发阶段按改动范围运行定向测试，候选版本集中执行冻结回归。
 
@@ -162,9 +168,10 @@ P3-B3 尚未启动。
 - [x] 受控规划、OpenAPI / Policy 校验、确定性 HTTP、断言与报告
 - [x] Deep Agents Harness、Skills、上下文管理、检查点与步骤恢复、HITL
 - [x] 义务覆盖与清理证明、模型反馈诊断、脱敏、离线评测与固定回归基础
-- [ ] 真实稳定性发布门槛（当前 **NO-GO**）
-- [ ] P3-B3 · Web 长任务、人工审批与断点恢复体验
-- [ ] 跨项目评测、多模型对比与产品化
+- [x] 产品主线 · 无密钥演示、报告与固定回归、隔离审批和恢复证据
+- [x] 产品主线 · C1 影子验证、默认关闭的 C1.1/C2 候选及 Web 恢复资格展示
+- [ ] 产品主线 · 完整的 Web 审批和原任务恢复交互
+- [ ] 研究线 · 复杂自主发布（当前 **0/5、NO-GO**）、跨模型对照与泛化评估
 
 ## 文档导航
 
@@ -175,3 +182,4 @@ P3-B3 尚未启动。
 | 断点恢复、审批与可靠性 | [持久化执行](docs/deepagents-durable-execution-p3b1.md) · [P3-B2.5](docs/deepagents-hitl-reliability-p3b25.md) · [P3-B2.6](docs/deepagents-hitl-reliability-p3b26.md) |
 | 可复用测试和实验 | [固定 pytest 回归](docs/regression-export.md) · [实验分析](docs/first-completion-delivery.md) |
 | Web 与开发进度 | [Web 使用指南](docs/web-intake-guide.md) · [开发进度](docs/progress.md) |
+| 产品演示与后续路线 | [演示基线](docs/product-demo-and-delivery-baseline.md) · [架构复盘](docs/architecture-and-roadmap-review.md) |
