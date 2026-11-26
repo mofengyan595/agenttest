@@ -8,10 +8,10 @@ import httpx
 import pytest
 
 from agenttest.contracts import load_openapi
-from agenttest.dsl import Scenario
+from agenttest.dsl import ArgumentBinding, NegativeValue, Scenario
 from agenttest.executor import Executor
 from agenttest.negative_demo import create_negative_target
-from agenttest.policies import NeedsReview, PolicyRegistry
+from agenttest.policies import BindingRule, NeedsReview, PolicyRegistry
 from agenttest.project_goals import load_goal_project
 from agenttest.report import Outcome, ReportStore
 
@@ -107,8 +107,6 @@ async def test_negative_response_cannot_supply_a_resource(tmp_path):
     plan = scenario("missing_message")
     consumer = deepcopy(plan.steps[0])
     consumer.id, consumer.policy_id = "consumer", "validation_normal"
-    from agenttest.dsl import ArgumentBinding
-
     consumer.body["message"] = ArgumentBinding(from_step="create", select="$.code")
     plan.steps.append(consumer)
     # Even when an operator relation exists, a rejection payload is not a created resource.
@@ -125,6 +123,53 @@ async def test_negative_response_cannot_supply_a_resource(tmp_path):
         httpx.MockTransport(lambda r: calls.append(r)), {}, PolicyRegistry(entries)).run(plan)
     assert report.outcome == Outcome.NEEDS_REVIEW and not calls
     assert report.diagnostic.code == "NEGATIVE_RESPONSE_IS_NOT_A_RESOURCE"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["omit", "null", "wrong_code", "missing", "extra", "override"])
+async def test_negative_baseline_keeps_approved_required_header(tmp_path, case):
+    p = project()
+    operation = next(op for op in p.contract.operations if op.operation_id == "validateRecord")
+    header = dict(type="string", enum=["fixture-key"])
+    operation.parameters.append(dict(name="X-Audit-Key", **{"in": "header"}, required=True,
+                                     schema=header))
+    entries = p.registry.definitions()
+    for entry in entries:
+        entry.binding_rules.append(BindingRule(location="headers", name="X-Audit-Key",
+                                               literal_schema=header))
+        if entry.id == "wrong_message_type":
+            entry.negative.value = None  # Approved distinct value, unlike a missing field.
+    plan = scenario("wrong_message_type" if case == "null" else "missing_message")
+    step = plan.steps[0]
+    if case != "missing":
+        step.headers["X-Audit-Key"] = ArgumentBinding(value="fixture-key")
+    if case == "extra":
+        step.headers["X-Unapproved"] = ArgumentBinding(value="no")
+    if case == "override":
+        step.negative_value = NegativeValue(value=None)
+    calls = []
+
+    def answer(request):
+        calls.append((request.headers["X-Audit-Key"], json.loads(request.content)))
+        return httpx.Response(422, json={"code": "OTHER" if case == "wrong_code"
+                                        else "INVALID_INPUT"})
+
+    report = await Executor(p.target, p.contract, ReportStore(tmp_path),
+        httpx.MockTransport(answer), {}, PolicyRegistry(entries)).run(plan)
+    if case in {"missing", "extra", "override"}:
+        assert report.outcome in {Outcome.TOOL_ERROR, Outcome.NEEDS_REVIEW}
+        assert not calls
+        return
+    expected = {"category": "a", "count": 2}
+    if case == "null":
+        expected["message"] = None
+    assert calls == [("fixture-key", expected)], report.diagnostic
+    if case == "wrong_code":
+        assert report.outcome == Outcome.ASSERTION_FAILED
+        assert any(c.kind == "http_status" and c.passed for c in report.steps[0].checks)
+        assert any(c.kind != "http_status" and not c.passed for c in report.steps[0].checks)
+    else:
+        assert report.outcome == Outcome.PASS, report.steps[0].checks
 
 
 @pytest.mark.parametrize("change", ["extra_violation", "missing_violation", "valid_value",

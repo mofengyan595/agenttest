@@ -216,8 +216,8 @@ async def test_a_mutator_that_substitutes_a_default_value_is_stopped_before_http
 
     p, _ = read_project()
     original = mutations.mutate_request
-    def substitute(approval, operation, path, query, payload, media):
-        query, payload = original(approval, operation, path, query, payload, media)
+    def substitute(approval, operation, path, query, payload, media, *, headers=None):
+        query, payload = original(approval, operation, path, query, payload, media, headers=headers)
         query[approval.name] = "wrong-type"
         return query, payload
     monkeypatch.setattr(mutations, "mutate_request", substitute)

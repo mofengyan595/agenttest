@@ -531,7 +531,7 @@ class Executor:
                 step.negative_value.value if step.negative_value is not None else None,
                 override=step.negative_value is not None)
             query, payload = mutate_request(approval, operation,
-                path_values, query, request_payload, media)
+                path_values, query, request_payload, media, headers=request_headers)
             if step.negative_value is not None:
                 from agenttest.json_values import json_equal
 

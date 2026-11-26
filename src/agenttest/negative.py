@@ -89,12 +89,12 @@ def validate_approval(approval, operation):
     return codes
 
 
-def mutate_request(approval, operation, path, query, payload, media):
+def mutate_request(approval, operation, path, query, payload, media, *, headers=None):
     """Validate everything first, then change exactly the approved non-resource field."""
     from agenttest.policies import NeedsReview
     from agenttest.request_validation import validate_request
 
-    validate_request(operation, path, query, payload, media)
+    validate_request(operation, path, query, payload, media, headers=headers)
     validate_approval(approval, operation)
     values = deepcopy(payload if approval.location == "body" else query)
     if approval.name not in values:
